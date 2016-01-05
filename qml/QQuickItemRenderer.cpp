@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2016 Wang Bin <wbsecg1@gmail.com>
     theoribeiro <theo@fictix.com.br>
 
 *   This file is part of QtAV
@@ -58,6 +58,8 @@ public:
     }
     virtual void setupQuality() {
         if (!node)
+            return;
+        if (opengl)
             return;
         if (quality == VideoRenderer::QualityFastest) {
             ((QSGSimpleTextureNode*)node)->setFiltering(QSGTexture::Nearest);
@@ -172,7 +174,12 @@ void QQuickItemRenderer::setFillMode(FillMode mode)
     }
     //m_geometryDirty = true;
     //update();
-    emit fillModeChanged(mode);
+    Q_EMIT fillModeChanged(mode);
+}
+
+QRectF QQuickItemRenderer::contentRect() const
+{
+    return videoRect();
 }
 
 bool QQuickItemRenderer::isOpenGL() const
@@ -285,7 +292,7 @@ void QQuickItemRenderer::afterRendering()
 bool QQuickItemRenderer::onSetRegionOfInterest(const QRectF &roi)
 {
     Q_UNUSED(roi);
-    emit regionOfInterestChanged();
+    Q_EMIT regionOfInterestChanged();
     return true;
 }
 
@@ -296,8 +303,19 @@ bool QQuickItemRenderer::onSetOrientation(int value)
         if (value == 90 || value == 270)
             return false;
     }
-    emit orientationChanged();
+    Q_EMIT orientationChanged();
     return true;
+}
+
+void QQuickItemRenderer::onSetOutAspectRatio(qreal ratio)
+{
+    Q_UNUSED(ratio);
+    Q_EMIT contentRectChanged();
+}
+
+void QQuickItemRenderer::onResizeRenderer(int, int)
+{
+    Q_EMIT contentRectChanged();
 }
 
 void QQuickItemRenderer::onFrameSizeChanged(const QSize &size)

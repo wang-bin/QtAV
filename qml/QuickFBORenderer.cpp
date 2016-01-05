@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2015-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -166,7 +166,12 @@ void QuickFBORenderer::setFillMode(FillMode mode)
         return;
     d_func().fill_mode = mode;
     updateRenderRect();
-    emit fillModeChanged(mode);
+    Q_EMIT fillModeChanged(mode);
+}
+
+QRectF QuickFBORenderer::contentRect() const
+{
+    return videoRect();
 }
 
 bool QuickFBORenderer::isOpenGL() const
@@ -180,7 +185,7 @@ void QuickFBORenderer::setOpenGL(bool o)
     if (d.opengl == o)
         return;
     d.opengl = o;
-    emit openGLChanged();
+    Q_EMIT openGLChanged();
     if (o)
         setPreferredPixelFormat(VideoFormat::Format_YUV420P);
     else
@@ -243,14 +248,15 @@ bool QuickFBORenderer::event(QEvent *e)
 bool QuickFBORenderer::onSetRegionOfInterest(const QRectF &roi)
 {
     Q_UNUSED(roi);
-    emit regionOfInterestChanged();
+    Q_EMIT regionOfInterestChanged();
     return true;
 }
 
 bool QuickFBORenderer::onSetOrientation(int value)
 {
     Q_UNUSED(value);
-    emit orientationChanged();
+    Q_EMIT orientationChanged();
+    // will call onSetOutAspectRatio after out_rect updated. so emit contentChanged there
     return true;
 }
 
@@ -259,6 +265,7 @@ void QuickFBORenderer::onSetOutAspectRatio(qreal ratio)
     Q_UNUSED(ratio);
     DPTR_D(QuickFBORenderer);
     d.setupAspectRatio();
+    Q_EMIT contentRectChanged();
 }
 
 void QuickFBORenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
@@ -266,12 +273,19 @@ void QuickFBORenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
     Q_UNUSED(mode);
     DPTR_D(QuickFBORenderer);
     d.setupAspectRatio();
+    // already called onSetOutAspectRatio, so no contentChanged here
+}
+
+void QuickFBORenderer::onResizeRenderer(int, int)
+{
+    Q_EMIT contentRectChanged();
 }
 
 void QuickFBORenderer::onFrameSizeChanged(const QSize &size)
 {
     Q_UNUSED(size);
     Q_EMIT frameSizeChanged();
+    // will call onSetOutAspectRatio after out_rect updated. so emit contentChanged there
 }
 
 void QuickFBORenderer::updateRenderRect()

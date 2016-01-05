@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2015-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -36,6 +36,7 @@ class QuickFBORenderer : public QQuickFramebufferObject, public VideoRenderer
     Q_PROPERTY(QObject* source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(FillMode fillMode READ fillMode WRITE setFillMode NOTIFY fillModeChanged)
     Q_PROPERTY(int orientation READ orientation WRITE setOrientation NOTIFY orientationChanged)
+    Q_PROPERTY(QRectF contentRect READ contentRect NOTIFY contentRectChanged)
     // regionOfInterest > sourceRect
     Q_PROPERTY(QRectF regionOfInterest READ regionOfInterest WRITE setRegionOfInterest NOTIFY regionOfInterestChanged)
     Q_PROPERTY(qreal sourceAspectRatio READ sourceAspectRatio NOTIFY sourceAspectRatioChanged)
@@ -51,14 +52,16 @@ public:
     Renderer *createRenderer() const Q_DECL_OVERRIDE;
 
     explicit QuickFBORenderer(QQuickItem *parent = 0);
-    virtual VideoRendererId id() const Q_DECL_OVERRIDE;
-    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
+    VideoRendererId id() const Q_DECL_OVERRIDE;
+    bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
 
     QObject *source() const;
     void setSource(QObject *source);
 
     FillMode fillMode() const;
     void setFillMode(FillMode mode);
+
+    QRectF contentRect() const;
 
     bool isOpenGL() const;
     void setOpenGL(bool o);
@@ -68,22 +71,24 @@ Q_SIGNALS:
     void sourceChanged();
     void fillModeChanged(QuickFBORenderer::FillMode);
     void orientationChanged();
+    void contentRectChanged();
     void regionOfInterestChanged();
     void openGLChanged();    
     void sourceAspectRatioChanged(qreal value) Q_DECL_OVERRIDE;
     void frameSizeChanged();
 protected:
-    virtual bool event(QEvent *e) Q_DECL_OVERRIDE;
-    virtual bool receiveFrame(const VideoFrame &frame) Q_DECL_OVERRIDE;
-    virtual bool needUpdateBackground() const Q_DECL_OVERRIDE;
-    virtual void drawBackground() Q_DECL_OVERRIDE;
-    virtual bool needDrawFrame() const Q_DECL_OVERRIDE;
-    virtual void drawFrame() Q_DECL_OVERRIDE;
+    bool event(QEvent *e) Q_DECL_OVERRIDE;
+    bool receiveFrame(const VideoFrame &frame) Q_DECL_OVERRIDE;
+    bool needUpdateBackground() const Q_DECL_OVERRIDE;
+    void drawBackground() Q_DECL_OVERRIDE;
+    bool needDrawFrame() const Q_DECL_OVERRIDE;
+    void drawFrame() Q_DECL_OVERRIDE;
 private:
-    virtual bool onSetRegionOfInterest(const QRectF& roi) Q_DECL_OVERRIDE;
-    virtual bool onSetOrientation(int value) Q_DECL_OVERRIDE;
-    virtual void onSetOutAspectRatio(qreal ratio) Q_DECL_OVERRIDE;
-    virtual void onSetOutAspectRatioMode(OutAspectRatioMode mode) Q_DECL_OVERRIDE;
+    bool onSetRegionOfInterest(const QRectF& roi) Q_DECL_OVERRIDE;
+    bool onSetOrientation(int value) Q_DECL_OVERRIDE;
+    void onSetOutAspectRatio(qreal ratio) Q_DECL_OVERRIDE;
+    void onSetOutAspectRatioMode(OutAspectRatioMode mode) Q_DECL_OVERRIDE;
+    void onResizeRenderer(int, int) Q_DECL_OVERRIDE;
     void onFrameSizeChanged(const QSize& size) Q_DECL_OVERRIDE;
     void updateRenderRect();
 };
