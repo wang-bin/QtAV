@@ -174,6 +174,11 @@ QRectF QuickFBORenderer::contentRect() const
     return videoRect();
 }
 
+QRectF QuickFBORenderer::sourceRect() const
+{
+    return QRectF(QPointF(), videoFrameSize());
+}
+
 bool QuickFBORenderer::isOpenGL() const
 {
     return d_func().opengl;

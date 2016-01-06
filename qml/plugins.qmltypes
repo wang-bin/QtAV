@@ -266,6 +266,7 @@ Module {
         Property { name: "fillMode"; type: "FillMode" }
         Property { name: "orientation"; type: "int" }
         Property { name: "contentRect"; type: "QRectF"; isReadonly: true }
+        Property { name: "sourceRect"; type: "QRectF"; isReadonly: true }
         Property { name: "regionOfInterest"; type: "QRectF" }
         Property { name: "sourceAspectRatio"; type: "double"; isReadonly: true }
         Property { name: "frameSize"; type: "QSize"; isReadonly: true }
@@ -298,6 +299,7 @@ Module {
         Property { name: "fillMode"; type: "FillMode" }
         Property { name: "orientation"; type: "int" }
         Property { name: "contentRect"; type: "QRectF"; isReadonly: true }
+        Property { name: "sourceRect"; type: "QRectF"; isReadonly: true }
         Property { name: "regionOfInterest"; type: "QRectF" }
         Property { name: "sourceAspectRatio"; type: "double"; isReadonly: true }
         Property { name: "frameSize"; type: "QSize"; isReadonly: true }

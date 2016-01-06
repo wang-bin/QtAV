@@ -182,6 +182,11 @@ QRectF QQuickItemRenderer::contentRect() const
     return videoRect();
 }
 
+QRectF QQuickItemRenderer::sourceRect() const
+{
+    return QRectF(QPointF(), videoFrameSize());
+}
+
 bool QQuickItemRenderer::isOpenGL() const
 {
     return d_func().opengl;

@@ -38,6 +38,7 @@ class QQuickItemRenderer : public QQuickItem, public VideoRenderer
     Q_PROPERTY(FillMode fillMode READ fillMode WRITE setFillMode NOTIFY fillModeChanged)
     Q_PROPERTY(int orientation READ orientation WRITE setOrientation NOTIFY orientationChanged)
     Q_PROPERTY(QRectF contentRect READ contentRect NOTIFY contentRectChanged)
+    Q_PROPERTY(QRectF sourceRect READ sourceRect NOTIFY videoFrameSizeChanged)
     // regionOfInterest > sourceRect
     Q_PROPERTY(QRectF regionOfInterest READ regionOfInterest WRITE setRegionOfInterest NOTIFY regionOfInterestChanged)
     Q_PROPERTY(qreal sourceAspectRatio READ sourceAspectRatio NOTIFY sourceAspectRatioChanged)
@@ -62,6 +63,7 @@ public:
     void setFillMode(FillMode mode);
 
     QRectF contentRect() const;
+    QRectF sourceRect() const;
 
     bool isOpenGL() const;
     void setOpenGL(bool o);
