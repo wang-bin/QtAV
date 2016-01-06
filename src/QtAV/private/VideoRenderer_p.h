@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -64,12 +64,15 @@ public:
     }
     virtual ~VideoRendererPrivate(){
     }
-    void computeOutParameters(qreal outAspectRatio) {
+
+    // return true if video rect changed
+    bool computeOutParameters(qreal outAspectRatio) {
         qreal rendererAspectRatio = qreal(renderer_width)/qreal(renderer_height);
+        const QRect out_rect0(out_rect);
         if (out_aspect_ratio_mode == VideoRenderer::RendererAspectRatio) {
             out_aspect_ratio = rendererAspectRatio;
             out_rect = QRect(0, 0, renderer_width, renderer_height);
-            return;
+            return out_rect0 != out_rect;
         }
         // dar: displayed aspect ratio in video renderer orientation
         const qreal dar = (orientation % 180) ? 1.0/outAspectRatio : outAspectRatio;
@@ -87,6 +90,7 @@ public:
         }
         out_aspect_ratio = outAspectRatio;
         //qDebug("%f %dx%d <<<<<<<<", out_aspect_ratio, out_rect.width(), out_rect.height());
+        return out_rect0 != out_rect;
     }
     virtual void setupQuality() {}
 

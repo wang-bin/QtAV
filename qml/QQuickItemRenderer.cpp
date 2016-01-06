@@ -289,13 +289,6 @@ void QQuickItemRenderer::afterRendering()
     d_func().img_mutex.unlock();
 }
 
-bool QQuickItemRenderer::onSetRegionOfInterest(const QRectF &roi)
-{
-    Q_UNUSED(roi);
-    Q_EMIT regionOfInterestChanged();
-    return true;
-}
-
 bool QQuickItemRenderer::onSetOrientation(int value)
 {
     Q_UNUSED(value);
@@ -303,25 +296,6 @@ bool QQuickItemRenderer::onSetOrientation(int value)
         if (value == 90 || value == 270)
             return false;
     }
-    Q_EMIT orientationChanged();
     return true;
 }
-
-void QQuickItemRenderer::onSetOutAspectRatio(qreal ratio)
-{
-    Q_UNUSED(ratio);
-    Q_EMIT contentRectChanged();
-}
-
-void QQuickItemRenderer::onResizeRenderer(int, int)
-{
-    Q_EMIT contentRectChanged();
-}
-
-void QQuickItemRenderer::onFrameSizeChanged(const QSize &size)
-{
-    Q_UNUSED(size);
-    Q_EMIT frameSizeChanged();
-}
-
 } // namespace QtAV

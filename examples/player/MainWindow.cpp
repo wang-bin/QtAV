@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -1026,10 +1026,10 @@ void MainWindow::wheelEvent(QWheelEvent *e)
         fp.setX(0);
     if (fp.y() < 0)
         fp.setY(0);
-    if (fp.x() > mpRenderer->frameSize().width())
-        fp.setX(mpRenderer->frameSize().width());
-    if (fp.y() > mpRenderer->frameSize().height())
-        fp.setY(mpRenderer->frameSize().height());
+    if (fp.x() > mpRenderer->videoFrameSize().width())
+        fp.setX(mpRenderer->videoFrameSize().width());
+    if (fp.y() > mpRenderer->videoFrameSize().height())
+        fp.setY(mpRenderer->videoFrameSize().height());
 
     QRectF viewport = QRectF(mpRenderer->mapToFrame(QPointF(0, 0)), mpRenderer->mapToFrame(QPointF(mpRenderer->rendererWidth(), mpRenderer->rendererHeight())));
     //qDebug("vo: (%.1f, %.1f)=> frame: (%.1f, %.1f)", p.x(), p.y(), fp.x(), fp.y());
@@ -1041,7 +1041,7 @@ void MainWindow::wheelEvent(QWheelEvent *e)
     m.scale(1.0/zoom, 1.0/zoom);
     m.translate(-fp.x(), -fp.y());
     QRectF r = m.mapRect(mpRenderer->realROI());
-    mpRenderer->setRegionOfInterest((r | m.mapRect(viewport))&QRectF(QPointF(0,0), mpRenderer->frameSize()));
+    mpRenderer->setRegionOfInterest((r | m.mapRect(viewport))&QRectF(QPointF(0,0), mpRenderer->videoFrameSize()));
 }
 
 void MainWindow::about()
@@ -1327,13 +1327,13 @@ void MainWindow::onBufferProgress(qreal percent)
     const qreal bs = mpPlayer->bufferSpeed();
     QString s;
     if (bs > 1024*1024*1024)
-        s = QString("%1G/s").arg(bs/1024.0/1024.0/1024.0, 5, 'f', 1);
+        s = QString("%1G/s").arg(bs/1024.0/1024.0/1024.0, 6, 'f', 1);
     else if (bs > 1024*1024)
-        s = QString("%1M/s").arg(bs/1024.0/1024.0, 5, 'f', 1);
+        s = QString("%1M/s").arg(bs/1024.0/1024.0, 6, 'f', 1);
     else if (bs > 1024)
-        s = QString("%1K/s").arg(bs/1024.0, 5, 'f', 1);
+        s = QString("%1K/s").arg(bs/1024.0, 6, 'f', 1);
     else
-        s = QString("%1B/s").arg(bs, 5, 'f', 1);
+        s = QString("%1B/s").arg(bs, 6, 'f', 1);
     setWindowTitle(QString::fromLatin1("Buffering... %1% @%2 ").arg(percent*100.0, 5, 'f', 1).arg(s) + mTitle);
 }
 

@@ -80,7 +80,7 @@ public:
       , source(0)
       , glctx(0)
     {}
-    void setupAspectRatio() {
+    void setupAspectRatio() { //TODO: call when out_rect, renderer_size, orientation changed
         matrix.setToIdentity();
         matrix.scale((GLfloat)out_rect.width()/(GLfloat)renderer_width, (GLfloat)out_rect.height()/(GLfloat)renderer_height, 1);
         if (orientation)
@@ -245,18 +245,10 @@ bool QuickFBORenderer::event(QEvent *e)
     return true;
 }
 
-bool QuickFBORenderer::onSetRegionOfInterest(const QRectF &roi)
-{
-    Q_UNUSED(roi);
-    Q_EMIT regionOfInterestChanged();
-    return true;
-}
-
 bool QuickFBORenderer::onSetOrientation(int value)
 {
     Q_UNUSED(value);
-    Q_EMIT orientationChanged();
-    // will call onSetOutAspectRatio after out_rect updated. so emit contentChanged there
+    d_func().setupAspectRatio();
     return true;
 }
 
@@ -265,7 +257,6 @@ void QuickFBORenderer::onSetOutAspectRatio(qreal ratio)
     Q_UNUSED(ratio);
     DPTR_D(QuickFBORenderer);
     d.setupAspectRatio();
-    Q_EMIT contentRectChanged();
 }
 
 void QuickFBORenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
@@ -273,19 +264,6 @@ void QuickFBORenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
     Q_UNUSED(mode);
     DPTR_D(QuickFBORenderer);
     d.setupAspectRatio();
-    // already called onSetOutAspectRatio, so no contentChanged here
-}
-
-void QuickFBORenderer::onResizeRenderer(int, int)
-{
-    Q_EMIT contentRectChanged();
-}
-
-void QuickFBORenderer::onFrameSizeChanged(const QSize &size)
-{
-    Q_UNUSED(size);
-    Q_EMIT frameSizeChanged();
-    // will call onSetOutAspectRatio after out_rect updated. so emit contentChanged there
 }
 
 void QuickFBORenderer::updateRenderRect()

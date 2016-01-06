@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -120,11 +120,6 @@ qreal VideoRenderer::sourceAspectRatio() const
     return d_func().source_aspect_ratio;
 }
 
-void VideoRenderer::sourceAspectRatioChanged(qreal value)
-{
-    Q_UNUSED(value);
-}
-
 void VideoRenderer::setOutAspectRatioMode(OutAspectRatioMode mode)
 {
     DPTR_D(VideoRenderer);
@@ -133,14 +128,20 @@ void VideoRenderer::setOutAspectRatioMode(OutAspectRatioMode mode)
     d.aspect_ratio_changed = true;
     d.out_aspect_ratio_mode = mode;
     if (mode == RendererAspectRatio) {
+        QRect out_rect0(d.out_rect);
         //compute out_rect
         d.out_rect = QRect(0, 0, d.renderer_width, d.renderer_height); //remove? already in computeOutParameters()
         setOutAspectRatio(qreal(d.renderer_width)/qreal(d.renderer_height));
+        if (out_rect0 != d.out_rect) {
+            Q_EMIT videoRectChanged();
+            Q_EMIT contentRectChanged();
+        }
         //is that thread safe?
     } else if (mode == VideoAspectRatio) {
         setOutAspectRatio(d.source_aspect_ratio);
     }
     onSetOutAspectRatioMode(mode);
+    Q_EMIT outAspectRatioModeChanged();
 }
 
 void VideoRenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
@@ -160,16 +161,23 @@ void VideoRenderer::setOutAspectRatio(qreal ratio)
     d.out_aspect_ratio = ratio;
     //indicate that this function is called by user. otherwise, called in VideoRenderer
     if (!d.aspect_ratio_changed) {
-        d.out_aspect_ratio_mode = CustomAspectRation;
+        if (d.out_aspect_ratio_mode != CustomAspectRation) {
+            d.out_aspect_ratio_mode = CustomAspectRation;
+            Q_EMIT outAspectRatioModeChanged();
+        }
     }
     d.aspect_ratio_changed = false; //TODO: when is false?
     if (d.out_aspect_ratio_mode != RendererAspectRatio) {
         d.update_background = true; //can not fill the whole renderer with video
     }
     //compute the out out_rect
-    d.computeOutParameters(ratio);
+    if (d.computeOutParameters(ratio)) {
+        Q_EMIT videoRectChanged();
+        Q_EMIT contentRectChanged();
+    }
     if (ratio_changed) {
         onSetOutAspectRatio(ratio);
+        Q_EMIT outAspectRatioChanged();
     }
 }
 
@@ -218,7 +226,7 @@ void VideoRenderer::setInSize(int width, int height)
         d.aspect_ratio_changed = true; //?? for VideoAspectRatio mode
         d.src_width = width;
         d.src_height = height;
-        onFrameSizeChanged(QSize(width, height));
+        Q_EMIT videoFrameSizeChanged();
     }
     if (!d.aspect_ratio_changed)// && (d.src_width == width && d.src_height == height))
         return;
@@ -244,7 +252,10 @@ void VideoRenderer::resizeRenderer(int width, int height)
         return;
     d.renderer_width = width;
     d.renderer_height = height;
-    d.computeOutParameters(d.out_aspect_ratio);
+    if (d.computeOutParameters(d.out_aspect_ratio)) {
+        Q_EMIT videoRectChanged();
+        Q_EMIT contentRectChanged();
+    }
     onResizeRenderer(width, height);
 }
 
@@ -284,7 +295,11 @@ void VideoRenderer::setOrientation(int value)
     if (!onSetOrientation(value)) {
         d.orientation = old;
     } else {
-        d.computeOutParameters(d.out_aspect_ratio);
+        orientationChanged();
+        if (d.computeOutParameters(d.out_aspect_ratio)) {
+            Q_EMIT videoRectChanged();
+            Q_EMIT contentRectChanged();
+        }
         onSetOutAspectRatio(outAspectRatio());
     }
 }
@@ -301,7 +316,7 @@ bool VideoRenderer::onSetOrientation(int value)
     return false;
 }
 
-QSize VideoRenderer::frameSize() const
+QSize VideoRenderer::videoFrameSize() const
 {
     DPTR_D(const VideoRenderer);
     return QSize(d.src_width, d.src_height);
@@ -331,7 +346,10 @@ void VideoRenderer::setRegionOfInterest(const QRectF &roi)
     d.roi = roi;
     if (!onSetRegionOfInterest(roi)) {
         d.roi = old;
+    } else {
+        Q_EMIT regionOfInterestChanged();
     }
+    // TODO: how to fill video? what's out_rect now?
 }
 
 bool VideoRenderer::onSetRegionOfInterest(const QRectF &roi)
@@ -540,6 +558,7 @@ bool VideoRenderer::setBrightness(qreal brightness)
         d.brightness = old;
         return false;
     }
+    Q_EMIT brightnessChanged(brightness);
     updateUi();
     return true;
 }
@@ -561,6 +580,7 @@ bool VideoRenderer::setContrast(qreal contrast)
         d.contrast = old;
         return false;
     }
+    Q_EMIT contrastChanged(contrast);
     updateUi();
     return true;
 }
@@ -582,6 +602,7 @@ bool VideoRenderer::setHue(qreal hue)
         d.hue = old;
         return false;
     }
+    Q_EMIT hueChanged(hue);
     updateUi();
     return true;
 }
@@ -603,6 +624,7 @@ bool VideoRenderer::setSaturation(qreal saturation)
         d.saturation = old;
         return false;
     }
+    Q_EMIT saturationChanged(saturation);
     updateUi();
     return true;
 }
@@ -629,11 +651,6 @@ bool VideoRenderer::onSetSaturation(qreal s)
 {
     Q_UNUSED(s);
     return false;
-}
-
-void VideoRenderer::onFrameSizeChanged(const QSize &size)
-{
-    Q_UNUSED(size);
 }
 
 void VideoRenderer::updateUi()

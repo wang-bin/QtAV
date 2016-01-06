@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -49,8 +49,8 @@ public:
         filters = impl->filters();
         renderer_width = impl->rendererWidth();
         renderer_height = impl->rendererHeight();
-        src_width = impl->frameSize().width();
-        src_height = impl->frameSize().height();
+        src_width = impl->videoFrameSize().width();
+        src_height = impl->videoFrameSize().height();
         source_aspect_ratio = qreal(src_width)/qreal(src_height);
         out_aspect_ratio_mode = impl->outAspectRatioMode();
         out_aspect_ratio = impl->outAspectRatio();
@@ -229,13 +229,7 @@ void VideoOutput::onSetOutAspectRatioMode(OutAspectRatioMode mode)
     if (!isAvailable())
         return;
     DPTR_D(VideoOutput);
-    qreal a = d.impl->outAspectRatio();
-    OutAspectRatioMode am = d.impl->outAspectRatioMode();
     d.impl->setOutAspectRatioMode(mode);
-    if (a != outAspectRatio())
-        Q_EMIT outAspectRatioChanged(outAspectRatio());
-    if (am != outAspectRatioMode())
-        Q_EMIT outAspectRatioModeChanged(mode);
 }
 
 void VideoOutput::onSetOutAspectRatio(qreal ratio)
@@ -243,13 +237,7 @@ void VideoOutput::onSetOutAspectRatio(qreal ratio)
     if (!isAvailable())
         return;
     DPTR_D(VideoOutput);
-    qreal a = d.impl->outAspectRatio();
-    OutAspectRatioMode am = d.impl->outAspectRatioMode();
     d.impl->setOutAspectRatio(ratio);
-    if (a != outAspectRatio())
-        Q_EMIT outAspectRatioChanged(ratio);
-    if (am != outAspectRatioMode())
-        Q_EMIT outAspectRatioModeChanged(outAspectRatioMode());
 }
 
 bool VideoOutput::onSetQuality(Quality q)
@@ -271,7 +259,6 @@ bool VideoOutput::onSetOrientation(int value)
     if (d.impl->orientation() != value) {
         return false;
     }
-    Q_EMIT orientationChanged(value);
     return true;
 }
 
@@ -289,7 +276,6 @@ bool VideoOutput::onSetRegionOfInterest(const QRectF& roi)
         return false;
     DPTR_D(VideoOutput);
     d.impl->setRegionOfInterest(roi);
-    Q_EMIT regionOfInterestChanged(roi);
     return true;
 }
 
@@ -319,7 +305,6 @@ bool VideoOutput::onSetBrightness(qreal brightness)
     if (brightness != d.impl->brightness()) {
         return false;
     }
-    Q_EMIT brightnessChanged(brightness);
     return true;
 }
 
@@ -333,7 +318,6 @@ bool VideoOutput::onSetContrast(qreal contrast)
     if (contrast != d.impl->contrast()) {
         return false;
     }
-    Q_EMIT contrastChanged(contrast);
     return true;
 }
 
@@ -347,7 +331,6 @@ bool VideoOutput::onSetHue(qreal hue)
     if (hue != d.impl->hue()) {
         return false;
     }
-    Q_EMIT hueChanged(hue);
     return true;
 }
 
@@ -361,13 +344,7 @@ bool VideoOutput::onSetSaturation(qreal saturation)
     if (saturation != d.impl->saturation()) {
         return false;
     }
-    Q_EMIT saturationChanged(saturation);
     return true;
-}
-
-void VideoOutput::onFrameSizeChanged(const QSize &size)
-{
-    Q_EMIT frameSizeChanged(size);
 }
 
 void VideoOutput::setStatistics(Statistics* statistics)

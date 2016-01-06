@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -44,7 +44,8 @@ class Q_AV_EXPORT VideoOutput : public QObject, public VideoRenderer
     Q_PROPERTY(OutAspectRatioMode outAspectRatioMode READ outAspectRatioMode WRITE setOutAspectRatioMode NOTIFY outAspectRatioModeChanged)
     Q_ENUMS(OutAspectRatioMode)
     Q_PROPERTY(int orientation READ orientation WRITE setOrientation NOTIFY orientationChanged)
-    Q_PROPERTY(QSize frameSize READ frameSize NOTIFY frameSizeChanged)
+    Q_PROPERTY(QRect videoRect READ videoRect NOTIFY videoRectChanged)
+    Q_PROPERTY(QSize videoFrameSize READ videoFrameSize NOTIFY videoFrameSizeChanged)
     Q_ENUMS(Quality)
 public:
     /*!
@@ -68,15 +69,16 @@ public:
 
 Q_SIGNALS:
     void sourceAspectRatioChanged(qreal value) Q_DECL_OVERRIDE Q_DECL_FINAL;
-    void regionOfInterestChanged(const QRectF&);
-    void outAspectRatioChanged(qreal);
-    void outAspectRatioModeChanged(OutAspectRatioMode);
-    void brightnessChanged(qreal value);
-    void contrastChanged(qreal value);
-    void hueChanged(qreal value);
-    void saturationChanged(qreal value);
-    void orientationChanged(int value);
-    void frameSizeChanged(const QSize& size);
+    void regionOfInterestChanged() Q_DECL_OVERRIDE;
+    void outAspectRatioChanged() Q_DECL_OVERRIDE;
+    void outAspectRatioModeChanged() Q_DECL_OVERRIDE;
+    void brightnessChanged(qreal value) Q_DECL_OVERRIDE;
+    void contrastChanged(qreal) Q_DECL_OVERRIDE;
+    void hueChanged(qreal) Q_DECL_OVERRIDE;
+    void saturationChanged(qreal) Q_DECL_OVERRIDE;
+    void orientationChanged() Q_DECL_OVERRIDE;
+    void videoRectChanged() Q_DECL_OVERRIDE;
+    void videoFrameSizeChanged() Q_DECL_OVERRIDE;
 protected:
     bool eventFilter(QObject *obj, QEvent *event) Q_DECL_OVERRIDE;
     bool receiveFrame(const VideoFrame& frame) Q_DECL_OVERRIDE;
@@ -102,7 +104,6 @@ private:
     virtual bool onSetContrast(qreal contrast) Q_DECL_OVERRIDE;
     virtual bool onSetHue(qreal hue) Q_DECL_OVERRIDE;
     virtual bool onSetSaturation(qreal saturation) Q_DECL_OVERRIDE;
-    virtual void onFrameSizeChanged(const QSize& size) Q_DECL_OVERRIDE;
     // from AVOutput
     virtual void setStatistics(Statistics* statistics) Q_DECL_OVERRIDE; //called by friend AVPlayer
     virtual bool onInstallFilter(Filter *filter, int index) Q_DECL_OVERRIDE;

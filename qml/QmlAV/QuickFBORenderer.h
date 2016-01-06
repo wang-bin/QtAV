@@ -40,7 +40,8 @@ class QuickFBORenderer : public QQuickFramebufferObject, public VideoRenderer
     // regionOfInterest > sourceRect
     Q_PROPERTY(QRectF regionOfInterest READ regionOfInterest WRITE setRegionOfInterest NOTIFY regionOfInterestChanged)
     Q_PROPERTY(qreal sourceAspectRatio READ sourceAspectRatio NOTIFY sourceAspectRatioChanged)
-    Q_PROPERTY(QSize frameSize READ frameSize NOTIFY frameSizeChanged)
+    Q_PROPERTY(QSize videoFrameSize READ videoFrameSize NOTIFY videoFrameSizeChanged)
+    Q_PROPERTY(QSize frameSize READ videoFrameSize NOTIFY videoFrameSizeChanged)
     Q_ENUMS(FillMode)
 public:
     enum FillMode {
@@ -70,12 +71,12 @@ public:
 Q_SIGNALS:
     void sourceChanged();
     void fillModeChanged(QuickFBORenderer::FillMode);
-    void orientationChanged();
-    void contentRectChanged();
-    void regionOfInterestChanged();
+    void orientationChanged() Q_DECL_OVERRIDE;
+    void contentRectChanged() Q_DECL_OVERRIDE;
+    void regionOfInterestChanged() Q_DECL_OVERRIDE;
     void openGLChanged();    
     void sourceAspectRatioChanged(qreal value) Q_DECL_OVERRIDE;
-    void frameSizeChanged();
+    void videoFrameSizeChanged() Q_DECL_OVERRIDE;
 protected:
     bool event(QEvent *e) Q_DECL_OVERRIDE;
     bool receiveFrame(const VideoFrame &frame) Q_DECL_OVERRIDE;
@@ -84,12 +85,9 @@ protected:
     bool needDrawFrame() const Q_DECL_OVERRIDE;
     void drawFrame() Q_DECL_OVERRIDE;
 private:
-    bool onSetRegionOfInterest(const QRectF& roi) Q_DECL_OVERRIDE;
     bool onSetOrientation(int value) Q_DECL_OVERRIDE;
     void onSetOutAspectRatio(qreal ratio) Q_DECL_OVERRIDE;
     void onSetOutAspectRatioMode(OutAspectRatioMode mode) Q_DECL_OVERRIDE;
-    void onResizeRenderer(int, int) Q_DECL_OVERRIDE;
-    void onFrameSizeChanged(const QSize& size) Q_DECL_OVERRIDE;
     void updateRenderRect();
 };
 typedef QuickFBORenderer VideoRendererQuickFBO;
