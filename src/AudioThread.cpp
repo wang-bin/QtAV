@@ -129,7 +129,7 @@ void AudioThread::run()
                 msleep(qMin((ulong)20, ulong(a_v*1000.0)));
             } else {
                 // audio maybe too late compared with video packet before seeking backword. so just ignore
-                msleep(1);
+                msleep(0); //wait video seek done if audio done early
             }
             pkt = Packet(); //mark invalid to take next
             continue;
@@ -211,7 +211,8 @@ void AudioThread::run()
             qWarning("Decode audio failed. undecoded: %d", dec->undecodedSize());
             if (pkt.isEOF()) {
                 qDebug("audio decode eof done");
-                break;
+                if (!pkt.position)
+                    break;
             }
             qreal dt = dts - d.last_pts;
             if (dt > 0.5 || dt < 0) {
@@ -239,6 +240,7 @@ void AudioThread::run()
                 d.clock->updateValue(frame.timestamp());
                 continue;
             }
+            qDebug("seek audio done @%.3f", frame.timestamp());
             d.render_pts0 = -1.0;
             Q_EMIT seekFinished(qint64(frame.timestamp()*1000.0));
         }
@@ -274,6 +276,7 @@ void AudioThread::run()
             if (has_ao && ao->isOpen()) {
                 QByteArray decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
                 ao->play(decodedChunk, pkt.pts);
+                //qDebug("ao.timestamp: %.3f", ao->timestamp());
                 d.clock->updateValue(ao->timestamp());
             } else {
                 d.clock->updateDelay(delay += chunk_delay);

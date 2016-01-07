@@ -167,7 +167,7 @@ T BlockingQueue<T, Container>::take()
             cond_empty.wait(&lock); //block when empty only
     }
     if (checkEmpty()) {
-        qWarning("Queue is still empty");
+        //qWarning("Queue is still empty");
         if (empty_callback) {
             empty_callback->call();
         }

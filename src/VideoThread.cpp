@@ -274,7 +274,7 @@ void VideoThread::run()
     /* kNbSlowSkip: if video frame slow count >= kNbSlowSkip, skip decoding all frames until next keyframe reaches.
      * if slow count > kNbSlowSkip/2, skip rendering every 3 or 6 frames
      */
-    const int kNbSlowSkip = 120; // about 1s for 120fps video
+    const int kNbSlowSkip = 20;
     // kNbSlowFrameDrop: if video frame slow count > kNbSlowFrameDrop, skip decoding nonref frames. only some of ffmpeg based decoders support it.
     const int kNbSlowFrameDrop = 10;
     bool sync_audio = d.clock->clockType() == AVClock::AudioClock;
@@ -408,22 +408,10 @@ void VideoThread::run()
                 //continue;
             }
         } else if (!seeking) { //when to drop off?
-            qDebug("delay %fs @%fs", diff, d.clock->value());
+            qDebug("delay %fs @%.3fs pts:%.3f", diff, d.clock->value(), pkt.pts);
             if (diff < 0) {
-                if (!pkt.hasKeyFrame) {
-                    // if continue without decoding, we must wait to the next key frame, then we may skip to many frames
-                    //wait_key_frame = true;
-                    //pkt = Packet();
-                    //continue;
-                }
-                skip_render = !pkt.hasKeyFrame;
-                if (skip_render) {
-                    if (nb_dec_slow < kNbSlowSkip/2) {
-                        skip_render = false;
-                    } else if (nb_dec_slow < kNbSlowSkip) {
-                        const int skip_every = kNbSlowSkip >= 60 ? 2 : 4;
-                        skip_render = nb_dec_slow % skip_every; // skip rendering every 3 frames
-                    }
+                if (nb_dec_slow > kNbSlowSkip) {
+                    skip_render = !pkt.hasKeyFrame && (nb_dec_slow %2);
                 }
             } else {
                 const double s = qMin<qreal>(0.01*(nb_dec_fast>>1), diff);
@@ -487,10 +475,11 @@ void VideoThread::run()
             dec->setOptions(*dec_opt);
         if (!dec->decode(pkt)) {
             d.pts_history.push_back(d.pts_history.back());
-            qWarning("Decode video failed. undecoded: %d", dec->undecodedSize());
+            qWarning("Decode video failed. undecoded: %d/%d", dec->undecodedSize(), pkt.data.size());
             if (pkt.isEOF()) {
-                qDebug("decode eof done");
-                break;
+                qDebug("video decode eof done");
+                if (!pkt.position)
+                    break;
             }
             pkt = Packet();
             continue;

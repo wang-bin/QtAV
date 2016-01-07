@@ -480,7 +480,7 @@ void AVDemuxThread::run()
     }
     connect(thread, SIGNAL(seekFinished(qint64)), this, SIGNAL(seekFinished(qint64)), Qt::DirectConnection);
     seek_tasks.clear();
-    bool was_end = false;
+    int was_end = 0;
     if (ademuxer) {
         ademuxer->seek(0LL);
     }
@@ -490,22 +490,29 @@ void AVDemuxThread::run()
         vqueue = video_thread ? video_thread->packetQueue() : 0;
         if (demuxer->atEnd()) {
             // if avthread may skip 1st eof packet because of a/v sync
+            const int kMaxEof = 1;//if buffer packet, we can use qMax(aqueue->bufferValue(), vqueue->bufferValue()) and not call blockEmpty(false);
             if (aqueue && (!was_end || aqueue->isEmpty())) {
-                aqueue->put(Packet::createEOF());
-                aqueue->blockEmpty(false); // do not block if buffer is not enough. block again on seek
+                if (was_end < kMaxEof)
+                    aqueue->put(Packet::createEOF());
+                aqueue->blockEmpty(was_end >= kMaxEof); // do not block if buffer is not enough. block again on seek
             }
             if (vqueue && (!was_end || vqueue->isEmpty())) {
-                vqueue->put(Packet::createEOF());
-                vqueue->blockEmpty(false);
+                if (was_end < kMaxEof)
+                    vqueue->put(Packet::createEOF());
+                vqueue->blockEmpty(was_end >= kMaxEof);
             }
-            m_buffering = false;
-            Q_EMIT mediaStatusChanged(QtAV::BufferedMedia);
-            was_end = true;
+            if (m_buffering) {
+                m_buffering = false;
+                Q_EMIT mediaStatusChanged(QtAV::BufferedMedia);
+            }
+            was_end = qMin(was_end + 1, kMaxEof);
+            if (!user_paused) // TODO: resume at eof is not enough, should check avthread done
+                break;
             // wait for a/v thread finished
             msleep(100);
             continue;
         }
-        was_end = false;
+        was_end = 0;
         if (tryPause()) {
             continue; //the queue is empty and will block
         }
@@ -597,11 +604,17 @@ void AVDemuxThread::run()
     m_buffer = 0;
     while (audio_thread && audio_thread->isRunning()) {
         qDebug("waiting audio thread.......");
+        Packet quit_pkt(Packet::createEOF());
+        quit_pkt.position = 0;
+        aqueue->put(quit_pkt);
         aqueue->blockEmpty(false); //FIXME: why need this
         audio_thread->wait(500);
     }
     while (video_thread && video_thread->isRunning()) {
         qDebug("waiting video thread.......");
+        Packet quit_pkt(Packet::createEOF());
+        quit_pkt.position = 0;
+        vqueue->put(quit_pkt);
         vqueue->blockEmpty(false);
         video_thread->wait(500);
     }
