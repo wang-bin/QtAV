@@ -506,7 +506,7 @@ void AVDemuxThread::run()
                 Q_EMIT mediaStatusChanged(QtAV::BufferedMedia);
             }
             was_end = qMin(was_end + 1, kMaxEof);
-            if (!user_paused) // TODO: resume at eof is not enough, should check avthread done
+            if (!user_paused && ((aqueue && aqueue->isEmpty()) || (vqueue && vqueue->isEmpty()))) // TODO: resume at eof is not enough, should check avthread done
                 break;
             // wait for a/v thread finished
             msleep(100);
