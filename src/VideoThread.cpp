@@ -300,7 +300,6 @@ void VideoThread::run()
            // TODO: push pts history here and reorder
         }
         if (pkt.isEOF()) {
-            d.render_pts0 = -1;
             wait_key_frame = false;
             qDebug("video thread gets an eof packet.");
         } else {
@@ -477,7 +476,16 @@ void VideoThread::run()
             d.pts_history.push_back(d.pts_history.back());
             qWarning("Decode video failed. undecoded: %d/%d", dec->undecodedSize(), pkt.data.size());
             if (pkt.isEOF()) {
-                qDebug("video decode eof done");
+                qDebug("video decode eof done. d.render_pts0: %.3f", d.render_pts0);
+                if (d.render_pts0 >= 0) {
+                    qDebug("video seek done at eof pts: %.3f", d.pts_history.back());
+                    d.render_pts0 = -1;
+                    Q_EMIT seekFinished(qint64(d.pts_history.back()*1000.0));
+                    if (seek_count == -1)
+                        seek_count = 1;
+                    else if (seek_count > 0)
+                        seek_count++;
+                }
                 if (!pkt.position)
                     break;
             }
@@ -510,7 +518,7 @@ void VideoThread::run()
                 continue;
             }
             d.render_pts0 = -1;
-            qDebug("seek finished @%f", pts);
+            qDebug("video seek finished @%f", pts);
             Q_EMIT seekFinished(qint64(pts*1000.0));
             if (seek_count == -1)
                 seek_count = 1;

@@ -1336,10 +1336,10 @@ void AVPlayer::playInternal()
 void AVPlayer::stopFromDemuxerThread()
 {
     qDebug("demuxer thread emit finished.");
+    d->seeking = false;
     if (currentRepeat() >= repeat() && repeat() >= 0) {
         masterClock()->reset();
         stopNotifyTimer();
-        d->seeking = false;
         d->start_position = 0;
         d->stop_position = kInvalidPosition; // already stopped. so not 0 but invalid. 0 can stop the playback in timerEvent
         d->media_end = kInvalidPosition;
