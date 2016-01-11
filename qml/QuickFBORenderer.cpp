@@ -211,20 +211,9 @@ void QuickFBORenderer::renderToFbo()
     handlePaintEvent();
 }
 
-bool QuickFBORenderer::needUpdateBackground() const
-{
-    DPTR_D(const QuickFBORenderer);
-    return d.out_rect != boundingRect().toRect();
-}
-
 void QuickFBORenderer::drawBackground()
 {
     d_func().glv.fill(QColor(Qt::black));
-}
-
-bool QuickFBORenderer::needDrawFrame() const
-{
-    return true; //always call updatePaintNode, node must be set
 }
 
 void QuickFBORenderer::drawFrame()

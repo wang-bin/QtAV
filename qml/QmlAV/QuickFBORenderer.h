@@ -81,9 +81,7 @@ Q_SIGNALS:
 protected:
     bool event(QEvent *e) Q_DECL_OVERRIDE;
     bool receiveFrame(const VideoFrame &frame) Q_DECL_OVERRIDE;
-    bool needUpdateBackground() const Q_DECL_OVERRIDE;
     void drawBackground() Q_DECL_OVERRIDE;
-    bool needDrawFrame() const Q_DECL_OVERRIDE;
     void drawFrame() Q_DECL_OVERRIDE;
 private:
     bool onSetOrientation(int value) Q_DECL_OVERRIDE;

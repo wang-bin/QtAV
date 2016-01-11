@@ -31,7 +31,6 @@
 #endif
 
 namespace QtAV {
-
 class WidgetRendererPrivate;
 class Q_AVWIDGETS_EXPORT WidgetRenderer : public QWidget, public QPainterRenderer
 {
@@ -70,16 +69,13 @@ Q_SIGNALS:
     void videoFrameSizeChanged() Q_DECL_OVERRIDE;
     QTAVWIDGETS_DEPRECATED void imageReady(); // add frameReady() in the future?
 protected:
-    virtual bool receiveFrame(const VideoFrame& frame) Q_DECL_OVERRIDE;
-    virtual bool needUpdateBackground() const Q_DECL_OVERRIDE;
-    //called in paintEvent before drawFrame() when required
-    virtual void drawBackground() Q_DECL_OVERRIDE;
-    virtual void resizeEvent(QResizeEvent *) Q_DECL_OVERRIDE;
+    bool receiveFrame(const VideoFrame& frame) Q_DECL_OVERRIDE;
+    void resizeEvent(QResizeEvent *) Q_DECL_OVERRIDE;
     /*usually you don't need to reimplement paintEvent, just drawXXX() is ok. unless you want do all
      *things yourself totally*/
-    virtual void paintEvent(QPaintEvent *) Q_DECL_OVERRIDE;
+    void paintEvent(QPaintEvent *) Q_DECL_OVERRIDE;
 
-    virtual bool onSetOrientation(int value) Q_DECL_OVERRIDE;
+    bool onSetOrientation(int value) Q_DECL_OVERRIDE;
 protected:
     WidgetRenderer(WidgetRendererPrivate& d, QWidget *parent, Qt::WindowFlags f);
 };

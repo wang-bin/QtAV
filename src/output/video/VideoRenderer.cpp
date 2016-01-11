@@ -445,9 +445,17 @@ QPointF VideoRenderer::onMapFromFrame(const QPointF &p) const
     return QPointF(rendererWidth()/2, rendererHeight()/2) + delta / zoom;
 }
 
+QRegion VideoRenderer::backgroundRegion() const
+{
+    return QRegion(0, 0, rendererWidth(), rendererHeight()) - QRegion(d_func().out_rect);
+}
+
 bool VideoRenderer::needUpdateBackground() const
 {
-    return d_func().update_background;
+    DPTR_D(const VideoRenderer);
+    const QRect rendererRect(QPoint(), rendererSize());
+    return d.update_background || !d.video_frame.isValid()
+            || d.out_rect.intersected(rendererRect)  != rendererRect;
 }
 
 void VideoRenderer::drawBackground()
@@ -493,22 +501,11 @@ void VideoRenderer::handlePaintEvent()
          * protected by mutex. otherwise, e.g. QPainterRenderer, it's not required if drawing
          * on the shared data is safe
          */
-        if (needUpdateBackground()) {
-            /* xv: should always draw the background. so shall we only paint the border
-             * rectangles, but not the whole widget
-             */
-            d.update_background = false;
-            //fill background color. DO NOT return, you must continue drawing
-            drawBackground();
-        }
-        /* DO NOT return if no data. we should draw other things
+        drawBackground();
+        /*
          * NOTE: if data is not copyed in receiveFrame(), you should always call drawFrame()
          */
-        /*
-         * why the background is white if return? the below code draw an empty bitmap?
-         */
-        //DO NOT return if no data. we should draw other things
-        if (needDrawFrame()) {
+        if (d.video_frame.isValid()) {
             drawFrame();
             if (d.statistics) {
                 d.statistics->video_only.frameDisplayed(d.video_frame.timestamp());

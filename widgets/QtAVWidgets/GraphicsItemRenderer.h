@@ -94,8 +94,6 @@ protected:
     GraphicsItemRenderer(GraphicsItemRendererPrivate& d, QGraphicsItem *parent);
 
     bool receiveFrame(const VideoFrame& frame) Q_DECL_OVERRIDE;
-    bool needUpdateBackground() const Q_DECL_OVERRIDE;
-    //called in paintEvent before drawFrame() when required
     void drawBackground() Q_DECL_OVERRIDE;
     //draw the current frame using the current paint engine. called by paintEvent()
     void drawFrame() Q_DECL_OVERRIDE;

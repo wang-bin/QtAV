@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -73,17 +73,13 @@ public:
     virtual QWidget* widget() { return this; }
 protected:
     virtual bool receiveFrame(const VideoFrame& frame);
-    virtual bool needUpdateBackground() const;
-    //called in paintEvent before drawFrame() when required
     virtual void drawBackground();
-    virtual bool needDrawFrame() const;
-    //draw the current frame using the current paint engine. called by paintEvent()
     virtual void drawFrame();
     /*usually you don't need to reimplement paintEvent, just drawXXX() is ok. unless you want do all
      *things yourself totally*/
     virtual void paintEvent(QPaintEvent *);
     virtual void resizeEvent(QResizeEvent *);
-    //stay on top will change parent, hide then show(windows). we need GetDC() again
+    //stay on top will change parent, hide then show(windows)
     virtual void showEvent(QShowEvent *);
 };
 typedef Direct2DRenderer VideoRendererDirect2D;
@@ -335,12 +331,6 @@ QPaintEngine* Direct2DRenderer::paintEngine() const
     return 0; //use native engine
 }
 
-bool Direct2DRenderer::needUpdateBackground() const
-{
-    DPTR_D(const Direct2DRenderer);
-    return (d.update_background && d.out_rect != rect()) || !d.video_frame.isValid();
-}
-
 void Direct2DRenderer::drawBackground()
 {
     DPTR_D(Direct2DRenderer);
@@ -350,11 +340,6 @@ void Direct2DRenderer::drawBackground()
     //ID2D1SolidColorBrush *brush;
     //d.render_target->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::Black), &brush);
     //d.render_target->FillRectangle(D2D1::RectF(0, 0, width(), height()), brush);
-}
-
-bool Direct2DRenderer::needDrawFrame() const
-{
-    return true;
 }
 
 void Direct2DRenderer::drawFrame()

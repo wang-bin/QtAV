@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -68,15 +68,11 @@ public:
     virtual QWidget* widget() Q_DECL_OVERRIDE { return this; }
 protected:
     virtual bool receiveFrame(const VideoFrame& frame) Q_DECL_OVERRIDE;
-    virtual bool needUpdateBackground() const Q_DECL_OVERRIDE;
-    //called in paintEvent before drawFrame() when required
     virtual void drawBackground() Q_DECL_OVERRIDE;
-    virtual bool needDrawFrame() const Q_DECL_OVERRIDE;
-    //draw the current frame using the current paint engine. called by paintEvent()
     virtual void drawFrame() Q_DECL_OVERRIDE;
     virtual void paintEvent(QPaintEvent *) Q_DECL_OVERRIDE;
     virtual void resizeEvent(QResizeEvent *) Q_DECL_OVERRIDE;
-    //stay on top will change parent, hide then show(windows). we need GetDC() again
+    //stay on top will change parent, hide then show(windows)
     virtual void showEvent(QShowEvent *) Q_DECL_OVERRIDE;
 private:
     virtual bool onSetBrightness(qreal b) Q_DECL_OVERRIDE;
@@ -489,36 +485,18 @@ QPaintEngine* XVRenderer::paintEngine() const
     return 0; //use native engine
 }
 
-bool XVRenderer::needUpdateBackground() const
-{
-    DPTR_D(const XVRenderer);
-    return d.update_background && d.out_rect != rect();/* || d.data.isEmpty()*/ //data is always empty because we never copy it now.
-}
-
 void XVRenderer::drawBackground()
 {
     if (autoFillBackground())
         return;
     DPTR_D(XVRenderer);
-    if (d.video_frame.isValid()) {
-        if (d.out_rect.width() < width()) {
-            XFillRectangle(d.display, winId(), d.gc, 0, 0, (width() - d.out_rect.width())/2, height());
-            XFillRectangle(d.display, winId(), d.gc, d.out_rect.right(), 0, (width() - d.out_rect.width())/2, height());
+    const QVector<QRect> bg(backgroundRegion().rects());
+    if (!bg.isEmpty()) {
+        foreach (const QRect& r, bg) {
+            XFillRectangle(d.display, winId(), d.gc, r.x(), r.y(), r.width(), r.height());
         }
-        if (d.out_rect.height() < height()) {
-            XFillRectangle(d.display, winId(), d.gc, 0, 0,  width(), (height() - d.out_rect.height())/2);
-            XFillRectangle(d.display, winId(), d.gc, 0, d.out_rect.bottom(), width(), (height() - d.out_rect.height())/2);
-        }
-    } else {
-        XFillRectangle(d.display, winId(), d.gc, 0, 0, width(), height());
     }
     XFlush(d.display);
-}
-
-bool XVRenderer::needDrawFrame() const
-{
-    DPTR_D(const XVRenderer);
-    return  d.xv_image || d.video_frame.isValid();
 }
 
 void XVRenderer::drawFrame()

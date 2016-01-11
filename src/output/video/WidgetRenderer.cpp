@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -28,7 +28,6 @@
 #include "QtAV/Filter.h"
 
 namespace QtAV {
-
 class WidgetRendererPrivate : public QPainterRendererPrivate
 {
 public:
@@ -88,18 +87,6 @@ bool WidgetRenderer::receiveFrame(const VideoFrame &frame)
      */
     Q_EMIT imageReady();
     return true;
-}
-
-bool WidgetRenderer::needUpdateBackground() const
-{
-    DPTR_D(const WidgetRenderer);
-    return d.out_rect != rect();
-}
-
-void WidgetRenderer::drawBackground()
-{
-    DPTR_D(WidgetRenderer);
-    d.painter->fillRect(rect(), QColor(0, 0, 0));
 }
 
 void WidgetRenderer::resizeEvent(QResizeEvent *e)

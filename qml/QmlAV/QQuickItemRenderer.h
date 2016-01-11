@@ -82,10 +82,7 @@ protected:
     void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry) Q_DECL_OVERRIDE;
 
     bool receiveFrame(const VideoFrame &frame) Q_DECL_OVERRIDE;
-    bool needUpdateBackground() const Q_DECL_OVERRIDE;
-    bool needDrawFrame() const Q_DECL_OVERRIDE;
     void drawFrame() Q_DECL_OVERRIDE;
-
     // QQuickItem interface
     QSGNode *updatePaintNode(QSGNode *node, UpdatePaintNodeData *data) Q_DECL_OVERRIDE;
 private slots:

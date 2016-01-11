@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -49,7 +49,6 @@ public:
     virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
 protected:
     virtual bool receiveFrame(const VideoFrame& frame);
-    virtual bool needUpdateBackground() const;
     //called in paintEvent before drawFrame() when required
     virtual void drawBackground();
     //draw the current frame using the current paint engine. called by paintEvent()

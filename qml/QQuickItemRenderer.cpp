@@ -201,17 +201,6 @@ void QQuickItemRenderer::setOpenGL(bool o)
     emit openGLChanged();
 }
 
-bool QQuickItemRenderer::needUpdateBackground() const
-{
-    DPTR_D(const QQuickItemRenderer);
-    return d.out_rect != boundingRect().toRect();
-}
-
-bool QQuickItemRenderer::needDrawFrame() const
-{
-    return true; //always call updatePaintNode, node must be set
-}
-
 void QQuickItemRenderer::drawFrame()
 {
     DPTR_D(QQuickItemRenderer);
@@ -223,7 +212,6 @@ void QQuickItemRenderer::drawFrame()
         if (d.frame_changed)
             sgvn->setCurrentFrame(d.video_frame);
         d.frame_changed = false;
-        d.video_frame = VideoFrame();
         sgvn->setTexturedRectGeometry(d.out_rect, normalizedROI(), d.orientation);
         return;
     }
@@ -249,7 +237,6 @@ void QQuickItemRenderer::drawFrame()
     static_cast<QSGSimpleTextureNode*>(d.node)->setTexture(d.texture);
     d.node->markDirty(QSGNode::DirtyGeometry);
     d.frame_changed = false;
-    d.video_frame = VideoFrame();
 }
 
 QSGNode *QQuickItemRenderer::updatePaintNode(QSGNode *node, QQuickItem::UpdatePaintNodeData *data)

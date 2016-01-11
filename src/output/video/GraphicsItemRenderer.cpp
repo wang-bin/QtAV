@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -169,18 +169,18 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
         ctx->painter = 0;
 }
 
-bool GraphicsItemRenderer::needUpdateBackground() const
-{
-    DPTR_D(const GraphicsItemRenderer);
-    return d.out_rect != boundingRect() || !d.video_frame.isValid();
-}
-
 void GraphicsItemRenderer::drawBackground()
 {
     DPTR_D(GraphicsItemRenderer);
-    if (!d.painter)
+#if QTAV_HAVE(OPENGL)
+    if (d.checkGL()) {
+       // d.glv.fill(QColor(0, 0, 0)); //FIXME: fill boundingRect
         return;
-    d.painter->fillRect(boundingRect(), QColor(0, 0, 0));
+    } else
+#endif
+    {
+        QPainterRenderer::drawBackground();
+    }
 }
 
 void GraphicsItemRenderer::drawFrame()

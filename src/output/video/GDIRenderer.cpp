@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -57,10 +57,7 @@ public:
     virtual QWidget* widget() { return this; }
 protected:
     virtual bool receiveFrame(const VideoFrame& frame);
-    virtual bool needUpdateBackground() const;
-    //called in paintEvent before drawFrame() when required
     virtual void drawBackground();
-    //draw the current frame using the current paint engine. called by paintEvent()
     virtual void drawFrame();
     /*usually you don't need to reimplement paintEvent, just drawXXX() is ok. unless you want do all
      *things yourself totally*/
@@ -231,19 +228,18 @@ bool GDIRenderer::receiveFrame(const VideoFrame& frame)
     return true;
 }
 
-bool GDIRenderer::needUpdateBackground() const
-{
-    DPTR_D(const GDIRenderer);
-    return (d.update_background && d.out_rect != rect()) || !d.video_frame.isValid();
-}
-
 void GDIRenderer::drawBackground()
 {
     DPTR_D(GDIRenderer);
     //HDC hdc = d.device_context;
     Graphics g(d.device_context);
     SolidBrush brush(Color(255, 0, 0, 0)); //argb
-    g.FillRectangle(&brush, 0, 0, width(), height());
+    const QVector<QRect> bg(backgroundRegion().rects());
+    if (!bg.isEmpty()) {
+        foreach (const QRect& r, bg) {
+            g.FillRectangle(&brush, r.x(), r.y(), r.width(), r.height());
+        }
+    }
 }
 
 void GDIRenderer::drawFrame()

@@ -196,10 +196,12 @@ public:
 
 protected:
     VideoRenderer(VideoRendererPrivate &d);
+    QRegion backgroundRegion() const;
+    //TODO: batch drawBackground(color, region)=>loop drawBackground(color,rect)
     virtual bool receiveFrame(const VideoFrame& frame) = 0;
-    virtual bool needUpdateBackground() const;
+    QTAV_DEPRECATED virtual bool needUpdateBackground() const;
     virtual void drawBackground();
-    virtual bool needDrawFrame() const; //TODO: no virtual func. it's a solution for temporary
+    QTAV_DEPRECATED virtual bool needDrawFrame() const; //TODO: no virtual func. it's a solution for temporary
     //draw the current frame using the current paint engine. called by paintEvent()
     // TODO: parameter VideoFrame
     virtual void drawFrame() = 0; //You MUST reimplement this to display a frame. Other draw functions are not essential
