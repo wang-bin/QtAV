@@ -233,12 +233,12 @@ void GDIRenderer::drawBackground()
     const QRegion bgRegion(backgroundRegion());
     if (bgRegion.isEmpty())
         return;
-    const QColor bc;
+    const QColor bc(backgroundColor());
     DPTR_D(GDIRenderer);
     //HDC hdc = d.device_context;
     Graphics g(d.device_context);
     SolidBrush brush(Color(bc.alpha(), bc.red(), bc.green(), bc.blue())); //argb
-    const QVector<QRect> bg(backgroundRegion().rects());
+    const QVector<QRect> bg(bgRegion.rects());
     foreach (const QRect& r, bg) {
         g.FillRectangle(&brush, r.x(), r.y(), r.width(), r.height());
     }
