@@ -487,14 +487,14 @@ QPaintEngine* XVRenderer::paintEngine() const
 
 void XVRenderer::drawBackground()
 {
-    if (autoFillBackground())
+    const QRegion bgRegion(backgroundRegion());
+    if (bgRegion.isEmpty())
         return;
     DPTR_D(XVRenderer);
-    const QVector<QRect> bg(backgroundRegion().rects());
-    if (!bg.isEmpty()) {
-        foreach (const QRect& r, bg) {
-            XFillRectangle(d.display, winId(), d.gc, r.x(), r.y(), r.width(), r.height());
-        }
+    // TODO: set color
+    const QVector<QRect> bg(bgRegion.rects());
+    foreach (const QRect& r, bg) {
+        XFillRectangle(d.display, winId(), d.gc, r.x(), r.y(), r.width(), r.height());
     }
     XFlush(d.display);
 }

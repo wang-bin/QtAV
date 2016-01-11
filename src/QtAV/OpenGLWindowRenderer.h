@@ -36,6 +36,7 @@ class Q_AV_EXPORT OpenGLWindowRenderer : public QOpenGLWindow, public OpenGLRend
     Q_PROPERTY(qreal contrast READ contrast WRITE setContrast NOTIFY contrastChanged)
     Q_PROPERTY(qreal hue READ hue WRITE setHue NOTIFY hueChanged)
     Q_PROPERTY(qreal saturation READ saturation WRITE setSaturation NOTIFY saturationChanged)
+    Q_PROPERTY(QColor backgroundColor READ backgroundColor WRITE setBackgroundColor NOTIFY backgroundColorChanged)
     Q_PROPERTY(QRectF regionOfInterest READ regionOfInterest WRITE setRegionOfInterest NOTIFY regionOfInterestChanged)
     Q_PROPERTY(qreal sourceAspectRatio READ sourceAspectRatio NOTIFY sourceAspectRatioChanged)
     Q_PROPERTY(qreal outAspectRatio READ outAspectRatio WRITE setOutAspectRatio NOTIFY outAspectRatioChanged)
@@ -60,6 +61,7 @@ Q_SIGNALS:
     void contrastChanged(qreal) Q_DECL_OVERRIDE;
     void hueChanged(qreal) Q_DECL_OVERRIDE;
     void saturationChanged(qreal) Q_DECL_OVERRIDE;
+    void backgroundColorChanged() Q_DECL_OVERRIDE;
     void orientationChanged() Q_DECL_OVERRIDE;
     void videoRectChanged() Q_DECL_OVERRIDE;
     void videoFrameSizeChanged() Q_DECL_OVERRIDE;

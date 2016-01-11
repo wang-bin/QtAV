@@ -43,6 +43,7 @@ class Q_AVWIDGETS_EXPORT GLWidgetRenderer2 : public QGLWidget, public OpenGLRend
     Q_PROPERTY(qreal contrast READ contrast WRITE setContrast NOTIFY contrastChanged)
     Q_PROPERTY(qreal hue READ hue WRITE setHue NOTIFY hueChanged)
     Q_PROPERTY(qreal saturation READ saturation WRITE setSaturation NOTIFY saturationChanged)
+    Q_PROPERTY(QColor backgroundColor READ backgroundColor WRITE setBackgroundColor NOTIFY backgroundColorChanged)
     Q_PROPERTY(QRectF regionOfInterest READ regionOfInterest WRITE setRegionOfInterest NOTIFY regionOfInterestChanged)
     Q_PROPERTY(qreal sourceAspectRatio READ sourceAspectRatio NOTIFY sourceAspectRatioChanged)
     Q_PROPERTY(qreal outAspectRatio READ outAspectRatio WRITE setOutAspectRatio NOTIFY outAspectRatioChanged)
@@ -70,6 +71,7 @@ Q_SIGNALS:
     void orientationChanged() Q_DECL_OVERRIDE;
     void videoRectChanged() Q_DECL_OVERRIDE;
     void videoFrameSizeChanged() Q_DECL_OVERRIDE;
+    void backgroundColorChanged() Q_DECL_OVERRIDE;
 protected:
     virtual void initializeGL() Q_DECL_OVERRIDE;
     virtual void paintGL() Q_DECL_OVERRIDE;

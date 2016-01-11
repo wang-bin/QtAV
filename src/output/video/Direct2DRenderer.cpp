@@ -62,25 +62,25 @@ class Direct2DRenderer : public QWidget, public VideoRenderer
     DPTR_DECLARE_PRIVATE(Direct2DRenderer)
 public:
     Direct2DRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
-    virtual VideoRendererId id() const;
-    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
+    VideoRendererId id() const Q_DECL_OVERRIDE;
+    bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
 
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
      * native painting primitives, you need to reimplement QWidget::paintEngine() to
      * return 0 and set this flag
      */
-    virtual QPaintEngine* paintEngine() const;
-    virtual QWidget* widget() { return this; }
+    QPaintEngine* paintEngine() const Q_DECL_OVERRIDE;
+    QWidget* widget() Q_DECL_OVERRIDE { return this; }
 protected:
-    virtual bool receiveFrame(const VideoFrame& frame);
-    virtual void drawBackground();
-    virtual void drawFrame();
+    bool receiveFrame(const VideoFrame& frame) Q_DECL_OVERRIDE;
+    void drawBackground() Q_DECL_OVERRIDE;
+    void drawFrame() Q_DECL_OVERRIDE;
     /*usually you don't need to reimplement paintEvent, just drawXXX() is ok. unless you want do all
      *things yourself totally*/
-    virtual void paintEvent(QPaintEvent *);
-    virtual void resizeEvent(QResizeEvent *);
+    void paintEvent(QPaintEvent *) Q_DECL_OVERRIDE;
+    void resizeEvent(QResizeEvent *) Q_DECL_OVERRIDE;
     //stay on top will change parent, hide then show(windows)
-    virtual void showEvent(QShowEvent *);
+    void showEvent(QShowEvent *) Q_DECL_OVERRIDE;
 };
 typedef Direct2DRenderer VideoRendererDirect2D;
 extern VideoRendererId VideoRendererId_Direct2D;
@@ -333,8 +333,12 @@ QPaintEngine* Direct2DRenderer::paintEngine() const
 
 void Direct2DRenderer::drawBackground()
 {
+    const QRegion bgRegion(backgroundRegion());
+    if (bgRegion.isEmpty())
+        return;
     DPTR_D(Direct2DRenderer);
-    D2D1_COLOR_F c = {0, 0, 0, 255};
+    const QColor bc(backgroundColor());
+    D2D1_COLOR_F c = {bc.red(), bc.green(), bc.blue(), bc.alpha()};
     d.render_target->Clear(&c); //const D2D1_COlOR_F&?
 //http://msdn.microsoft.com/en-us/library/windows/desktop/dd535473(v=vs.85).aspx
     //ID2D1SolidColorBrush *brush;

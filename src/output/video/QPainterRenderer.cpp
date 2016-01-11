@@ -80,17 +80,18 @@ void QPainterRenderer::drawBackground()
     DPTR_D(QPainterRenderer);
     if (!d.painter)
         return;
+    const QRegion bgRegion(backgroundRegion());
+    if (bgRegion.isEmpty())
+        return;
 #if 0
     d.painter->save();
-    d.painter->setClipRegion(backgroundRegion());
-    d.painter->fillRect(QRect(QPoint(), rendererSize()), QColor(0, 0, 0));
+    d.painter->setClipRegion(bgRegion);
+    d.painter->fillRect(QRect(QPoint(), rendererSize()), backgroundColor());
     d.painter->restore();
 #else
-    const QVector<QRect> bg(backgroundRegion().rects());
-    if (!bg.isEmpty()) {
-        foreach (const QRect& r, bg) {
-            d.painter->fillRect(r, QColor(0, 0, 0));
-        }
+    const QVector<QRect> bg(bgRegion.rects());
+    foreach (const QRect& r, bg) {
+        d.painter->fillRect(r, backgroundColor());
     }
 #endif
 }

@@ -27,6 +27,7 @@
 #include <QtCore/QMutex>
 #include <QtCore/QRect>
 #include <QtAV/VideoFrame.h>
+#include <QtGui/QColor>
 
 /*TODO:
  * Region of Interest(ROI)
@@ -58,6 +59,7 @@ public:
       , contrast(0)
       , hue(0)
       , saturation(0)
+      , bg_color(0, 0, 0)
     {
         //conv.setInFormat(PIX_FMT_YUV420P);
         //conv.setOutFormat(PIX_FMT_BGR32); //TODO: why not RGB32?
@@ -117,6 +119,7 @@ public:
     bool force_preferred;
 
     qreal brightness, contrast, hue, saturation;
+    QColor bg_color;
 };
 
 } //namespace QtAV

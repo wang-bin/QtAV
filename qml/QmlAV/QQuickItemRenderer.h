@@ -44,6 +44,7 @@ class QQuickItemRenderer : public QQuickItem, public VideoRenderer
     Q_PROPERTY(qreal sourceAspectRatio READ sourceAspectRatio NOTIFY sourceAspectRatioChanged)
     Q_PROPERTY(QSize videoFrameSize READ videoFrameSize NOTIFY videoFrameSizeChanged)
     Q_PROPERTY(QSize frameSize READ videoFrameSize NOTIFY videoFrameSizeChanged)
+    Q_PROPERTY(QColor backgroundColor READ backgroundColor WRITE setBackgroundColor NOTIFY backgroundColorChanged)
     Q_ENUMS(FillMode)
 public:
     enum FillMode {
@@ -77,6 +78,7 @@ Q_SIGNALS:
     void openGLChanged();
     void sourceAspectRatioChanged(qreal value) Q_DECL_OVERRIDE;
     void videoFrameSizeChanged() Q_DECL_OVERRIDE;
+    void backgroundColorChanged() Q_DECL_OVERRIDE;
 protected:
     bool event(QEvent *e) Q_DECL_OVERRIDE;
     void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry) Q_DECL_OVERRIDE;

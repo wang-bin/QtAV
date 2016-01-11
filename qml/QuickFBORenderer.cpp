@@ -213,7 +213,9 @@ void QuickFBORenderer::renderToFbo()
 
 void QuickFBORenderer::drawBackground()
 {
-    d_func().glv.fill(QColor(Qt::black));
+    if (backgroundRegion().isEmpty())
+        return;
+    d_func().glv.fill(backgroundColor());
 }
 
 void QuickFBORenderer::drawFrame()

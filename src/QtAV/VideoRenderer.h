@@ -25,6 +25,7 @@
 #include <QtCore/QByteArray>
 #include <QtCore/QSize>
 #include <QtCore/QRectF>
+#include <QtGui/QColor>
 #include <QtAV/AVOutput.h>
 #include <QtAV/VideoFrame.h>
 
@@ -183,7 +184,7 @@ public:
      *  values range between -1.0 and 1.0, the default is 0.
      *  value is not changed if does not implementd and onChangingXXX() returns false.
      *  video widget/item will update after if onChangingXXX/setXXX returns true
-     * \return \a false if failed (may be onChangingXXX not implemented or return false)
+     * \return \a false if failed to set (may be onChangingXXX not implemented or return false)
      */
     qreal brightness() const;
     bool setBrightness(qreal brightness);
@@ -193,12 +194,14 @@ public:
     bool setHue(qreal hue);
     qreal saturation() const;
     bool setSaturation(qreal saturation);
+    QColor backgroundColor() const;
+    void setBackgroundColor(const QColor& c);
 
 protected:
     VideoRenderer(VideoRendererPrivate &d);
-    QRegion backgroundRegion() const;
     //TODO: batch drawBackground(color, region)=>loop drawBackground(color,rect)
     virtual bool receiveFrame(const VideoFrame& frame) = 0;
+    QRegion backgroundRegion() const;
     QTAV_DEPRECATED virtual bool needUpdateBackground() const;
     virtual void drawBackground();
     QTAV_DEPRECATED virtual bool needDrawFrame() const; //TODO: no virtual func. it's a solution for temporary
@@ -222,6 +225,7 @@ private: // property change. used as signals in subclasses. implemented by moc
     virtual void contrastChanged(qreal) {}
     virtual void hueChanged(qreal) {}
     virtual void saturationChanged(qreal) {}
+    virtual void backgroundColorChanged() {}
 private: // mainly used by VideoOutput class
     /*!
      * return false if value not changed. default is true

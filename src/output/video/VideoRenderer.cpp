@@ -547,14 +547,10 @@ bool VideoRenderer::setBrightness(qreal brightness)
 {
     DPTR_D(VideoRenderer);
     if (d.brightness == brightness)
+        return true;
+    if (!onSetBrightness(brightness))
         return false;
-    // may emit signal in onSetXXX. ensure get the new value in slot
-    qreal old = d.brightness;
     d.brightness = brightness;
-    if (!onSetBrightness(brightness)) {
-        d.brightness = old;
-        return false;
-    }
     Q_EMIT brightnessChanged(brightness);
     updateUi();
     return true;
@@ -569,14 +565,10 @@ bool VideoRenderer::setContrast(qreal contrast)
 {
     DPTR_D(VideoRenderer);
     if (d.contrast == contrast)
+        return true;
+    if (!onSetContrast(contrast))
         return false;
-    // may emit signal in onSetXXX. ensure get the new value in slot
-    qreal old = d.contrast;
     d.contrast = contrast;
-    if (!onSetContrast(contrast)) {
-        d.contrast = old;
-        return false;
-    }
     Q_EMIT contrastChanged(contrast);
     updateUi();
     return true;
@@ -591,14 +583,10 @@ bool VideoRenderer::setHue(qreal hue)
 {
     DPTR_D(VideoRenderer);
     if (d.hue == hue)
+        return true;
+    if (!onSetHue(hue))
         return false;
-    // may emit signal in onSetXXX. ensure get the new value in slot
-    qreal old = d.hue;
     d.hue = hue;
-    if (!onSetHue(hue)) {
-        d.hue = old;
-        return false;
-    }
     Q_EMIT hueChanged(hue);
     updateUi();
     return true;
@@ -613,14 +601,10 @@ bool VideoRenderer::setSaturation(qreal saturation)
 {
     DPTR_D(VideoRenderer);
     if (d.saturation == saturation)
+        return true;
+    if (!onSetSaturation(saturation))
         return false;
-    // may emit signal in onSetXXX. ensure get the new value in slot
-    qreal old = d.saturation;
     d.saturation = saturation;
-    if (!onSetSaturation(saturation)) {
-        d.saturation = old;
-        return false;
-    }
     Q_EMIT saturationChanged(saturation);
     updateUi();
     return true;
@@ -648,6 +632,21 @@ bool VideoRenderer::onSetSaturation(qreal s)
 {
     Q_UNUSED(s);
     return false;
+}
+
+QColor VideoRenderer::backgroundColor() const
+{
+    return d_func().bg_color;
+}
+
+void VideoRenderer::setBackgroundColor(const QColor &c)
+{
+    DPTR_D(VideoRenderer);
+    if (d.bg_color == c)
+        return;
+    d.bg_color = c;
+    Q_EMIT backgroundColorChanged();
+    updateUi();
 }
 
 void VideoRenderer::updateUi()

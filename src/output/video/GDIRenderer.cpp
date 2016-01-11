@@ -42,29 +42,29 @@ class GDIRenderer : public QWidget, public VideoRenderer
     DPTR_DECLARE_PRIVATE(GDIRenderer)
 public:
     GDIRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0); //offscreen?
-    virtual VideoRendererId id() const;
-    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
+    VideoRendererId id() const Q_DECL_OVERRIDE;
+    bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require
      * native painting primitives, you need to reimplement QWidget::paintEngine() to
      * return 0 and set this flag
      */
-    virtual QPaintEngine* paintEngine() const;
+    QPaintEngine* paintEngine() const Q_DECL_OVERRIDE;
 
     /*http://lists.trolltech.com/qt4-preview-feedback/2005-04/thread00609-0.html
      * true: paintEngine.getDC(), double buffer is enabled by defalut.
      * false: GetDC(winId()), no double buffer, should reimplement paintEngine()
      */
-    virtual QWidget* widget() { return this; }
+    QWidget* widget() Q_DECL_OVERRIDE { return this; }
 protected:
-    virtual bool receiveFrame(const VideoFrame& frame);
-    virtual void drawBackground();
-    virtual void drawFrame();
+    bool receiveFrame(const VideoFrame& frame) Q_DECL_OVERRIDE;
+    void drawBackground() Q_DECL_OVERRIDE;
+    void drawFrame() Q_DECL_OVERRIDE;
     /*usually you don't need to reimplement paintEvent, just drawXXX() is ok. unless you want do all
      *things yourself totally*/
-    virtual void paintEvent(QPaintEvent *);
-    virtual void resizeEvent(QResizeEvent *);
+    void paintEvent(QPaintEvent *) Q_DECL_OVERRIDE;
+    void resizeEvent(QResizeEvent *) Q_DECL_OVERRIDE;
     //stay on top will change parent, hide then show(windows). we need GetDC() again
-    virtual void showEvent(QShowEvent *);
+    void showEvent(QShowEvent *) Q_DECL_OVERRIDE;
 };
 typedef GDIRenderer VideoRendererGDI;
 extern VideoRendererId VideoRendererId_GDI;
@@ -230,15 +230,17 @@ bool GDIRenderer::receiveFrame(const VideoFrame& frame)
 
 void GDIRenderer::drawBackground()
 {
+    const QRegion bgRegion(backgroundRegion());
+    if (bgRegion.isEmpty())
+        return;
+    const QColor bc;
     DPTR_D(GDIRenderer);
     //HDC hdc = d.device_context;
     Graphics g(d.device_context);
-    SolidBrush brush(Color(255, 0, 0, 0)); //argb
+    SolidBrush brush(Color(bc.alpha(), bc.red(), bc.green(), bc.blue())); //argb
     const QVector<QRect> bg(backgroundRegion().rects());
-    if (!bg.isEmpty()) {
-        foreach (const QRect& r, bg) {
-            g.FillRectangle(&brush, r.x(), r.y(), r.width(), r.height());
-        }
+    foreach (const QRect& r, bg) {
+        g.FillRectangle(&brush, r.x(), r.y(), r.width(), r.height());
     }
 }
 
