@@ -271,7 +271,8 @@ SubtitleFrame SubtitleProcessorFFmpeg::processLine(const QByteArray &data, qreal
     // AV_CODEC_ID_xxx and srt, subrip are available for ffmpeg >= 1.0. AV_CODEC_ID_xxx
     // TODO: what about other formats?
     // libav-9: packet data from demuxer contains time and but duration is 0, must decode
-    if (duration > 0 && (!codec_ctx
+    // Always decode the data because it may contain styles
+    if (false && duration > 0 && (!codec_ctx
 #if QTAV_USE_FFMPEG(LIBAVCODEC)
             || codec_ctx->codec_id == AV_CODEC_ID_SUBRIP
 #endif
@@ -318,11 +319,11 @@ SubtitleFrame SubtitleProcessorFFmpeg::processLine(const QByteArray &data, qreal
     for (unsigned i = 0; i < sub.num_rects; i++) {
         switch (sub.rects[i]->type) {
         case SUBTITLE_ASS:
-            //qDebug("frame: %s", sub.rects[i]->ass);
+            //qDebug("ass frame: %s", sub.rects[i]->ass);
             frame.text.append(PlainText::fromAss(sub.rects[i]->ass)).append(ushort('\n'));
             break;
         case SUBTITLE_TEXT:
-            //qDebug("frame: %s", sub.rects[i]->text);
+            //qDebug("txt frame: %s", sub.rects[i]->text);
             frame.text.append(QString::fromUtf8(sub.rects[i]->text)).append(ushort('\n'));
             break;
         case SUBTITLE_BITMAP:
