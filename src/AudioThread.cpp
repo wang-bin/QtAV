@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -82,7 +82,6 @@ void AudioThread::run()
     Q_ASSERT(d.clock != 0);
     d.init();
     //TODO: bool need_sync in private class
-    bool is_external_clock = d.clock->clockType() == AVClock::ExternalClock;
     Packet pkt;
     while (true) {
         processNextTask();
@@ -134,6 +133,7 @@ void AudioThread::run()
             pkt = Packet(); //mark invalid to take next
             continue;
         }
+        const bool is_external_clock = d.clock->clockType() == AVClock::ExternalClock;
         if (is_external_clock) {
             d.delay = dts - d.clock->value();
             /*
@@ -143,7 +143,8 @@ void AudioThread::run()
              * 2. use last delay when seeking
             */
             if (qAbs(d.delay) < 2.0) {
-                if (d.delay < -kSyncThreshold) { //Speed up. drop frame?
+                if (d.delay < -kSyncThreshold) { //Speed up. drop frame? resample?
+                    //qDebug("audio is too late compared with external clock. skip decoding. %.3f-%.3f=%.3f", dts, d.clock->value(), d.delay);
                     //continue;
                 }
                 if (d.delay > 0)
@@ -153,6 +154,7 @@ void AudioThread::run()
                     msleep(64);
                 } else {
                     //audio packet not cleaned up?
+                    qDebug("audio is too late compared with external clock. skip decoding. %.3f-%.3f=%.3f", dts, d.clock->value(), d.delay);
                     continue;
                 }
             }
@@ -277,7 +279,8 @@ void AudioThread::run()
                 QByteArray decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
                 ao->play(decodedChunk, pkt.pts);
                 //qDebug("ao.timestamp: %.3f", ao->timestamp());
-                d.clock->updateValue(ao->timestamp());
+                if (!is_external_clock)
+                    d.clock->updateValue(ao->timestamp());
             } else {
                 d.clock->updateDelay(delay += chunk_delay);
             /*
