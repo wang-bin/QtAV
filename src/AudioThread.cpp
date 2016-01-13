@@ -108,6 +108,7 @@ void AudioThread::run()
                 if (d.dec) //maybe set to null in setDecoder()
                     d.dec->flush();
                 d.render_pts0 = pkt.pts;
+                pkt = Packet(); //mark invalid to take next
                 continue;
             }
         }
@@ -144,8 +145,9 @@ void AudioThread::run()
             */
             if (qAbs(d.delay) < 2.0) {
                 if (d.delay < -kSyncThreshold) { //Speed up. drop frame? resample?
-                    //qDebug("audio is too late compared with external clock. skip decoding. %.3f-%.3f=%.3f", dts, d.clock->value(), d.delay);
-                    //continue;
+                    qDebug("audio is late compared with external clock. skip decoding. %.3f-%.3f=%.3f", dts, d.clock->value(), d.delay);
+                    pkt = Packet(); //mark invalid to take next
+                    continue;
                 }
                 if (d.delay > 0)
                     waitAndCheck(d.delay, dts);
@@ -155,6 +157,7 @@ void AudioThread::run()
                 } else {
                     //audio packet not cleaned up?
                     qDebug("audio is too late compared with external clock. skip decoding. %.3f-%.3f=%.3f", dts, d.clock->value(), d.delay);
+                    pkt = Packet(); //mark invalid to take next
                     continue;
                 }
             }
@@ -166,8 +169,10 @@ void AudioThread::run()
         QMutexLocker locker(&d.mutex);
         Q_UNUSED(locker);
         AudioDecoder *dec = static_cast<AudioDecoder*>(d.dec);
-        if (!dec)
+        if (!dec) {
+            pkt = Packet(); //mark invalid to take next
             continue;
+        }
         AudioOutput *ao = 0;
         // first() is not null even if list empty
         if (!d.outputSet->outputs().isEmpty())
@@ -233,14 +238,14 @@ void AudioThread::run()
 #if USE_AUDIO_FRAME
         AudioFrame frame(dec->frame());
         if (!frame)
-            continue;
+            continue; //pkt data is updated after decode, no reset here
         if (frame.timestamp() <= 0)
             frame.setTimestamp(pkt.pts); // pkt.pts is wrong. >= real timestamp
         if (d.render_pts0 >= 0.0) { // seeking
             if (frame.timestamp() < d.render_pts0) {
                 qDebug("skip audio rendering: %f-%f", frame.timestamp(), d.render_pts0);
                 d.clock->updateValue(frame.timestamp());
-                continue;
+                continue; //pkt data is updated after decode, no reset here
             }
             qDebug("seek audio done @%.3f", frame.timestamp());
             d.render_pts0 = -1.0;
