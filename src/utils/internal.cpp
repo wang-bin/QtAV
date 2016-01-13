@@ -100,13 +100,7 @@ QString fontsDir()
     return QStandardPaths::standardLocations(QStandardPaths::FontsLocation).first();
 #endif
 }
-
-// writable font dir. it's appFontsDir()/fonts
-QString appFontsDir();
-// usually not writable
-QString fontsDir();
-
-}
+} //namespace Path
 
 QString options2StringHelper(void* obj, const char* unit)
 {
