@@ -1,6 +1,6 @@
 /******************************************************************************
     VideoWall:  this file is part of QtAV examples
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -50,6 +50,10 @@ public slots:
 protected:
     virtual bool eventFilter(QObject *, QEvent *);
     virtual void timerEvent(QTimerEvent *e);
+
+private Q_SLOTS:
+    void changeClockType();
+
 private:
     int r, c;
     int timer_id;

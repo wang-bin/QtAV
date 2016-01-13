@@ -1,6 +1,6 @@
 /******************************************************************************
     VideoWall:  this file is part of QtAV examples
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -47,11 +47,8 @@ int main(int argc, char *argv[])
         }
     }
     qDebug("vo: %s", vo.toUtf8().constData());
-    vo = vo.toLower();
-    if (vo != QLatin1String("gl") && vo != QLatin1String("d2d") && vo != QLatin1String("gdi") && vo != QLatin1String("xv"))
-        vo = QString::fromLatin1("qpainter");
     VideoWall wall;
-    wall.setVideoRendererTypeString(vo);
+    wall.setVideoRendererTypeString(vo.toLower());
     wall.setRows(r);
     wall.setCols(c);
     wall.show();
