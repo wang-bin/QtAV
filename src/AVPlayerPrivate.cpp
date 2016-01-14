@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -326,11 +326,15 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     AudioFormat af;
     af.setSampleRate(avctx->sample_rate);
     af.setSampleFormatFFmpeg(avctx->sample_fmt);
+    af.setChannelLayoutFFmpeg(avctx->channel_layout);
+    qDebug() << "audio format from codec: " << af;
+    if (!af.isValid()) {
+        qWarning("invalid audio format. audio stream will be disabled");
+        return false;
+    }
     // 5, 6, 7 channels may not play
     if (avctx->channels > 2)
         af.setChannelLayout(ao->preferredChannelLayout());
-    else
-        af.setChannelLayoutFFmpeg(avctx->channel_layout);
     //af.setChannels(avctx->channels);
     // FIXME: workaround. planar convertion crash now!
     if (af.isPlanar()) {
