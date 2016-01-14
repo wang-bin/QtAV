@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -56,13 +56,13 @@ public:
     //set planes and linesize manually or call init
     QTAV_DEPRECATED VideoFrame(const QByteArray& data, int width, int height, const VideoFormat& format);
     VideoFrame(const QVector<int>& textures, int width, int height, const VideoFormat& format);
-    VideoFrame(const QImage& image); // does not copy the image data
+    VideoFrame(const QImage& image);
     VideoFrame(const VideoFrame &other);
-    virtual ~VideoFrame();
+    ~VideoFrame();
 
     VideoFrame &operator =(const VideoFrame &other);
 
-    virtual int channelCount() const;
+    int channelCount() const Q_DECL_OVERRIDE;
     /*!
      * Deep copy. Given the format, width and height, plane addresses and line sizes.
      */
@@ -96,13 +96,14 @@ public:
     /*!
      * \brief toImage
      * Return a QImage of current video frame, with given format, image size and region of interest.
+     * If VideoFrame is constructed from an QImage, the target format, size and roi are the same, then no data copy.
      * \param dstSize result image size
      * \param roi NOT implemented!
      */
     QImage toImage(QImage::Format fmt = QImage::Format_ARGB32, const QSize& dstSize = QSize(), const QRectF& roi = QRect()) const;
     /*!
      * \brief to
-     * The result frame data is always on host memory.
+     * The result frame data is always on host memory. If video frame data is already in host memory, and the target parameters are the same, then return the current frame.
      * \param pixfmt target pixel format
      * \param dstSize target frame size
      * \param roi interested region of source frame

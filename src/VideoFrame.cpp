@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -146,6 +146,7 @@ public:
     float displayAspectRatio;
     VideoFormat format;
     QVector<int> textures;
+    QScopedPointer<QImage> qt_image;
 
     VideoSurfaceInteropPtr surface_interop;
 };
@@ -181,6 +182,7 @@ VideoFrame::VideoFrame(const QImage& image)
 {
     setBits((uchar*)image.constBits(), 0);
     setBytesPerLine(image.bytesPerLine(), 0);
+    d_func()->qt_image.reset(new QImage(image));
 }
 
 /*!
@@ -352,6 +354,13 @@ int VideoFrame::effectiveBytesPerLine(int plane) const
 
 QImage VideoFrame::toImage(QImage::Format fmt, const QSize& dstSize, const QRectF &roi) const
 {
+    Q_D(const VideoFrame);
+    if (!d->qt_image.isNull()
+            && fmt == d->qt_image->format()
+            && dstSize == d->qt_image->size()
+            && (!roi.isValid() || roi == d->qt_image->rect())) {
+        return *d->qt_image.data();
+    }
     VideoFrame f(to(VideoFormat(VideoFormat::pixelFormatFromImageFormat(fmt)), dstSize, roi));
     if (!f)
         return QImage();
