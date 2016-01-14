@@ -120,7 +120,6 @@ public:
         , color_space(ColorSpace_Unknow)
         , displayAspectRatio(0)
         , format(VideoFormat::Format_Invalid)
-        , textures(4, 0)
     {}
     VideoFramePrivate(int w, int h, const VideoFormat& fmt)
         : FramePrivate()
@@ -129,23 +128,19 @@ public:
         , color_space(ColorSpace_Unknow)
         , displayAspectRatio(0)
         , format(fmt)
-        , textures(4, 0)
     {
         if (!format.isValid())
             return;
         planes.resize(format.planeCount());
         line_sizes.resize(format.planeCount());
-        textures.resize(format.planeCount());
         planes.reserve(format.planeCount());
         line_sizes.reserve(format.planeCount());
-        textures.reserve(format.planeCount());
     }
     ~VideoFramePrivate() {}
     int width, height;
     ColorSpace color_space;
     float displayAspectRatio;
     VideoFormat format;
-    QVector<int> textures;
     QScopedPointer<QImage> qt_image;
 
     VideoSurfaceInteropPtr surface_interop;
@@ -168,13 +163,6 @@ VideoFrame::VideoFrame(const QByteArray& data, int width, int height, const Vide
 {
     Q_D(VideoFrame);
     d->data = data;
-}
-
-VideoFrame::VideoFrame(const QVector<int>& textures, int width, int height, const VideoFormat &format)
-    : Frame(new VideoFramePrivate(width, height, format))
-{
-    Q_D(VideoFrame);
-    d->textures = textures;
 }
 
 VideoFrame::VideoFrame(const QImage& image)
@@ -463,14 +451,6 @@ void* VideoFrame::createInteropHandle(void* handle, SurfaceType type, int plane)
     if (plane > planeCount())
         return 0;
     return d->surface_interop->createHandle(handle, type, format(), plane, planeWidth(plane), planeHeight(plane));
-}
-
-int VideoFrame::texture(int plane) const
-{
-    Q_D(const VideoFrame);
-    if (d->textures.size() <= plane)
-        return -1;
-    return d->textures[plane];
 }
 
 VideoFrameConverter::VideoFrameConverter()

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -73,7 +73,7 @@ enum ColorSpace {
  * Map the decoded frame to host memory
  * GLTextureSurface:
  * Map the decoded frame as an OpenGL texture
- * DecoderSurface:
+ * SourceSurface:
  * get the original surface from decoder, for example VASurfaceID for va-api, CUdeviceptr for CUDA and IDirect3DSurface9* for DXVA.
  * Zero copy mode is required.
  * UserSurface:
@@ -82,8 +82,8 @@ enum ColorSpace {
 enum SurfaceType {
     HostMemorySurface,
     GLTextureSurface,
-    DecoderSurface,
-    UserSurface
+    SourceSurface,
+    UserSurface = 0xffff
 };
 
 } //namespace QtAV

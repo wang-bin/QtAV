@@ -55,7 +55,6 @@ public:
     VideoFrame(int width, int height, const VideoFormat& format, const QByteArray& data = QByteArray());
     //set planes and linesize manually or call init
     QTAV_DEPRECATED VideoFrame(const QByteArray& data, int width, int height, const VideoFormat& format);
-    VideoFrame(const QVector<int>& textures, int width, int height, const VideoFormat& format);
     VideoFrame(const QImage& image);
     VideoFrame(const VideoFrame &other);
     ~VideoFrame();
@@ -126,13 +125,6 @@ public:
      * \return null on error. otherwise return the input handle
      */
     void* createInteropHandle(void* handle, SurfaceType type, int plane);
-    //copy to host. Used if gpu filter not supported. To avoid copy too frequent, sort the filters first?
-    //bool mapToHost();
-    /*!
-       texture in FBO. we can use texture in FBO through filter pipeline then switch to window context to display
-       return -1 if no texture, not uploaded
-     */
-    int texture(int plane = 0) const; //TODO: remove
 };
 
 class ImageConverter;
