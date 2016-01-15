@@ -484,6 +484,8 @@ void AVDemuxThread::run()
     if (ademuxer) {
         ademuxer->seek(0LL);
     }
+    qreal last_apts = 0;
+    qreal last_vpts = 0;
     while (!end) {
         processNextSeekTask();
         //vthread maybe changed by AVPlayer.setPriority() from no dec case
@@ -494,6 +496,14 @@ void AVDemuxThread::run()
             if (aqueue && (!was_end || aqueue->isEmpty())) {
                 if (was_end < kMaxEof)
                     aqueue->put(Packet::createEOF());
+                const qreal dpts = last_vpts - last_apts;
+                if (dpts > 0.1) {
+                    Packet fake_apkt;
+                    fake_apkt.duration = dpts;
+                    last_apts = last_vpts = 0; // if not reset to 0, for example real eof pts, then no fake apkt after seek because dpts < 0
+                    qDebug("audio is too short than video: %.3f", fake_apkt.duration);
+                    aqueue->put(fake_apkt);
+                }
                 aqueue->blockEmpty(was_end >= kMaxEof); // do not block if buffer is not enough. block again on seek
             }
             if (vqueue && (!was_end || vqueue->isEmpty())) {
@@ -506,7 +516,12 @@ void AVDemuxThread::run()
                 Q_EMIT mediaStatusChanged(QtAV::BufferedMedia);
             }
             was_end = qMin(was_end + 1, kMaxEof);
-            if (!user_paused && ((aqueue && aqueue->isEmpty()) || (vqueue && vqueue->isEmpty()))) // TODO: resume at eof is not enough, should check avthread done
+            bool exit_thread = !user_paused;
+            if (aqueue)
+                exit_thread &= aqueue->isEmpty();
+            if (vqueue)
+                exit_thread &= vqueue->isEmpty();
+            if (exit_thread)
                 break;
             // wait for a/v thread finished
             msleep(100);
@@ -565,6 +580,7 @@ void AVDemuxThread::run()
         if (a_internal || a_ext > 0) {//apkt.isValid()) {
             if (a_internal && !a_ext) // internal is always read even if external audio used
                 apkt = demuxer->packet();
+            last_apts = apkt.pts;
             /* if vqueue if not blocked and full, and aqueue is empty, then put to
              * vqueue will block demuex thread
              */
@@ -593,6 +609,7 @@ void AVDemuxThread::run()
                 }
                 vqueue->blockFull(!audio_thread || !audio_thread->isRunning() || !aqueue || aqueue->isEnough());
                 vqueue->put(pkt); //affect audio_thread
+                last_vpts = pkt.pts;
             }
         } else if (demuxer->subtitleStreams().contains(stream)) { //subtitle
             Q_EMIT internalSubtitlePacketRead(demuxer->subtitleStreams().indexOf(stream), pkt);

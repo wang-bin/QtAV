@@ -81,9 +81,10 @@ void AudioThread::run()
     resetState();
     Q_ASSERT(d.clock != 0);
     d.init();
-    //TODO: bool need_sync in private class
     Packet pkt;
-    while (true) {
+    qint64 fake_duration = 0LL;
+    qint64 fake_pts = 0LL;
+    while (!d.stop) {
         processNextTask();
         //TODO: why put it at the end of loop then playNextFrame() not work?
         if (tryPause()) { //DO NOT continue, or playNextFrame() will fail
@@ -93,29 +94,53 @@ void AudioThread::run()
             if (isPaused())
                 continue;
         }
-        if (!pkt.isValid() && !pkt.isEOF()) { // can't seek back if eof packet is read
-            pkt = d.packets.take(); //wait to dequeue
-        }
-        if (pkt.isEOF()) {
-            qDebug("audio thread gets an eof packet.");
-        } else {
-            if (d.stop) // user stop
-                break;
+        if (!pkt.isValid()) {
+            // can't seek back if eof packet is read
+            //qDebug("eof pkt: %d valid: %d, aqueue size: %d, abuffer: %d %.3f %d, fake_duration: %lld", pkt.isEOF(), pkt.isValid(), d.packets.size(), d.packets.bufferValue(), d.packets.bufferMax(), d.packets.isFull(), fake_duration);
+            if (!pkt.isEOF() && (fake_duration <= 0 || !d.packets.isEmpty())) {
+                pkt = d.packets.take(); //wait to dequeue
+            }
+            if (pkt.isEOF()) {
+                fake_duration = 0; //avoid endless wait
+                qDebug("audio thread gets an eof packet. pkt.pts: %.3f, d.render_pts0:%.3f", pkt.pts, d.render_pts0);
+            }
             if (!pkt.isValid()) {
-                qDebug("Invalid packet! flush audio codec context!!!!!!!! audio queue size=%d", d.packets.size());
-                QMutexLocker locker(&d.mutex);
-                Q_UNUSED(locker);
-                if (d.dec) //maybe set to null in setDecoder()
-                    d.dec->flush();
-                d.render_pts0 = pkt.pts;
-                pkt = Packet(); //mark invalid to take next
+                if (pkt.pts >= 0) { // check seek first
+                    qDebug("Invalid packet! flush audio codec context!!!!!!!! audio queue size=%d", d.packets.size());
+                    QMutexLocker locker(&d.mutex);
+                    Q_UNUSED(locker);
+                    if (d.dec) //maybe set to null in setDecoder()
+                        d.dec->flush();
+                    d.render_pts0 = pkt.pts;
+                    pkt = Packet(); //mark invalid to take next
+                    fake_duration = fake_duration + fake_pts - d.render_pts0*1000.0;
+                    fake_pts = d.render_pts0*1000.0;
+                    d.clock->updateValue(d.render_pts0);
+                    d.clock->updateDelay(0);
+                    continue;
+                }
+                if (pkt.duration > 0) {
+                    fake_duration = pkt.duration * 1000.0;
+                    fake_pts = d.last_pts*1000.0;
+                    pkt = Packet(); //mark invalid to avoid run here in the next loop
+                    //qDebug("get fake apkt: %.3f+%ul", pkt.pts, fake_duration);
+                    continue;
+                }
+            }
+            if (fake_duration > 0) {
+                static const ulong kSleepMs = 20;
+                const ulong ms = qMin<qint64>(fake_duration, kSleepMs);
+                fake_duration -= ms;
+                fake_pts += ms;
+                //qDebug("fake_wait: %ul, fake_duration: %lld, delay: %.3f", ms, fake_duration, d.clock->delay());
+                d.clock->updateDelay(d.clock->delay() + qreal(ms)/1000.0);
+                msleep(ms);
                 continue;
             }
         }
-
         qreal dts = pkt.dts; //FIXME: pts and dts
         // no key frame for audio. so if pts reaches, try decode and skip render if got frame pts does not reach
-        bool skip_render = pkt.pts < d.render_pts0;
+        bool skip_render = pkt.pts >= 0 && pkt.pts < d.render_pts0; // if audio stream is too short, seeking will fail and d.render_pts0 keeps >0
         // audio has no key frame, skip rendering equals to skip decoding
         if (skip_render) {
             d.clock->updateValue(pkt.pts);
@@ -124,7 +149,7 @@ void AudioThread::run()
              * a frame is about 20ms. sleep time must be << frame time
              */
             qreal a_v = dts - d.clock->videoTime();
-            //qDebug("skip audio decode at %f/%f v=%f a-v=%fms", dts, d.render_pts0, d.clock->videoTime(), a_v*1000.0);
+            qDebug("skip audio decode at %f/%f v=%f a-v=%fms", dts, d.render_pts0, d.clock->videoTime(), a_v*1000.0);
             if (a_v > 0) {
                 msleep(qMin((ulong)20, ulong(a_v*1000.0)));
             } else {
