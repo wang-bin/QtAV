@@ -138,6 +138,8 @@ void AudioThread::run()
                 continue;
             }
         }
+        if (!pkt.isValid() && !pkt.isEOF()) // decode it will cause crash
+            continue;
         qreal dts = pkt.dts; //FIXME: pts and dts
         // no key frame for audio. so if pts reaches, try decode and skip render if got frame pts does not reach
         bool skip_render = pkt.pts >= 0 && pkt.pts < d.render_pts0; // if audio stream is too short, seeking will fail and d.render_pts0 keeps >0
@@ -291,9 +293,7 @@ void AudioThread::run()
         int decodedSize = decoded.size();
         int decodedPos = 0;
         qreal delay = 0;
-        //AudioFormat.durationForBytes() calculates int type internally. not accurate
-        const AudioFormat &af = dec->resampler()->outAudioFormat();
-        const qreal byte_rate = af.bytesPerSecond();
+        const qreal byte_rate = frame.format().bytesPerSecond();
         while (decodedSize > 0) {
             if (d.stop) {
                 qDebug("audio thread stop after decode()");
