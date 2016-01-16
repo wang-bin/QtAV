@@ -531,8 +531,8 @@ void AVDemuxThread::run()
                 const qreal dpts = last_vpts - last_apts;
                 if (dpts > 0.1) {
                     Packet fake_apkt;
-                    fake_apkt.duration = dpts; // FIXME: too long for seek
-                    qDebug("audio is too short than video: %.3f", dpts);
+                    fake_apkt.duration = last_vpts - qMin(thread->clock()->videoTime(), thread->clock()->value()); // FIXME: when clock value < 0?
+                    qDebug("audio is too short than video: %.3f, fake_apkt.duration: %.3f", dpts, fake_apkt.duration);
                     last_apts = last_vpts = 0; // if not reset to 0, for example real eof pts, then no fake apkt after seek because dpts < 0
                     aqueue->put(fake_apkt);
                 }
@@ -564,7 +564,6 @@ void AVDemuxThread::run()
                     vqueue->blockEmpty(true);
             }
             // wait for a/v thread finished
-
             msleep(100);
             continue;
         }

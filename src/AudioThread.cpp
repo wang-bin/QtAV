@@ -113,8 +113,11 @@ void AudioThread::run()
                         d.dec->flush();
                     d.render_pts0 = pkt.pts;
                     pkt = Packet(); //mark invalid to take next
-                    fake_duration = fake_duration + fake_pts - d.render_pts0*1000.0;
-                    fake_pts = d.render_pts0*1000.0;
+                    if (fake_duration > 0) {
+                        //qDebug("fake_duration update on seek: %ul + %ul - %.3f", fake_duration, fake_pts, d.render_pts0);
+                        fake_duration = fake_duration + fake_pts - d.render_pts0*1000.0;
+                        fake_pts = d.render_pts0*1000.0;
+                    }
                     d.clock->updateValue(d.render_pts0);
                     d.clock->updateDelay(0);
                     continue;
