@@ -245,6 +245,7 @@ void AudioThread::run()
             qWarning("Decode audio failed. undecoded: %d", dec->undecodedSize());
             if (pkt.isEOF()) {
                 qDebug("audio decode eof done");
+                Q_EMIT eofDecoded();
                 if (!pkt.position)
                     break;
             }

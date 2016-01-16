@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -476,6 +476,7 @@ void VideoThread::run()
             d.pts_history.push_back(d.pts_history.back());
             qWarning("Decode video failed. undecoded: %d/%d", dec->undecodedSize(), pkt.data.size());
             if (pkt.isEOF()) {
+                Q_EMIT eofDecoded();
                 qDebug("video decode eof done. d.render_pts0: %.3f", d.render_pts0);
                 if (d.render_pts0 >= 0) {
                     qDebug("video seek done at eof pts: %.3f", d.pts_history.back());
@@ -548,7 +549,7 @@ void VideoThread::run()
                 // TODO: what if seek happens during playback?
                 const int msecs_started(now + qMax(0LL, delta) - start_time);
                 frame.setTimestamp(qreal(msecs_started)/1000.0);
-                clock()->updateValue(frame.timestamp());
+                clock()->updateValue(frame.timestamp()); //external clock?
             }
             if (delta > 0LL) { // limit up bound?
                 waitAndCheck((ulong)delta, -1); // wait and not compare pts-clock

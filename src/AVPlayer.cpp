@@ -1552,7 +1552,7 @@ void AVPlayer::stepForward()
 {
     // pause clock
     pause(true); // must pause AVDemuxThread (set user_paused true)
-    d->read_thread->nextFrame();
+    d->read_thread->stepForward();
 }
 
 void AVPlayer::stepBackward()

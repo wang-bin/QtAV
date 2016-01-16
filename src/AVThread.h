@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -93,6 +93,7 @@ Q_SIGNALS:
      * \param timestamp the frame pts after seek
      */
     void seekFinished(qint64 timestamp);
+    void eofDecoded();
 protected:
     AVThread(AVThreadPrivate& d, QObject *parent = 0);
     void resetState();

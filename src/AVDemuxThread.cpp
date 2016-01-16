@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -261,7 +261,7 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
     }
     if (watch_thread) {
         pauseInternal(false);
-        emit requestClockPause(false); // need direct connection
+        Q_EMIT requestClockPause(false); // need direct connection
         // direct connection is fine here
         connect(watch_thread, SIGNAL(seekFinished(qint64)), this, SLOT(seekOnPauseFinished()), Qt::DirectConnection);
     }
@@ -352,10 +352,10 @@ void AVDemuxThread::stop()
 
 void AVDemuxThread::pause(bool p, bool wait)
 {
+    user_paused = p;
     if (paused == p)
         return;
     paused = p;
-    user_paused = paused;
     if (!paused)
         cond.wakeAll();
     else {
@@ -367,9 +367,11 @@ void AVDemuxThread::pause(bool p, bool wait)
     }
 }
 
-void AVDemuxThread::nextFrame()
+void AVDemuxThread::stepForward()
 {
-    // clock type will be wrong if no lock because slot frameDeliveredNextFrame() is in video thread
+    if (end)
+        return;
+    // clock type will be wrong if no lock because slot frameDeliveredOnStepForward() is in video thread
     QMutexLocker locker(&next_frame_mutex);
     Q_UNUSED(locker);
     pause(true); // must pause AVDemuxThread (set user_paused true)
@@ -387,11 +389,12 @@ void AVDemuxThread::nextFrame()
         t->pause(false);
         t->packetQueue()->blockFull(false);
         if (!connected) {
-            connect(t, SIGNAL(frameDelivered()), this, SLOT(frameDeliveredNextFrame()), Qt::DirectConnection);
+            connect(t, SIGNAL(frameDelivered()), this, SLOT(frameDeliveredOnStepForward()), Qt::DirectConnection);
+            connect(t, SIGNAL(eofDecoded()), this, SLOT(eofDecodedOnStepForward()), Qt::DirectConnection);
             connected = true;
         }
     }
-    emit requestClockPause(false);
+    Q_EMIT requestClockPause(false);
     pauseInternal(false);
 }
 
@@ -402,7 +405,7 @@ void AVDemuxThread::seekOnPauseFinished()
     disconnect(thread, SIGNAL(seekFinished(qint64)), this, SLOT(seekOnPauseFinished()));
     if (user_paused) {
         pause(true); // restore pause state
-        emit requestClockPause(true); // need direct connection
+        Q_EMIT requestClockPause(true); // need direct connection
     // pause video/audio thread
         if (video_thread)
             video_thread->pause(true);
@@ -416,22 +419,40 @@ void AVDemuxThread::seekOnPauseFinished()
     }
 }
 
-void AVDemuxThread::frameDeliveredNextFrame()
+void AVDemuxThread::frameDeliveredOnStepForward()
 {
     AVThread *thread = video_thread ? video_thread : audio_thread;
     Q_ASSERT(thread);
     QMutexLocker locker(&next_frame_mutex);
     Q_UNUSED(locker);
-    disconnect(thread, SIGNAL(frameDelivered()), this, SLOT(frameDeliveredNextFrame()));
+    disconnect(thread, SIGNAL(frameDelivered()), this, SLOT(frameDeliveredOnStepForward()));
+    disconnect(thread, SIGNAL(eofDecoded()), this, SLOT(eofDecodedOnStepForward()));
     if (user_paused) {
         pause(true); // restore pause state
-        emit requestClockPause(true); // need direct connection
+        Q_EMIT requestClockPause(true); // need direct connection
     // pause both video and audio thread
         if (video_thread)
             video_thread->pause(true);
         if (audio_thread)
             audio_thread->pause(true);
     }
+    if (clock_type >= 0) {
+        thread->clock()->setClockAuto(clock_type & 1);
+        thread->clock()->setClockType(AVClock::ClockType(clock_type/2));
+        clock_type = -1;
+    }
+}
+
+void AVDemuxThread::eofDecodedOnStepForward()
+{
+    AVThread *thread = video_thread ? video_thread : audio_thread;
+    Q_ASSERT(thread);
+    QMutexLocker locker(&next_frame_mutex);
+    Q_UNUSED(locker);
+    disconnect(thread, SIGNAL(frameDelivered()), this, SLOT(frameDeliveredOnStepForward()));
+    disconnect(thread, SIGNAL(eofDecoded()), this, SLOT(eofDecodedOnStepForward()));
+    pause(false);
+    end = true;
     if (clock_type >= 0) {
         thread->clock()->setClockAuto(clock_type & 1);
         thread->clock()->setClockType(AVClock::ClockType(clock_type/2));
@@ -637,7 +658,7 @@ void AVDemuxThread::run()
     }
     thread->disconnect(this, SIGNAL(seekFinished(qint64)));
     qDebug("Demux thread stops running....");
-    emit mediaStatusChanged(QtAV::EndOfMedia);
+    Q_EMIT mediaStatusChanged(QtAV::EndOfMedia);
 }
 
 bool AVDemuxThread::tryPause(unsigned long timeout)

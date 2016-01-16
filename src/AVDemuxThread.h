@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -44,6 +44,7 @@ public:
     AVThread* audioThread();
     void setVideoThread(AVThread *thread);
     AVThread* videoThread();
+    void stepForward(); // show next video frame and pause
     void stepBackward();
     void seek(qint64 pos, SeekType type); //ms
     //AVDemuxer* demuxer
@@ -51,10 +52,8 @@ public:
     bool isEnd() const;
     PacketBuffer* buffer();
     void updateBufferState();
-public slots:
     void stop(); //TODO: remove it?
     void pause(bool p, bool wait = false);
-    void nextFrame(); // show next video frame and pause
 
 Q_SIGNALS:
     void requestClockPause(bool value);
@@ -64,7 +63,8 @@ Q_SIGNALS:
     void internalSubtitlePacketRead(int index, const QtAV::Packet& packet);
 private slots:
     void seekOnPauseFinished();
-    void frameDeliveredNextFrame();
+    void frameDeliveredOnStepForward();
+    void eofDecodedOnStepForward();
     void onAVThreadQuit();
 
 protected:
