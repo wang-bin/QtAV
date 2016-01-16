@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -63,6 +63,8 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(int contrast READ contrast WRITE setContrast NOTIFY contrastChanged)
     Q_PROPERTY(int saturation READ saturation WRITE setSaturation NOTIFY saturationChanged)
     Q_PROPERTY(State state READ state WRITE setState NOTIFY stateChanged)
+    Q_PROPERTY(QtAV::MediaStatus mediaStatus READ mediaStatus NOTIFY mediaStatusChanged)
+    Q_PROPERTY(QtAV::MediaEndAction mediaEndAction READ mediaEndAction WRITE setMediaEndAction NOTIFY mediaEndActionChanged)
     Q_ENUMS(State)
 public:
     enum State {
@@ -382,6 +384,15 @@ public:
     void setOptionsForVideoCodec(const QVariantHash& dict);
     QVariantHash optionsForVideoCodec() const;
 
+    /*!
+     * \brief mediaEndAction
+     * The action at the end of media or when playback is stopped. Default is quit threads and clear video renderers.
+     * If the flag MediaEndAction_KeepDisplay is set, the last video frame will keep displaying in video renderers.
+     * If MediaEndAction_Pause is set, you can still seek and resume the playback because no thread exits.
+     */
+    MediaEndAction mediaEndAction() const;
+    void setMediaEndAction(MediaEndAction value);
+
 public slots:
     void togglePause();
     void pause(bool p = true);
@@ -499,6 +510,7 @@ Q_SIGNALS:
     void sourceChanged();
     void loaded(); // == mediaStatusChanged(QtAV::LoadedMedia)
     void mediaStatusChanged(QtAV::MediaStatus status); //explictly use QtAV::MediaStatus
+    void mediaEndActionChanged(QtAV::MediaEndAction action);
     /*!
      * \brief durationChanged emit when media is loaded/unloaded
      */
@@ -549,7 +561,8 @@ private Q_SLOTS:
     void stopNotifyTimer();
     void onStarted();
     void updateMediaStatus(QtAV::MediaStatus status);
-    void onSeekFinished();
+    void onSeekFinished(qint64 value);
+    void tryClearVideoRenderers();
 protected:
     // TODO: set position check timer interval
     virtual void timerEvent(QTimerEvent *);

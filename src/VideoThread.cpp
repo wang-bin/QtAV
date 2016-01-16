@@ -117,6 +117,11 @@ void VideoThread::addCaptureTask()
     scheduleTask(new CaptureTask(this));
 }
 
+void VideoThread::clearRenderers()
+{
+    d_func().outputSet->sendVideoFrame(VideoFrame());
+}
+
 VideoFrame VideoThread::displayedFrame() const
 {
     return d_func().displayed_frame;
@@ -435,7 +440,7 @@ void VideoThread::run()
         }
         QVariantHash *dec_opt_old = dec_opt;
         if (d.drop_frame_seek) {
-            if (!seeking) { // MAYBE not seeking
+            if (!seeking || d.render_pts0 < 0.001) { // MAYBE not seeking
                 if (nb_dec_slow < kNbSlowFrameDrop) {
                     if (dec_opt == &d.dec_opt_framedrop) {
                         qDebug("frame drop normal. nb_dec_slow: %d. not seeking", nb_dec_slow);
@@ -597,7 +602,6 @@ void VideoThread::run()
         }
     }
     d.packets.clear();
-    d.outputSet->sendVideoFrame(VideoFrame()); // TODO: let user decide what to display
     qDebug("Video thread stops running...");
 }
 

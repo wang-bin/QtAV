@@ -62,6 +62,7 @@ AVDemuxThread::AVDemuxThread(QObject *parent) :
   , paused(false)
   , user_paused(false)
   , end(false)
+  , end_action(MediaEndAction_Default)
   , m_buffering(false)
   , m_buffer(0)
   , demuxer(0)
@@ -367,6 +368,16 @@ void AVDemuxThread::pause(bool p, bool wait)
     }
 }
 
+void AVDemuxThread::setMediaEndAction(MediaEndAction value)
+{
+    end_action = value;
+}
+
+MediaEndAction AVDemuxThread::mediaEndAction() const
+{
+    return end_action;
+}
+
 void AVDemuxThread::stepForward()
 {
     if (end)
@@ -520,9 +531,9 @@ void AVDemuxThread::run()
                 const qreal dpts = last_vpts - last_apts;
                 if (dpts > 0.1) {
                     Packet fake_apkt;
-                    fake_apkt.duration = dpts;
+                    fake_apkt.duration = dpts; // FIXME: too long for seek
+                    qDebug("audio is too short than video: %.3f", dpts);
                     last_apts = last_vpts = 0; // if not reset to 0, for example real eof pts, then no fake apkt after seek because dpts < 0
-                    qDebug("audio is too short than video: %.3f", fake_apkt.duration);
                     aqueue->put(fake_apkt);
                 }
                 aqueue->blockEmpty(was_end >= kMaxEof); // do not block if buffer is not enough. block again on seek
@@ -542,9 +553,18 @@ void AVDemuxThread::run()
                 exit_thread &= aqueue->isEmpty();
             if (vqueue)
                 exit_thread &= vqueue->isEmpty();
-            if (exit_thread)
-                break;
+            if (exit_thread) {
+                if (!(mediaEndAction() & MediaEndAction_Pause))
+                    break;
+                pause(true);
+                Q_EMIT requestClockPause(true);
+                if (aqueue)
+                    aqueue->blockEmpty(true);
+                if (vqueue)
+                    vqueue->blockEmpty(true);
+            }
             // wait for a/v thread finished
+
             msleep(100);
             continue;
         }
@@ -646,6 +666,7 @@ void AVDemuxThread::run()
         quit_pkt.position = 0;
         aqueue->put(quit_pkt);
         aqueue->blockEmpty(false); //FIXME: why need this
+        audio_thread->pause(false);
         audio_thread->wait(500);
     }
     while (video_thread && video_thread->isRunning()) {
@@ -654,6 +675,7 @@ void AVDemuxThread::run()
         quit_pkt.position = 0;
         vqueue->put(quit_pkt);
         vqueue->blockEmpty(false);
+        video_thread->pause(false);
         video_thread->wait(500);
     }
     thread->disconnect(this, SIGNAL(seekFinished(qint64)));

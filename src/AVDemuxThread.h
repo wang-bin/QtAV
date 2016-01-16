@@ -55,6 +55,9 @@ public:
     void stop(); //TODO: remove it?
     void pause(bool p, bool wait = false);
 
+    MediaEndAction mediaEndAction() const;
+    void setMediaEndAction(MediaEndAction value);
+
 Q_SIGNALS:
     void requestClockPause(bool value);
     void mediaStatusChanged(QtAV::MediaStatus);
@@ -85,6 +88,7 @@ private:
     bool paused;
     bool user_paused;
     volatile bool end;
+    MediaEndAction end_action;
     bool m_buffering;
     PacketBuffer *m_buffer;
     AVDemuxer *demuxer;

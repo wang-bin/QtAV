@@ -103,6 +103,7 @@ AVPlayer::Private::Private()
     , notify_interval(-500)
     , status(NoMedia)
     , state(AVPlayer::StoppedState)
+    , end_action(MediaEndAction_Default)
 {
     demuxer.setInterruptTimeout(interrupt_timeout);
     /*
@@ -558,6 +559,7 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
                 vthread->installFilter(filter);
             }
         }
+        QObject::connect(vthread, SIGNAL(finished()), player, SLOT(tryClearVideoRenderers()), Qt::DirectConnection);
     }
     vthread->setDecoder(vdec);
 

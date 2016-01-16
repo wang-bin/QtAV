@@ -84,7 +84,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     connect(d->read_thread, SIGNAL(requestClockPause(bool)), masterClock(), SLOT(pause(bool)), Qt::DirectConnection);
     connect(d->read_thread, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SLOT(updateMediaStatus(QtAV::MediaStatus)));
     connect(d->read_thread, SIGNAL(bufferProgressChanged(qreal)), this, SIGNAL(bufferProgressChanged(qreal)));
-    connect(d->read_thread, SIGNAL(seekFinished(qint64)), this, SLOT(onSeekFinished()), Qt::DirectConnection);
+    connect(d->read_thread, SIGNAL(seekFinished(qint64)), this, SLOT(onSeekFinished(qint64)), Qt::DirectConnection);
     connect(d->read_thread, SIGNAL(internalSubtitlePacketRead(int, QtAV::Packet)), this, SIGNAL(internalSubtitlePacketRead(int, QtAV::Packet)), Qt::DirectConnection);
     d->vcapture = new VideoCapture(this);
 }
@@ -183,7 +183,7 @@ void AVPlayer::setSpeed(qreal speed)
         d->ao->setSpeed(d->speed);
     }
     masterClock()->setSpeed(d->speed);
-    emit speedChanged(d->speed);
+    Q_EMIT speedChanged(d->speed);
 }
 
 qreal AVPlayer::speed() const
@@ -198,7 +198,7 @@ void AVPlayer::setInterruptTimeout(qint64 ms)
     if (d->interrupt_timeout == ms)
         return;
     d->interrupt_timeout = ms;
-    emit interruptTimeoutChanged();
+    Q_EMIT interruptTimeoutChanged();
     d->demuxer.setInterruptTimeout(ms);
 }
 
@@ -212,7 +212,7 @@ void AVPlayer::setInterruptOnTimeout(bool value)
     if (isInterruptOnTimeout() == value)
         return;
     d->demuxer.setInterruptOnTimeout(value);
-    emit interruptOnTimeoutChanged();
+    Q_EMIT interruptOnTimeoutChanged();
 }
 
 bool AVPlayer::isInterruptOnTimeout() const
@@ -481,6 +481,20 @@ QVariantHash AVPlayer::optionsForVideoCodec() const
     return d->vc_opt;
 }
 
+void AVPlayer::setMediaEndAction(MediaEndAction value)
+{
+    if (d->end_action == value)
+        return;
+    d->end_action = value;
+    Q_EMIT mediaEndActionChanged(value);
+    d->read_thread->setMediaEndAction(value);
+}
+
+MediaEndAction AVPlayer::mediaEndAction() const
+{
+    return d->end_action;
+}
+
 /*
  * loaded state is the state of current setted file.
  * For replaying, we can avoid load a seekable file again.
@@ -499,8 +513,8 @@ void AVPlayer::setFile(const QString &path)
     // TODO: d->reset_state = d->demuxer2.setMedia(path);
     if (d->reset_state) {
         d->audio_track = d->video_track = d->subtitle_track = 0;
-        emit sourceChanged();
-        //emit error(AVError(AVError::NoError));
+        Q_EMIT sourceChanged();
+        //Q_EMIT error(AVError(AVError::NoError));
     }
     // TODO: use absoluteFilePath?
     d->loaded = false; //
@@ -529,7 +543,7 @@ void AVPlayer::setIODevice(QIODevice* device)
     d->current_source = QVariant::fromValue(device);
     if (d->reset_state) {
         d->audio_track = d->video_track = d->subtitle_track = 0;
-        emit sourceChanged();
+        Q_EMIT sourceChanged();
     }
 }
 
@@ -549,7 +563,7 @@ void AVPlayer::setInput(MediaIO *in)
     d->current_source = QVariant::fromValue<QtAV::MediaIO*>(in);
     if (d->reset_state) {
         d->audio_track = d->video_track = d->subtitle_track = 0;
-        emit sourceChanged();
+        Q_EMIT sourceChanged();
     }
 }
 
@@ -630,7 +644,7 @@ void AVPlayer::setAutoLoad(bool value)
     if (d->auto_load == value)
         return;
     d->auto_load = value;
-    emit autoLoadChanged();
+    Q_EMIT autoLoadChanged();
 }
 
 bool AVPlayer::isAutoLoad() const
@@ -643,7 +657,7 @@ void AVPlayer::setAsyncLoad(bool value)
     if (d->async_load == value)
         return;
     d->async_load = value;
-    emit asyncLoadChanged();
+    Q_EMIT asyncLoadChanged();
 }
 
 bool AVPlayer::isAsyncLoad() const
@@ -770,7 +784,7 @@ void AVPlayer::loadInternal()
     int interval = qAbs(d->notify_interval);
     d->initStatistics();
     if (interval != qAbs(d->notify_interval))
-        emit notifyIntervalChanged();
+        Q_EMIT notifyIntervalChanged();
 }
 
 void AVPlayer::unload()
@@ -810,7 +824,7 @@ void AVPlayer::setRelativeTimeMode(bool value)
     if (d->relative_time_mode == value)
         return;
     d->relative_time_mode = value;
-    emit relativeTimeModeChanged();
+    Q_EMIT relativeTimeModeChanged();
 }
 
 bool AVPlayer::relativeTimeMode() const
@@ -873,7 +887,7 @@ void AVPlayer::setStartPosition(qint64 pos)
         d->start_position += mediaStopPosition();
     if (d->start_position < 0)
         d->start_position = mediaStartPosition();
-    emit startPositionChanged(d->start_position);
+    Q_EMIT startPositionChanged(d->start_position);
 }
 
 qint64 AVPlayer::stopPosition() const
@@ -902,7 +916,7 @@ void AVPlayer::setStopPosition(qint64 pos)
         qWarning("stop postion %lld < start position %lld. ignore", d->stop_position, startPosition());
         return;
     }
-    emit stopPositionChanged(d->stop_position);
+    Q_EMIT stopPositionChanged(d->stop_position);
 }
 
 bool AVPlayer::isSeekable() const
@@ -941,7 +955,7 @@ void AVPlayer::setPosition(qint64 position)
     masterClock()->updateExternalClock(pos_pts); //in msec. ignore usec part using t/1000
     d->read_thread->seek(pos_pts, seekType());
 
-    emit positionChanged(position); //emit relative position
+    Q_EMIT positionChanged(position); //emit relative position
 }
 
 int AVPlayer::repeat() const
@@ -960,7 +974,7 @@ void AVPlayer::setRepeat(int max)
     d->repeat_max = max;
     if (d->repeat_max < 0)
         d->repeat_max = std::numeric_limits<int>::max();
-    emit repeatChanged(d->repeat_max);
+    Q_EMIT repeatChanged(d->repeat_max);
 }
 
 bool AVPlayer::setExternalAudio(const QString &file)
@@ -1316,6 +1330,7 @@ void AVPlayer::playInternal()
         else
             d->demuxer.seek((qint64)(startPosition()));
     }
+    d->read_thread->setMediaEndAction(mediaEndAction());
     d->read_thread->start();
 
     if (d->timer_id < 0) {
@@ -1379,7 +1394,7 @@ void AVPlayer::setNotifyInterval(int msec)
     const int old = qAbs(d->notify_interval);
     d->notify_interval = msec;
     d->updateNotifyInterval();
-    emit notifyIntervalChanged();
+    Q_EMIT notifyIntervalChanged();
     if (d->timer_id < 0)
         return;
     if (old != qAbs(d->notify_interval)) {
@@ -1423,10 +1438,23 @@ void AVPlayer::updateMediaStatus(QtAV::MediaStatus status)
     Q_EMIT mediaStatusChanged(d->status);
 }
 
-void AVPlayer::onSeekFinished()
+void AVPlayer::onSeekFinished(qint64 value)
 {
     d->seeking = false;
     Q_EMIT seekFinished();
+    //d->clock->updateValue(value/1000.0);
+    Q_EMIT positionChanged(value);
+}
+
+void AVPlayer::tryClearVideoRenderers()
+{
+    if (!d->vthread) {
+        qWarning("internal error");
+        return;
+    }
+    if (!(mediaEndAction() & MediaEndAction_KeepDisplay)) {
+        d->vthread->clearRenderers();
+    }
 }
 
 // TODO: doc about when the state will be reset
@@ -1491,7 +1519,7 @@ void AVPlayer::timerEvent(QTimerEvent *te)
         const qint64 t = position();
         if (stopPosition() == kInvalidPosition) { // or check stopPosition() < 0
             // not seekable. network stream
-            emit positionChanged(t);
+            Q_EMIT positionChanged(t);
             return;
         }
         if (t < startPosition()) {
@@ -1650,7 +1678,7 @@ void AVPlayer::setBrightness(int val)
     if (d->brightness == val)
         return;
     d->brightness = val;
-    emit brightnessChanged(d->brightness);
+    Q_EMIT brightnessChanged(d->brightness);
     if (d->vthread) {
         d->vthread->setBrightness(val);
     }
@@ -1666,7 +1694,7 @@ void AVPlayer::setContrast(int val)
     if (d->contrast == val)
         return;
     d->contrast = val;
-    emit contrastChanged(d->contrast);
+    Q_EMIT contrastChanged(d->contrast);
     if (d->vthread) {
         d->vthread->setContrast(val);
     }
@@ -1692,7 +1720,7 @@ void AVPlayer::setSaturation(int val)
     if (d->saturation == val)
         return;
     d->saturation = val;
-    emit saturationChanged(d->saturation);
+    Q_EMIT saturationChanged(d->saturation);
     if (d->vthread) {
         d->vthread->setSaturation(val);
     }

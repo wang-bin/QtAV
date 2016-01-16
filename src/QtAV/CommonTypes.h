@@ -36,7 +36,7 @@ enum MediaStatus
     StalledMedia, // insufficient buffering or other interruptions (timeout, user interrupt)
     BufferingMedia, // NOT IMPLEMENTED
     BufferedMedia, // when playing //NOT IMPLEMENTED
-    EndOfMedia,
+    EndOfMedia, // Playback has reached the end of the current media. The player is in the StoppedState.
     InvalidMedia // what if loop > 0 or stopPosition() is not mediaStopPosition()?
 };
 
@@ -45,6 +45,13 @@ enum BufferMode {
     BufferBytes,
     BufferPackets
 };
+
+enum MediaEndActionFlag {
+    MediaEndAction_Default, /// stop playback (if loop end) and clear video renderer
+    MediaEndAction_KeepDisplay = 1, /// stop playback but video renderer keeps the last frame
+    MediaEndAction_Pause = 1 << 1 /// pause playback. Currently AVPlayer repeat mode will not work if this flag is set
+};
+Q_DECLARE_FLAGS(MediaEndAction, MediaEndActionFlag)
 
 enum SeekUnit {
     SeekByTime, // only this is supported now
@@ -88,5 +95,5 @@ enum SurfaceType {
 
 } //namespace QtAV
 Q_DECLARE_METATYPE(QtAV::MediaStatus)
-
+Q_DECLARE_METATYPE(QtAV::MediaEndAction)
 #endif // QTAV_COMMONTYPES_H
