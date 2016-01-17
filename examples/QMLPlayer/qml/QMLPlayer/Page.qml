@@ -9,6 +9,7 @@ Rectangle {
     property alias title: title.text
     property alias content: content
     property int titleHeight: title.height + 2*Utils.kMargin
+
     Text {
         id: title
         anchors.top: parent.top
@@ -35,6 +36,8 @@ Rectangle {
     }
     MouseArea { // avoid mouse events propagated to parents
         anchors.fill: parent
+        hoverEnabled: true
+        propagateComposedEvents: false
     }
     Item {
         id: content

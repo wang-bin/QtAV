@@ -7,14 +7,13 @@ Page {
     id: root
     title: qsTr("Audio")
     signal channelChanged(int channel)
-    signal muteChanged(bool value)
     signal externalAudioChanged(string file)
     signal audioTrackChanged(int track)
     property var internalAudioTracks : "unkown"
     property var externalAudioTracks : "unkown"
     property alias isExternal: externalCheck.checked
     height: titleHeight + channelLabel.height + (channels.visible ? channels.contentHeight : 0)
-            + Utils.kItemHeight*2 + trackLabel.height + tracksMenu.contentHeight + Utils.kSpacing*6
+            + Utils.kItemHeight + trackLabel.height + tracksMenu.contentHeight + Utils.kSpacing*5
     Column {
         anchors.fill: content
         spacing: Utils.kSpacing
@@ -37,14 +36,6 @@ Page {
             onClicked: {
                 root.channelChanged(model.get(index).value)
             }
-        }
-        Button {
-            text: qsTr("Mute")
-            checked: false
-            checkable: true
-            width: parent.width
-            height: Utils.kItemHeight
-            onCheckedChanged: root.muteChanged(checked)
         }
         Text {
             id: trackLabel

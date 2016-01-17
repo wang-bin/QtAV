@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2016 Wang Bin <wbsecg1@gmail.com>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -18,12 +18,8 @@
 
 import QtQuick 2.0
 
-Item {
+Rectangle {
     id: root
-    //color: textColor
-    //radius: 0.25 * height
-    opacity: 0.7
-
     property string text
     property url icon
     property alias iconChecked: iconChecked.source
@@ -32,84 +28,57 @@ Item {
     property color bgColor: "#555555"
     property color bgColorSelected: "#ee6666dd"
     property color textColor: "white"
-    property alias enabled: mouseArea.enabled
+    readonly property alias hovered: mouseArea.containsMouse
+    signal clicked()
 
-    signal clicked
+    opacity: 0.7
+    color: checked ? bgColorSelected : mouseArea.pressed ? Qt.lighter(bgColorSelected) : bgColor
+    border.color: Qt.lighter(color)
 
-    Rectangle {
-        anchors { fill: parent; margins: 1 }
-        color: checked ? bgColorSelected : mouseArea.pressed ? Qt.lighter(bgColorSelected) : bgColor
-        border.color: Qt.lighter(color)
-        //radius: 0.25 * height
-
-        Text {
-            id: text
-            anchors.centerIn: parent
-            text: root.text
-            font.pixelSize: 0.5 * parent.height
-            color: textColor
-            horizontalAlignment: Text.AlignHCenter
-            verticalAlignment: Text.AlignVCenter
-        }
-
-        Image {
-            source: icon
-            anchors.centerIn: parent
-            width: parent.width
-            height: parent.height
-            visible: !checked
-        }
-        Image {
-            id: iconChecked
-            width: parent.width
-            height: parent.height
-            visible: checked
-        }
-
-        MouseArea {
-            id: mouseArea
-            anchors.fill: parent
-            hoverEnabled: true
-            onClicked: {
-                if (root.checkable)
-                    root.checked = !root.checked
-                root.clicked()
-            }
-            onEntered: {
-                anim.stop()
-                anim.reset()
-                anim.start()
-            }
-            onExited: {
-                anim.stop()
-                anim.reverse()
-                anim.start()
-            }
-        }
-        PropertyAnimation {
-            id: anim
-            target: root
-            properties: "opacity"
-            function reverse() {
-                to = 0.7
-                from = root.opacity
-            }
-            function reset() {
-                from = root.opacity
-                to = 1.0
-            }
-        }
-        states: State {
-            name: "brighter"
-            when: mouseArea.pressed
-            PropertyChanges { target: root; opacity: 0.7 }
-        }
-        transitions: Transition {
-            reversible: true
-            to: "brighter"
-            ParallelAnimation {
-                NumberAnimation { properties: "opacity" }
-            }
+    Text {
+        id: text
+        anchors.fill: parent
+        text: root.text
+        font.pixelSize: 0.5 * parent.height
+        color: textColor
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+    }
+    Image {
+        source: icon
+        anchors.fill: parent
+        visible: !checked
+    }
+    Image {
+        id: iconChecked
+        anchors.fill: parent
+        visible: checked
+    }
+    MouseArea {
+        id: mouseArea
+        anchors.fill: parent
+        hoverEnabled: true
+        onClicked: {
+            if (root.checkable)
+                root.checked = !root.checked
+            root.clicked()
         }
     }
+    states: [
+        State {
+            name: "brighter"
+            when: hovered // only the first true State is applied, so put scale and opacity together
+            PropertyChanges { target: root; opacity: 1.0; scale: mouseArea.pressed ? 1.06 : 1.0 }
+        }
+    ]
+    transitions: [
+        Transition {
+            from: "*"; to: "*"
+            PropertyAnimation {
+                properties: "opacity,scale"
+                easing.type: Easing.OutQuart
+                duration: 300
+            }
+        }
+    ]
 }
