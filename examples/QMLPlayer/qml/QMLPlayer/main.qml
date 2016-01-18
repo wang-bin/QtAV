@@ -220,10 +220,13 @@ Rectangle {
                 }
                 if (player.playbackState == MediaPlayer.StoppedState || !player.hasVideo)
                     return;
-                if (mouseY < control.y - control.previewHeight)
+                if (mouseY < control.y - control.previewHeight) {
                     control.hidePreview() // TODO: check previw hovered too
-                else
-                    control.showPreview(mouseX/parent.width)
+                } else {
+                    if (pressed) {
+                        control.showPreview(mouseX/parent.width)
+                    }
+                }
             }
         }
     }

@@ -125,6 +125,8 @@ Rectangle {
               //  return
             if (playState == "stop")
                 return
+            if (pos.y > -previewText.height && pos.y <= height/2)
+                return
             preview.state = dpos.y > 0 ? "out" : "out_"
         }
         onHoverAt: {
@@ -189,6 +191,10 @@ Rectangle {
                 moved = 0
             }
             onMouseXChanged: {
+                if (!pressed) {
+                    mouse.accepted = false
+                    return
+                }
                 mouse.accepted = true
                 var x1 = mapToItem(progress, mouseX, 0).x
                 var dx = x1 - gPos
@@ -219,7 +225,7 @@ Rectangle {
                 name: "out_"
                 PropertyChanges {
                     target: preview
-                    anchors.bottomMargin: -preview.height
+                    anchors.bottomMargin: -(preview.height + progress.height)
                     opacity: 0
                 }
             }
