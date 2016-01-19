@@ -167,24 +167,19 @@ struct fmtentry {
     uint32_t va;
     VideoFormat::PixelFormat fmt;
 };
-static const struct fmtentry va_to_imgfmt[] = {
-    {VA_FOURCC_NV12, VideoFormat::Format_NV12},
-    {VA_FOURCC_YV12,  VideoFormat::Format_YUV420P},
-    {VA_FOURCC_IYUV, VideoFormat::Format_YUV420P},
-    {VA_FOURCC_UYVY, VideoFormat::Format_UYVY},
-    {VA_FOURCC_YUY2, VideoFormat::Format_YUYV},
-    // Note: not sure about endian issues
-    {VA_FOURCC_RGBA, VideoFormat::Format_RGB32},
-    {VA_FOURCC_RGBX, VideoFormat::Format_RGB32},
-    {VA_FOURCC_BGRA, VideoFormat::Format_RGB32},
-    {VA_FOURCC_BGRX, VideoFormat::Format_RGB32},
-    {0             , VideoFormat::Format_Invalid}
-};
+
 VideoFormat::PixelFormat pixelFormatFromVA(uint32_t fourcc)
 {
-    for (const struct fmtentry *entry = va_to_imgfmt; entry->va; ++entry) {
-        if (entry->va == fourcc)
-            return entry->fmt;
+    switch (fourcc) {
+    case VA_FOURCC_NV12:
+        return VideoFormat::Format_NV12;
+    case VA_FOURCC_YV12:
+    case VA_FOURCC_IYUV:
+        return VideoFormat::Format_YUV420P;
+    case VA_FOURCC_UYVY:
+        return VideoFormat::Format_UYVY;
+    default:
+        return VideoFormat::Format_Invalid;
     }
     return VideoFormat::Format_Invalid;
 }

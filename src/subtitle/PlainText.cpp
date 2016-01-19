@@ -27,7 +27,10 @@
 namespace QtAV {
 namespace PlainText {
 
-// from mpv/sub/sd_ass.c
+/*
+ *  from mpv/sub/sd_ass.c
+ * ass_to_plaintext() was written by wm4 and he says it can be under LGPL
+ */
 
 struct buf {
     char *start;
