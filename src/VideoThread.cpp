@@ -300,6 +300,11 @@ void VideoThread::run()
             if (isPaused())
                 continue; //timeout. process pending tasks
         }
+        if (d.seek_requested) {
+            d.seek_requested = false;
+            qDebug("request seek video thread");
+            pkt = Packet(); // last decode failed and pkt is valid, reset pkt to force take the next packet if seek is requested
+        }
         if(!pkt.isValid() && !pkt.isEOF()) { // can't seek back if eof packet is read
             pkt = d.packets.take(); //wait to dequeue
            // TODO: push pts history here and reorder

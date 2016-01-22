@@ -247,6 +247,7 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
         if (!t)
             continue;
         t->packetQueue()->clear();
+        t->requestSeek();
         // TODO: the first frame (key frame) will not be decoded correctly if flush() is called.
         //PacketBuffer *pb = t->packetQueue();
         //qDebug("%s put seek packet. %d/%d-%.3f, progress: %.3f", t->metaObject()->className(), pb->buffered(), pb->bufferValue(), pb->bufferMax(), pb->bufferProgress());
@@ -255,7 +256,7 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
         pkt.pts = qreal(pos)/1000.0;
         t->packetQueue()->put(pkt);
         t->packetQueue()->setBlocking(true); // blockEmpty was false when eof is read.
-        if (isPaused()) {
+        if (isPaused()) { //TODO: deal with pause in AVThread?
             t->pause(false);
             watch_thread = t;
         }

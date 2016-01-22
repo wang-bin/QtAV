@@ -94,9 +94,15 @@ void AudioThread::run()
             if (isPaused())
                 continue;
         }
+        if (d.seek_requested) {
+            d.seek_requested = false;
+            qDebug("request seek audio thread");
+            pkt = Packet(); // last decode failed and pkt is valid, reset pkt to force take the next packet if seek is requested
+        }
         if (!pkt.isValid()) {
             // can't seek back if eof packet is read
             //qDebug("eof pkt: %d valid: %d, aqueue size: %d, abuffer: %d %.3f %d, fake_duration: %lld", pkt.isEOF(), pkt.isValid(), d.packets.size(), d.packets.bufferValue(), d.packets.bufferMax(), d.packets.isFull(), fake_duration);
+            // If seek requested but last decode failed
             if (!pkt.isEOF() && (fake_duration <= 0 || !d.packets.isEmpty())) {
                 pkt = d.packets.take(); //wait to dequeue
             }
@@ -244,6 +250,7 @@ void AudioThread::run()
             qDebug("audio thread stop before decode()");
             break;
         }
+        //qDebug("apkt: %.3f, %lld %p", pkt.pts, pkt.asAVPacket()->pts, pkt.asAVPacket()->data);
         if (!dec->decode(pkt)) {
             qWarning("Decode audio failed. undecoded: %d", dec->undecodedSize());
             if (pkt.isEOF()) {
@@ -273,9 +280,9 @@ void AudioThread::run()
         if (frame.timestamp() <= 0)
             frame.setTimestamp(pkt.pts); // pkt.pts is wrong. >= real timestamp
         if (d.render_pts0 >= 0.0) { // seeking
+            d.clock->updateValue(frame.timestamp());
             if (frame.timestamp() < d.render_pts0) {
                 qDebug("skip audio rendering: %f-%f", frame.timestamp(), d.render_pts0);
-                d.clock->updateValue(frame.timestamp());
                 continue; //pkt data is updated after decode, no reset here
             }
             qDebug("seek audio done @%.3f", frame.timestamp());
@@ -298,6 +305,7 @@ void AudioThread::run()
         int decodedPos = 0;
         qreal delay = 0;
         const qreal byte_rate = frame.format().bytesPerSecond();
+        qreal pts = frame.timestamp();
         while (decodedSize > 0) {
             if (d.stop) {
                 qDebug("audio thread stop after decode()");
@@ -307,14 +315,20 @@ void AudioThread::run()
             const int chunk = qMin(decodedSize, has_ao ? ao->bufferSize() : 1024*4);//int(max_len*byte_rate));
             //AudioFormat.bytesForDuration
             const qreal chunk_delay = (qreal)chunk/(qreal)byte_rate;
-            pkt.pts += chunk_delay;
+            pts += chunk_delay;
+            pkt.pts += chunk_delay; // packet not fully decoded, use new pts in the next decoding
             pkt.dts += chunk_delay;
             if (has_ao && ao->isOpen()) {
                 QByteArray decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
-                ao->play(decodedChunk, pkt.pts);
-                //qDebug("ao.timestamp: %.3f", ao->timestamp());
-                if (!is_external_clock)
+                //qDebug("ao.timestamp: %.3f, pts: %.3f, pktpts: %.3f", ao->timestamp(), pts, pkt.pts);
+
+                ao->play(decodedChunk, pkt.pts); //FIXME: why frame.timestamp() is wrong? i.e. Packet.asAVPacket()->pts is wrong in decoder
+                if (!is_external_clock && ao->timestamp() > 0) {//TODO: clear ao buffer
+                   // const qreal da = qAbs(pts - ao->timestamp());
+                   // if (da > 1.0) { // what if frame duration is long?
+                   // }
                     d.clock->updateValue(ao->timestamp());
+                }
             } else {
                 d.clock->updateDelay(delay += chunk_delay);
             /*

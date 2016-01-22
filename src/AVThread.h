@@ -75,6 +75,7 @@ public:
 
     // TODO: resample, resize task etc.
     void scheduleTask(QRunnable *task);
+    void requestSeek();
     void scheduleFrameDrop(bool value = true);
     qreal previousHistoryPts() const; //move to statistics?
     qreal decodeFrameRate() const; //move to statistics?

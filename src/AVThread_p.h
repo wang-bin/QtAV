@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -53,6 +53,7 @@ public:
       , delay(0)
       , statistics(0)
       , ready(false)
+      , seek_requested(false)
       , render_pts0(-1)
       , drop_frame_seek(true)
       , pts_history(30)
@@ -82,6 +83,7 @@ public:
     QWaitCondition ready_cond;
     QMutex ready_mutex;
     bool ready;
+    bool seek_requested;
     //only decode video without display or skip decode audio until pts reaches
     qreal render_pts0;
 
