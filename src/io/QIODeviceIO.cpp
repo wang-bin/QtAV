@@ -160,7 +160,11 @@ public:
     QString name() const Q_DECL_OVERRIDE { return QLatin1String(kQFileName);}
     const QStringList& protocols() const Q_DECL_OVERRIDE
     {
-        static QStringList p = QStringList() << QStringLiteral("") << QStringLiteral("qrc") << QStringLiteral("qfile");
+        static QStringList p = QStringList() << QStringLiteral("") << QStringLiteral("qrc") << QStringLiteral("qfile")
+#ifdef Q_OS_ANDROID
+                                             << QStringLiteral("assets")
+#endif
+                                                ;
         return p;
     }
 protected:
