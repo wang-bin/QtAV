@@ -403,7 +403,7 @@ QRectF VideoRenderer::normalizedROI() const
         r.setX(r.x()/qreal(d.src_width));
     else
         normalized = true;
-    if (qAbs(r.y() >= 1))
+    if (qAbs(r.y()) >= 1)
         r.setY(r.y()/qreal(d.src_height));
     else
         normalized = true;
