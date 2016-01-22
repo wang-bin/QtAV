@@ -285,7 +285,7 @@ bool VideoWall::eventFilter(QObject *watched, QEvent *event)
             stop();
             break;
         case Qt::Key_Space: //check playing?
-            clock->pause(!clock->isActive());
+            clock->pause(!clock->isPaused());
             foreach (AVPlayer* player, players) {
                 player->pause(!player->isPaused());
             }
