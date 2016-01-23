@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -18,8 +18,6 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
-
 #include <QtAV/AVClock.h>
 #include <QtCore/QTimer>
 #include <QtCore/QTimerEvent>
@@ -27,7 +25,6 @@
 #include "utils/Logger.h"
 
 namespace QtAV {
-
 enum {
     kRunning,
     kPaused,
@@ -42,6 +39,8 @@ AVClock::AVClock(AVClock::ClockType c, QObject *parent):
   , value0(0)
   , avg_err(0)
   , nb_restarted(0)
+  , nb_sync(0)
+  , sync_id(0)
 {
     last_pts = pts_ = pts_v = delay_ = 0;
 }
@@ -55,6 +54,8 @@ AVClock::AVClock(QObject *parent):
   , value0(0)
   , avg_err(0)
   , nb_restarted(0)
+  , nb_sync(0)
+  , sync_id(0)
 {
     last_pts = pts_ = pts_v = delay_ = 0;
 }
@@ -134,13 +135,34 @@ bool AVClock::isPaused() const
     return m_state == kPaused;
 }
 
+int AVClock::syncStart(int count)
+{
+    static int sId = 0;
+    nb_sync = count;
+    if (sId == -1)
+        sId = 0;
+    sync_id = ++sId;
+    return sId;
+}
+
+bool AVClock::syncEndOnce(int id)
+{
+    if (id != sync_id) {
+        qWarning("bad sync id: %d, current: %d", id, sync_id);
+        return true;
+    }
+    if (!nb_sync.deref())
+        sync_id = 0;
+    return sync_id;
+}
+
 void AVClock::start()
 {
     m_state = kRunning;
     qDebug("AVClock started!!!!!!!!");
     timer.start();
     QTimer::singleShot(0, this, SLOT(restartCorrectionTimer()));
-    emit started();
+    Q_EMIT started();
 }
 //remember last value because we don't reset  pts_, pts_v, delay_
 void AVClock::pause(bool p)
@@ -157,14 +179,14 @@ void AVClock::pause(bool p)
 #else
         timer.stop();
 #endif //QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
-        emit paused();
+        Q_EMIT paused();
     } else {
         timer.start();
         QTimer::singleShot(0, this, SLOT(restartCorrectionTimer()));
-        emit resumed();
+        Q_EMIT resumed();
     }
     t = QDateTime::currentMSecsSinceEpoch();
-    emit paused(p);
+    Q_EMIT paused(p);
 }
 
 void AVClock::reset()
@@ -180,7 +202,7 @@ void AVClock::reset()
     timer.stop();
 #endif //QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
     t = QDateTime::currentMSecsSinceEpoch();
-    emit resetted();
+    Q_EMIT resetted();
 }
 
 void AVClock::timerEvent(QTimerEvent *event)

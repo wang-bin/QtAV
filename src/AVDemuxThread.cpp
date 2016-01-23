@@ -240,12 +240,18 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
         ademuxer->setSeekType(type);
         ademuxer->seek(pos);
     }
+
     AVThread *watch_thread = 0;
     // TODO: why queue may not empty?
+    int sync_id = 0;
     for (size_t i = 0; i < sizeof(av)/sizeof(av[0]); ++i) {
         AVThread *t = av[i];
         if (!t)
             continue;
+        if (!sync_id)
+            sync_id = t->clock()->syncStart(!!audio_thread + !!video_thread);
+        Q_ASSERT(sync_id != 0);
+        qDebug("demuxer sync id: %d/%d", sync_id, t->clock()->syncId());
         t->packetQueue()->clear();
         t->requestSeek();
         // TODO: the first frame (key frame) will not be decoded correctly if flush() is called.
@@ -254,6 +260,7 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
         t->packetQueue()->setBlocking(false); // aqueue bufferValue can be small (1), we can not put and take
         Packet pkt;
         pkt.pts = qreal(pos)/1000.0;
+        pkt.position = sync_id;
         t->packetQueue()->put(pkt);
         t->packetQueue()->setBlocking(true); // blockEmpty was false when eof is read.
         if (isPaused()) { //TODO: deal with pause in AVThread?

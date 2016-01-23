@@ -84,6 +84,7 @@ void AudioThread::run()
     Packet pkt;
     qint64 fake_duration = 0LL;
     qint64 fake_pts = 0LL;
+    int sync_id = 0;
     while (!d.stop) {
         processNextTask();
         //TODO: why put it at the end of loop then playNextFrame() not work?
@@ -98,6 +99,18 @@ void AudioThread::run()
             d.seek_requested = false;
             qDebug("request seek audio thread");
             pkt = Packet(); // last decode failed and pkt is valid, reset pkt to force take the next packet if seek is requested
+            msleep(1);
+        } else {
+            // d.render_pts0 < 0 means seek finished here
+            if (d.clock->syncId() > 0) {
+                qDebug("audio thread wait to sync end for sync id: %d", d.clock->syncId());
+                if (d.render_pts0 < 0 && sync_id > 0) {
+                    msleep(10);
+                    continue;
+                }
+            } else {
+                sync_id = 0;
+            }
         }
         if (!pkt.isValid()) {
             // can't seek back if eof packet is read
@@ -118,6 +131,8 @@ void AudioThread::run()
                     if (d.dec) //maybe set to null in setDecoder()
                         d.dec->flush();
                     d.render_pts0 = pkt.pts;
+                    sync_id = pkt.position;
+                    qDebug("audio seek: %.3f, id: %d", d.render_pts0, sync_id);
                     pkt = Packet(); //mark invalid to take next
                     if (fake_duration > 0) {
                         //qDebug("fake_duration update on seek: %ul + %ul - %.3f", fake_duration, fake_pts, d.render_pts0);
@@ -256,6 +271,12 @@ void AudioThread::run()
             if (pkt.isEOF()) {
                 qDebug("audio decode eof done");
                 Q_EMIT eofDecoded();
+                if (d.render_pts0 >= 0) {
+                    qDebug("audio seek done at eof pts: %.3f. id: %d", pkt.pts, sync_id);
+                    d.render_pts0 = -1;
+                    d.clock->syncEndOnce(sync_id);
+                    Q_EMIT seekFinished(qint64(pkt.pts*1000.0)); //TODO: pts
+                }
                 if (!pkt.position)
                     break;
             }
@@ -285,8 +306,9 @@ void AudioThread::run()
                 qDebug("skip audio rendering: %f-%f", frame.timestamp(), d.render_pts0);
                 continue; //pkt data is updated after decode, no reset here
             }
-            qDebug("seek audio done @%.3f", frame.timestamp());
+            qDebug("audio seek finished @%.3f. id: %d", frame.timestamp(), sync_id);
             d.render_pts0 = -1.0;
+            d.clock->syncEndOnce(sync_id);
             Q_EMIT seekFinished(qint64(frame.timestamp()*1000.0));
         }
         if (has_ao) {
@@ -327,6 +349,7 @@ void AudioThread::run()
                    // const qreal da = qAbs(pts - ao->timestamp());
                    // if (da > 1.0) { // what if frame duration is long?
                    // }
+                    // TODO: check seek_requested(atomic bool)
                     d.clock->updateValue(ao->timestamp());
                 }
             } else {

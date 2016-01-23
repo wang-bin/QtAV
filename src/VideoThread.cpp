@@ -290,6 +290,7 @@ void VideoThread::run()
     //bool wait_audio_drain
     const char* pkt_data = NULL; // workaround for libav9 decode fail but error code >= 0
     qint64 last_deliver_time = 0;
+    int sync_id = 0;
     while (true) {
         processNextTask();
         //TODO: why put it at the end of loop then stepForward() not work?
@@ -304,6 +305,18 @@ void VideoThread::run()
             d.seek_requested = false;
             qDebug("request seek video thread");
             pkt = Packet(); // last decode failed and pkt is valid, reset pkt to force take the next packet if seek is requested
+            msleep(1);
+        } else {
+            // d.render_pts0 < 0 means seek finished here
+            if (d.clock->syncId() > 0) {
+                qDebug("video thread wait to sync end for sync id: %d", d.clock->syncId());
+                if (d.render_pts0 < 0 && sync_id > 0) {
+                    msleep(10);
+                    continue;
+                }
+            } else {
+                sync_id = 0;
+            }
         }
         if(!pkt.isValid() && !pkt.isEOF()) { // can't seek back if eof packet is read
             pkt = d.packets.take(); //wait to dequeue
@@ -323,6 +336,8 @@ void VideoThread::run()
                 qDebug("Invalid packet! flush video codec context!!!!!!!!!! video packet queue size: %d", d.packets.size());  
                 d.dec->flush(); //d.dec instead of dec because d.dec maybe changed in processNextTask() but dec is not
                 d.render_pts0 = pkt.pts;
+                sync_id = pkt.position;
+                qDebug("video seek: %.3f, id: %d", d.render_pts0, sync_id);
                 d.pts_history = ring<qreal>(d.pts_history.capacity());
                 v_a = 0;
                 continue;
@@ -489,8 +504,9 @@ void VideoThread::run()
                 Q_EMIT eofDecoded();
                 qDebug("video decode eof done. d.render_pts0: %.3f", d.render_pts0);
                 if (d.render_pts0 >= 0) {
-                    qDebug("video seek done at eof pts: %.3f", d.pts_history.back());
+                    qDebug("video seek done at eof pts: %.3f. id: %d", d.pts_history.back(), sync_id);
                     d.render_pts0 = -1;
+                    d.clock->syncEndOnce(sync_id);
                     Q_EMIT seekFinished(qint64(d.pts_history.back()*1000.0));
                     if (seek_count == -1)
                         seek_count = 1;
@@ -529,7 +545,8 @@ void VideoThread::run()
                 continue;
             }
             d.render_pts0 = -1;
-            qDebug("video seek finished @%f", pts);
+            qDebug("video seek finished @%f. id: %d", pts, sync_id);
+            d.clock->syncEndOnce(sync_id);
             Q_EMIT seekFinished(qint64(pts*1000.0));
             if (seek_count == -1)
                 seek_count = 1;
