@@ -89,6 +89,7 @@ static void glGetTexLevelParameteriv(GLenum target, GLint level, GLenum pname, G
 #endif
 }
 
+/// 16bit (R16 e.g.) texture does not support >8bit a BE channel, fallback to 2 channel texture
 int depth16BitTexture()
 {
     static int depth = qgetenv("QTAV_TEXTURE16_DEPTH").toInt() == 16 ? 16 : 8;//8 ? 8 : 16;
@@ -642,9 +643,12 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
     GLenum *d_f = data_format;
     GLenum *d_t = data_type;
     gl_param_t* gp = (gl_param_t*)get_gl_param();
-    if (gp == gl_param_desktop && fmt.planeCount() == 2) {
-        gp = (gl_param_t*)gl_param_desktop_fallback; // nv12 UV plane is 16bit, but we use rg
-        qDebug("desktop_fallback for bi-plane format");
+    if (gp == gl_param_desktop && (
+                fmt.planeCount() == 2 // nv12 UV plane is 16bit, but we use rg
+                || (OpenGLHelper::depth16BitTexture() == 16 && OpenGLHelper::has16BitTexture() && fmt.isBigEndian()) // 16bit texture does not support be channel now
+                )) {
+        gp = (gl_param_t*)gl_param_desktop_fallback;
+        qDebug("desktop_fallback for %s", fmt.planeCount() == 2 ? "bi-plane format" : "16bit big endian channel");
     }
     for (int p = 0; p < fmt.planeCount(); ++p) {
         // for packed rgb(swizzle required) and planar formats

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -224,8 +224,10 @@ const char* VideoShader::fragmentShader() const
         frag.prepend("#define USE_RG\n");
     const bool has_alpha = d.video_format.hasAlpha();
     if (d.video_format.isPlanar()) {
-        if (d.video_format.bytesPerPixel(0) > 1) {
-            if (!OpenGLHelper::has16BitTexture() || OpenGLHelper::depth16BitTexture() < 16)
+        const int bpp0 = d.video_format.bitsPerPixel(0);
+        if (bpp0 > 8) {
+            //// has and use 16 bit texture (r16 for example): If channel depth is 16 bit, no range convertion required. Otherwise, must convert to color.r*(2^16-1)/(2^bpp0-1)
+            if (OpenGLHelper::depth16BitTexture() < 16 || !OpenGLHelper::has16BitTexture() || bpp0 < 16 || d.video_format.isBigEndian())
                 frag.prepend("#define CHANNEL16_TO8\n");
         }
 #if YUVA_DONE
@@ -452,13 +454,22 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     const int bpp_old = d.bpp;
     d.bpp = fmt.bitsPerPixel(0);
     if (d.bpp > 8 && d.bpp != bpp_old) {
+        //FIXME: Assume first plane has 1 channel. So not work with NV21
         const int range = (1 << d.bpp) - 1;
         // FFmpeg supports 9, 10, 12, 14, 16 bits
         // 10p in little endian: yyyyyyyy yy000000 => (L, L, L, A)  //(yyyyyyyy, 000000yy)?
-        if (fmt.isBigEndian())
-            d.vec_to8 = QVector2D(256.0, 1.0)*255.0/(float)range;
-        else
-            d.vec_to8 = QVector2D(1.0, 256.0)*255.0/(float)range;
+        if (OpenGLHelper::depth16BitTexture() < 16 || !OpenGLHelper::has16BitTexture() || fmt.isBigEndian()) {
+            if (fmt.isBigEndian())
+                d.vec_to8 = QVector2D(256.0, 1.0)*255.0/(float)range;
+            else
+                d.vec_to8 = QVector2D(1.0, 256.0)*255.0/(float)range;
+        } else if (d.bpp < 16) {
+            /// FIXME: 16bit (R16 e.g.) texture does not support >8bit be channels
+            /// 10p be: R2 R1(Host) = R1*2^8+R2 = 000000rr rrrrrrrr ->(GL) R=R2*2^8+R1
+            /// 10p le: R1 R2(Host) = rrrrrrrr rr000000
+            d.vec_to8 = QVector2D(1.0, 0.0)*65535.0/(float)range;
+        }
+
     }
     // http://forum.doom9.org/archive/index.php/t-160211.html
     ColorSpace cs = frame.colorSpace();// ColorSpace_RGB;
@@ -519,7 +530,9 @@ qint64 VideoMaterial::type() const
     const bool tex_2d = d.target == GL_TEXTURE_2D;
     // 2d,alpha,planar,8bit
     const int rg_biplane = fmt.planeCount()==2 && !OpenGLHelper::useDeprecatedFormats() && OpenGLHelper::hasRG();
-    const int channel16_to8 = fmt.bytesPerPixel(0) > 1 && (!OpenGLHelper::has16BitTexture() || OpenGLHelper::depth16BitTexture() < 16);
+    // nv21 Bpp0=1?
+    const int bpp0 = fmt.bitsPerPixel(0);
+    const int channel16_to8 = bpp0 > 8 && (OpenGLHelper::depth16BitTexture() < 16 || !OpenGLHelper::has16BitTexture() || bpp0 < 16 || fmt.isBigEndian());
     return (rg_biplane<<4)|(tex_2d<<3)|(fmt.hasAlpha()<<2)|(fmt.isPlanar()<<1)|(channel16_to8);
 }
 
