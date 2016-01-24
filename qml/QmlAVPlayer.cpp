@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -82,7 +82,7 @@ void QmlAVPlayer::classBegin()
     connect(mpPlayer, SIGNAL(stopped()), SLOT(_q_stopped()));
     connect(mpPlayer, SIGNAL(positionChanged(qint64)), SIGNAL(positionChanged()));
     connect(mpPlayer, SIGNAL(seekableChanged()), SIGNAL(seekableChanged()));
-    connect(mpPlayer, SIGNAL(seekFinished()), this, SIGNAL(seekFinished()), Qt::DirectConnection);
+    connect(mpPlayer, SIGNAL(seekFinished(qint64)), this, SIGNAL(seekFinished()), Qt::DirectConnection);
     connect(mpPlayer, SIGNAL(bufferProgressChanged(qreal)), SIGNAL(bufferProgressChanged()));
     connect(this, SIGNAL(channelLayoutChanged()), SLOT(applyChannelLayout()));
     // direct connection to ensure volume() in slots is correct

@@ -526,7 +526,12 @@ Q_SIGNALS:
     void startPositionChanged(qint64 position);
     void stopPositionChanged(qint64 position);
     void seekableChanged();
-    void seekFinished();
+    /*!
+     * \brief seekFinished
+     * If there is a video stream currently playing, emitted when video seek is finished. If only an audio stream is playing, emitted when audio seek is finished. The position() is the master clock value, It can be very different from video timestamp at this time.
+     * \param position The video or audio timestamp when seek is finished
+     */
+    void seekFinished(qint64 position);
     void positionChanged(qint64 position);
     void interruptTimeoutChanged();
     void interruptOnTimeoutChanged();

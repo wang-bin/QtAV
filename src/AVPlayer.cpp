@@ -1441,7 +1441,7 @@ void AVPlayer::updateMediaStatus(QtAV::MediaStatus status)
 void AVPlayer::onSeekFinished(qint64 value)
 {
     d->seeking = false;
-    Q_EMIT seekFinished();
+    Q_EMIT seekFinished(value);
     //d->clock->updateValue(value/1000.0);
     Q_EMIT positionChanged(value);
 }

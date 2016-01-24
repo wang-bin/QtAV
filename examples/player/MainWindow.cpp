@@ -174,7 +174,7 @@ void MainWindow::initPlayer()
     connect(mpVolumeSlider, SIGNAL(sliderPressed()), SLOT(setVolume()));
     connect(mpVolumeSlider, SIGNAL(valueChanged(int)), SLOT(setVolume()));
 
-    connect(mpPlayer, SIGNAL(seekFinished()), SLOT(onSeekFinished()));
+    connect(mpPlayer, SIGNAL(seekFinished(qint64)), SLOT(onSeekFinished(qint64)));
     connect(mpPlayer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), SLOT(onMediaStatusChanged()));
     connect(mpPlayer, SIGNAL(bufferProgressChanged(qreal)), SLOT(onBufferProgress(qreal)));
     connect(mpPlayer, SIGNAL(error(QtAV::AVError)), this, SLOT(handleError(QtAV::AVError)));
@@ -194,9 +194,9 @@ void MainWindow::initPlayer()
     emit ready(); //emit this signal after connection. otherwise the slots may not be called for the first time
 }
 
-void MainWindow::onSeekFinished()
+void MainWindow::onSeekFinished(qint64 pos)
 {
-    qDebug("seek finished at %lld", mpPlayer->position());
+    qDebug("seek finished at %lld/%lld", pos, mpPlayer->position());
 }
 
 void MainWindow::stopUnload()
