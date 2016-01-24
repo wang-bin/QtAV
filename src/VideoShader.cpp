@@ -453,7 +453,7 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     const VideoFormat fmt(frame.format());
     const int bpp_old = d.bpp;
     d.bpp = fmt.bitsPerPixel(0);
-    if (d.bpp > 8 && d.bpp != bpp_old) {
+    if (d.bpp > 8 && (d.bpp != bpp_old || d.video_format.isBigEndian() != fmt.isBigEndian())) {
         //FIXME: Assume first plane has 1 channel. So not work with NV21
         const int range = (1 << d.bpp) - 1;
         // FFmpeg supports 9, 10, 12, 14, 16 bits
