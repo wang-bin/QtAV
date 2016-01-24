@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -116,7 +116,6 @@ int GLSLVersion()
         v = major * 100 + minor;
     else
         v = 0;
-    qDebug("GLSL version: %s/%d", vs, v);
     return v;
 }
 
@@ -232,7 +231,6 @@ bool isPBOSupported() {
         NULL
     };
     support = hasExtension(exts);
-    qDebug() << "PBO: " << support;
     pbo_checked = true;
     return support;
 }
@@ -306,7 +304,7 @@ static const gl_param_t gl_param_compat[] = { // it's legacy
 };
 static const gl_param_t gl_param_desktop[] = {
     {GL_R8,     GL_RED,     GL_UNSIGNED_BYTE},      // 1 x 8
-    {GL_RG,      GL_RG,      GL_UNSIGNED_BYTE},      // 2 x 8
+    {GL_RG,      GL_RG,      GL_UNSIGNED_BYTE},      // 2 x 8 //FIXME: OSX error in hasRG(), internal format GL_RG8 is ok
     {GL_RGB,     GL_RGB,     GL_UNSIGNED_BYTE},      // 3 x 8
     {GL_RGBA,    GL_RGBA,    GL_UNSIGNED_BYTE},      // 4 x 8
     {GL_R16,     GL_RED,     GL_UNSIGNED_SHORT},     // 1 x 16
@@ -396,20 +394,24 @@ bool hasRG()
     static int has_rg = -1;
     if (has_rg >= 0)
         return !!has_rg;
+    qDebug("check desktop rg: %#X", gl_param_desktop[1].internal_format);
     if (test_gl_param(gl_param_desktop[1])) {
         has_rg = 1;
         return true;
     }
+    qDebug("check es3 rg: %#X", gl_param_es3[1].internal_format);
     if (test_gl_param(gl_param_es3[1])) {
         has_rg = 1;
         return true;
     }
+    qDebug("check GL_EXT_texture_rg");
     static const char* ext[] = { "GL_EXT_texture_rg", 0}; //RED, RG, R8, RG8
     if (hasExtension(ext)) {
         qDebug("has extension GL_EXT_texture_rg");
         has_rg = 1;
         return true;
     }
+    qDebug("check gl es>=3 rg");
     if (QOpenGLContext::currentContext())
         has_rg = isOpenGLES() && QOpenGLContext::currentContext()->format().majorVersion() > 2;
     return has_rg;

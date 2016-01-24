@@ -46,15 +46,6 @@ class FBORenderer : public QQuickFramebufferObject::Renderer
 public:
     FBORenderer(QuickFBORenderer* item) : m_item(item) {}
     QOpenGLFramebufferObject* createFramebufferObject(const QSize &size) {
-        static bool sInfo = true;
-        if (sInfo) {
-            sInfo = false;
-            qDebug("GL_VERSION: %s", DYGL(glGetString(GL_VERSION)));
-            qDebug("GL_VENDOR: %s", DYGL(glGetString(GL_VENDOR)));
-            qDebug("GL_RENDERER: %s", DYGL(glGetString(GL_RENDERER)));
-            qDebug("GL_SHADING_LANGUAGE_VERSION: %s", DYGL(glGetString(GL_SHADING_LANGUAGE_VERSION)));
-        }
-
         m_item->fboSizeChanged(size);
         return QQuickFramebufferObject::Renderer::createFramebufferObject(size);
     }

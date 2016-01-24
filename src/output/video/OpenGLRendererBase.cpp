@@ -105,17 +105,6 @@ void OpenGLRendererBase::onInitializeGL()
 #endif
     QOpenGLContext *ctx = const_cast<QOpenGLContext*>(QOpenGLContext::currentContext()); //qt4 returns const
     d.glv.setOpenGLContext(ctx);
-    //const QByteArray extensions(reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS)));
-    bool hasGLSL = QOpenGLShaderProgram::hasOpenGLShaderPrograms();
-    qDebug("OpenGL version: %d.%d  hasGLSL: %d", ctx->format().majorVersion(), ctx->format().minorVersion(), hasGLSL);  
-    static bool sInfo = true;
-    if (sInfo) {
-        sInfo = false;
-        qDebug("GL_VERSION: %s", DYGL(glGetString(GL_VERSION)));
-        qDebug("GL_VENDOR: %s", DYGL(glGetString(GL_VENDOR)));
-        qDebug("GL_RENDERER: %s", DYGL(glGetString(GL_RENDERER)));
-        qDebug("GL_SHADING_LANGUAGE_VERSION: %s", DYGL(glGetString(GL_SHADING_LANGUAGE_VERSION)));
-    }
 }
 
 void OpenGLRendererBase::onPaintGL()

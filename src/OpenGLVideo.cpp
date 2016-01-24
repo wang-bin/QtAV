@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -266,6 +266,29 @@ void OpenGLVideo::setOpenGLContext(QOpenGLContext *ctx)
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     QObject::connect(ctx, SIGNAL(aboutToBeDestroyed()), this, SLOT(resetGL()), Qt::DirectConnection); //direct?
 #endif
+    /// get gl info here because context is current(qt ensure it)
+    //const QByteArray extensions(reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS)));
+    bool hasGLSL = QOpenGLShaderProgram::hasOpenGLShaderPrograms();
+    qDebug("OpenGL version: %d.%d  hasGLSL: %d", ctx->format().majorVersion(), ctx->format().minorVersion(), hasGLSL);
+    static bool sInfo = true;
+    if (sInfo) {
+        sInfo = false;
+        qDebug("GL_VERSION: %s", DYGL(glGetString(GL_VERSION)));
+        qDebug("GL_VENDOR: %s", DYGL(glGetString(GL_VENDOR)));
+        qDebug("GL_RENDERER: %s", DYGL(glGetString(GL_RENDERER)));
+        qDebug("GL_SHADING_LANGUAGE_VERSION: %s", DYGL(glGetString(GL_SHADING_LANGUAGE_VERSION)));
+        /// check here with current context can ensure the right result. If the first check is in VideoShader/VideoMaterial/decoder or somewhere else, the context can be null
+        bool v = OpenGLHelper::isEGL();
+        qDebug("Is EGL: %d", v);
+        const int glsl_ver = OpenGLHelper::GLSLVersion();
+        qDebug("GLSL version: %d", glsl_ver);
+        v = OpenGLHelper::isPBOSupported();
+        qDebug("Has PBO: %d", v);
+        v = OpenGLHelper::has16BitTexture();
+        qDebug("Has 16bit texture: %d", v);
+        v = OpenGLHelper::hasRG();
+        qDebug("Has RG texture: %d", v);
+    }
 }
 
 QOpenGLContext* OpenGLVideo::openGLContext()
