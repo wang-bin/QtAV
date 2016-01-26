@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -158,6 +158,27 @@ const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt)
     if (pix_fmt < 0 || pix_fmt >= PIX_FMT_NB)
         return NULL;
     return &av_pix_fmt_descriptors[pix_fmt];
+}
+
+const AVPixFmtDescriptor *av_pix_fmt_desc_next(const AVPixFmtDescriptor *prev)
+{
+    if (!prev)
+        return &av_pix_fmt_descriptors[0];
+    while (prev - av_pix_fmt_descriptors < FF_ARRAY_ELEMS(av_pix_fmt_descriptors) - 1) {
+        prev++;
+        if (prev->name)
+            return prev;
+    }
+    return NULL;
+}
+
+AVPixelFormat av_pix_fmt_desc_get_id(const AVPixFmtDescriptor *desc)
+{
+    if (desc < av_pix_fmt_descriptors ||
+        desc >= av_pix_fmt_descriptors + FF_ARRAY_ELEMS(av_pix_fmt_descriptors))
+        return QTAV_PIX_FMT_C(NONE);
+
+    return desc - av_pix_fmt_descriptors;
 }
 #endif // !AV_MODULE_CHECK(LIBAVUTIL, 52, 3, 0, 13, 100)
 #if !FFMPEG_MODULE_CHECK(LIBAVUTIL, 52, 48, 101)

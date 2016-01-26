@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -389,6 +389,20 @@ int VideoFormat::pixelFormatToFFmpeg(VideoFormat::PixelFormat fmt)
             return pixfmt_map[i].ff;
     }
     return QTAV_PIX_FMT_C(NONE);
+}
+
+QVector<int> VideoFormat::pixelFormatsFFmpeg()
+{
+    static QVector<int> sFmts;
+    if (sFmts.isEmpty()) {
+        const AVPixFmtDescriptor *desc = NULL;
+        while ((desc = av_pix_fmt_desc_next(desc))) {
+            if ((desc->flags & AV_PIX_FMT_FLAG_HWACCEL) == AV_PIX_FMT_FLAG_HWACCEL)
+                continue;
+            sFmts.append(av_pix_fmt_desc_get_id(desc));
+        }
+    }
+    return sFmts;
 }
 
 /*!
