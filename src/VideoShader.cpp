@@ -224,10 +224,10 @@ const char* VideoShader::fragmentShader() const
         frag.prepend("#define USE_RG\n");
     const bool has_alpha = d.video_format.hasAlpha();
     if (d.video_format.isPlanar()) {
-        const int bpp0 = d.video_format.bitsPerPixel(0);
-        if (bpp0 > 8) {
-            //// has and use 16 bit texture (r16 for example): If channel depth is 16 bit, no range convertion required. Otherwise, must convert to color.r*(2^16-1)/(2^bpp0-1)
-            if (OpenGLHelper::depth16BitTexture() < 16 || !OpenGLHelper::has16BitTexture() || bpp0 < 16 || d.video_format.isBigEndian())
+        const int bpc = d.video_format.bitsPerComponent();
+        if (bpc > 8) {
+            //// has and use 16 bit texture (r16 for example): If channel depth is 16 bit, no range convertion required. Otherwise, must convert to color.r*(2^16-1)/(2^bpc-1)
+            if (OpenGLHelper::depth16BitTexture() < 16 || !OpenGLHelper::has16BitTexture() || bpc < 16 || d.video_format.isBigEndian())
                 frag.prepend("#define CHANNEL16_TO8\n");
         }
 #if YUVA_DONE
@@ -451,11 +451,11 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     }
 
     const VideoFormat fmt(frame.format());
-    const int bpp_old = d.bpp;
-    d.bpp = fmt.bitsPerPixel(0);
-    if (d.bpp > 8 && (d.bpp != bpp_old || d.video_format.isBigEndian() != fmt.isBigEndian())) {
+    const int bpc_old = d.bpc;
+    d.bpc = fmt.bitsPerComponent();
+    if (d.bpc > 8 && (d.bpc != bpc_old || d.video_format.isBigEndian() != fmt.isBigEndian())) {
         //FIXME: Assume first plane has 1 channel. So not work with NV21
-        const int range = (1 << d.bpp) - 1;
+        const int range = (1 << d.bpc) - 1;
         // FFmpeg supports 9, 10, 12, 14, 16 bits
         // 10p in little endian: yyyyyyyy yy000000 => (L, L, L, A)  //(yyyyyyyy, 000000yy)?
         if (OpenGLHelper::depth16BitTexture() < 16 || !OpenGLHelper::has16BitTexture() || fmt.isBigEndian()) {
@@ -463,7 +463,7 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
                 d.vec_to8 = QVector2D(256.0, 1.0)*255.0/(float)range;
             else
                 d.vec_to8 = QVector2D(1.0, 256.0)*255.0/(float)range;
-        } else if (d.bpp < 16) {
+        } else if (d.bpc < 16) {
             /// FIXME: 16bit (R16 e.g.) texture does not support >8bit be channels
             /// 10p be: R2 R1(Host) = R1*2^8+R2 = 000000rr rrrrrrrr ->(GL) R=R2*2^8+R1
             /// 10p le: R1 R2(Host) = rrrrrrrr rr000000
@@ -530,9 +530,9 @@ qint64 VideoMaterial::type() const
     const bool tex_2d = d.target == GL_TEXTURE_2D;
     // 2d,alpha,planar,8bit
     const int rg_biplane = fmt.planeCount()==2 && !OpenGLHelper::useDeprecatedFormats() && OpenGLHelper::hasRG();
-    // nv21 Bpp0=1?
-    const int bpp0 = fmt.bitsPerPixel(0);
-    const int channel16_to8 = bpp0 > 8 && (OpenGLHelper::depth16BitTexture() < 16 || !OpenGLHelper::has16BitTexture() || bpp0 < 16 || fmt.isBigEndian());
+    // nv21 bpc=1?
+    const int bpc = fmt.bitsPerComponent();
+    const int channel16_to8 = bpc > 8 && (OpenGLHelper::depth16BitTexture() < 16 || !OpenGLHelper::has16BitTexture() || bpc < 16 || fmt.isBigEndian());
     return (rg_biplane<<4)|(tex_2d<<3)|(fmt.hasAlpha()<<2)|(fmt.isPlanar()<<1)|(channel16_to8);
 }
 
@@ -620,7 +620,7 @@ int VideoMaterial::compare(const VideoMaterial *other) const
         if (diff)
             return diff;
     }
-    return d.bpp - other->bpp();
+    return d.bpc - other->bitsPerComponent();
 }
 
 bool VideoMaterial::hasAlpha() const
@@ -658,9 +658,9 @@ const QMatrix4x4 &VideoMaterial::channelMap() const
     return d_func().channel_map;
 }
 
-int VideoMaterial::bpp() const
+int VideoMaterial::bitsPerComponent() const
 {
-    return d_func().bpp;
+    return d_func().bpc;
 }
 
 QVector2D VideoMaterial::vectorTo8bit() const
@@ -863,7 +863,10 @@ bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
         qWarning() << "No OpenGL support for " << fmt;
         return false;
     }
-    qDebug("///////////bpp %d", fmt.bytesPerPixel());
+    qDebug() << "texture internal format: " << internal_format;
+    qDebug() << "texture data format: " << data_format;
+    qDebug() << "texture data type: " << data_type;
+    qDebug("///////////bpp %d, bpc: %d", fmt.bytesPerPixel(), fmt.bitsPerComponent());
     /*!
      * GLES internal_format == data_format, GL_LUMINANCE_ALPHA is 2 bytes
      * so if NV12 use GL_LUMINANCE_ALPHA, YV12 use GL_ALPHA

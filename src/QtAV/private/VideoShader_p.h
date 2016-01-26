@@ -1,6 +1,6 @@
 ﻿/******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -90,7 +90,7 @@ public:
     VideoMaterialPrivate()
         : update_texure(true)
         , init_textures_required(true)
-        , bpp(1)
+        , bpc(0)
         , width(0)
         , height(0)
         , video_format(VideoFormat::Format_Invalid)
@@ -127,7 +127,7 @@ public:
 
     bool update_texure; // reduce upload/map times. true: new frame not bound. false: current frame is bound
     bool init_textures_required; // e.g. target changed
-    int bpp;
+    int bpc;
     int width, height; //avoid accessing frame(need lock)
     QRect viewport;
     QRect out_rect;

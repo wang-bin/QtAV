@@ -492,6 +492,7 @@ static const reorder_t gl_channel_maps[] = {
     { VideoFormat::Format_BGR48BE,{2, 1, 0, 3}},
     { VideoFormat::Format_BGR48,  {2, 1, 0, 3}},
     { VideoFormat::Format_BGR555, {2, 1, 0, 3}},
+    // TODO: rgb444le/be etc
     { VideoFormat::Format_Invalid,{1, 2, 3}}
 };
 
@@ -573,7 +574,7 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
         {VideoFormat::Format_BGR555, GL_RGBA, GL_RGBA, GL_UNSIGNED_SHORT_1_5_5_5_REV},
     #endif
         // TODO: BE formats not implemeted
-        {VideoFormat::Format_RGB48, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT }, //TODO: rgb16?
+        {VideoFormat::Format_RGB48, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT }, //TODO: they are not work for ANGLE, and rgb16 works on desktop gl, so remove these lines to use rgb16?
         {VideoFormat::Format_RGB48LE, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT },
         {VideoFormat::Format_RGB48BE, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT },
         {VideoFormat::Format_BGR48, GL_RGB, GL_BGR, GL_UNSIGNED_SHORT }, //RGB16?
@@ -645,7 +646,7 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
     gl_param_t* gp = (gl_param_t*)get_gl_param();
     if (gp == gl_param_desktop && (
                 fmt.planeCount() == 2 // nv12 UV plane is 16bit, but we use rg
-                || (OpenGLHelper::depth16BitTexture() == 16 && OpenGLHelper::has16BitTexture() && fmt.isBigEndian()) // 16bit texture does not support be channel now
+                || (OpenGLHelper::depth16BitTexture() == 16 && OpenGLHelper::has16BitTexture() && fmt.isBigEndian() && fmt.bitsPerComponent() > 8) // 16bit texture does not support be channel now
                 )) {
         gp = (gl_param_t*)gl_param_desktop_fallback;
         qDebug("desktop_fallback for %s", fmt.planeCount() == 2 ? "bi-plane format" : "16bit big endian channel");

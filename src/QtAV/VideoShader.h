@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -118,7 +118,7 @@ public:
     const QMatrix4x4 &colorMatrix() const;
     const QMatrix4x4& matrix() const;
     const QMatrix4x4& channelMap() const;
-    int bpp() const; //1st plane
+    int bitsPerComponent() const; //0 if the value of components are different
     QVector2D vectorTo8bit() const;
     int planeCount() const;
     /*!
