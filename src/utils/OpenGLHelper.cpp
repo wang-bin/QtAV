@@ -33,7 +33,7 @@
 #ifdef QT_OPENGL_DYNAMIC
 #include <QtGui/QOpenGLFunctions_1_0>
 #endif
-#if QTAV_HAVE(EGL_CAPI)  && QTAV_HAVE(QT_EGL) //make sure no crash if no egl library
+#if QTAV_HAVE(EGL_CAPI) // && QTAV_HAVE(QT_EGL) //make sure no crash if no egl library
 #define EGL_CAPI_NS
 #include "capi/egl_api.h"
 #endif //QTAV_HAVE(EGL_CAPI)
@@ -125,12 +125,21 @@ bool isEGL()
     static int is_egl = -1;
     if (is_egl >= 0)
         return !!is_egl;
+#ifdef Q_OS_IOS
+    is_egl = 0;
+    return false;
+#endif
     if (isOpenGLES()) { //TODO: ios has no egl
         is_egl = 1;
         return true;
     }
-#if QTAV_HAVE(EGL_CAPI) && QTAV_HAVE(QT_EGL) //make sure no crash if no egl library
-    if (eglGetCurrentDisplay() != EGL_NO_DISPLAY) {
+    // angle has no QTAV_HAVE(QT_EGL). TODO: no assert in capi, or check egl loaded
+#if QTAV_HAVE(EGL_CAPI) //&& QTAV_HAVE(QT_EGL) //make sure no crash if no egl library
+    if (!egl::api().loaded()) { //load twice, here and ns func call
+        is_egl = 0;
+        return false;
+    }
+    if (eglGetCurrentDisplay() != EGL_NO_DISPLAY) { //egl can be loaded but glx is used
         is_egl = 1;
         return true;
     }
@@ -172,7 +181,9 @@ bool isOpenGLES()
 
 bool hasExtensionEGL(const char *exts[])
 {
-#if QTAV_HAVE(EGL_CAPI) && QTAV_HAVE(QT_EGL) //make sure no crash if no egl library
+    if (!isEGL())
+        return false;
+#if QTAV_HAVE(EGL_CAPI)
     static QList<QByteArray> supported;
     if (supported.isEmpty()) {
         EGLDisplay display = eglGetDisplay(EGL_DEFAULT_DISPLAY);
