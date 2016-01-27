@@ -155,7 +155,7 @@ AVAudioResampleContext *swr_alloc_set_opts(AVAudioResampleContext *s
 extern const AVPixFmtDescriptor av_pix_fmt_descriptors[];
 const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt)
 {
-    if (pix_fmt < 0 || pix_fmt >= PIX_FMT_NB)
+    if (pix_fmt < 0 || pix_fmt >= QTAV_PIX_FMT_C(NB))
         return NULL;
     return &av_pix_fmt_descriptors[pix_fmt];
 }
@@ -164,7 +164,8 @@ const AVPixFmtDescriptor *av_pix_fmt_desc_next(const AVPixFmtDescriptor *prev)
 {
     if (!prev)
         return &av_pix_fmt_descriptors[0];
-    while (prev - av_pix_fmt_descriptors < FF_ARRAY_ELEMS(av_pix_fmt_descriptors) - 1) {
+    // can not use sizeof(av_pix_fmt_descriptors)
+    while (prev - av_pix_fmt_descriptors < QTAV_PIX_FMT_C(NB) - 1) {
         prev++;
         if (prev->name)
             return prev;
@@ -175,10 +176,10 @@ const AVPixFmtDescriptor *av_pix_fmt_desc_next(const AVPixFmtDescriptor *prev)
 AVPixelFormat av_pix_fmt_desc_get_id(const AVPixFmtDescriptor *desc)
 {
     if (desc < av_pix_fmt_descriptors ||
-        desc >= av_pix_fmt_descriptors + FF_ARRAY_ELEMS(av_pix_fmt_descriptors))
+        desc >= av_pix_fmt_descriptors + QTAV_PIX_FMT_C(NB))
         return QTAV_PIX_FMT_C(NONE);
 
-    return desc - av_pix_fmt_descriptors;
+    return AVPixelFormat(desc - av_pix_fmt_descriptors);
 }
 #endif // !AV_MODULE_CHECK(LIBAVUTIL, 52, 3, 0, 13, 100)
 #if !FFMPEG_MODULE_CHECK(LIBAVUTIL, 52, 48, 101)
