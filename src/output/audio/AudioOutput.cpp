@@ -37,8 +37,8 @@ typedef QTime QElapsedTimer;
 namespace QtAV {
 
 // chunk
-static const int kBufferSize = 1024*4;
-static const int kBufferCount = 8;
+static const int kBufferSamples = 1024*2;
+static const int kBufferCount = 8; // 8: may wait too long at the beginning (oal). 2: too small
 
 typedef void (*scale_samples_func)(quint8 *dst, const quint8 *src, int nb_samples, int volume, float volumef);
 
@@ -127,7 +127,7 @@ public:
       , vol(1)
       , speed(1.0)
       , nb_buffers(kBufferCount)
-      , buffer_size(kBufferSize)
+      , buffer_samples(kBufferSamples)
       , features(0)
       , play_pos(0)
       , processed_remain(0)
@@ -180,7 +180,7 @@ public:
     QByteArray data;
     //AudioFrame audio_frame;
     quint32 nb_buffers;
-    qint32 buffer_size;
+    qint32 buffer_samples;
     int features;
     int play_pos; // index or bytes
     int processed_remain;
@@ -219,8 +219,8 @@ void AudioOutputPrivate::playInitialData()
                     || format.sampleFormat() == AudioFormat::SampleFormat_Unsigned8Planar)
             ? 0x80 : 0;
     for (quint32 i = 0; i < nb_buffers; ++i) {
-        backend->write(QByteArray(buffer_size, c)); // fill silence byte, not always 0. AudioFormat.silenceByte
-        frame_infos.push_back(FrameInfo(0, buffer_size));
+        backend->write(QByteArray(buffer_samples*format.bytesPerSample(), c)); // fill silence byte, not always 0. AudioFormat.silenceByte
+        frame_infos.push_back(FrameInfo(0, buffer_samples*format.bytesPerSample()));
     }
     backend->play();
 }
@@ -580,12 +580,22 @@ AudioFormat::ChannelLayout AudioOutput::preferredChannelLayout() const
 
 int AudioOutput::bufferSize() const
 {
-    return d_func().buffer_size;
+    return bufferSamples() * d_func().format.bytesPerSample();
 }
 
 void AudioOutput::setBufferSize(int value)
 {
-    d_func().buffer_size = value;
+    setBufferSamples(value);
+}
+
+int AudioOutput::bufferSamples() const
+{
+    return d_func().buffer_samples;
+}
+
+void AudioOutput::setBufferSamples(int value)
+{
+    d_func().buffer_samples = value;
 }
 
 int AudioOutput::bufferCount() const

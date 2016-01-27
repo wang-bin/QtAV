@@ -157,12 +157,15 @@ public:
      * \return the preferred channel layout. default is stereo
      */
     AudioFormat::ChannelLayout preferredChannelLayout() const;
+
+    int bufferSize() const; /// bufferSamples()*bytesPerSample
+    QTAV_DEPRECATED void setBufferSize(int value); /// The same as setBufferSamples
     /*!
-     * \brief bufferSize
-     * chunk size that audio output accept. feed the audio output this size of data every time
+     * \brief bufferSamples
+     * number of samples that audio output accept in 1 buffer. feed the audio output this size of data every time
      */
-    int bufferSize() const;
-    void setBufferSize(int value);
+    int bufferSamples() const;
+    void setBufferSamples(int value);
     // for internal use
     int bufferCount() const;
     void setBufferCount(int value);
