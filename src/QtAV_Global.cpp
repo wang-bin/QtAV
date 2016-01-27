@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -130,6 +130,8 @@ void print_library_info()
     qDebug() << aboutQtAV_PlainText();
     const depend_component* info = Internal::get_depend_component(0);
     while (info) {
+        if (!qstrcmp(info->lib, "avutil"))
+            qDebug("FFmpeg/Libav configuration: %s", info->config);
         qDebug("Build with %s-%u.%u.%u"
                , info->lib
                , QTAV_VERSION_MAJOR(info->build_version)
