@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -88,6 +88,8 @@ public:
      * backend name currently in use
      */
     QString backend() const;
+    bool drain();
+    void reset(); //drain and set audio time 0
     bool open();
     bool close();
     bool isOpen() const;

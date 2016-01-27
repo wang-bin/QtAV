@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -151,7 +151,6 @@ public:
         cond.wait(&mutex, (us+500LL)/1000LL);
     }
 
-    int bufferSizeTotal() { return nb_buffers * buffer_size; }
     struct FrameInfo {
         FrameInfo(qreal t = 0, int s = 0) : timestamp(t), data_size(s) {}
         qreal timestamp;
@@ -350,6 +349,23 @@ QString AudioOutput::backend() const
     if (d.backend)
         return d.backend->name();
     return QString();
+}
+
+bool AudioOutput::drain()
+{
+    DPTR_D(AudioOutput);
+    // TODO: backend drain
+    while (!d.frame_infos.empty()) {
+        waitForNextBuffer();
+    }
+    return true;
+}
+
+void AudioOutput::reset()
+{
+    drain();
+    DPTR_D(AudioOutput);
+    d.resetStatus();
 }
 
 bool AudioOutput::open()
@@ -611,6 +627,8 @@ AudioOutput::DeviceFeatures AudioOutput::supportedDeviceFeatures() const
 bool AudioOutput::waitForNextBuffer()
 {
     DPTR_D(AudioOutput);
+    if (d.frame_infos.empty())
+        return true;
     if (!d.backend)
         return false;
     //don't return even if we can add buffer because we don't know when a buffer is processed and we have /to update dequeue index
@@ -665,7 +683,7 @@ bool AudioOutput::waitForNextBuffer()
         while (!no_wait && d.processed_remain < next) {
             const qint64 us = d.format.durationForBytes(next - d.processed_remain);
             if (us < 1000LL)
-                d.uwait(10000LL);
+                d.uwait(1000LL);
             else
                 d.uwait(us);
             d.processed_remain = d.backend->getPlayedBytes();
@@ -689,7 +707,7 @@ bool AudioOutput::waitForNextBuffer()
             if (elapsed > 0 && us > elapsed*1000LL)
                 us -= elapsed*1000LL;
             if (us < 1000LL)
-                us = 10000LL; //opensl crash if 1
+                us = 1000LL; //opensl crash if 1ms
 #endif //AO_USE_TIMER
             d.uwait(us);
             c = d.backend->getPlayedCount();
