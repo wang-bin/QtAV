@@ -299,6 +299,7 @@ void AVThread::resetState()
 {
     DPTR_D(AVThread);
     pause(false);
+    d.pts_history = ring<qreal>(d.pts_history.capacity());
     d.tasks.clear();
     d.render_pts0 = -1;
     d.stop = false;

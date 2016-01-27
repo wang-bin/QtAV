@@ -312,6 +312,7 @@ void VideoThread::run()
                 qDebug("video thread wait to sync end for sync id: %d", d.clock->syncId());
                 if (d.render_pts0 < 0 && sync_id > 0) {
                     msleep(10);
+                    v_a = 0;
                     continue;
                 }
             } else {
@@ -396,6 +397,7 @@ void VideoThread::run()
                     nb_dec_slow = 0;
                     wait_key_frame = true;
                     pkt = Packet();
+                    v_a = 0;
                     // TODO: use discard flag
                     continue;
                 } else {
@@ -454,36 +456,33 @@ void VideoThread::run()
             if (!pkt.hasKeyFrame) {
                 qDebug("waiting for key frame. queue size: %d. pkt.size: %d", d.packets.size(), pkt.data.size());
                 pkt = Packet();
+                v_a = 0;
                 continue;
             }
             wait_key_frame = false;
         }
         QVariantHash *dec_opt_old = dec_opt;
-        if (d.drop_frame_seek) {
-            if (!seeking || d.render_pts0 < 0.001) { // MAYBE not seeking
-                if (nb_dec_slow < kNbSlowFrameDrop) {
-                    if (dec_opt == &d.dec_opt_framedrop) {
-                        qDebug("frame drop normal. nb_dec_slow: %d. not seeking", nb_dec_slow);
-                        dec_opt = &d.dec_opt_normal;
-                    }
-                } else {
-                    if (dec_opt == &d.dec_opt_normal) {
-                        qDebug("frame drop noref. nb_dec_slow: %d too slow. not seeking", nb_dec_slow);
-                        dec_opt = &d.dec_opt_framedrop;
-                    }
+        if (!seeking || d.render_pts0 < 0.001) { // MAYBE not seeking
+            if (nb_dec_slow < kNbSlowFrameDrop) {
+                if (dec_opt == &d.dec_opt_framedrop) {
+                    qDebug("frame drop normal. nb_dec_slow: %d. not seeking", nb_dec_slow);
+                    dec_opt = &d.dec_opt_normal;
                 }
-            } else { // seeking
-                if (seek_count > 0) {
-                    if (dec_opt == &d.dec_opt_normal) {
-                        qDebug("seeking... frame drop noref. nb_dec_slow: %d", nb_dec_slow);
-                        dec_opt = &d.dec_opt_framedrop;
-                    }
-                } else {
-                    seek_count = -1;
+            } else {
+                if (dec_opt == &d.dec_opt_normal) {
+                    qDebug("frame drop noref. nb_dec_slow: %d too slow. not seeking", nb_dec_slow);
+                    dec_opt = &d.dec_opt_framedrop;
                 }
             }
-        } else {
-            dec_opt = &d.dec_opt_normal;
+        } else { // seeking
+            if (seek_count > 0 && d.drop_frame_seek) {
+                if (dec_opt == &d.dec_opt_normal) {
+                    qDebug("seeking... frame drop noref. nb_dec_slow: %d", nb_dec_slow);
+                    dec_opt = &d.dec_opt_framedrop;
+                }
+            } else {
+                seek_count = -1;
+            }
         }
 
         // decoder maybe changed in processNextTask(). code above MUST use d.dec but not dec
@@ -491,6 +490,7 @@ void VideoThread::run()
             dec = static_cast<VideoDecoder*>(d.dec);
             if (!pkt.hasKeyFrame) {
                 wait_key_frame = true;
+                v_a = 0;
                 continue;
             }
             qDebug("decoder changed. decoding key frame");
@@ -517,6 +517,7 @@ void VideoThread::run()
                     break;
             }
             pkt = Packet();
+            v_a = 0; //?
             continue;
         }
         // reduce here to ensure to decode the rest data in the next loop
@@ -529,6 +530,7 @@ void VideoThread::run()
                 pkt = Packet();
             else
                 pkt_data = pkt.data.constData();
+            v_a = 0; //?
             continue;
         }
         pkt_data = pkt.data.constData();
@@ -542,6 +544,7 @@ void VideoThread::run()
             if (pts < d.render_pts0) {
                 if (!pkt.isEOF())
                     pkt = Packet();
+                v_a = 0;
                 continue;
             }
             d.render_pts0 = -1;
@@ -556,6 +559,7 @@ void VideoThread::run()
         if (skip_render) {
             qDebug("skip rendering @%.3f", pts);
             pkt = Packet();
+            v_a = 0;
             continue;
         }
         Q_ASSERT(d.statistics);
