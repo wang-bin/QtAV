@@ -361,6 +361,8 @@ greaterThan(QT_MAJOR_VERSION, 4) {
     } else {
       sdk_qml_install.commands = $$quote($$COPY_DIR $$system_path($$BUILD_DIR/bin/QtAV) $$system_path($$[QT_INSTALL_QML]))
     }
+    static: sdk_qml_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/$$ORIG_LIB/libQmlAV*) $$system_path($$[QT_INSTALL_QML]/QtAV/))
+#static qml plugin is not copied to bin/QtAV. copy it and prl
     sdk_qml_install.commands += $$quote($$COPY $$system_path($$PROJECTROOT/qml/plugins.qmltypes) $$system_path($$[QT_INSTALL_QML]/QtAV/))
     sdk_qml_uninstall.commands = $$quote($$RM_DIR $$system_path($$[QT_INSTALL_QML]/QtAV))
     write_file($$BUILD_DIR/sdk_install.$$SCRIPT_SUFFIX, sdk_qml_install.commands, append)

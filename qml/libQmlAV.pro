@@ -30,7 +30,9 @@ RESOURCES +=
 QML_FILES = $$PWD/Video.qml
 
 qtav_qml.files = $$PWD/qmldir $$PWD/Video.qml $$PWD/plugins.qmltypes
-!ios: plugin.files = $$DESTDIR/$$qtSharedLib($$NAME)
+!static { #static lib copy error before ranlib. copy only in sdk_install
+  plugin.files = $$DESTDIR/$$qtSharedLib($$NAME)
+}
 plugin.path = $$BUILD_DIR/bin/QtAV/
 mkpath($$plugin.path)
 #plugin.depends = #makefile target
