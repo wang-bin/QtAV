@@ -310,6 +310,9 @@ void AudioThread::run()
             d.render_pts0 = -1.0;
             d.clock->syncEndOnce(sync_id);
             Q_EMIT seekFinished(qint64(frame.timestamp()*1000.0));
+            if (has_ao) {
+                ao->reset();
+            }
         }
         if (has_ao) {
             applyFilters(frame);
