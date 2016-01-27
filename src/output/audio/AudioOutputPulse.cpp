@@ -214,7 +214,8 @@ void AudioOutputPulse::stateCallback(pa_stream *s, void *userdata)
 void AudioOutputPulse::latencyUpdateCallback(pa_stream *s, void *userdata)
 {
     Q_UNUSED(s);
-    Q_UNUSED(userdata);
+    AudioOutputPulse *p = reinterpret_cast<AudioOutputPulse*>(userdata);
+    pa_threaded_mainloop_signal(p->loop, 0);
 }
 
 void AudioOutputPulse::writeCallback(pa_stream *s, size_t length, void *userdata)
@@ -260,7 +261,7 @@ bool AudioOutputPulse::init(const AudioFormat &format)
     ScopedPALocker lock(loop);
     Q_UNUSED(lock);
     pa_mainloop_api *api = pa_threaded_mainloop_get_api(loop);
-    ctx = pa_context_new(api, qApp->applicationName().append(QLatin1String(" (QtAV)")).toUtf8().constData());
+    ctx = pa_context_new(api, qApp->applicationName().append(QLatin1String(" @%1 (QtAV)")).arg((quintptr)this).toUtf8().constData());
     if (!ctx) {
         qWarning("PulseAudio failed to allocate a context");
         return false;
@@ -317,11 +318,11 @@ bool AudioOutputPulse::init(const AudioFormat &format)
     pa_stream_set_latency_update_callback(stream, AudioOutputPulse::latencyUpdateCallback, this);
 
     pa_buffer_attr ba;
-    ba.maxlength = buffer_size*buffer_count; // max buffer size on the server
-    ba.tlength = (uint32_t)-1; // ?
+    ba.maxlength = PA_STREAM_ADJUST_LATENCY;//-1;//buffer_size*buffer_count; // max buffer size on the server
+    ba.tlength = PA_STREAM_ADJUST_LATENCY;//(uint32_t)-1; // ?
     ba.prebuf = 1;//(uint32_t)-1; // play as soon as possible
     ba.minreq = (uint32_t)-1;
-    ba.fragsize = (uint32_t)-1;
+    //ba.fragsize = (uint32_t)-1;
     // PA_STREAM_NOT_MONOTONIC?
     pa_stream_flags_t flags = pa_stream_flags_t(PA_STREAM_NOT_MONOTONIC|PA_STREAM_INTERPOLATE_TIMING|PA_STREAM_AUTO_TIMING_UPDATE);
     if (pa_stream_connect_playback(stream, NULL /*sink*/, &ba, flags, NULL, NULL) < 0) {
