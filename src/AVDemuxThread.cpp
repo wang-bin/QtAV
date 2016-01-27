@@ -249,7 +249,7 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
         if (!t)
             continue;
         if (!sync_id)
-            sync_id = t->clock()->syncStart(!!audio_thread + !!video_thread);
+            sync_id = t->clock()->syncStart(!!audio_thread + (!!video_thread && !demuxer->hasAttacedPicture()));
         Q_ASSERT(sync_id != 0);
         qDebug("demuxer sync id: %d/%d", sync_id, t->clock()->syncId());
         t->packetQueue()->clear();
