@@ -24,7 +24,7 @@ Page {
                   + "<p>Copyright (C) 2012-2015 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>"
                   + "<p>Home page: <a href='http://qtav.org'>http://qtav.org</a></p>"
                   + "\n<p>Double click: show/hide control bar</p>"
-                  + "<p>click right area: show config panel</p>"
+                  + "<p>Click right area: show config panel</p>"
                   + (Qt.platform.os === "android" || Qt.platform.os === "ios" || Qt.platform.os === "winphone" || Qt.platform.os === "blackberry" ?
                       " " :
                     "\n<h3>" + qsTr("Shortcut") + ":</h3>"

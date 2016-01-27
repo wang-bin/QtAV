@@ -324,6 +324,7 @@ Rectangle {
                 */
             }
         }
+        /*
         Button {
             id: backwardBtn
             anchors.right: playBtn.left
@@ -337,11 +338,11 @@ Rectangle {
                 //player.seek(player.position-10000)
                 seekBackward(10000)
             }
-        }
+        }*/
         Button {
             id: stopBtn
             anchors.verticalCenter: playBtn.verticalCenter
-            anchors.right: backwardBtn.left
+            anchors.right: playBtn.left
             bgColor: "transparent"
             bgColorSelected: "transparent"
             width: Utils.scaled(35)
@@ -351,7 +352,7 @@ Rectangle {
                 //player.stop()
                 stop()
             }
-        }
+        }/*
         Button {
             id: forwardBtn
             anchors.left: playBtn.right
@@ -365,7 +366,7 @@ Rectangle {
                 //player.seek(player.position+10000)
                 seekForward(10000)
             }
-        }
+        }*/
         Button {
             id: fullScreenBtn
             anchors.left: parent.left
