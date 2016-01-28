@@ -66,7 +66,9 @@ public:
     }
     ~VideoOutputPrivate() {
         if (impl) {
-            delete impl;
+            QObject* obj = reinterpret_cast<QObject*>(impl->widget());
+            if (obj && !obj->parent())
+                delete impl;
             impl = 0;
         }
     }
@@ -155,13 +157,12 @@ bool VideoOutput::eventFilter(QObject *obj, QEvent *event)
 {
     DPTR_D(VideoOutput);
     if (!d.impl || (QObject*)d.impl->widget() != obj)
-        return false;
+        return QObject::eventFilter(obj, event);
     if (event->type() == QEvent::Resize) {
         QResizeEvent *re = static_cast<QResizeEvent*>(event);
         resizeRenderer(re->size());
-        return false;
     }
-    return false;
+    return QObject::eventFilter(obj, event);
 }
 
 bool VideoOutput::receiveFrame(const VideoFrame& frame)
