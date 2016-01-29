@@ -252,6 +252,8 @@ void VideoRenderer::resizeRenderer(int width, int height)
         return;
     d.renderer_width = width;
     d.renderer_height = height;
+    if (d.out_aspect_ratio_mode == RendererAspectRatio)
+        Q_EMIT outAspectRatioChanged();
     if (d.computeOutParameters(d.out_aspect_ratio)) {
         Q_EMIT videoRectChanged();
         Q_EMIT contentRectChanged();
@@ -527,10 +529,11 @@ void VideoRenderer::handlePaintEvent()
             if (!vf->isEnabled())
                 continue;
             // qpainter rendering on renderer's paint device. only supported by none-null paint engine
-            if (!vf->context() || vf->context()->type()  == VideoFilterContext::OpenGL) {
+            if (!vf->context() || vf->context()->type()  == VideoFilterContext::OpenGL)
                 continue;
-            }
             if (vf->prepareContext(d.filter_context, d.statistics, 0)) {
+                if (!vf->isSupported(d.filter_context->type()))
+                    continue;
                 vf->apply(d.statistics, &d.video_frame); //painter and paint device are ready, pass video frame is ok.
             }
         }
