@@ -154,8 +154,10 @@ public:
       , ShmCompletionEvent(0)
       , ShmCompletionWaitCount(0)
       , current_index(0)
+      , next_index(0)
       , gc(NULL)
       , pixfmt(VideoFormat::Format_Invalid)
+      , frame_changed(false)
     {
         XInitThreads();
         memset(ximage_pool, 0, sizeof(ximage_pool));
@@ -304,7 +306,7 @@ no_shm:
         ximage_data[index].resize(ximage->bytes_per_line*ximage->height + 32);
         return true;
     }
-    bool resizeXImage(int index);
+    int resizeXImage(int index);
 
     bool use_shm; //TODO: set by user
     bool warn_bad_pitch;
@@ -316,6 +318,7 @@ no_shm:
     XVisualInfo vinfo;
     Display *display;
     int current_index;
+    int next_index;
     XImage *ximage_pool[kPoolSize];
     GC gc;
     XShmSegmentInfo shm_pool[kPoolSize];
@@ -323,6 +326,7 @@ no_shm:
     // if the incoming image pitchs are different from ximage ones, use ximage pitchs and copy data in ximage_data
     QByteArray ximage_data[kPoolSize];
     VideoFrame frame_orig; // if renderer is resized, scale the original frame
+    bool frame_changed;
 };
 
 X11Renderer::X11Renderer(QWidget *parent, Qt::WindowFlags f):
@@ -359,6 +363,7 @@ bool X11Renderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 bool X11Renderer::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(X11Renderer);
+    d.frame_changed = true;
     if (!frame.isValid()) {
         d.video_frame = VideoFrame(); // fill background
         update();
@@ -370,14 +375,17 @@ bool X11Renderer::receiveFrame(const VideoFrame& frame)
     return true;
 }
 
-bool X11RendererPrivate::resizeXImage(int index)
+int X11RendererPrivate::resizeXImage(int index)
 {
     if (!frame_orig.isValid())
         return false;
+    if (!frame_changed)
+        return -1;
     // force align to 8(16?) because xcreateimage will not do alignment
     // GAL vmem is 16 aligned
     if (!ensureImage(index, FFALIGN(out_rect.width(), 16), FFALIGN(out_rect.height(), 16))) // we can also call it in onResizeRenderer, onSetOutAspectXXX
         return false;
+    frame_changed = false;
     XImage* &ximage = ximage_pool[index];
     video_frame = frame_orig; // set before map!
     VideoFrame interopFrame;
@@ -444,7 +452,8 @@ void X11Renderer::drawFrame()
 {
     // TODO: interop
     DPTR_D(X11Renderer);
-    if (!d.resizeXImage(d.current_index))
+    int ret = d.resizeXImage(d.next_index); // -1: image no change
+    if (!ret)
         return;
     if (preferredPixelFormat() != d.pixfmt) {
         qDebug() << "x11 preferred pixel format: " << d.pixfmt;
@@ -471,7 +480,12 @@ void X11Renderer::drawFrame()
         }
     }
     QRect roi = realROI();
-    XImage* ximage = d.ximage_pool[d.current_index];
+    int idx = d.current_index; // ret<0, frame/vo no change. if host frame, no filters; >0: filters
+    if (ret > 0) { // next ximage is ready
+        idx = d.next_index;
+        d.next_index = (d.next_index+1)%kPoolSize;
+    }
+    XImage* ximage = d.ximage_pool[idx];
     if (d.use_shm) {
         XShmPutImage(d.display, winId(), d.gc, ximage
                       , roi.x(), roi.y()//, roi.width(), roi.height()
@@ -484,7 +498,6 @@ void X11Renderer::drawFrame()
                    , d.out_rect.x(), d.out_rect.y(), d.out_rect.width(), d.out_rect.height());
         XSync(d.display, False); // update immediately
     }
-    d.current_index = (d.current_index+1)%kPoolSize;
 }
 
 void X11Renderer::paintEvent(QPaintEvent *)
@@ -495,6 +508,7 @@ void X11Renderer::paintEvent(QPaintEvent *)
 void X11Renderer::resizeEvent(QResizeEvent *e)
 {
     DPTR_D(X11Renderer);
+    d.frame_changed = true;
     resizeRenderer(e->size());
     update(); //update background
 }
