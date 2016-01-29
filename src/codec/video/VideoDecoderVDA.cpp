@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -59,8 +59,7 @@ class VideoDecoderVDA : public VideoDecoderFFmpegHW
     Q_ENUMS(PixelFormat)
 public:
     enum PixelFormat {
-        NV12 = '420v',
-        //NV12Full = '420f',
+        NV12 = '420f',
         UYVY = '2vuy',
         YUV420P = 'y420',
         YUYV = 'yuvs'
