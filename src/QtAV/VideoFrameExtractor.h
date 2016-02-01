@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -25,8 +25,8 @@
 #include <QtCore/QObject>
 #include <QtAV/VideoFrame.h>
 
+//TODO: extract all streams
 namespace QtAV {
-
 class VideoFrameExtractorPrivate;
 class Q_AV_EXPORT VideoFrameExtractor : public QObject
 {
@@ -43,7 +43,7 @@ public:
      * \brief setSource
      * Set the video file. If video changes, current loaded video will be unloaded.
      */
-    void setSource(const QString value);
+    void setSource(const QString url);
     QString source() const;
     /*!
      * \brief setAsync
@@ -68,7 +68,7 @@ public:
     qint64 position() const;
 
     virtual bool event(QEvent *e);
-signals:
+Q_SIGNALS:
     void frameExtracted(const QtAV::VideoFrame& frame); // parameter: VideoFrame, bool changed?
     void sourceChanged();
     void asyncChanged();
@@ -83,7 +83,7 @@ signals:
 
     void aboutToExtract(qint64 pos);
 
-public slots:
+public Q_SLOTS:
     /*!
      * \brief extract
      * If last extracted frame can be use, use it.
@@ -91,7 +91,7 @@ public slots:
      * before position+precision will be extracted. Otherwise, the given position frame will be extracted.
      */
     void extract();
-private slots:
+private Q_SLOTS:
     void extractInternal(qint64 pos);
 
 protected:
