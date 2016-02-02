@@ -31,6 +31,7 @@ namespace QtAV {
 
 OpenGLRendererBasePrivate::OpenGLRendererBasePrivate(QPaintDevice* pd)
     : painter(new QPainter())
+    , frame_changed(false)
 {
     filter_context = VideoFilterContext::create(VideoFilterContext::QtPainter);
     filter_context->paint_device = pd;
@@ -72,9 +73,7 @@ bool OpenGLRendererBase::receiveFrame(const VideoFrame& frame)
 {
     DPTR_D(OpenGLRendererBase);
     d.video_frame = frame;
-
-    d.glv.setCurrentFrame(frame);
-
+    d.frame_changed = true;
     updateUi(); //can not call updateGL() directly because no event and paintGL() will in video thread
     return true;
 }
@@ -93,6 +92,10 @@ void OpenGLRendererBase::drawFrame()
     QRect roi = realROI();
     //d.glv.render(QRectF(-1, 1, 2, -2), roi, d.matrix);
     // QRectF() means the whole viewport
+    if (d.frame_changed) {
+        d.glv.setCurrentFrame(d.video_frame);
+        d.frame_changed = false;
+    }
     d.glv.render(QRectF(), roi, d.matrix);
 }
 

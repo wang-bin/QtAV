@@ -44,7 +44,8 @@ class GraphicsItemRendererPrivate : public QPainterRendererPrivate
 {
 public:
     GraphicsItemRendererPrivate()
-        : opengl(false)
+        : frame_changed(false)
+        , opengl(false)
     {}
     virtual ~GraphicsItemRendererPrivate(){}
     void setupAspectRatio() {
@@ -73,6 +74,7 @@ public:
         return false;
     }
 
+    bool frame_changed;
     bool opengl;
 #if QTAV_HAVE(OPENGL)
     OpenGLVideo glv;
@@ -118,7 +120,7 @@ bool GraphicsItemRenderer::receiveFrame(const VideoFrame& frame)
     DPTR_D(GraphicsItemRenderer);
     if (isOpenGL()) {
         d.video_frame = frame;
-        d.glv.setCurrentFrame(frame);
+        d.frame_changed = true;
     } else
 #endif
     {
@@ -190,6 +192,10 @@ void GraphicsItemRenderer::drawFrame()
         return;
 #if QTAV_HAVE(OPENGL)
     if (d.checkGL()) {
+        if (d.frame_changed) {
+            d.glv.setCurrentFrame(d.video_frame);
+            d.frame_changed = false;
+        }
         d.glv.render(boundingRect(), realROI(), d.matrix*sceneTransform());
         return;
     }
