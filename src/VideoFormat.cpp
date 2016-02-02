@@ -759,6 +759,7 @@ QDebug operator<<(QDebug dbg, const VideoFormat &fmt)
     dbg.nospace() << "QtAV::VideoFormat(pixelFormat: " << (int)fmt.pixelFormat() << " " << fmt.name() << " alpha: " << fmt.hasAlpha();
     dbg.nospace() << ", channels: " << fmt.channels();
     dbg.nospace() << ", planes: " << fmt.planeCount();
+    dbg.nospace() << ", bpc: " << fmt.bitsPerComponent();
     dbg.nospace() << ", bpp: " << fmt.bitsPerPixel() << "/" << fmt.bitsPerPixelPadded() << " ";
     for (int i = 0; i < fmt.planeCount(); ++i) {
         dbg.nospace() << "-" << fmt.bitsPerPixel(i);
