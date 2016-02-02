@@ -299,7 +299,7 @@ private:
         qDebug("qtmain.OnFileActivated");
         Q_UNUSED(args);
         const QString file = UrlFromFileArgs(args);
-        this->args.append("-f");
+        this->args.append(strdup("-f"));
         this->args.append(strdup(file.toLocal8Bit().constData()));
         ResumeThread(mainThread);
         QAbstractEventDispatcher *dispatcher = QCoreApplication::eventDispatcher();
