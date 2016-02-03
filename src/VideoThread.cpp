@@ -464,22 +464,24 @@ void VideoThread::run()
             wait_key_frame = false;
         }
         QVariantHash *dec_opt_old = dec_opt;
-        if (!seeking || d.render_pts0 < 0.001) { // MAYBE not seeking
+        if (!seeking || pkt.pts - d.render_pts0 >= 0.0) { // MAYBE not seeking. We should not drop the frames after seek target
+            if (seeking)
+                qDebug("seeking... pkt.pts - d.render_pts0: %.3f", pkt.pts - d.render_pts0);
             if (nb_dec_slow < kNbSlowFrameDrop) {
                 if (dec_opt == &d.dec_opt_framedrop) {
-                    qDebug("frame drop normal. nb_dec_slow: %d. not seeking", nb_dec_slow);
+                    qDebug("frame drop=>normal. nb_dec_slow: %d", nb_dec_slow);
                     dec_opt = &d.dec_opt_normal;
                 }
             } else {
                 if (dec_opt == &d.dec_opt_normal) {
-                    qDebug("frame drop noref. nb_dec_slow: %d too slow. not seeking", nb_dec_slow);
+                    qDebug("frame drop=>noref. nb_dec_slow: %d too slow", nb_dec_slow);
                     dec_opt = &d.dec_opt_framedrop;
                 }
             }
         } else { // seeking
             if (seek_count > 0 && d.drop_frame_seek) {
                 if (dec_opt == &d.dec_opt_normal) {
-                    qDebug("seeking... frame drop noref. nb_dec_slow: %d", nb_dec_slow);
+                    qDebug("seeking... pkt.pts - d.render_pts0: %.3f, frame drop=>noref. nb_dec_slow: %d", pkt.pts - d.render_pts0, nb_dec_slow);
                     dec_opt = &d.dec_opt_framedrop;
                 }
             } else {
