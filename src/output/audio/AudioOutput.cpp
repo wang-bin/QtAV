@@ -351,20 +351,21 @@ QString AudioOutput::backend() const
     return QString();
 }
 
-bool AudioOutput::drain()
+void AudioOutput::flush()
 {
     DPTR_D(AudioOutput);
-    // TODO: backend drain
     while (!d.frame_infos.empty()) {
+        if (d.backend)
+            d.backend->flush();
         waitForNextBuffer();
     }
-    return true;
 }
 
-void AudioOutput::reset()
+void AudioOutput::clear()
 {
-    drain();
     DPTR_D(AudioOutput);
+    if (!d.backend || !d.backend->clear())
+        flush();
     d.resetStatus();
 }
 

@@ -88,8 +88,17 @@ public:
      * backend name currently in use
      */
     QString backend() const;
-    bool drain();
-    void reset(); //drain and set audio time 0
+    /*!
+     * \brief flush
+     * play the buffered audio data
+     * \return
+     */
+    void flush();
+    /*!
+     * \brief clear
+     * clear audio buffers and set time to 0. The default behavior is flush and reset time
+     */
+    void clear();
     bool open();
     bool close();
     bool isOpen() const;

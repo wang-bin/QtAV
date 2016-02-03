@@ -311,7 +311,7 @@ void AudioThread::run()
             d.clock->syncEndOnce(sync_id);
             Q_EMIT seekFinished(qint64(frame.timestamp()*1000.0));
             if (has_ao) {
-                ao->reset();
+                ao->clear();
             }
         }
         if (has_ao) {
