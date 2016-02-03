@@ -187,10 +187,6 @@ void AVDemuxThread::stepBackward()
     };
 
     pause(true);
-    // set clock first
-    if (clock_type < 0)
-        clock_type = (int)video_thread->clock()->isClockAuto() + 2*(int)video_thread->clock()->clockType();
-    video_thread->clock()->setClockType(AVClock::VideoClock);
     t->packetQueue()->clear(); // will put new packets before task run
     t->packetQueue();
     Packet pkt;
@@ -431,11 +427,6 @@ void AVDemuxThread::seekOnPauseFinished()
         if (audio_thread)
             audio_thread->pause(true);
     }
-    if (clock_type >= 0) {
-        thread->clock()->setClockAuto(clock_type & 1);
-        thread->clock()->setClockType(AVClock::ClockType(clock_type/2));
-        clock_type = -1;
-    }
 }
 
 void AVDemuxThread::frameDeliveredOnStepForward()
@@ -460,6 +451,7 @@ void AVDemuxThread::frameDeliveredOnStepForward()
         thread->clock()->setClockType(AVClock::ClockType(clock_type/2));
         clock_type = -1;
     }
+    Q_EMIT stepFinished();
 }
 
 void AVDemuxThread::eofDecodedOnStepForward()
@@ -477,6 +469,7 @@ void AVDemuxThread::eofDecodedOnStepForward()
         thread->clock()->setClockType(AVClock::ClockType(clock_type/2));
         clock_type = -1;
     }
+    Q_EMIT stepFinished();
 }
 
 void AVDemuxThread::onAVThreadQuit()

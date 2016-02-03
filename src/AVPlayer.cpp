@@ -931,6 +931,7 @@ qreal AVPlayer::positionF() const
 
 qint64 AVPlayer::position() const
 {
+    // TODO: videoTime()?
     const qint64 pts = d->clock->value()*1000.0;
     if (relativeTimeMode())
         return pts - absoluteMediaStartPosition();
@@ -1443,7 +1444,10 @@ void AVPlayer::onSeekFinished(qint64 value)
     d->seeking = false;
     Q_EMIT seekFinished(value);
     //d->clock->updateValue(value/1000.0);
-    Q_EMIT positionChanged(value);
+    if (relativeTimeMode())
+        Q_EMIT positionChanged(value - absoluteMediaStartPosition());
+    else
+        Q_EMIT positionChanged(value);
 }
 
 void AVPlayer::tryClearVideoRenderers()
@@ -1513,7 +1517,7 @@ void AVPlayer::timerEvent(QTimerEvent *te)
     if (te->timerId() == d->timer_id) {
         // killTimer() should be in the same thread as object. kill here?
         if (isPaused()) {
-            return;
+            //return; //ensure positionChanged emitted for stepForward()
         }
         // active only when playing
         const qint64 t = position();
