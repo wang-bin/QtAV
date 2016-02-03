@@ -87,13 +87,14 @@ void AudioThread::run()
     int sync_id = 0;
     while (!d.stop) {
         processNextTask();
-        //TODO: why put it at the end of loop then playNextFrame() not work?
-        if (tryPause()) { //DO NOT continue, or playNextFrame() will fail
-            if (d.stop)
-                break; //the queue is empty and may block. should setBlocking(false) wake up cond empty?
-        } else {
-            if (isPaused())
-                continue;
+        if (d.render_pts0 < 0) { // no pause when seeking
+            if (tryPause()) { //DO NOT continue, or stepForward() will fail
+                if (d.stop)
+                    break; //the queue is empty and may block. should setBlocking(false) wake up cond empty?
+            } else {
+                if (isPaused())
+                    continue;
+            }
         }
         if (d.seek_requested) {
             d.seek_requested = false;

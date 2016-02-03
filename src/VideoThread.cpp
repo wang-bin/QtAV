@@ -295,11 +295,13 @@ void VideoThread::run()
         processNextTask();
         //TODO: why put it at the end of loop then stepForward() not work?
         //processNextTask tryPause(timeout) and  and continue outter loop
-        if (tryPause()) { //DO NOT continue, or stepForward() will fail
+        if (d.render_pts0 < 0) { // no pause when seeking
+            if (tryPause()) { //DO NOT continue, or stepForward() will fail
 
-        } else {
-            if (isPaused())
-                continue; //timeout. process pending tasks
+            } else {
+                if (isPaused())
+                    continue; //timeout. process pending tasks
+            }
         }
         if (d.seek_requested) {
             d.seek_requested = false;
@@ -344,7 +346,7 @@ void VideoThread::run()
                 continue;
             }
         }
-        if (pkt.pts <= 0) {
+        if (pkt.pts <= 0 && !pkt.isEOF() && pkt.data.size() > 0) {
             nb_no_pts++;
         } else {
             nb_no_pts = 0;
