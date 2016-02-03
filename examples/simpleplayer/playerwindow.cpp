@@ -1,6 +1,6 @@
 /******************************************************************************
     Simple Player:  this file is part of QtAV examples
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -29,6 +29,7 @@ using namespace QtAV;
 
 PlayerWindow::PlayerWindow(QWidget *parent) : QWidget(parent)
 {
+    m_unit = 1000;
     setWindowTitle(QString::fromLatin1("QtAV simple player example"));
     m_player = new AVPlayer(this);
     QVBoxLayout *vl = new QVBoxLayout();
@@ -42,9 +43,11 @@ PlayerWindow::PlayerWindow(QWidget *parent) : QWidget(parent)
     vl->addWidget(m_vo->widget());
     m_slider = new QSlider();
     m_slider->setOrientation(Qt::Horizontal);
-    connect(m_slider, SIGNAL(sliderMoved(int)), SLOT(seek(int)));
-    connect(m_player, SIGNAL(positionChanged(qint64)), SLOT(updateSlider()));
+    connect(m_slider, SIGNAL(sliderMoved(int)), SLOT(seekBySlider(int)));
+    connect(m_slider, SIGNAL(sliderPressed()), SLOT(seekBySlider()));
+    connect(m_player, SIGNAL(positionChanged(qint64)), SLOT(updateSlider(qint64)));
     connect(m_player, SIGNAL(started()), SLOT(updateSlider()));
+    connect(m_player, SIGNAL(notifyIntervalChanged()), SLOT(updateSliderUnit()));
 
     vl->addWidget(m_slider);
     QHBoxLayout *hb = new QHBoxLayout();
@@ -68,11 +71,16 @@ void PlayerWindow::openMedia()
     m_player->play(file);
 }
 
-void PlayerWindow::seek(int pos)
+void PlayerWindow::seekBySlider(int value)
 {
     if (!m_player->isPlaying())
         return;
-    m_player->seek(pos*1000LL); // to msecs
+    m_player->seek(qint64(value*m_unit));
+}
+
+void PlayerWindow::seekBySlider()
+{
+    seekBySlider(m_slider->value());
 }
 
 void PlayerWindow::playPause()
@@ -84,8 +92,19 @@ void PlayerWindow::playPause()
     m_player->pause(!m_player->isPaused());
 }
 
+void PlayerWindow::updateSlider(qint64 value)
+{
+    m_slider->setRange(0, int(m_player->duration()/m_unit));
+    m_slider->setValue(int(value/m_unit));
+}
+
 void PlayerWindow::updateSlider()
 {
-    m_slider->setRange(0, int(m_player->duration()/1000LL));
-    m_slider->setValue(int(m_player->position()/1000LL));
+    updateSlider(m_player->position());
+}
+
+void PlayerWindow::updateSliderUnit()
+{
+    m_unit = m_player->notifyInterval();
+    updateSlider();
 }
