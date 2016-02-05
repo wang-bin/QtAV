@@ -107,9 +107,12 @@ void QPainterRenderer::drawFrame()
     if (orientation() == 0) {
         //assume that the image data is already scaled to out_size(NOT renderer size!)
         if (roi.size() == d.out_rect.size()) {
-            d.painter->drawImage(d.out_rect.topLeft(), d.image, roi);
+            d.painter->drawPixmap(d.out_rect.topLeft(), QPixmap::fromImage(d.image), roi);
+            //d.painter->drawImage(d.out_rect.topLeft(), d.image, roi);
         } else {
-            d.painter->drawImage(d.out_rect, d.image, roi);
+            // drawPixmap() is faster for on screen painting
+            d.painter->drawPixmap(d.out_rect, QPixmap::fromImage(d.image), roi);
+            //d.painter->drawImage(d.out_rect, d.image, roi);
             //what's the difference?
             //d.painter->drawImage(QPoint(), image.scaled(d.renderer_width, d.renderer_height));
         }
@@ -126,7 +129,8 @@ void QPainterRenderer::drawFrame()
         d.painter->scale((qreal)d.out_rect.width()/(qreal)rendererWidth(), (qreal)d.out_rect.height()/(qreal)rendererHeight());
     d.painter->rotate(orientation());
     d.painter->translate(-rendererWidth()/2, -rendererHeight()/2);
-    d.painter->drawImage(QRect(0, 0, rendererWidth(), rendererHeight()), d.image, roi);
+    d.painter->drawPixmap(QRect(0, 0, rendererWidth(), rendererHeight()), QPixmap::fromImage(d.image), roi);
+    //d.painter->drawImage(QRect(0, 0, rendererWidth(), rendererHeight()), d.image, roi);
     d.painter->restore();
 }
 
