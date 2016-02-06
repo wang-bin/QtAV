@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -187,6 +187,12 @@ int AudioFrame::samplesPerChannel() const
 void AudioFrame::setAudioResampler(AudioResampler *conv)
 {
     d_func()->conv = conv;
+}
+
+qint64 AudioFrame::duration() const
+{
+    Q_D(const AudioFrame);
+    return d->format.durationForBytes(d->data.size());
 }
 
 AudioFrame AudioFrame::to(const AudioFormat &fmt) const
