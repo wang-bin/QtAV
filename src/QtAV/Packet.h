@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -55,6 +55,12 @@ public:
      * Packet takes the owner ship. time unit is always ms even constructed from AVPacket.
      */
     const AVPacket* asAVPacket() const;
+    /*!
+     * \brief skip
+     * Skip bytes of packet data. User has to update pts, dts etc to new values.
+     * Useful for asAVPakcet(). When asAVPakcet() is called, AVPacket->pts/dts will be updated to new values.
+     */
+    void skip(int bytes);
 
     bool hasKeyFrame;
     bool isCorrupt;
@@ -75,6 +81,9 @@ bool Packet::isValid() const
     return !isCorrupt && !data.isEmpty() && pts >= 0 && duration >= 0; //!data.isEmpty()?
 }
 
+#ifndef QT_NO_DEBUG_STREAM
+Q_AV_EXPORT QDebug operator<<(QDebug debug, const Packet &pkt);
+#endif
 } //namespace QtAV
 Q_DECLARE_METATYPE(QtAV::Packet)
 #endif // QAV_PACKET_H

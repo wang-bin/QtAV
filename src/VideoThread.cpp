@@ -526,7 +526,7 @@ void VideoThread::run()
         }
         // reduce here to ensure to decode the rest data in the next loop
         if (!pkt.isEOF())
-            pkt.data = QByteArray::fromRawData(pkt.data.constData() + pkt.data.size() - dec->undecodedSize(), dec->undecodedSize());
+            pkt.skip(pkt.data.size() - dec->undecodedSize());
         VideoFrame frame = dec->frame();
         if (!frame.isValid()) {
             qWarning("invalid video frame from decoder. undecoded data size: %d", pkt.data.size());

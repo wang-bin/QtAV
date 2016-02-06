@@ -294,7 +294,7 @@ void AudioThread::run()
         }
         // reduce here to ensure to decode the rest data in the next loop
         if (!pkt.isEOF())
-            pkt.data = QByteArray::fromRawData(pkt.data.constData() + pkt.data.size() - dec->undecodedSize(), dec->undecodedSize());
+            pkt.skip(pkt.data.size() - dec->undecodedSize());
 #if USE_AUDIO_FRAME
         AudioFrame frame(dec->frame());
         if (!frame)
@@ -341,14 +341,10 @@ void AudioThread::run()
             const int chunk = qMin(decodedSize, has_ao ? ao->bufferSize() : 1024*4);//int(max_len*byte_rate));
             //AudioFormat.bytesForDuration
             const qreal chunk_delay = (qreal)chunk/(qreal)byte_rate;
-            pts += chunk_delay;
-            pkt.pts += chunk_delay; // packet not fully decoded, use new pts in the next decoding
-            pkt.dts += chunk_delay;
             if (has_ao && ao->isOpen()) {
                 QByteArray decodedChunk = QByteArray::fromRawData(decoded.constData() + decodedPos, chunk);
                 //qDebug("ao.timestamp: %.3f, pts: %.3f, pktpts: %.3f", ao->timestamp(), pts, pkt.pts);
-
-                ao->play(decodedChunk, pkt.pts); //FIXME: why frame.timestamp() is wrong? i.e. Packet.asAVPacket()->pts is wrong in decoder
+                ao->play(decodedChunk, pts);
                 if (!is_external_clock && ao->timestamp() > 0) {//TODO: clear ao buffer
                    // const qreal da = qAbs(pts - ao->timestamp());
                    // if (da > 1.0) { // what if frame duration is long?
@@ -368,6 +364,9 @@ void AudioThread::run()
             }
             decodedPos += chunk;
             decodedSize -= chunk;
+            pts += chunk_delay;
+            pkt.pts += chunk_delay; // packet not fully decoded, use new pts in the next decoding
+            pkt.dts += chunk_delay;
         }
         if (has_ao)
             emit frameDelivered();
