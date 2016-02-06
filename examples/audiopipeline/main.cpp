@@ -1,6 +1,6 @@
 /******************************************************************************
     audiopipeline:  this file is part of QtAV examples
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2015-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -17,13 +17,11 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
-
 #include <QtAV>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QScopedPointer>
 #include <QtDebug>
 using namespace QtAV;
-static const int kBufferSize = 1024;
 
 int main(int argc, char *argv[])
 {
@@ -62,7 +60,9 @@ int main(int argc, char *argv[])
             continue;
         //frame.setAudioResampler(dec->resampler()); // if not set, always create a resampler in AudioFrame.to()
         AudioFormat af(frame.format());
-        if (!ao->isOpen()) {
+        if (ao->isOpen()) {
+            af = ao->audioFormat();
+        } else {
             dec->resampler()->setOutAudioFormat(af);
             // if decoded format is not supported by audio renderer, change decoder output format
             if (!ao->isSupported(af)) {
@@ -73,7 +73,6 @@ int main(int argc, char *argv[])
             }
             // now af is supported by audio renderer. it's safe to open
             ao->setAudioFormat(af);
-            ao->setBufferSize(kBufferSize);
             if (!ao->open())
                 qFatal("Open audio output error");
 #if 0 // always resample ONCE due to QtAV bug
@@ -81,15 +80,17 @@ int main(int argc, char *argv[])
             if (!ao->isSupported(frame.format()))
                 frame = frame.to(af);
 #endif
+            qDebug() << "Input: " << frame.format();
+            qDebug() << "Output: " << af;
         }
-        printf("playing: %.3f... data size: %d\r", frame.timestamp(), frame.data().size());
+        printf("playing: %.3f...\r", frame.timestamp());
         fflush(0);
         // always resample ONCE. otherwise data are all 0x0. QtAV bug
         frame = frame.to(af);
-        QByteArray data(frame.data());
+        QByteArray data(frame.data()); // plane data. currently only packet sample formats are supported.
         while (!data.isEmpty()) {
-            ao->play(QByteArray::fromRawData(data.constData(), qMin(data.size(), kBufferSize)));
-            data.remove(0, qMin(data.size(), kBufferSize));
+            ao->play(QByteArray::fromRawData(data.constData(), qMin(data.size(), ao->bufferSize())));
+            data.remove(0, qMin(data.size(), ao->bufferSize()));
         }
     }
     // dec, ao will be closed in dtor. demuxer will call unload in dtor
