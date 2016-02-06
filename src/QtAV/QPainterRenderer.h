@@ -35,7 +35,7 @@ public:
     QPainterRenderer();
     bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
 protected:
-    bool prepareFrame(const VideoFrame& frame);
+    bool preparePixmap(const VideoFrame& frame);
     void drawBackground() Q_DECL_OVERRIDE;
     //draw the current frame using the current paint engine. called by paintEvent()
     void drawFrame() Q_DECL_OVERRIDE;

@@ -124,7 +124,7 @@ bool GraphicsItemRenderer::receiveFrame(const VideoFrame& frame)
     } else
 #endif
     {
-        prepareFrame(frame);
+        preparePixmap(frame);
     }
     scene()->update(sceneBoundingRect()); //TODO: thread?
     //update(); //does not cause an immediate paint. my not redraw.

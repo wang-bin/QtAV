@@ -78,7 +78,7 @@ WidgetRenderer::WidgetRenderer(WidgetRendererPrivate &d, QWidget *parent, Qt::Wi
 
 bool WidgetRenderer::receiveFrame(const VideoFrame &frame)
 {
-    prepareFrame(frame);
+    preparePixmap(frame);
     updateUi();
     /*
      * workaround for the widget not updated if has parent. don't know why it works and why update() can't
