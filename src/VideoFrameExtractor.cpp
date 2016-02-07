@@ -104,6 +104,7 @@ class VideoFrameExtractorPrivate : public DPtrPrivate<VideoFrameExtractor>
 public:
     VideoFrameExtractorPrivate()
         : extracted(false)
+        , abort_seek(false)
         , async(true)
         , has_video(true)
         , auto_extract(true)
@@ -189,6 +190,7 @@ public:
 
     // return the key frame position
     bool extractInPrecision(qint64 value, int range) {
+        abort_seek = false;
         frame = VideoFrame();
         if (value < demuxer.startTime())
             value += demuxer.startTime();
@@ -199,6 +201,10 @@ public:
         bool warn_bad_seek = true;
         bool warn_out_of_range = true;
         while (!demuxer.atEnd()) {
+            if (abort_seek) {
+                qDebug("VideoFrameExtractor abort seek before read");
+                return false;
+            }
             if (!demuxer.readFrame())
                 continue;
             if (demuxer.stream() != vstream)
@@ -237,6 +243,10 @@ public:
         // must decode key frame
         int k = 0;
         while (k < 2 && !frame.isValid()) {
+            if (abort_seek) {
+                qDebug("VideoFrameExtractor abort seek before decoding key frames");
+                return false;
+            }
             //qWarning("invalid key frame!!!!! undecoded: %d", decoder->undecodedSize());
             if (decoder->decode(pkt)) {
                 frame = decoder->frame();
@@ -256,6 +266,10 @@ public:
         QVariantHash* dec_opt = &dec_opt_normal; // 0: default, 1: framedrop
         // decode at the given position
         while (!demuxer.atEnd()) {
+            if (abort_seek) {
+                qDebug("VideoFrameExtractor abort seek after key frame before read");
+                return false;
+            }
             if (!demuxer.readFrame())
                 continue;
             if (demuxer.stream() != vstream)
@@ -335,6 +349,7 @@ public:
     }
 
     bool extracted;
+    volatile bool abort_seek;
     bool async;
     bool has_video;
     bool loading;
@@ -485,6 +500,7 @@ void VideoFrameExtractor::extract()
         VideoFrameExtractor *extractor;
         qint64 position;
     };
+    d.abort_seek = true;
     d.thread.addTask(new ExtractTask(this, position()));
     return;
 #endif
