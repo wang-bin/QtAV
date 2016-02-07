@@ -29,7 +29,7 @@
 
 using namespace QtAV;
 const int kTableSize = 200;
-const int kFrames = 1024;
+const int kFrames = 512;
 qint16 sin_table[kTableSize];
 
 void help() {
@@ -64,7 +64,7 @@ int main(int argc, char** argv)
     }
     ao.setAudioFormat(af);
     QByteArray data(af.bytesPerFrame()*kFrames, 0); //bytesPerSample*channels*1024
-    ao.setBufferSize(data.size());
+    ao.setBufferSamples(kFrames);
     if (!ao.open()) {
         qWarning("open audio error");
         return -1;
