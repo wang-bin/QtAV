@@ -191,6 +191,8 @@ void AVClock::pause(bool p)
 
 void AVClock::reset()
 {
+    nb_sync = 0;
+    sync_id = 0;
     // keep mSpeed
     m_state = kStopped;
     value0 = 0;
