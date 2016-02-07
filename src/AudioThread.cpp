@@ -187,7 +187,7 @@ void AudioThread::run()
             continue;
         }
         const bool is_external_clock = d.clock->clockType() == AVClock::ExternalClock;
-        if (is_external_clock) {
+        if (is_external_clock && !pkt.isEOF()) {
             d.delay = dts - d.clock->value();
             /*
              *after seeking forward, a packet may be the old, v packet may be
@@ -332,13 +332,13 @@ void AudioThread::run()
         qreal delay = 0;
         const qreal byte_rate = frame.format().bytesPerSecond();
         qreal pts = frame.timestamp();
+        //qDebug("frame samples: %d @%.3f+%lld", frame.samplesPerChannel()*frame.channelCount(), frame.timestamp(), frame.duration()/1000LL);
         while (decodedSize > 0) {
             if (d.stop) {
                 qDebug("audio thread stop after decode()");
                 break;
             }
-            // TODO: set to format.bytesPerFrame()*1024?
-            const int chunk = qMin(decodedSize, has_ao ? ao->bufferSize() : 1024*4);//int(max_len*byte_rate));
+            const int chunk = qMin(decodedSize, has_ao ? ao->bufferSize() : 512*frame.format().bytesPerFrame());//int(max_len*byte_rate));
             //AudioFormat.bytesForDuration
             const qreal chunk_delay = (qreal)chunk/(qreal)byte_rate;
             if (has_ao && ao->isOpen()) {
