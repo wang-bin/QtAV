@@ -37,8 +37,8 @@ typedef QTime QElapsedTimer;
 namespace QtAV {
 
 // chunk
-static const int kBufferSamples = 1024*2;
-static const int kBufferCount = 8; // 8: may wait too long at the beginning (oal). 2: too small
+static const int kBufferSamples = 512;
+static const int kBufferCount = 8*2; // may wait too long at the beginning (oal) if too large. if buffer count is too small, can not play for high sample rate audio.
 
 typedef void (*scale_samples_func)(quint8 *dst, const quint8 *src, int nb_samples, int volume, float volumef);
 
@@ -582,11 +582,6 @@ AudioFormat::ChannelLayout AudioOutput::preferredChannelLayout() const
 int AudioOutput::bufferSize() const
 {
     return bufferSamples() * d_func().format.bytesPerSample();
-}
-
-void AudioOutput::setBufferSize(int value)
-{
-    setBufferSamples(value);
 }
 
 int AudioOutput::bufferSamples() const
