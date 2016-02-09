@@ -16,7 +16,6 @@
         <file>qml/QMLPlayer/MediaInfoPage.qml</file>
         <file>qml/QMLPlayer/About.qml</file>
         <file>i18n/QMLPlayer_zh_CN.qm</file>
-        <file>fonts/default.ttf</file>
         <file>qml/QMLPlayer/MiscPage.qml</file>
     </qresource>
 </RCC>

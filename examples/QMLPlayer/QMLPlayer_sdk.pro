@@ -42,8 +42,14 @@ COMMON = $$PWD/../common
 INCLUDEPATH *= $$COMMON $$COMMON/..
 RESOURCES += $$COMMON/theme/theme.qrc
 isEmpty(PROJECTROOT): PROJECTROOT = $$PWD/../..
+
+fonts.files = fonts
+fonts.path = fonts
+QMAKE_BUNDLE_DATA += fonts
 mac: RC_FILE = $$PROJECTROOT/src/QtAV.icns
 QMAKE_INFO_PLIST = $$COMMON/Info.plist
+#ios: QMAKE_INFO_PLIST = ios/Info.plist
+
 defineTest(genRC) {
     RC_ICONS = $$PROJECTROOT/src/QtAV.ico
     QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
@@ -92,6 +98,7 @@ android {
     android/gradlew.bat
 
   ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+#user can put fonts in android/assets/fonts
 }
 winrt|wince {
    winrt:isEqual(QT_MAJOR_VERSION, 5):lessThan(QT_MINOR_VERSION, 7) {
@@ -118,7 +125,7 @@ winrt|wince {
     $$[QT_INSTALL_BINS]/swscale-*.dll
   exists($$[QT_INSTALL_BINS]/ass.dll): depend_dll.files += $$[QT_INSTALL_BINS]/ass.dll
   #depend_dll.path = $$OUT_PWD
-  DEPLOYMENT = depend_dll #vs2015update1 error about multiple qt5core.dll(in both build dir and qtbin dir), we can remove them in `Deployment Files`
+  DEPLOYMENT = depend_dll fonts #vs2015update1 error about multiple qt5core.dll(in both build dir and qtbin dir), we can remove them in `Deployment Files`
 # WINRT_MANIFEST file: "=>\"
   winphone {
     WINRT_MANIFEST = winrt/WinPhone8.Package.appxmanifest
