@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -80,6 +80,9 @@ public:
     void setContrast(qreal value);
     void setHue(qreal value);
     void setSaturation(qreal value);
+
+    //void setCustomSampleFunc(const QString& glsl);
+
 protected:
     DPTR_DECLARE(OpenGLVideo)
 

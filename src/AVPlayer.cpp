@@ -1285,7 +1285,7 @@ void AVPlayer::playInternal()
     qreal vfps = d->force_fps;
     bool force_fps = vfps > 0;
     const bool ao_null = d->ao && d->ao->backend().toLower() == QLatin1String("null");
-    if (d->athread && !ao_null) {
+    if (d->athread && !ao_null) { // TODO: no null ao check. null ao block internally
         force_fps = vfps > 0 && !!d->vthread;
     } else if (!force_fps) {
         force_fps = !!d->vthread;

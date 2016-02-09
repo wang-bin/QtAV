@@ -347,7 +347,7 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
 {
     DPTR_D(OpenGLVideo);
     Q_ASSERT(d.manager);
-    VideoShader *shader = d.manager->prepareMaterial(d.material);
+    VideoShader *shader = d.manager->prepareMaterial(d.material); //TODO: print shader type name if changed. prepareMaterial(,sample_code, pp_code)
     shader->update(d.material);
     shader->program()->setUniformValue(shader->opacityLocation(), (GLfloat)1.0);
     shader->program()->setUniformValue(shader->matrixLocation(), transform*d.matrix);
