@@ -2,7 +2,7 @@
     QtAV:  Media play library based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV 2016
+*   This file is part of QtAV (from 2016-02-11)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -23,6 +23,7 @@
 #include <QtCore/QQueue>
 #include <QtCore/QSemaphore>
 #include <QtCore/QThread>
+#include <QtCore/QWaitCondition>
 #include <AudioToolbox/AudioQueue.h>
 #include <AudioToolbox/AudioToolbox.h>
 #include "QtAV/private/mkid.h"
@@ -48,14 +49,18 @@ public:
     bool write(const QByteArray& data) Q_DECL_OVERRIDE;
     bool play() Q_DECL_OVERRIDE;
 
-    static void outCallback(void* inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffer);
 private:
+    static void outCallback(void* inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffer);
+    void tryPauseTimeline();
+
     QVector<AudioQueueBufferRef> m_buffer;
     QVector<AudioQueueBufferRef> m_buffer_fill;
-    QMutex m_mutex;
     AudioQueueRef m_queue;
     AudioStreamBasicDescription m_desc;
 
+    bool m_waiting;
+    QMutex m_mutex;
+    QWaitCondition m_cond;
     QSemaphore sem;
 };
 
@@ -66,7 +71,7 @@ FACTORY_REGISTER(AudioOutputBackend, AudioToolbox, kName)
 #define AT_ENSURE(FUNC, ...) \
     do { \
         OSStatus ret = FUNC; \
-        if (ret) { \
+        if (ret != noErr) { \
             qWarning("AudioOutputAudioToolbox Error>>> " #FUNC " (%d)", ret); \
             return __VA_ARGS__; \
         } \
@@ -102,11 +107,20 @@ void AudioOutputAudioToolbox::outCallback(void* inUserData, AudioQueueRef inAQ, 
     QMutexLocker locker(&ao->m_mutex);
     Q_UNUSED(locker);
     ao->m_buffer_fill.push_back(inBuffer);
+
+    if (ao->m_waiting) {
+        ao->m_waiting = false;
+        qDebug("wake up to fill buffer");
+        ao->m_cond.wakeOne();
+    }
+    //qDebug("callback. sem: %d, fill queue: %d", ao->sem.available(), ao->m_buffer_fill.size());
+    ao->tryPauseTimeline();
 }
 
 AudioOutputAudioToolbox::AudioOutputAudioToolbox(QObject *parent)
     : AudioOutputBackend(AudioOutput::DeviceFeatures()
                          , parent)
+    , m_waiting(false)
 {
     available = false;
 
@@ -126,7 +140,17 @@ void AudioOutputAudioToolbox::onCallback()
 {
     if (bufferControl() & CountCallback)
         sem.release();
-    //qDebug("callback. sem: %d", sem.available());
+}
+
+void AudioOutputAudioToolbox::tryPauseTimeline()
+{
+    /// All buffers are rendered but the AudioQueue timeline continues. If the next buffer sample time is earlier than AudioQueue timeline value, for example resume after pause, the buffer will not be rendered
+    if (sem.available() == buffer_count) {
+        AudioTimeStamp t;
+        AudioQueueGetCurrentTime(m_queue, NULL, &t, NULL);
+        qDebug("pause audio queue timeline @%.3f (sample time)/%lld (host time)", t.mSampleTime, t.mHostTime);
+        AT_ENSURE(AudioQueuePause(m_queue));
+    }
 }
 
 bool AudioOutputAudioToolbox::open()
@@ -140,6 +164,7 @@ bool AudioOutputAudioToolbox::open()
     m_buffer_fill = m_buffer;
 
     sem.release(buffer_count - sem.available());
+    m_waiting = false;
     return true;
 }
 
@@ -149,7 +174,6 @@ bool AudioOutputAudioToolbox::close()
     foreach (AudioQueueBufferRef buf, m_buffer) {
         AT_ENSURE(AudioQueueFreeBuffer(m_queue, buf), false);
     }
-
     return true;
 }
 
@@ -166,9 +190,10 @@ bool AudioOutputAudioToolbox::write(const QByteArray& data)
         QMutexLocker locker(&m_mutex);
         Q_UNUSED(locker);
         // put to data queue, if has buffer to fill (was available in callback), fill the front data
-        if (m_buffer_fill.isEmpty()) { //FIXME: the first call may be empty! use blocking queue instead
-            qWarning("internal error buffer queue to fill should not be empty");
-            return false;
+        if (m_buffer_fill.isEmpty()) {
+            qDebug("buffer queue to fill is empty, wait a valid buffer to fill");
+            m_waiting = true;
+            m_cond.wait(&m_mutex);
         }
         buf = m_buffer_fill.front();
         m_buffer_fill.pop_front();
