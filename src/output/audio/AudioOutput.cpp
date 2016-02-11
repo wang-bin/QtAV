@@ -260,6 +260,9 @@ AudioOutput::AudioOutput(QObject* parent)
     d_func().format.setSampleFormat(AudioFormat::SampleFormat_Signed16);
     d_func().format.setChannelLayout(AudioFormat::ChannelLayout_Stereo);
     static const QStringList all = QStringList()
+#ifdef Q_OS_MAC
+            << QStringLiteral("AudioToolbox")
+#endif
 #if QTAV_HAVE(XAUDIO2)
             << QStringLiteral("XAudio2")
 #endif
