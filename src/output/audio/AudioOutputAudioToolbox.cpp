@@ -36,6 +36,7 @@ class AudioOutputAudioToolbox Q_DECL_FINAL: public AudioOutputBackend
 public:
     AudioOutputAudioToolbox(QObject *parent = 0);
     QString name() const Q_DECL_OVERRIDE { return QLatin1String(kName);}
+    bool isSupported(AudioFormat::SampleFormat smpfmt) const Q_DECL_OVERRIDE;
     bool open() Q_DECL_OVERRIDE;
     bool close() Q_DECL_OVERRIDE;
     //bool flush() Q_DECL_OVERRIDE;
@@ -43,7 +44,6 @@ public:
     void onCallback() Q_DECL_OVERRIDE;
     bool write(const QByteArray& data) Q_DECL_OVERRIDE;
     bool play() Q_DECL_OVERRIDE;
-
 private:
     static void outCallback(void* inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffer);
     void tryPauseTimeline();
@@ -82,11 +82,11 @@ FACTORY_REGISTER(AudioOutputBackend, AudioToolbox, kName)
 
 static AudioStreamBasicDescription audioFormatToAT(const AudioFormat &format)
 {
+    // AudioQueue only supports interleave
     AudioStreamBasicDescription desc;
     desc.mSampleRate = format.sampleRate();
     desc.mFormatID = kAudioFormatLinearPCM;
-    desc.mFormatFlags = kLinearPCMFormatFlagIsSignedInteger|kAudioFormatFlagIsPacked; // TODO: float, endian
-    // FIXME: unsigned int
+    desc.mFormatFlags = kAudioFormatFlagIsPacked; // TODO: kAudioFormatFlagIsPacked?
     if (format.isFloat())
         desc.mFormatFlags |= kAudioFormatFlagIsFloat;
     else if (!format.isUnsigned())
@@ -150,6 +150,11 @@ void AudioOutputAudioToolbox::tryPauseTimeline()
         qDebug("pause audio queue timeline @%.3f (sample time)/%lld (host time)", t.mSampleTime, t.mHostTime);
         AT_ENSURE(AudioQueuePause(m_queue));
     }
+}
+
+bool AudioOutputAudioToolbox::isSupported(AudioFormat::SampleFormat smpfmt) const
+{
+    return !AudioFormat::isPlanar(smpfmt);
 }
 
 bool AudioOutputAudioToolbox::open()
