@@ -29,16 +29,12 @@
 #include "QtAV/private/factory.h"
 #include "utils/Logger.h"
 
-// TODO: ao.pause to avoid continue playing
 namespace QtAV {
-
 static const char kName[] = "AudioToolbox";
 class AudioOutputAudioToolbox Q_DECL_FINAL: public AudioOutputBackend
 {
 public:
     AudioOutputAudioToolbox(QObject *parent = 0);
-    ~AudioOutputAudioToolbox();
-
     QString name() const Q_DECL_OVERRIDE { return QLatin1String(kName);}
     bool open() Q_DECL_OVERRIDE;
     bool close() Q_DECL_OVERRIDE;
@@ -131,12 +127,7 @@ AudioOutputAudioToolbox::AudioOutputAudioToolbox(QObject *parent)
     , m_waiting(false)
 {
     available = false;
-
     available = true;
-}
-
-AudioOutputAudioToolbox::~AudioOutputAudioToolbox()
-{
 }
 
 AudioOutputBackend::BufferControl AudioOutputAudioToolbox::bufferControl() const
@@ -183,15 +174,12 @@ bool AudioOutputAudioToolbox::close()
         return true;
     }
     UInt32 running = 0, s = 0;
-    AT_WARN(AudioQueueGetProperty(m_queue, kAudioQueueProperty_IsRunning, &running, &s));
+    AT_ENSURE(AudioQueueGetProperty(m_queue, kAudioQueueProperty_IsRunning, &running, &s), false);
     if (running)
-        AT_ENSURE(AudioQueueStop(m_queue, true), false); // must free buffers after stop
-    if (!m_buffer.isEmpty()) {
-        foreach (AudioQueueBufferRef buf, m_buffer) {
-            AT_WARN(AudioQueueFreeBuffer(m_queue, buf), false);
-        }
-        m_buffer.clear();
-    }
+        AT_ENSURE(AudioQueueStop(m_queue, true), false);
+    AT_ENSURE(AudioQueueDispose(m_queue, true), false); // dispose all resouces including buffers, so we can remove AudioQueueFreeBuffer
+    m_queue = NULL;
+    m_buffer.clear();
     return true;
 }
 
