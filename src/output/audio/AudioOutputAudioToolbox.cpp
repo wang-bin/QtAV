@@ -24,7 +24,6 @@
 #include <QtCore/QSemaphore>
 #include <QtCore/QThread>
 #include <QtCore/QWaitCondition>
-#include <AudioToolbox/AudioQueue.h>
 #include <AudioToolbox/AudioToolbox.h>
 #include "QtAV/private/mkid.h"
 #include "QtAV/private/factory.h"
@@ -77,6 +76,14 @@ FACTORY_REGISTER(AudioOutputBackend, AudioToolbox, kName)
         } \
     } while(0)
 
+#define AT_WARN(FUNC, ...) \
+    do { \
+        OSStatus ret = FUNC; \
+        if (ret != noErr) { \
+            qWarning("AudioOutputAudioToolbox Error>>> " #FUNC " (%d)", ret); \
+        } \
+    } while(0)
+
 static AudioStreamBasicDescription audioFormatToAT(const AudioFormat &format)
 {
     AudioStreamBasicDescription desc;
@@ -120,6 +127,7 @@ void AudioOutputAudioToolbox::outCallback(void* inUserData, AudioQueueRef inAQ, 
 AudioOutputAudioToolbox::AudioOutputAudioToolbox(QObject *parent)
     : AudioOutputBackend(AudioOutput::DeviceFeatures()
                          , parent)
+    , m_queue(NULL)
     , m_waiting(false)
 {
     available = false;
@@ -170,9 +178,19 @@ bool AudioOutputAudioToolbox::open()
 
 bool AudioOutputAudioToolbox::close()
 {
-    AT_ENSURE(AudioQueueStop(m_queue, true), false);
-    foreach (AudioQueueBufferRef buf, m_buffer) {
-        AT_ENSURE(AudioQueueFreeBuffer(m_queue, buf), false);
+    if (!m_queue) {
+        qDebug("AudioQueue is not created. skip close");
+        return true;
+    }
+    UInt32 running = 0, s = 0;
+    AT_WARN(AudioQueueGetProperty(m_queue, kAudioQueueProperty_IsRunning, &running, &s));
+    if (running)
+        AT_ENSURE(AudioQueueStop(m_queue, true), false); // must free buffers after stop
+    if (!m_buffer.isEmpty()) {
+        foreach (AudioQueueBufferRef buf, m_buffer) {
+            AT_WARN(AudioQueueFreeBuffer(m_queue, buf), false);
+        }
+        m_buffer.clear();
     }
     return true;
 }
@@ -208,8 +226,7 @@ bool AudioOutputAudioToolbox::write(const QByteArray& data)
 
 bool AudioOutputAudioToolbox::play()
 {
-    //UInt32 running = 0;
-    //AT_ENSURE(AudioQueueGetProperty(m_queue, kAudioQueueProperty_IsRunning, &running, NULL), false);
+    // no running check is fine
     AT_ENSURE(AudioQueueStart(m_queue, NULL), false);
     return true;
 }
