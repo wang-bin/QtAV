@@ -161,6 +161,10 @@ config_ipp {
     LIBS *= -L$$(IPPROOT)/../compiler/lib/$$IPPARCH -lsvml -limf
     #omp for static link. _t is multi-thread static link
 }
+mac|ios {
+  SOURCES += output/audio/AudioOutputAudioToolbox.cpp
+  LIBS += -framework AudioToolbox
+}
 win32: {
   HEADERS += output/audio/xaudio2_compat.h
   SOURCES += output/audio/AudioOutputXAudio2.cpp
@@ -276,11 +280,12 @@ config_vda {
     LIBS += -framework VideoDecodeAcceleration -framework CoreVideo -framework CoreFoundation \
             -framework IOSurface
 }
-config_videotoolbox:!ios {
+config_videotoolbox {
   DEFINES *= QTAV_HAVE_VIDEOTOOLBOX=1
   SOURCES += codec/video/VideoDecoderVideoToolbox.cpp
-  LIBS += -framework CoreVideo -framework CoreFoundation -framework CoreMedia \
-          -framework IOSurface -framework VideoToolbox
+  LIBS += -framework CoreVideo -framework CoreFoundation -framework CoreMedia -framework VideoToolbox
+# iOS use gles and IOSurface is private
+  !ios: LIBS += -framework IOSurface
 }
 
 config_gl|config_opengl {
