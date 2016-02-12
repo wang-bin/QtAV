@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -38,6 +38,7 @@ public:
     int buffer_size;
     int buffer_count;
     AudioFormat format;
+    static QStringList defaultPriority();
     /*!
      * \brief AudioOutputBackend
      * Specify supported features by the backend. Use this for new backends.

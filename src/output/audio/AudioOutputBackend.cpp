@@ -25,6 +25,34 @@
 
 namespace QtAV {
 
+QStringList AudioOutputBackend::defaultPriority()
+{
+    static const QStringList sBackends = QStringList()
+#ifdef Q_OS_MAC
+            << QStringLiteral("AudioToolbox")
+#endif
+#if QTAV_HAVE(XAUDIO2)
+            << QStringLiteral("XAudio2")
+#endif
+#if QTAV_HAVE(PULSEAUDIO)&& !defined(Q_OS_MAC)
+            << QStringLiteral("Pulse")
+#endif
+#if QTAV_HAVE(OPENSL)
+            << QStringLiteral("OpenSL")
+#endif
+#if QTAV_HAVE(OPENAL)
+            << QStringLiteral("OpenAL")
+#endif
+#if QTAV_HAVE(PORTAUDIO)
+            << QStringLiteral("PortAudio")
+#endif
+#if QTAV_HAVE(DSOUND)
+            << QStringLiteral("DirectSound")
+#endif
+              ;
+    return sBackends;
+}
+
 AudioOutputBackend::AudioOutputBackend(AudioOutput::DeviceFeatures f, QObject *parent)
     : QObject(parent)
     , audio(0)

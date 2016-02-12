@@ -259,30 +259,7 @@ AudioOutput::AudioOutput(QObject* parent)
     qDebug() << "Registered audio backends: " << AudioOutput::backendsAvailable(); // call this to register
     d_func().format.setSampleFormat(AudioFormat::SampleFormat_Signed16);
     d_func().format.setChannelLayout(AudioFormat::ChannelLayout_Stereo);
-    static const QStringList all = QStringList()
-#ifdef Q_OS_MAC
-            << QStringLiteral("AudioToolbox")
-#endif
-#if QTAV_HAVE(XAUDIO2)
-            << QStringLiteral("XAudio2")
-#endif
-#if QTAV_HAVE(PULSEAUDIO)&& !defined(Q_OS_MAC)
-            << QStringLiteral("Pulse")
-#endif
-#if QTAV_HAVE(OPENSL)
-            << QStringLiteral("OpenSL")
-#endif
-#if QTAV_HAVE(OPENAL)
-            << QStringLiteral("OpenAL")
-#endif
-#if QTAV_HAVE(PORTAUDIO)
-            << QStringLiteral("PortAudio")
-#endif
-#if QTAV_HAVE(DSOUND)
-            << QStringLiteral("DirectSound")
-#endif
-              ;
-    setBackends(all); //ensure a backend is available
+    setBackends(AudioOutputBackend::defaultPriority()); //ensure a backend is available
 }
 
 AudioOutput::~AudioOutput()
