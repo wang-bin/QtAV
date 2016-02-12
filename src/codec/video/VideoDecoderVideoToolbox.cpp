@@ -26,6 +26,7 @@
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/factory.h"
 #include "utils/OpenGLHelper.h"
+//#include <OpenGLES/EAGL.h>
 #include <assert.h>
 #ifdef __cplusplus
 extern "C" {
@@ -45,6 +46,7 @@ extern "C" {
 #define kCFCoreFoundationVersionNumber10_7      635.00
 #endif
 
+//kCVPixelBufferOpenGLESCompatibilityKey //ios6
 namespace QtAV {
 
 class VideoDecoderVideoToolboxPrivate;
@@ -88,7 +90,7 @@ public:
         copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
         description = QStringLiteral("VideoToolbox");
     }
-    ~VideoDecoderVideoToolboxPrivate() {qDebug("~VideoDecoderVideoToolboxPrivate");}
+    ~VideoDecoderVideoToolboxPrivate() {}
     bool open() Q_DECL_OVERRIDE;
     void close() Q_DECL_OVERRIDE;
 
@@ -195,12 +197,31 @@ VideoFrame VideoDecoderVideoToolbox::frame()
     class SurfaceInteropCVBuffer Q_DECL_FINAL: public VideoSurfaceInterop {
         bool glinterop;
         CVPixelBufferRef cvbuf; // keep ref until video frame is destroyed
+#ifdef Q_OS_IOS
+        CVOpenGLESTextureCacheRef es_tex_cache;
+        QVector<CVOpenGLESTextureRef> es_tex_ref;
+#endif
     public:
         SurfaceInteropCVBuffer(CVPixelBufferRef cv, bool gl) : glinterop(gl), cvbuf(cv) {
             CVPixelBufferRetain(cvbuf); // videotoolbox need it for map and CVPixelBufferRelease
+#ifdef Q_OS_IOS
+            es_tex_ref.reserve(4);
+            // TODO: move to map() to ensure correct thread.
+            // eagl is objc
+            //CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, NULL, (CVEAGLContext*)EAGLContext::currentContext(), NULL, &es_tex_cache);
+#endif
         }
         ~SurfaceInteropCVBuffer() {
             CVPixelBufferRelease(cvbuf);
+#ifdef Q_OS_IOS
+            // FIXME: thread?
+            foreach (CVOpenGLESTextureRef tex, es_tex_ref) {
+                CFRelease(tex);
+            }
+            if (es_tex_cache) {
+                CFRelease(es_tex_cache);
+            }
+#endif
         }
         void* mapToHost(const VideoFormat &format, void *handle, int plane) {
             Q_UNUSED(plane);
@@ -237,20 +258,33 @@ VideoFrame VideoDecoderVideoToolbox::frame()
             if (type == HostMemorySurface) {
                 return mapToHost(fmt, handle, plane);
             }
+            if (type == SourceSurface) {
+                CVPixelBufferRef *b = reinterpret_cast<CVPixelBufferRef*>(handle);
+                *b = cvbuf;
+                return handle;
+            }
             if (type != GLTextureSurface)
                 return 0;
             // https://www.opengl.org/registry/specs/APPLE/rgb_422.txt
             // TODO: check extension GL_APPLE_rgb_422 and rectangle?
-            IOSurfaceRef surface  = CVPixelBufferGetIOSurface(cvbuf);
-            int w = IOSurfaceGetWidthOfPlane(surface, plane);
-            int h = IOSurfaceGetHeightOfPlane(surface, plane);
-            //qDebug("plane:%d, iosurface %dx%d, ctx: %p", plane, w, h, CGLGetCurrentContext());
-            OSType pixfmt = IOSurfaceGetPixelFormat(surface); //CVPixelBufferGetPixelFormatType(cvbuf);
-            GLenum iformat = GL_RGBA8;
-            GLenum format = GL_BGRA;
-            GLenum dtype = GL_UNSIGNED_INT_8_8_8_8_REV;
+            int w = CVPixelBufferGetWidthOfPlane(cvbuf, plane);
+            int h = CVPixelBufferGetHeightOfPlane(cvbuf, plane);
+            OSType pixfmt = CVPixelBufferGetPixelFormatType(cvbuf);
+            GLenum iformat = GL_RGB8; //GL_RGB, sized: GL_RGB8. TODO: internal format = format (GL_RGB_422_APPLE) for iOS GLES2?
+            // https://www.opengl.org/registry/specs/APPLE/rgb_422.txt
+            // https://www.opengl.org/registry/specs/APPLE/ycbcr_422.txt  uyvy: UNSIGNED_SHORT_8_8_REV_APPLE, yuy2: GL_UNSIGNED_SHORT_8_8_APPLE
+            GLenum format = GL_RGB_422_APPLE;
+            GLenum dtype = GL_UNSIGNED_SHORT_8_8_APPLE;
+            // OSX: GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV
+            // GL_YCBCR_422_APPLE: convert to rgb texture internally (bt601). only supports OSX
+            // GL_RGB_422_APPLE: raw yuv422 texture
+#ifdef Q_OS_IOS
+            const GLenum target = GL_TEXTURE_2D;
+            if (es_tex_ref.size() < plane + 1)
+                es_tex_ref.resize(plane+1);
+#else
             const GLenum target = GL_TEXTURE_RECTANGLE;
-            // TODO: GL_RED, GL_RG is better for gl >= 3.0
+#endif
             if (pixfmt == NV12) {
                 dtype = GL_UNSIGNED_BYTE;
                 if (plane == 0) {
@@ -258,8 +292,8 @@ VideoFrame VideoDecoderVideoToolbox::frame()
                 } else {
                     iformat = format = OpenGLHelper::useDeprecatedFormats() ? GL_LUMINANCE_ALPHA : GL_RG;
                 }
-            } else if (pixfmt == UYVY || pixfmt == YUYV) {
-                w /= 2; //rgba texture
+            } else if (pixfmt == YUYV) {
+                dtype = GL_UNSIGNED_SHORT_8_8_REV_APPLE;
             } else if (pixfmt == YUV420P) {
                 dtype = GL_UNSIGNED_BYTE;
                 iformat = format = OpenGLHelper::useDeprecatedFormats() ? GL_LUMINANCE : GL_RED;
@@ -267,10 +301,17 @@ VideoFrame VideoDecoderVideoToolbox::frame()
                     iformat = format = GL_ALPHA;
             }
             DYGL(glBindTexture(target, *((GLuint*)handle)));
+#ifdef Q_OS_IOS //TODO: use CVPixelBufferLockBaseAddress and upload texture can avoid using EAGL
+            CVOpenGLESTextureCacheCreateTextureFromImage(kCFAllocatorDefault, es_tex_cache, cvbuf, NULL, target, iformat, w, h, format, dtype, plane, &es_tex_ref[plane]);
+            CVOpenGLESTextureGetName(es_tex_ref[plane]); //FIXME: too late to get texture
+
+#else
+            const IOSurfaceRef surface  = CVPixelBufferGetIOSurface(cvbuf);
             CGLError err = CGLTexImageIOSurface2D(CGLGetCurrentContext(), target, iformat, w, h, format, dtype, surface, plane);
             if (err != kCGLNoError) {
                 qWarning("error creating IOSurface texture at plane %d: %s", plane, CGLErrorString(err));
             }
+#endif
             DYGL(glBindTexture(target, 0));
             return handle;
         }
@@ -282,6 +323,7 @@ VideoFrame VideoDecoderVideoToolbox::frame()
             Q_UNUSED(planeHeight);
             if (!glinterop)
                 return 0;
+            // ios map here, release and clear VideoShader textures in unmap. So must always map even if frame not change
             GLuint *tex = (GLuint*)handle;
             DYGL(glGenTextures(1, tex));
             // no init required
@@ -296,8 +338,8 @@ VideoFrame VideoDecoderVideoToolbox::frame()
         // make sure VideoMaterial can correctly setup parameters
         switch (format()) {
         case UYVY:
-            pitch[0] = 2*d.width; //
-            pixfmt = VideoFormat::Format_VYUY; //FIXME: VideoShader assume uyvy is uploaded as rgba, but apple limits the result to bgra
+            pitch[0] = 4*d.width;
+            pixfmt = VideoFormat::Format_VYU;
             break;
         case NV12:
             pitch[0] = d.width;
@@ -308,8 +350,8 @@ VideoFrame VideoDecoderVideoToolbox::frame()
             pitch[1] = pitch[2] = d.width/2;
             break;
         case YUYV:
-            pitch[0] = 2*d.width; //
-            //pixfmt = VideoFormat::Format_YVYU; //
+            pitch[0] = 4*d.width;
+            pixfmt = VideoFormat::Format_VYU;
             break;
         default:
             break;
@@ -333,7 +375,9 @@ VideoFrame VideoDecoderVideoToolbox::frame()
         f.setTimestamp(double(d.frame->pkt_pts)/1000.0);
         f.setDisplayAspectRatio(d.getDAR(d.frame));
         if (zero_copy) {
+#ifndef Q_OS_IOS
             f.setMetaData(QStringLiteral("target"), QByteArrayLiteral("rect"));
+#endif
         } else {
             f.setBits(src); // only set for copy back mode
         }
