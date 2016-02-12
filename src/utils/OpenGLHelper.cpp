@@ -532,6 +532,11 @@ static QMatrix4x4 channelMap(const VideoFormat& fmt)
                                  0.0f, 0.0f, 0.0f, 1.0f,
                                  0.0f, 1.0f, 0.0f, 0.0f,
                                  0.0f, 0.0f, 0.0f, 1.0f);
+    case VideoFormat::Format_VYU:
+        return QMatrix4x4(0.0f, 1.0f, 0.0f, 0.0f,
+                                 0.0f, 0.0f, 1.0f, 0.0f,
+                                 1.0f, 0.0f, 0.0f, 0.0f,
+                                 0.0f, 0.0f, 0.0f, 1.0f);
     default:
         break;
     }
@@ -632,6 +637,7 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
         }
     }
     static const fmt_entry pixfmt_to_gl_swizzele[] = {
+        {VideoFormat::Format_VYU, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE },
         {VideoFormat::Format_UYVY, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE },
         {VideoFormat::Format_YUYV, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE },
         {VideoFormat::Format_VYUY, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE },

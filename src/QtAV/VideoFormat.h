@@ -127,6 +127,8 @@ public:
         Format_BGRA64, //native endian
         Format_BGRA64LE,
         Format_BGRA64BE,
+
+        Format_VYU, // for rgb422_apple texture, the layout is like rgb24: (v, y, u, )
         Format_User
     };
 

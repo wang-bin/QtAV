@@ -104,10 +104,6 @@ public:
     }
 
     void init() {
-        // FIXME: hack for invalid ffmpeg formats
-        if (pixfmt == VideoFormat::Format_VYUY) {
-            pixfmt_ff = QTAV_PIX_FMT_C(UYVY422);
-        }
         // TODO: what if other formats not supported by ffmpeg? give attributes in QtAV?
         if (pixfmt_ff == QTAV_PIX_FMT_C(NONE)) {
             qWarning("Invalid pixel format");
@@ -370,6 +366,9 @@ static const struct {
     { VideoFormat::Format_RGBA64, QTAV_PIX_FMT_C(RGBA64) },
     { VideoFormat::Format_BGRA64, QTAV_PIX_FMT_C(BGRA64) },
 #endif //QTAV_USE_FFMPEG(LIBAVUTIL)
+    { VideoFormat::Format_VYUY, QTAV_PIX_FMT_C(UYVY422) }, // FIXME: hack for invalid ffmpeg formats
+
+    { VideoFormat::Format_VYU, QTAV_PIX_FMT_C(RGB32) },
     { VideoFormat::Format_Invalid, QTAV_PIX_FMT_C(NONE) },
 };
 
@@ -714,7 +713,7 @@ bool VideoFormat::isPlanar() const
 
 bool VideoFormat::isRGB() const
 {
-    return (d->flags() & AV_PIX_FMT_FLAG_RGB) == AV_PIX_FMT_FLAG_RGB;
+    return (d->flags() & AV_PIX_FMT_FLAG_RGB) == AV_PIX_FMT_FLAG_RGB && d->pixfmt != Format_VYU;
 }
 
 bool VideoFormat::hasAlpha() const
@@ -774,7 +773,6 @@ QDebug operator<<(QDebug dbg, VideoFormat::PixelFormat pixFmt)
     return dbg.space();
 }
 #endif
-
 
 namespace {
     class VideoFormatPrivateRegisterMetaTypes
