@@ -1,8 +1,8 @@
 ﻿/******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -111,10 +111,6 @@ public:
         if (try_pbo)
             try_pbo = enable_pbo;
         pbo.reserve(4);
-        pbo.resize(4);
-        // QOpenGLBuffer is shared, must initialize 1 by 1.
-        for (int i = 0; i < pbo.size(); ++i)
-            pbo[i] = QOpenGLBuffer(QOpenGLBuffer::PixelUnpackBuffer);
         colorTransform.setOutputColorSpace(ColorSpace_RGB);
     }
     ~VideoMaterialPrivate();
@@ -142,7 +138,7 @@ public:
     int plane1_linesize;
 
     // textures.d in updateTextureParameters() changed. happens in qml. why?
-    quint8 workaround_vector_crash_on_linux[8];
+    quint8 workaround_vector_crash_on_linux[8]; //TODO: remove
     QVector<GLuint> textures; //texture ids. size is plane count
     QVector<QSize> texture_size;
     /*

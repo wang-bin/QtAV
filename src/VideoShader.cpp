@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -227,7 +227,7 @@ const char* VideoShader::fragmentShader() const
         const int bpc = d.video_format.bitsPerComponent();
         if (bpc > 8) {
             //// has and use 16 bit texture (r16 for example): If channel depth is 16 bit, no range convertion required. Otherwise, must convert to color.r*(2^16-1)/(2^bpc-1)
-            if (OpenGLHelper::depth16BitTexture() < 16 || !OpenGLHelper::has16BitTexture() || bpc < 16 || d.video_format.isBigEndian())
+            if (OpenGLHelper::depth16BitTexture() < 16 || !OpenGLHelper::has16BitTexture() || d.video_format.isBigEndian())
                 frag.prepend("#define CHANNEL16_TO8\n");
         }
 #if YUVA_DONE
@@ -247,6 +247,7 @@ const char* VideoShader::fragmentShader() const
     }
     if (textureTarget() == GL_TEXTURE_RECTANGLE)
         frag.prepend("#define MULTI_COORD\n");
+    //qDebug() << frag.constData();
     return frag.constData();
 }
 
@@ -463,13 +464,16 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
                 d.vec_to8 = QVector2D(256.0, 1.0)*255.0/(float)range;
             else
                 d.vec_to8 = QVector2D(1.0, 256.0)*255.0/(float)range;
-        } else if (d.bpc < 16) {
-            /// FIXME: 16bit (R16 e.g.) texture does not support >8bit be channels
+        } else {
+            /// 16bit (R16 e.g.) texture does not support >8bit be channels
             /// 10p be: R2 R1(Host) = R1*2^8+R2 = 000000rr rrrrrrrr ->(GL) R=R2*2^8+R1
             /// 10p le: R1 R2(Host) = rrrrrrrr rr000000
-            d.vec_to8 = QVector2D(1.0, 0.0)*65535.0/(float)range;
+            //d.vec_to8 = QVector2D(1.0, 0.0)*65535.0/(float)range;
+            d.colorTransform.setChannelDepthScale(65535.0/(qreal)range, YUVA_DONE && fmt.hasAlpha());
         }
-
+    } else {
+        if (d.bpc <= 8)
+            d.colorTransform.setChannelDepthScale(1.0);
     }
     // http://forum.doom9.org/archive/index.php/t-160211.html
     ColorSpace cs = frame.colorSpace();// ColorSpace_RGB;
@@ -532,7 +536,7 @@ qint64 VideoMaterial::type() const
     const int rg_biplane = fmt.planeCount()==2 && !OpenGLHelper::useDeprecatedFormats() && OpenGLHelper::hasRG();
     // nv21 bpc=1?
     const int bpc = fmt.bitsPerComponent();
-    const int channel16_to8 = bpc > 8 && (OpenGLHelper::depth16BitTexture() < 16 || !OpenGLHelper::has16BitTexture() || bpc < 16 || fmt.isBigEndian());
+    const int channel16_to8 = bpc > 8 && (OpenGLHelper::depth16BitTexture() < 16 || !OpenGLHelper::has16BitTexture() || fmt.isBigEndian());
     return (rg_biplane<<4)|(tex_2d<<3)|(fmt.hasAlpha()<<2)|(fmt.isPlanar()<<1)|(channel16_to8);
 }
 
@@ -606,6 +610,10 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
     DYGL(glTexParameteri(d.target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
     // TODO: data address use surfaceinterop.map()
     DYGL(glTexSubImage2D(d.target, 0, 0, 0, d.texture_upload_size[p].width(), d.texture_upload_size[p].height(), d.data_format[p], d.data_type[p], d.try_pbo ? 0 : d.frame.constBits(p)));
+    if (false) { //texture_upload_size[].width()*gl_bpp != bytesPerLine[]
+        for (int y = 0; y < d.plane0Size.height(); ++y)
+            DYGL(glTexSubImage2D(d.target, 0, 0, y, d.texture_upload_size[p].width()/3, 1, d.data_format[p], d.data_type[p], d.try_pbo ? 0 : d.frame.constBits(p)+y*d.plane0Size.width()));
+    }
     //DYGL(glBindTexture(d.target, 0)); // no bind 0 because glActiveTexture was called
     if (d.try_pbo) {
         d.pbo[p].release();
@@ -839,8 +847,8 @@ VideoMaterialPrivate::~VideoMaterialPrivate()
     if (!textures.isEmpty()) {
         DYGL(glDeleteTextures(textures.size(), textures.data()));
     }
-    for (int i = 0; i < pbo.size(); ++i)
-        pbo[i].destroy();
+    textures.clear();
+    pbo.clear();
 }
 
 bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
@@ -941,6 +949,7 @@ bool VideoMaterialPrivate::ensureResources()
             texture_size[i] = QSize(frame.bytesPerLine(i), frame.planeHeight(i));
             texture_upload_size[i] = texture_size[i];
             effective_tex_width[i] = frame.effectiveBytesPerLine(i); //store bytes here, modify as width later
+            //qDebug("bpl%d: %d/%d", i, frame.effectiveBytesPerLine(i), frame.bytesPerLine(i));
             // TODO: ratio count the GL_UNPACK_ALIGN?
             //effective_tex_width_ratio = qMin((qreal)1.0, (qreal)frame.effectiveBytesPerLine(i)/(qreal)frame.bytesPerLine(i));
         }
@@ -967,8 +976,10 @@ bool VideoMaterialPrivate::ensureResources()
         try_pbo = try_pbo && OpenGLHelper::isPBOSupported();
         // check PBO support with bind() is fine, no need to check extensions
         if (try_pbo) {
+            pbo.resize(nb_planes);
             for (int i = 0; i < nb_planes; ++i) {
                 qDebug("Init PBO for plane %d", i);
+                pbo[i] = QOpenGLBuffer(QOpenGLBuffer::PixelUnpackBuffer); //QOpenGLBuffer is shared, must initialize 1 by 1 but not use fill
                 if (!initPBO(i, frame.bytesPerLine(i)*frame.planeHeight(i))) {
                     qWarning("Failed to init PBO for plane %d", i);
                     break;

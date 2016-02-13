@@ -18,7 +18,6 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
 #ifdef GL_ES
 // Set default precision to medium
 precision mediump int;
@@ -100,10 +99,16 @@ void main()
                              dot(sample(u_Texture0, v_TexCoords0).rg, u_to8),
                              dot(sample(u_Texture1, v_TexCoords1).rg, u_to8),
                              dot(sample(u_Texture2, v_TexCoords2).rg, u_to8),
+#ifdef HAS_ALPHA
+                             dot(sample(u_Texture3, v_TexCoords3).rg, u_to8)
+#endif //HAS_ALPHA
 #else
                              dot(sample(u_Texture0, v_TexCoords0).ra, u_to8),
                              dot(sample(u_Texture1, v_TexCoords1).ra, u_to8),
                              dot(sample(u_Texture2, v_TexCoords2).ra, u_to8),
+#ifdef HAS_ALPHA
+                             dot(sample(u_Texture3, v_TexCoords3).ra, u_to8)
+#endif //HAS_ALPHA
 #endif //USE_RG
 #else
 #ifdef USE_RG
@@ -114,28 +119,23 @@ void main()
 #else
                              sample(u_Texture2, v_TexCoords2).r,
 #endif //IS_BIPLANE
+#ifdef HAS_ALPHA
+                             sample(u_Texture3, v_TexCoords3).r
+
+#endif //HAS_ALPHA
 #else
 // use r, g, a to work for both yv12 and nv12. idea from xbmc
                              sample(u_Texture0, v_TexCoords0).r,
                              sample(u_Texture1, v_TexCoords1).g,
                              sample(u_Texture2, v_TexCoords2).a,
-#endif //USE_RG
-#endif //CHANNEL16_TO8
-                             1)
-                         , 0.0, 1.0) * u_opacity;
 #ifdef HAS_ALPHA
-#ifdef CHANNEL16_TO8
-#ifdef USE_RG
-    gl_FragColor.a *= dot(sample(u_Texture3, v_TexCoords3).rg, u_to8); //GL_RG
-#else
-    gl_FragColor.a *= dot(sample(u_Texture3, v_TexCoords3).ra, u_to8); //GL_LUMINANCE_ALPHA
-#endif //USE_RG
-#else //8bit
-#ifdef USE_RG
-    gl_FragColor.a *= sample(u_Texture3, v_TexCoords3).r;
-#else
-    gl_FragColor.a *= sample(u_Texture3, v_TexCoords3).a; //GL_ALPHA
+                             sample(u_Texture3, v_TexCoords3).a
+#endif //HAS_ALPHA
 #endif //USE_RG
 #endif //CHANNEL16_TO8
+#ifndef HAS_ALPHA
+                             1
 #endif //HAS_ALPHA
+                            )
+                         , 0.0, 1.0) * u_opacity;
 }

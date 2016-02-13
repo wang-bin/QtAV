@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -41,7 +41,6 @@ static const QMatrix4x4 yuv2rgb_bt601 =
                 0.0f, 1.0f, 0.0f, -0.5f,
                 0.0f, 0.0f, 1.0f, -0.5f,
                 0.0f, 0.0f, 0.0f, 1.0f);
-
 static const QMatrix4x4 yuv2rgb_bt709 =
            QMatrix4x4(
                 1.0f,  0.000f,  1.5701f, 0.0f,
@@ -79,6 +78,8 @@ public:
         , saturation(0)
         , contrast(0)
         , brightness(0)
+        , bpc_scale(1.0)
+        , a_bpc_scale(false)
     {}
     Private(const Private& other)
         : QSharedData(other)
@@ -89,6 +90,8 @@ public:
         , saturation(0)
         , contrast(0)
         , brightness(0)
+        , bpc_scale(1.0)
+        , a_bpc_scale(false)
     {}
     ~Private() {}
 
@@ -99,6 +102,8 @@ public:
         saturation = 0;
         contrast = 0;
         brightness = 0;
+        bpc_scale = 1.0;
+        a_bpc_scale = false;
         M.setToIdentity();
     }
     // TODO: optimize for other color spaces
@@ -143,7 +148,9 @@ public:
                               0.0f,                   0.0f,                   0.0f, 1.0f
         );
 
+        // B*C*S*H*rgb_range_mat(*yuv2rgb*yuv_range_mat)*bpc_scale
         M = B*C*S*H;
+        // M *= rgb_range_translate*rgb_range_scale
         // TODO: transform to output color space other than RGB
         switch (in) {
         case ColorSpace_RGB:
@@ -153,7 +160,14 @@ public:
             break;
         default:
             M *= YUV2RGB(in);
+            // M *= yuv_range_scale*yuv_range_translate
             break;
+        }
+        if (bpc_scale != 1.0) {
+            M *= QMatrix4x4(bpc_scale, 0, 0, 0,
+                            0, bpc_scale, 0, 0,
+                            0, 0, bpc_scale, 0,
+                            0, 0, 0, a_bpc_scale ? bpc_scale : 1); // scale alpha channel too
         }
         switch (out) {
         case ColorSpace_RGB:
@@ -170,6 +184,8 @@ public:
     mutable bool recompute;
     ColorSpace in, out;
     qreal hue, saturation, contrast, brightness;
+    qreal bpc_scale;
+    bool a_bpc_scale;
     mutable QMatrix4x4 M; // count the transformations between spaces
 };
 
@@ -282,6 +298,16 @@ void ColorTransform::setSaturation(qreal saturation)
 qreal ColorTransform::saturation() const
 {
     return d->saturation;
+}
+
+void ColorTransform::setChannelDepthScale(qreal value, bool scaleAlpha)
+{
+    if (d->bpc_scale == value && d->a_bpc_scale == scaleAlpha)
+        return;
+    qDebug("ColorTransform bpc_scale %f=>%f, scale alpha: %d=>%d", d->bpc_scale, d->a_bpc_scale, value);
+    d->bpc_scale = value;
+    d->a_bpc_scale = scaleAlpha;
+    d->recompute = true;
 }
 
 } //namespace QtAV
