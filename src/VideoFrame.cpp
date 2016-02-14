@@ -68,9 +68,9 @@ VideoFrame VideoFrame::fromGPU(const VideoFormat& fmt, int width, int height, in
         }
         // additional 15 bytes to ensure 16 bytes aligned
         QByteArray buf(15 + yuv_size, 0);
-        const int offset_16 = (16 - ((uintptr_t)buf.data() & 0x0f)) & 0x0f;
+        const int offset_16 = (16 - ((uintptr_t)buf.constData() & 0x0f)) & 0x0f;
         // plane 1, 2... is aligned?
-        uchar* plane_ptr = (uchar*)buf.data() + offset_16;
+        uchar* plane_ptr = (uchar*)buf.constData() + offset_16;
         QVector<uchar*> dst(nb_planes, 0);
         for (int i = 0; i < nb_planes; ++i) {
             dst[i] = plane_ptr;
@@ -289,14 +289,13 @@ int VideoFrame::height() const
 
 int VideoFrame::effectivePlaneWidth(int plane) const
 {
-    Q_D(const VideoFrame);
-    return effectiveBytesPerLine(plane)/d->format.bytesPerPixel(plane); //padded bpl?
+    return planeWidth(plane)*effectiveBytesPerLine(plane)/bytesPerLine(plane);
 }
 
 int VideoFrame::planeWidth(int plane) const
 {
     Q_D(const VideoFrame);
-    return bytesPerLine(plane)/d->format.bytesPerPixel(plane);
+    return d->format.width(width(), plane);
 }
 
 int VideoFrame::planeHeight(int plane) const
