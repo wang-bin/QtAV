@@ -195,7 +195,7 @@ config_openal {
     HEADERS *= capi/openal_api.h
     SOURCES *= capi/openal_api.cpp
     DEFINES *= QTAV_HAVE_OPENAL=1
-    static_openal: DEFINES += AL_LIBTYPE_STATIC
+    static_openal: DEFINES += AL_LIBTYPE_STATIC # openal-soft AL_API dllimport error. mac's macro is AL_BUILD_LIBRARY
     ios: CONFIG *= config_openal_link
     !capi|config_openal_link|static_openal {
       DEFINES *= CAPI_LINK_OPENAL

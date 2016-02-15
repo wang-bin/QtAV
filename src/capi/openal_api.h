@@ -26,6 +26,7 @@
 #ifndef CAPI_LINK_OPENAL
 namespace openal {
 namespace capi {
+#define AL_LIBTYPE_STATIC // openal-soft AL_API dllimport error. mac's macro is AL_BUILD_LIBRARY
 #else
 extern "C" {
 #endif
