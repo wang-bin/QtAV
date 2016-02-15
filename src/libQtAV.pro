@@ -191,15 +191,14 @@ config_portaudio {
     #win32: LIBS *= -lwinmm #-lksguid #-luuid
 }
 config_openal {
-    SOURCES += output/audio/AudioOutputOpenAL.cpp
+    SOURCES *= output/audio/AudioOutputOpenAL.cpp
+    HEADERS *= capi/openal_api.h
+    SOURCES *= capi/openal_api.cpp
     DEFINES *= QTAV_HAVE_OPENAL=1
-    ios: CONFIG *= config_openal_link
-    capi {
-      HEADERS *= capi/openal_api.h
-      SOURCES *= capi/openal_api.cpp
-    }
     static_openal: DEFINES += AL_LIBTYPE_STATIC
+    ios: CONFIG *= config_openal_link
     !capi|config_openal_link|static_openal {
+      DEFINES *= CAPI_LINK_OPENAL
       win32 {
         LIBS += -lOpenAL32 -lwinmm
       } else:mac {
@@ -330,8 +329,8 @@ config_libass {
     DEFINES += CAPI_LINK_ASS
   }
   DEFINES *= QTAV_HAVE_LIBASS=1
-  HEADERS *= subtitle/ass_api.h
-  SOURCES *= subtitle/ass_api.cpp
+  HEADERS *= capi/ass_api.h
+  SOURCES *= capi/ass_api.cpp
   SOURCES *= subtitle/SubtitleProcessorLibASS.cpp
 }
 capi {
