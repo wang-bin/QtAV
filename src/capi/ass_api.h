@@ -1,6 +1,6 @@
 /******************************************************************************
     mkapi dynamic load code generation for capi template
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
     https://github.com/wang-bin/mkapi
     https://github.com/wang-bin/capi
 
@@ -72,7 +72,7 @@ public:
     void ass_set_hinting(ASS_Renderer * priv, ASS_Hinting ht);
     void ass_set_line_spacing(ASS_Renderer * priv, double line_spacing);
     void ass_set_line_position(ASS_Renderer * priv, double line_position);
-    void ass_set_fonts(ASS_Renderer * priv, const char * default_font, const char * default_family, int fc, const char * config, int update);
+    void ass_set_fonts(ASS_Renderer * priv, const char * default_font, const char * default_family, int dfp, const char * config, int update);
     void ass_set_selective_style_override_enabled(ASS_Renderer * priv, int bits);
     void ass_set_selective_style_override(ASS_Renderer * priv, ASS_Style * style);
     int ass_fonts_update(ASS_Renderer * priv);
@@ -87,6 +87,7 @@ public:
     void ass_process_data(ASS_Track * track, char * data, int size);
     void ass_process_codec_private(ASS_Track * track, char * data, int size);
     void ass_process_chunk(ASS_Track * track, char * data, int size, long long timecode, long long duration);
+    void ass_set_check_readorder(ASS_Track *track, int check_readorder);
     void ass_flush_events(ASS_Track * track);
     ASS_Track * ass_read_file(ASS_Library * library, char * fname, char * codepage);
     ASS_Track * ass_read_memory(ASS_Library * library, char * buf, size_t bufsize, char * codepage);
@@ -98,7 +99,7 @@ public:
 #endif // !defined(CAPI_LINK_ASS) && !defined(ASS_CAPI_NS)
 };
 } //namespace ass
-#ifndef ASS_CAPI_BUILD
+#ifndef ASS_CAPI_BUILD // avoid ambiguous in ass_api.cpp
 #ifdef ASS_CAPI_NS
 using namespace ass::capi;
 #else

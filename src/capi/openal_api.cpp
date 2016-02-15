@@ -49,7 +49,7 @@ static const char* names[] = {
 
 class user_dso : public ::capi::dso {}; //%DSO%
 
-# if 1
+#if 1
 static const int versions[] = {
     ::capi::NoVersion,
 // the following line will be replaced by the content of config/openal/version if exists

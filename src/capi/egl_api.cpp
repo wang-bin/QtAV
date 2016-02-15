@@ -1,6 +1,6 @@
 /******************************************************************************
     mkapi dynamic load code generation for capi template
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2015-2016 Wang Bin <wbsecg1@gmail.com>
     https://github.com/wang-bin/mkapi
     https://github.com/wang-bin/capi
 
@@ -74,16 +74,18 @@ public:
     }
 };
 
-# if 1
+typedef EGLLib user_dso;
+
+#if 1
 static const int versions[] = {
     ::capi::NoVersion,
 // the following line will be replaced by the content of config/egl/version if exists
-    1
-    , ::capi::EndVersion
+1,
+    ::capi::EndVersion
 };
-CAPI_BEGIN_DLL_VER(names, versions, EGLLib)
+CAPI_BEGIN_DLL_VER(names, versions, user_dso)
 # else
-CAPI_BEGIN_DLL(names, EGLLib)
+CAPI_BEGIN_DLL(names, user_dso)
 # endif //CAPI_HAS_EGL_VERSION
 // CAPI_DEFINE_RESOLVER(argc, return_type, name, argv_no_name)
 // mkapi code generation BEGIN
@@ -134,6 +136,8 @@ CAPI_DEFINE_M_ENTRY(EGLSync, EGLAPIENTRY, eglCreateSync, CAPI_ARG3(EGLDisplay, E
 CAPI_DEFINE_M_ENTRY(EGLBoolean, EGLAPIENTRY, eglDestroySync, CAPI_ARG2(EGLDisplay, EGLSync))
 CAPI_DEFINE_M_ENTRY(EGLint, EGLAPIENTRY, eglClientWaitSync, CAPI_ARG4(EGLDisplay, EGLSync, EGLint, EGLTime))
 CAPI_DEFINE_M_ENTRY(EGLBoolean, EGLAPIENTRY, eglGetSyncAttrib, CAPI_ARG4(EGLDisplay, EGLSync, EGLint, EGLAttrib *))
+CAPI_DEFINE_M_ENTRY(EGLImage, EGLAPIENTRY, eglCreateImage, CAPI_ARG5(EGLDisplay, EGLContext, EGLenum, EGLClientBuffer, const EGLAttrib *))
+CAPI_DEFINE_M_ENTRY(EGLBoolean, EGLAPIENTRY, eglDestroyImage, CAPI_ARG2(EGLDisplay, EGLImage))
 CAPI_DEFINE_M_ENTRY(EGLDisplay, EGLAPIENTRY, eglGetPlatformDisplay, CAPI_ARG3(EGLenum, void *, const EGLAttrib *))
 CAPI_DEFINE_M_ENTRY(EGLSurface, EGLAPIENTRY, eglCreatePlatformWindowSurface, CAPI_ARG4(EGLDisplay, EGLConfig, void *, const EGLAttrib *))
 CAPI_DEFINE_M_ENTRY(EGLSurface, EGLAPIENTRY, eglCreatePlatformPixmapSurface, CAPI_ARG4(EGLDisplay, EGLConfig, void *, const EGLAttrib *))
@@ -191,6 +195,8 @@ CAPI_DEFINE(EGLSync, eglCreateSync, CAPI_ARG3(EGLDisplay, EGLenum, const EGLAttr
 CAPI_DEFINE(EGLBoolean, eglDestroySync, CAPI_ARG2(EGLDisplay, EGLSync))
 CAPI_DEFINE(EGLint, eglClientWaitSync, CAPI_ARG4(EGLDisplay, EGLSync, EGLint, EGLTime))
 CAPI_DEFINE(EGLBoolean, eglGetSyncAttrib, CAPI_ARG4(EGLDisplay, EGLSync, EGLint, EGLAttrib *))
+CAPI_DEFINE(EGLImage, eglCreateImage, CAPI_ARG5(EGLDisplay, EGLContext, EGLenum, EGLClientBuffer, const EGLAttrib *))
+CAPI_DEFINE(EGLBoolean, eglDestroyImage, CAPI_ARG2(EGLDisplay, EGLImage))
 CAPI_DEFINE(EGLDisplay, eglGetPlatformDisplay, CAPI_ARG3(EGLenum, void *, const EGLAttrib *))
 CAPI_DEFINE(EGLSurface, eglCreatePlatformWindowSurface, CAPI_ARG4(EGLDisplay, EGLConfig, void *, const EGLAttrib *))
 CAPI_DEFINE(EGLSurface, eglCreatePlatformPixmapSurface, CAPI_ARG4(EGLDisplay, EGLConfig, void *, const EGLAttrib *))

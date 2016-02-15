@@ -1,6 +1,6 @@
 /******************************************************************************
     mkapi dynamic load code generation for capi template
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
     https://github.com/wang-bin/mkapi
     https://github.com/wang-bin/capi
 
@@ -18,13 +18,15 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
+//%DEFS%
+
 #define ASS_CAPI_BUILD
-//#define DEBUG_RESOLVE
-//#define DEBUG_LOAD
+#define DEBUG_RESOLVE
+#define DEBUG_LOAD
 //#define CAPI_IS_LAZY_RESOLVE 0
 #ifndef CAPI_LINK_ASS
 #include "capi.h"
-#endif
+#endif //CAPI_LINK_ASS
 #include "ass_api.h" //include last to avoid covering types later
 
 namespace ass {
@@ -34,20 +36,25 @@ api::~api(){}
 bool api::loaded() const{return true;}
 #else
 static const char* names[] = {
-    "ass",
+    "ass", //%LIBS%
+#ifdef CAPI_TARGET_OS_WIN
     "libass",
+#endif
     NULL
 };
-# if 1
+
+class user_dso : public ::capi::dso {}; //%DSO%
+
+#if 1
 static const int versions[] = {
     ::capi::NoVersion,
 // the following line will be replaced by the content of config/ass/version if exists
-5, 4
-    , ::capi::EndVersion
+5, 4,
+    ::capi::EndVersion
 };
-CAPI_BEGIN_DLL_VER(names, versions, ::capi::dso)
+CAPI_BEGIN_DLL_VER(names, versions, user_dso)
 # else
-CAPI_BEGIN_DLL(names, ::capi::dso)
+CAPI_BEGIN_DLL(names, user_dso)
 # endif //1
 // CAPI_DEFINE_RESOLVER(argc, return_type, name, argv_no_name)
 // mkapi code generation BEGIN
@@ -88,6 +95,7 @@ CAPI_DEFINE_ENTRY(void, ass_free_track, CAPI_ARG1(ASS_Track *))
 CAPI_DEFINE_ENTRY(void, ass_process_data, CAPI_ARG3(ASS_Track *, char *, int))
 CAPI_DEFINE_ENTRY(void, ass_process_codec_private, CAPI_ARG3(ASS_Track *, char *, int))
 CAPI_DEFINE_ENTRY(void, ass_process_chunk, CAPI_ARG5(ASS_Track *, char *, int, long long, long long))
+CAPI_DEFINE_ENTRY(void, ass_set_check_readorder, CAPI_ARG2(ASS_Track *, int))
 CAPI_DEFINE_ENTRY(void, ass_flush_events, CAPI_ARG1(ASS_Track *))
 CAPI_DEFINE_ENTRY(ASS_Track *, ass_read_file, CAPI_ARG3(ASS_Library *, char *, char *))
 CAPI_DEFINE_ENTRY(ASS_Track *, ass_read_memory, CAPI_ARG4(ASS_Library *, char *, size_t, char *))
@@ -138,6 +146,7 @@ CAPI_DEFINE(void, ass_free_track, CAPI_ARG1(ASS_Track *))
 CAPI_DEFINE(void, ass_process_data, CAPI_ARG3(ASS_Track *, char *, int))
 CAPI_DEFINE(void, ass_process_codec_private, CAPI_ARG3(ASS_Track *, char *, int))
 CAPI_DEFINE(void, ass_process_chunk, CAPI_ARG5(ASS_Track *, char *, int, long long, long long))
+CAPI_DEFINE(void, ass_set_check_readorder, CAPI_ARG2(ASS_Track *, int))
 CAPI_DEFINE(void, ass_flush_events, CAPI_ARG1(ASS_Track *))
 CAPI_DEFINE(ASS_Track *, ass_read_file, CAPI_ARG3(ASS_Library *, char *, char *))
 CAPI_DEFINE(ASS_Track *, ass_read_memory, CAPI_ARG4(ASS_Library *, char *, size_t, char *))
