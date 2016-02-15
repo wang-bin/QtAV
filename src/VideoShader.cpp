@@ -464,6 +464,7 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
                 d.vec_to8 = QVector2D(256.0, 1.0)*255.0/(float)range;
             else
                 d.vec_to8 = QVector2D(1.0, 256.0)*255.0/(float)range;
+            d.colorTransform.setChannelDepthScale(1.0);
         } else {
             /// 16bit (R16 e.g.) texture does not support >8bit be channels
             /// 10p be: R2 R1(Host) = R1*2^8+R2 = 000000rr rrrrrrrr ->(GL) R=R2*2^8+R1
