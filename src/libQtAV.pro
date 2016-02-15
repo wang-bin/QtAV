@@ -5,10 +5,10 @@ QT += core gui
 #CONFIG *= ltcg
 greaterThan(QT_MAJOR_VERSION, 4) {
   lessThan(QT_MINOR_VERSION, 5):!no_gui_private {
-  contains(QT_CONFIG, opengles2)|contains(QT_CONFIG, dynamicgl) {
-    QT *= gui-private #dxva+egl
-    DEFINES *= QTAV_HAVE_GUI_PRIVATE=1
-  }
+    contains(QT_CONFIG, opengles2)|contains(QT_CONFIG, dynamicgl) {
+      QT *= gui-private #dxva+egl
+      DEFINES *= QTAV_HAVE_GUI_PRIVATE=1
+    }
   }
   contains(QT_CONFIG, opengl) {
       CONFIG *= config_opengl
@@ -47,7 +47,7 @@ config_uchardet {
 }
 exists($$PROJECTROOT/contrib/capi/capi.pri) {
   include($$PROJECTROOT/contrib/capi/capi.pri)
-  CONFIG *= capi
+  DEFINES *= QTAV_HAVE_CAPI=1
 } else {
   warning("contrib/capi is missing. run 'git submodule update --init' first")
 }
@@ -193,17 +193,24 @@ config_portaudio {
 config_openal {
     SOURCES += output/audio/AudioOutputOpenAL.cpp
     DEFINES *= QTAV_HAVE_OPENAL=1
+    ios: CONFIG *= config_openal_link
+    capi {
+      HEADERS *= capi/openal_api.h
+      SOURCES *= capi/openal_api.cpp
+    }
     static_openal: DEFINES += AL_LIBTYPE_STATIC
-    win32 {
-      LIBS += -lOpenAL32 -lwinmm
-    } else:mac {
-      LIBS += -framework OpenAL
-      DEFINES += HEADER_OPENAL_PREFIX
-    } else:blackberry {
-      LIBS += -lOpenAL
-    } else {
-      LIBS += -lopenal
-      static_openal:!android: LIBS += -lasound
+    !capi|config_openal_link|static_openal {
+      win32 {
+        LIBS += -lOpenAL32 -lwinmm
+      } else:mac {
+        LIBS += -framework OpenAL
+        DEFINES += HEADER_OPENAL_PREFIX
+      } else:blackberry {
+        LIBS += -lOpenAL
+      } else {
+        LIBS += -lopenal
+        static_openal:!android: LIBS += -lasound
+      }
     }
 }
 config_opensl {
@@ -282,7 +289,9 @@ config_vda {
 }
 config_videotoolbox {
   DEFINES *= QTAV_HAVE_VIDEOTOOLBOX=1
-  SOURCES += codec/video/VideoDecoderVideoToolbox.cpp
+  SOURCES *= codec/video/VideoDecoderVideoToolbox.cpp
+  #HEADERS *= codec/video/SurfaceInteropVideoToolbox.h
+  #SOURCES *= codec/video/SurfaceInteropVideoToolbox.cpp
   LIBS += -framework CoreVideo -framework CoreFoundation -framework CoreMedia -framework VideoToolbox
 # iOS use gles and IOSurface is private
   !ios: LIBS += -framework IOSurface

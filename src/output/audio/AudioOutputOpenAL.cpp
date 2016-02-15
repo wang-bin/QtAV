@@ -27,6 +27,10 @@
 #include <QtCore/QWaitCondition>
 #include <QtCore/QVector>
 
+#if QTAV_HAVE(CAPI)
+#define OPENAL_CAPI_NS // CAPI_LINK_OPENAL will override it
+#include "capi/openal_api.h"
+#else
 #if defined(HEADER_OPENAL_PREFIX)
 #include <OpenAL/al.h>
 #include <OpenAL/alc.h>
@@ -34,6 +38,7 @@
 #include <AL/al.h>
 #include <AL/alc.h>
 #endif
+#endif //QTAV_HAVE(CAPI)
 #include "utils/Logger.h"
 
 #define UNQUEUE_QUICK 0

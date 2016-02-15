@@ -1,11 +1,14 @@
-CONFIG -= qt
-CONFIG += console
+include(../paths.pri)
 
 SOURCES += main.cpp
-
-win32: LIBS += -lOpenAL32
-unix:!mac:!blackberry: LIBS += -lopenal
-blackberry: LIBS += -lOpenAL
-mac: LIBS += -framework OpenAL
 mac: DEFINES += HEADER_OPENAL_PREFIX
-include(../paths.pri)
+
+exists(../../contrib/capi/capi.pri) {
+  CONFIG = staticlib
+} else {
+  win32: LIBS += -lOpenAL32
+  unix:!mac:!blackberry: LIBS += -lopenal
+  blackberry: LIBS += -lOpenAL
+  mac: LIBS += -framework OpenAL
+}
+
