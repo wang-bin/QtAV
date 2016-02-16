@@ -57,6 +57,11 @@ public:
     void setInputColorSpace(ColorSpace cs);
     ColorSpace outputColorSpace() const;
     void setOutputColorSpace(ColorSpace cs);
+    /// Currently assume input is yuv, output is rgb
+    void setInputColorRange(ColorRange value);
+    ColorRange inputColorRange() const;
+    void setOutputColorRange(ColorRange value);
+    ColorRange outputColorRange() const;
     /*!
      * \brief matrix
      * \return result matrix to transform from inputColorSpace to outputColorSpace with given brightness,

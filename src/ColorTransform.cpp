@@ -40,7 +40,8 @@ static const QMatrix4x4 yuv2rgb_bt601 =
                 1.0f, 0.0f, 0.0f, 0.0f,
                 0.0f, 1.0f, 0.0f, -0.5f,
                 0.0f, 0.0f, 1.0f, -0.5f,
-                0.0f, 0.0f, 0.0f, 1.0f);
+                0.0f, 0.0f, 0.0f, 1.0f)
+        ;
 static const QMatrix4x4 yuv2rgb_bt709 =
            QMatrix4x4(
                 1.0f,  0.000f,  1.5701f, 0.0f,
@@ -52,7 +53,8 @@ static const QMatrix4x4 yuv2rgb_bt709 =
                 1.0f, 0.0f, 0.0f, 0.0f,
                 0.0f, 1.0f, 0.0f, -0.5f,
                 0.0f, 0.0f, 1.0f, -0.5f,
-                0.0f, 0.0f, 0.0f, 1.0f);
+                0.0f, 0.0f, 0.0f, 1.0f)
+        ;
 
 const QMatrix4x4& ColorTransform::YUV2RGB(ColorSpace cs)
 {
@@ -67,13 +69,65 @@ const QMatrix4x4& ColorTransform::YUV2RGB(ColorSpace cs)
     return yuv2rgb_bt601;
 }
 
+// For yuv->rgb, assume yuv is full range before convertion, rgb is full range after convertion. so if input yuv is limited range, transform to full range first. If display rgb is limited range, transform to limited range at last.
+// *ColorRangeYUV(...)
+static QMatrix4x4 ColorRangeYUV(ColorRange from, ColorRange to)
+{
+    if (from == to)
+        return QMatrix4x4();
+    static const qreal Y2 = 235, Y1 = 16, C2 = 240, C1 = 16;
+    static const qreal s = 255; //TODO: can be others
+    if (from == ColorRange_Limited) {
+        qDebug("input yuv limited range");
+        // [Y1, Y2] => [0, s]
+        QMatrix4x4 m;
+        m.scale(s/(Y2 - Y1), s/(C2 - C1), s/(C2 - C1));
+        m.translate(-Y1/s, -C1/s, -C1/s);
+        return m;
+    }
+    if (from == ColorRange_Full) {
+        // [0, s] => [Y1, Y2]
+        QMatrix4x4 m;
+        m.translate(Y1/s, C1/s, C1/s);
+        m.scale((Y2 - Y1)/s, (C2 - C1)/s, (C2 - C1)/s);
+        return m;
+    }
+    // ColorRange_Unknown
+    return QMatrix4x4();
+}
+
+// ColorRangeRGB(...)*
+static QMatrix4x4 ColorRangeRGB(ColorRange from, ColorRange to)
+{
+    if (from == to)
+        return QMatrix4x4();
+    static const qreal R2 = 235, R1 = 16;
+    static const qreal s = 255;
+    if (to == ColorRange_Limited) {
+        qDebug("output rgb limited range");
+        QMatrix4x4 m;
+        m.translate(R1/s, R1/s, R1/s);
+        m.scale((R2 - R1)/s, (R2 - R1)/s, (R2 - R1)/s);
+        return m;
+    }
+    if (to == ColorRange_Full) {
+        QMatrix4x4 m;
+        m.scale(s/(R2 - R1), s/(R2 - R1), s/(R2 - R1));
+        m.translate(-s/R1, -s/R1, -s/R1);
+        return m;
+    }
+    return QMatrix4x4();
+}
+
 class ColorTransform::Private : public QSharedData
 {
 public:
     Private()
         : recompute(true)
-        , in(ColorSpace_RGB)
-        , out(ColorSpace_RGB)
+        , cs_in(ColorSpace_RGB)
+        , cs_out(ColorSpace_RGB)
+        , range_in(ColorRange_Limited)
+        , range_out(ColorRange_Full)
         , hue(0)
         , saturation(0)
         , contrast(0)
@@ -84,8 +138,10 @@ public:
     Private(const Private& other)
         : QSharedData(other)
         , recompute(true)
-        , in(ColorSpace_RGB)
-        , out(ColorSpace_RGB)
+        , cs_in(ColorSpace_RGB)
+        , cs_out(ColorSpace_RGB)
+        , range_in(ColorRange_Limited)
+        , range_out(ColorRange_Full)
         , hue(0)
         , saturation(0)
         , contrast(0)
@@ -97,7 +153,8 @@ public:
 
     void reset() {
         recompute = true;
-        //in = out = ColorSpace_RGB; ///
+        //cs_in = cs_out = ColorSpace_RGB; ///
+        //range_in = range_out = ColorRange_Unknown;
         hue = 0;
         saturation = 0;
         contrast = 0;
@@ -152,15 +209,27 @@ public:
         M = B*C*S*H;
         // M *= rgb_range_translate*rgb_range_scale
         // TODO: transform to output color space other than RGB
-        switch (in) {
+        switch (cs_out) {
+        case ColorSpace_RGB:
+            M *= ColorRangeRGB(ColorRange_Full, range_out);
+            break;
+        case ColorSpace_GBR:
+            M *= ColorRangeRGB(ColorRange_Full, range_out);
+            M = kGBR2RGB.inverted() * M;
+            break;
+        default:
+            M = YUV2RGB(cs_out).inverted() * M;
+            break;
+        }
+
+        switch (cs_in) {
         case ColorSpace_RGB:
             break;
         case ColorSpace_GBR:
             M *= kGBR2RGB;
             break;
         default:
-            M *= YUV2RGB(in);
-            // M *= yuv_range_scale*yuv_range_translate
+            M *= YUV2RGB(cs_in)*ColorRangeYUV(range_in, ColorRange_Full);
             break;
         }
         if (bpc_scale != 1.0) {
@@ -169,20 +238,12 @@ public:
                             0, 0, bpc_scale, 0,
                             0, 0, 0, a_bpc_scale ? bpc_scale : 1); // scale alpha channel too
         }
-        switch (out) {
-        case ColorSpace_RGB:
-            break;
-        case ColorSpace_GBR:
-            M = kGBR2RGB.inverted() * M;
-            break;
-        default:
-            M = YUV2RGB(out).inverted() * M;
-            break;
-        }
+        //qDebug() << "color mat: " << M;
     }
 
     mutable bool recompute;
-    ColorSpace in, out;
+    ColorSpace cs_in, cs_out;
+    ColorRange range_in, range_out;
     qreal hue, saturation, contrast, brightness;
     qreal bpc_scale;
     bool a_bpc_scale;
@@ -200,28 +261,54 @@ ColorTransform::~ColorTransform()
 
 ColorSpace ColorTransform::inputColorSpace() const
 {
-    return d->in;
+    return d->cs_in;
 }
 
 void ColorTransform::setInputColorSpace(ColorSpace cs)
 {
-    if (d->in == cs)
+    if (d->cs_in == cs)
         return;
-    d->in = cs;
+    d->cs_in = cs;
     d->recompute = true; //TODO: only recompute color space transform
 }
 
 ColorSpace ColorTransform::outputColorSpace() const
 {
-    return d->out;
+    return d->cs_out;
 }
 
 void ColorTransform::setOutputColorSpace(ColorSpace cs)
 {
-    if (d->out == cs)
+    if (d->cs_out == cs)
         return;
-    d->out = cs;
+    d->cs_out = cs;
     d->recompute = true; //TODO: only recompute color space transform
+}
+
+ColorRange ColorTransform::inputColorRange() const
+{
+    return d->range_in;
+}
+
+void ColorTransform::setInputColorRange(ColorRange value)
+{
+    if (d->range_in == value)
+        return;
+    d->range_in = value;
+    d->recompute = true;
+}
+
+ColorRange ColorTransform::outputColorRange() const
+{
+    return d->range_out;
+}
+
+void ColorTransform::setOutputColorRange(ColorRange value)
+{
+    if (d->range_out == value)
+        return;
+    d->range_out = value;
+    d->recompute = true;
 }
 
 QMatrix4x4 ColorTransform::matrix() const
@@ -304,10 +391,9 @@ void ColorTransform::setChannelDepthScale(qreal value, bool scaleAlpha)
 {
     if (d->bpc_scale == value && d->a_bpc_scale == scaleAlpha)
         return;
-    qDebug("ColorTransform bpc_scale %f=>%f, scale alpha: %d=>%d", d->bpc_scale, d->a_bpc_scale, value);
+    qDebug("ColorTransform bpc_scale %f=>%f, scale alpha: %d=>%d", d->bpc_scale, value, d->a_bpc_scale, scaleAlpha);
     d->bpc_scale = value;
     d->a_bpc_scale = scaleAlpha;
     d->recompute = true;
 }
-
 } //namespace QtAV

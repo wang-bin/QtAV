@@ -75,6 +75,16 @@ enum ColorSpace {
 };
 
 /*!
+ * \brief The ColorRange enum
+ * YUV or RGB color range
+ */
+enum ColorRange {
+    ColorRange_Unknown,
+    ColorRange_Limited,
+    ColorRange_Full
+};
+
+/*!
  * \brief The SurfaceType enum
  * HostMemorySurface:
  * Map the decoded frame to host memory

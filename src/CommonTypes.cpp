@@ -53,4 +53,12 @@ ColorSpace colorSpaceFromFFmpeg(AVColorSpace cs)
     }
 }
 
+ColorRange colorRangeFromFFmpeg(AVColorRange cr)
+{
+    switch (cr) {
+    case AVCOL_RANGE_MPEG: return ColorRange_Limited;
+    case AVCOL_RANGE_JPEG: return ColorRange_Full;
+    default: return ColorRange_Unknown;
+    }
 }
+} //namespace QtAV
