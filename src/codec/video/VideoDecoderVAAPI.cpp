@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -364,7 +364,7 @@ VideoFrame VideoDecoderVAAPI::frame()
         SurfaceInteropVAAPI *interop = new SurfaceInteropVAAPI(d.interop_res);
         interop->setSurface(p, d.width, d.height);
 
-        VideoFormat fmt(VideoFormat::Format_RGB32);
+        VideoFormat fmt(VideoFormat::Format_RGB32); //TODO: nv12
         VAImage img;
         // TODO: derive/get image only once and pass to interop object
         const bool test_format = OpenGLHelper::isEGL() && vaapi::checkEGL_DMA() && va_0_38::isValid();
@@ -389,7 +389,7 @@ VideoFrame VideoDecoderVAAPI::frame()
         f.setDisplayAspectRatio(d.getDAR(d.frame));
 
         ColorSpace cs = colorSpaceFromFFmpeg(av_frame_get_colorspace(d.frame));
-        if (cs != ColorSpace_Unknow)
+        if (cs != ColorSpace_Unknown)
             cs = colorSpaceFromFFmpeg(d.codec_ctx->colorspace);
         if (cs == ColorSpace_BT601)
             p->setColorSpace(VA_SRC_BT601);

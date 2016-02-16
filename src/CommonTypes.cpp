@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -49,7 +49,7 @@ ColorSpace colorSpaceFromFFmpeg(AVColorSpace cs)
     case AVCOL_SPC_BT709: return ColorSpace_BT709;
     case AVCOL_SPC_BT470BG: return ColorSpace_BT601;
     case AVCOL_SPC_SMPTE170M: return ColorSpace_BT601;
-    default: return ColorSpace_Unknow;
+    default: return ColorSpace_Unknown;
     }
 }
 

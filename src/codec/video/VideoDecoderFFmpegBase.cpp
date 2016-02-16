@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -30,7 +30,7 @@ extern ColorSpace colorSpaceFromFFmpeg(AVColorSpace cs);
 void VideoDecoderFFmpegBasePrivate::updateColorDetails(VideoFrame *f)
 {
     ColorSpace cs = colorSpaceFromFFmpeg(av_frame_get_colorspace(frame));
-    if (cs != ColorSpace_Unknow)
+    if (cs != ColorSpace_Unknown)
         cs = colorSpaceFromFFmpeg(codec_ctx->colorspace);
     f->setColorSpace(cs);
 }
@@ -129,7 +129,7 @@ bool VideoDecoderFFmpegBase::decode(const Packet &packet)
     if (!d.codec_ctx->width || !d.codec_ctx->height)
         return false;
     //qDebug("codec %dx%d, frame %dx%d", d.codec_ctx->width, d.codec_ctx->height, d.frame->width, d.frame->height);
-    d.width = d.frame->width;
+    d.width = d.frame->width; // TODO: remove? used in hwdec
     d.height = d.frame->height;
     //avcodec_align_dimensions2(d.codec_ctx, &d.width_align, &d.height_align, aligns);
     return true;

@@ -117,7 +117,7 @@ public:
         : FramePrivate()
         , width(0)
         , height(0)
-        , color_space(ColorSpace_Unknow)
+        , color_space(ColorSpace_Unknown)
         , displayAspectRatio(0)
         , format(VideoFormat::Format_Invalid)
     {}
@@ -125,7 +125,7 @@ public:
         : FramePrivate()
         , width(w)
         , height(h)
-        , color_space(ColorSpace_Unknow)
+        , color_space(ColorSpace_Unknown)
         , displayAspectRatio(0)
         , format(fmt)
     {
@@ -398,7 +398,7 @@ VideoFrame VideoFrame::to(const VideoFormat &fmt, const QSize& dstSize, const QR
     if (fmt.isRGB()) {
         f.setColorSpace(fmt.isPlanar() ? ColorSpace_GBR : ColorSpace_RGB);
     } else {
-        f.setColorSpace(ColorSpace_Unknow);
+        f.setColorSpace(ColorSpace_Unknown);
     }
     f.setTimestamp(timestamp());
     f.setDisplayAspectRatio(displayAspectRatio());
@@ -529,7 +529,7 @@ VideoFrame VideoFrameConverter::convert(const VideoFrame &frame, int fffmt) cons
     if (fmt.isRGB()) {
         f.setColorSpace(fmt.isPlanar() ? ColorSpace_GBR : ColorSpace_RGB);
     } else {
-        f.setColorSpace(ColorSpace_Unknow);
+        f.setColorSpace(ColorSpace_Unknown);
     }
     return f;
 }

@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -67,7 +67,7 @@ enum SeekType {
 //http://www.itu.int/dms_pubrec/itu-r/rec/bt/R-REC-BT.709-5-200204-I!!PDF-E.pdf
 // TODO: other color spaces (yuv itu.xxxx, XYZ, ...)
 enum ColorSpace {
-    ColorSpace_Unknow,
+    ColorSpace_Unknown,
     ColorSpace_RGB,
     ColorSpace_GBR, // for planar gbr format(e.g. video from x264) used in glsl
     ColorSpace_BT601,

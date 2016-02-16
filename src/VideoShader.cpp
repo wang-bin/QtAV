@@ -478,7 +478,7 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     }
     // http://forum.doom9.org/archive/index.php/t-160211.html
     ColorSpace cs = frame.colorSpace();// ColorSpace_RGB;
-    if (cs == ColorSpace_Unknow) {
+    if (cs == ColorSpace_Unknown) {
         if (fmt.isRGB()) {
             if (fmt.isPlanar())
                 cs = ColorSpace_GBR;
