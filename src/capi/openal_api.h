@@ -156,7 +156,7 @@ public:
 } //namespace openal
 
 #ifndef OPENAL_CAPI_BUILD // avoid ambiguous in openal_api.cpp
-#ifdef OPENAL_CAPI_NS
+#if defined(OPENAL_CAPI_NS) && !defined(CAPI_LINK_OPENAL)
 using namespace openal::capi;
 #else
 using namespace openal;

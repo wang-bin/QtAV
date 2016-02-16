@@ -111,7 +111,7 @@ public:
 } //namespace egl
 
 #ifndef EGL_CAPI_BUILD // avoid ambiguous in egl_api.cpp
-#ifdef EGL_CAPI_NS
+#if defined(EGL_CAPI_NS) && !defined(CAPI_LINK_EGL)
 using namespace egl::capi;
 #else
 using namespace egl;

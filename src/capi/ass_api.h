@@ -100,7 +100,7 @@ public:
 };
 } //namespace ass
 #ifndef ASS_CAPI_BUILD // avoid ambiguous in ass_api.cpp
-#ifdef ASS_CAPI_NS
+#if defined(ASS_CAPI_NS) && !defined(CAPI_LINK_ASS)
 using namespace ass::capi;
 #else
 using namespace ass;
