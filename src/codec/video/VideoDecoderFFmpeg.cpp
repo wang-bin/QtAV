@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -235,10 +235,6 @@ VideoDecoderId VideoDecoderFFmpeg::id() const
 VideoFrame VideoDecoderFFmpeg::frame()
 {
     DPTR_D(VideoDecoderFFmpeg);
-    /*qDebug("color space: %d, range: %d, prim: %d, t: %d"
-           , d.codec_ctx->colorspace, d.codec_ctx->color_range
-           , d.codec_ctx->color_primaries, d.codec_ctx->color_trc);
-           */
     if (d.frame->width <= 0 || d.frame->height <= 0 || !d.codec_ctx)
         return VideoFrame();
     // it's safe if width, height, pixfmt will not change, only data change

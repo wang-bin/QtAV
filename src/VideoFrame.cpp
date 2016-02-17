@@ -118,6 +118,7 @@ public:
         , width(0)
         , height(0)
         , color_space(ColorSpace_Unknown)
+        , color_range(ColorRange_Unknown)
         , displayAspectRatio(0)
         , format(VideoFormat::Format_Invalid)
     {}
@@ -126,6 +127,7 @@ public:
         , width(w)
         , height(h)
         , color_space(ColorSpace_Unknown)
+        , color_range(ColorRange_Unknown)
         , displayAspectRatio(0)
         , format(fmt)
     {
@@ -139,6 +141,7 @@ public:
     ~VideoFramePrivate() {}
     int width, height;
     ColorSpace color_space;
+    ColorRange color_range;
     float displayAspectRatio;
     VideoFormat format;
     QScopedPointer<QImage> qt_image;
@@ -242,6 +245,7 @@ VideoFrame VideoFrame::clone() const
     f.setTimestamp(d->timestamp);
     f.setDisplayAspectRatio(d->displayAspectRatio);
     f.setColorSpace(d->color_space);
+    f.setColorRange(d->color_range);
     return f;
 }
 
@@ -333,6 +337,16 @@ void VideoFrame::setColorSpace(ColorSpace value)
     d_func()->color_space = value;
 }
 
+ColorRange VideoFrame::colorRange() const
+{
+    return d_func()->color_range;
+}
+
+void VideoFrame::setColorRange(ColorRange value)
+{
+    d_func()->color_range = value;
+}
+
 int VideoFrame::effectiveBytesPerLine(int plane) const
 {
     Q_D(const VideoFrame);
@@ -400,6 +414,7 @@ VideoFrame VideoFrame::to(const VideoFormat &fmt, const QSize& dstSize, const QR
     } else {
         f.setColorSpace(ColorSpace_Unknown);
     }
+    // TODO: color range
     f.setTimestamp(timestamp());
     f.setDisplayAspectRatio(displayAspectRatio());
     f.d_ptr->metadata = d->metadata; // need metadata?
@@ -531,6 +546,7 @@ VideoFrame VideoFrameConverter::convert(const VideoFrame &frame, int fffmt) cons
     } else {
         f.setColorSpace(ColorSpace_Unknown);
     }
+    // TODO: color range
     return f;
 }
 

@@ -26,13 +26,33 @@
 namespace QtAV {
 
 extern ColorSpace colorSpaceFromFFmpeg(AVColorSpace cs);
+extern ColorRange colorRangeFromFFmpeg(AVColorRange cr);
 
 void VideoDecoderFFmpegBasePrivate::updateColorDetails(VideoFrame *f)
 {
     ColorSpace cs = colorSpaceFromFFmpeg(av_frame_get_colorspace(frame));
-    if (cs != ColorSpace_Unknown)
+    if (cs == ColorSpace_Unknown)
         cs = colorSpaceFromFFmpeg(codec_ctx->colorspace);
     f->setColorSpace(cs);
+    ColorRange cr = colorRangeFromFFmpeg(av_frame_get_color_range(frame));
+    if (cr == ColorRange_Unknown) {
+        // check yuvj format. TODO: deprecated, check only for old ffmpeg?
+        const AVPixelFormat pixfmt = (AVPixelFormat)frame->format;
+        switch (pixfmt) {
+        case QTAV_PIX_FMT_C(YUVJ411P):
+        case QTAV_PIX_FMT_C(YUVJ420P):
+        case QTAV_PIX_FMT_C(YUVJ422P):
+        case QTAV_PIX_FMT_C(YUVJ440P):
+        case QTAV_PIX_FMT_C(YUVJ444P):
+            cr = ColorRange_Full;
+            break;
+        default:
+            break;
+        }
+    }
+    if (cr == ColorRange_Unknown)
+        cr = colorRangeFromFFmpeg(codec_ctx->color_range);
+    f->setColorRange(cr);
 }
 
 qreal VideoDecoderFFmpegBasePrivate::getDAR(AVFrame *f)

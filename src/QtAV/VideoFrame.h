@@ -89,6 +89,8 @@ public:
     // TODO: pixel aspect ratio
     ColorSpace colorSpace() const;
     void setColorSpace(ColorSpace value);
+    ColorRange colorRange() const;
+    void setColorRange(ColorRange value);
 
     // no padded bytes
     int effectiveBytesPerLine(int plane) const;
