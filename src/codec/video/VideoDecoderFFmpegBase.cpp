@@ -39,7 +39,7 @@ void VideoDecoderFFmpegBasePrivate::updateColorDetails(VideoFrame *f)
         // check yuvj format. TODO: deprecated, check only for old ffmpeg?
         const AVPixelFormat pixfmt = (AVPixelFormat)frame->format;
         switch (pixfmt) {
-        case QTAV_PIX_FMT_C(YUVJ411P):
+        //case QTAV_PIX_FMT_C(YUVJ411P): //not in ffmpeg<2 and libav
         case QTAV_PIX_FMT_C(YUVJ420P):
         case QTAV_PIX_FMT_C(YUVJ422P):
         case QTAV_PIX_FMT_C(YUVJ440P):

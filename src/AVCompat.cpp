@@ -193,7 +193,7 @@ enum AVColorSpace av_frame_get_colorspace(const AVFrame *frame)
     return AVCOL_SPC_NB;
 }
 
-enum AVColorSpace av_frame_get_color_range(const AVFrame *frame)
+enum AVColorRange av_frame_get_color_range(const AVFrame *frame)
 {
     if (!frame)
         return AVCOL_RANGE_UNSPECIFIED;
@@ -214,7 +214,7 @@ int av_pix_fmt_count_planes(AVPixelFormat pix_fmt)
 
     for (i = 0; i < desc->nb_components; i++)
         planes[desc->comp[i].plane] = 1;
-    for (i = 0; i < FF_ARRAY_ELEMS(planes); i++)
+    for (i = 0; i < (int)FF_ARRAY_ELEMS(planes); i++)
         ret += planes[i];
     return ret;
 }
