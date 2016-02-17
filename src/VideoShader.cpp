@@ -492,6 +492,10 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
         }
     }
     d.colorTransform.setInputColorSpace(cs);
+    d.colorTransform.setInputColorRange(frame.colorRange());
+    // TODO: use graphics driver's color range option if possible
+    static const ColorRange kRgbDispRange = qgetenv("QTAV_DISPLAY_RGB_RANGE") == "limited" ? ColorRange_Limited : ColorRange_Full;
+    d.colorTransform.setOutputColorRange(kRgbDispRange);
     d.frame = frame;
     if (fmt != d.video_format) {
         qDebug() << fmt;
