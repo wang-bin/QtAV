@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -251,6 +251,11 @@ VideoFrame VideoDecoderVDA::frame()
             if (type == HostMemorySurface) {
                 return mapToHost(fmt, handle, plane);
             }
+            if (type == SourceSurface) {
+                CVPixelBufferRef *b = reinterpret_cast<CVPixelBufferRef*>(handle);
+                *b = cvbuf;
+                return handle;
+            }
             if (type != GLTextureSurface)
                 return 0;
             // https://www.opengl.org/registry/specs/APPLE/rgb_422.txt
@@ -310,7 +315,7 @@ VideoFrame VideoDecoderVDA::frame()
         // make sure VideoMaterial can correctly setup parameters
         switch (format()) {
         case UYVY:
-            pitch[0] = 2*d.width; //
+            pitch[0] = 2*d.width;
             pixfmt = VideoFormat::Format_VYUY; //FIXME: VideoShader assume uyvy is uploaded as rgba, but apple limits the result to bgra
             break;
         case NV12:
@@ -351,6 +356,7 @@ VideoFrame VideoDecoderVDA::frame()
         } else {
             f.setBits(src); // only set for copy back mode
         }
+        d.updateColorDetails(&f);
     } else {
         f = copyToFrame(fmt, d.height, src, pitch, false);
     }

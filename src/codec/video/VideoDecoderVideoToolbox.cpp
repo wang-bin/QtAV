@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -60,7 +60,7 @@ class VideoDecoderVideoToolbox : public VideoDecoderFFmpegHW
     Q_ENUMS(PixelFormat)
 public:
     enum PixelFormat {
-        NV12 = '420f',
+        NV12 = '420v',
         UYVY = '2vuy',
         YUV420P = 'y420',
         YUYV = 'yuvs'
@@ -194,6 +194,7 @@ VideoFrame VideoDecoderVideoToolbox::frame()
         return VideoFrame();
     }
     // we can map the cv buffer addresses to video frame in SurfaceInteropCVBuffer. (may need VideoSurfaceInterop::mapToTexture()
+    // SurfaceInteropCVOpenGL, SurfaceInteropCVOpenGLES, SurfaceInteropIOSurface
     class SurfaceInteropCVBuffer Q_DECL_FINAL: public VideoSurfaceInterop {
         bool glinterop;
         CVPixelBufferRef cvbuf; // keep ref until video frame is destroyed
@@ -210,6 +211,11 @@ VideoFrame VideoDecoderVideoToolbox::frame()
             // eagl is objc
             //CVOpenGLESTextureCacheCreate(kCFAllocatorDefault, NULL, (CVEAGLContext*)EAGLContext::currentContext(), NULL, &es_tex_cache);
 #endif
+            //CVOpenGLTextureCacheCreate(), use TEXTURE_2D?
+            //http://stackoverflow.com/questions/13933503/core-video-pixel-buffers-as-gl-texture-2d
+            //CVOpenGLTextureCacheFlush
+            // CVOpenGLTextureCacheCreateTextureFromImage
+            // https://developer.apple.com/library/mac/samplecode/AVCustomEditOSX/Listings/AVCustomEditOSX_APLOpenGLRenderer_m.html
         }
         ~SurfaceInteropCVBuffer() {
             CVPixelBufferRelease(cvbuf);
@@ -306,6 +312,9 @@ VideoFrame VideoDecoderVideoToolbox::frame()
             CVOpenGLESTextureGetName(es_tex_ref[plane]); //FIXME: too late to get texture
 
 #else
+            //http://stackoverflow.com/questions/24933453/best-path-from-avplayeritemvideooutput-to-opengl-texture
+            //CVOpenGLTextureCacheCreate(). kCVPixelBufferOpenGLCompatibilityKey?
+
             const IOSurfaceRef surface  = CVPixelBufferGetIOSurface(cvbuf);
             CGLError err = CGLTexImageIOSurface2D(CGLGetCurrentContext(), target, iformat, w, h, format, dtype, surface, plane);
             if (err != kCGLNoError) {
@@ -381,6 +390,7 @@ VideoFrame VideoDecoderVideoToolbox::frame()
         } else {
             f.setBits(src); // only set for copy back mode
         }
+        d.updateColorDetails(&f);
     } else {
         f = copyToFrame(fmt, d.height, src, pitch, false);
     }

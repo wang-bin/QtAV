@@ -387,10 +387,8 @@ VideoFrame VideoDecoderVAAPI::frame()
         f.setMetaData(QStringLiteral("surface_interop"), QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
         f.setTimestamp(double(d.frame->pkt_pts)/1000.0);
         f.setDisplayAspectRatio(d.getDAR(d.frame));
-
-        ColorSpace cs = colorSpaceFromFFmpeg(av_frame_get_colorspace(d.frame));
-        if (cs != ColorSpace_Unknown)
-            cs = colorSpaceFromFFmpeg(d.codec_ctx->colorspace);
+        d.updateColorDetails(&f);
+        const ColorSpace cs = f.colorSpace();
         if (cs == ColorSpace_BT601)
             p->setColorSpace(VA_SRC_BT601);
         else
