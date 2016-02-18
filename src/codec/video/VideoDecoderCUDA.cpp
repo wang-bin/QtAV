@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -29,7 +29,6 @@
 #endif //QTAV_HAVE(DLLAPI_CUDA)
 #include "QtAV/private/AVCompat.h"
 #include "utils/BlockingQueue.h"
-
 /*
  * TODO: VC1, HEVC bsf
  */
@@ -159,6 +158,7 @@ public:
       , host_data_size(0)
       , create_flags(cudaVideoCreate_Default)
       , deinterlace(cudaVideoDeinterlaceMode_Adaptive)
+      , yuv_range(ColorRange_Limited)
       , nb_dec_surface(kMaxDecodeSurfaces)
       , copy_mode(VideoDecoderCUDA::GenericCopy) //TODO: check whether intel driver is used
     {
@@ -238,6 +238,7 @@ public:
             || p->force_sequence_update) {
             qDebug("recreate cuvid parser");
             p->force_sequence_update = false;
+            p->yuv_range = cuvidfmt->video_signal_description.video_full_range_flag ? ColorRange_Full : ColorRange_Limited;
             //coded_width or width?
             p->createCUVIDDecoder(cuvidfmt->codec, cuvidfmt->coded_width, cuvidfmt->coded_height);
             // how about parser.ulMaxNumDecodeSurfaces? recreate?
@@ -281,6 +282,7 @@ public:
     CUvideoparser parser;
     CUstream stream;
     bool force_sequence_update;
+    ColorRange yuv_range;
     /*
      * callbacks are in the same thread as cuvidParseVideoData. so video thread may be blocked
      * so create another thread?
@@ -781,6 +783,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
             };
             frame = VideoFrame(codec_ctx->width, codec_ctx->height, VideoFormat::Format_NV12);
             frame.setBits(planes);
+            frame.setColorRange(yuv_range);
         }
         int pitches[] = { (int)pitch, (int)pitch };
         if (!frame.format().isRGB())
