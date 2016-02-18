@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -81,13 +81,15 @@ public:
 
     static Config& instance();
     static void setName(const QString& name); // config file base name
+    static QString getName();
+    /*!
+     * \brief defaultConfigFile
+     * Config file name is $appname.ini. Must call Config::setName() first
+     */
+    static QString defaultConfigFile();
+    static QString defaultDir();
     Q_INVOKABLE bool reset();
     void reload();
-    /*!
-     * \brief defaultDir
-     * Config file dir. File name is $appname.ini
-     */
-    QString defaultDir() const;
     //void loadFromFile(const QString& file);
 
     QString lastFile() const;

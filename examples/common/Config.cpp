@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -287,12 +287,22 @@ void Config::setName(const QString &name)
     Config::Data::name = name;
 }
 
+QString Config::getName()
+{
+    return Config::Data::name;
+}
+
+QString Config::defaultConfigFile()
+{
+    return appDataDir() + QString::fromLatin1("/") + Data::name + QString::fromLatin1(".ini");;
+}
+
 Config::Config(QObject *parent)
     : QObject(parent)
     , mpData(new Data())
 {
     // DO NOT call save() in dtor because it's a singleton and may be deleted later than qApp, QFont is not valid
-    connect(qApp, SIGNAL(aboutToQuit()), SLOT(save()));
+    connect(qApp, SIGNAL(aboutToQuit()), SLOT(save())); //FIXME: what if qapp not ready
 }
 
 Config::~Config()
@@ -300,7 +310,7 @@ Config::~Config()
     delete mpData;
 }
 
-QString Config::defaultDir() const
+QString Config::defaultDir()
 {
     return appDataDir();
 }
