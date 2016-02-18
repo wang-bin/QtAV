@@ -28,7 +28,7 @@ namespace QtAV {
 extern ColorSpace colorSpaceFromFFmpeg(AVColorSpace cs);
 extern ColorRange colorRangeFromFFmpeg(AVColorRange cr);
 
-void VideoDecoderFFmpegBasePrivate::updateColorDetails(VideoFrame *f)
+static void SetColorDetailsByFFmpeg(VideoFrame *f, AVFrame* frame, AVCodecContext* codec_ctx)
 {
     ColorSpace cs = colorSpaceFromFFmpeg(av_frame_get_colorspace(frame));
     if (cs == ColorSpace_Unknown)
@@ -50,9 +50,41 @@ void VideoDecoderFFmpegBasePrivate::updateColorDetails(VideoFrame *f)
             break;
         }
     }
-    if (cr == ColorRange_Unknown)
+    if (cr == ColorRange_Unknown) {
         cr = colorRangeFromFFmpeg(codec_ctx->color_range);
+        if (cr == ColorRange_Unknown && !f->format().isRGB()) {
+            //qDebug("prefer limited yuv range");
+            cr = ColorRange_Limited;
+        }
+    }
     f->setColorRange(cr);
+}
+
+void VideoDecoderFFmpegBasePrivate::updateColorDetails(VideoFrame *f)
+{
+    if (f->format().pixelFormatFFmpeg() == frame->format) {
+        SetColorDetailsByFFmpeg(f, frame, codec_ctx);
+        return;
+    }
+    // hw decoder output frame may have a different format, e.g. gl interop frame may have rgb format for rendering(stored as yuv)
+    const bool rgb_frame = f->format().isRGB();
+    if (rgb_frame) {
+        //qDebug("rgb output frame (yuv coded)");
+        f->setColorSpace(f->format().isPlanar() ? ColorSpace_GBR : ColorSpace_RGB);
+        f->setColorRange(ColorRange_Full);
+        return;
+    }
+    // yuv frame. When happens?
+    const bool rgb_coded = (av_pix_fmt_desc_get(codec_ctx->pix_fmt)->flags & AV_PIX_FMT_FLAG_RGB) == AV_PIX_FMT_FLAG_RGB;
+    if (rgb_coded) {
+        if (f->width() >= 1280 && f->height() >= 576)
+            f->setColorSpace(ColorSpace_BT709);
+        else
+            f->setColorSpace(ColorSpace_BT601);
+        f->setColorRange(ColorRange_Limited);
+    } else {
+        SetColorDetailsByFFmpeg(f, frame, codec_ctx);
+    }
 }
 
 qreal VideoDecoderFFmpegBasePrivate::getDAR(AVFrame *f)
