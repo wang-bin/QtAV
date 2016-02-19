@@ -56,6 +56,13 @@ extern InteropResource* CreateInteropCVPixelbuffer();
 extern InteropResource* CreateInteropIOSurface();
 InteropResource* InteropResource::create(InteropType type)
 {
+    if (type == InteropAuto) {
+#ifdef Q_OS_MACX
+        type = InteropIOSurface;
+#else
+        type = InteropCVPixelBuffer;
+#endif
+    }
     switch (type) {
     case InteropCVPixelBuffer: return CreateInteropCVPixelbuffer();
 #ifdef Q_OS_MACX
@@ -188,7 +195,7 @@ bool InteropResourceCVPixelBuffer::map(CVPixelBufferRef buf, GLuint tex, int w, 
     Q_UNUSED(h);
     Q_UNUSED(w);
     CVPixelBufferLockBaseAddress(buf, 0);
-    GLint iformat[4];
+    GLint iformat[4]; //TODO: compute once only if cfbuf format changed
     GLenum format[4];
     GLenum dtype[4];
     const VideoFormat fmt(format_from_cv(CVPixelBufferGetPixelFormatType(buf)));

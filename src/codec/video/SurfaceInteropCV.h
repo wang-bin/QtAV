@@ -24,17 +24,20 @@
 
 #include <QtCore/qglobal.h>
 #include <CoreVideo/CoreVideo.h>
-#include "QtAV/SurfaceInterop.h"
+#include <QtAV/SurfaceInterop.h>
 
 namespace QtAV {
 namespace cv {
-typedef uint32_t GLuint; // define here to avoid including gl headers which are not required by decoder
 
+VideoFormat::PixelFormat format_from_cv(int cv);
+
+typedef uint32_t GLuint; // define here to avoid including gl headers which are not required by decoder
 enum InteropType {
     InteropCVPixelBuffer,   // osx+ios
     InteropIOSurface,       // osx
     InteropCVOpenGL,        // osx
-    InteropCVOpenGLES       // ios
+    InteropCVOpenGLES,       // ios
+    InteropAuto
 };
 
 class InteropResource
