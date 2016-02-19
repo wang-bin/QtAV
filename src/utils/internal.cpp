@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -25,13 +25,60 @@
 #else
 #include <QtCore/QStandardPaths>
 #endif
+#ifdef Q_OS_MAC
+#include <CoreFoundation/CoreFoundation.h>
+#endif
 #include "QtAV/private/AVCompat.h"
 #include "utils/Logger.h"
-namespace QtAV {
 
+namespace QtAV {
 static const char kFileScheme[] = "file:";
 #define CHAR_COUNT(s) (sizeof(s) - 1) // tail '\0'
 
+#ifdef Q_OS_MAC
+static QString fromCFString(CFStringRef string)
+{
+#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
+    return QString().fromCFString(string);
+#else
+    if (!string)
+        return QString();
+    CFIndex length = CFStringGetLength(string);
+    // Fast path: CFStringGetCharactersPtr does not copy but may return null for any and no reason.
+    const UniChar *chars = CFStringGetCharactersPtr(string);
+    if (chars)
+        return QString(reinterpret_cast<const QChar *>(chars), length);
+    QString ret(length, Qt::Uninitialized);
+    CFStringGetCharacters(string, CFRangeMake(0, length), reinterpret_cast<UniChar *>(ret.data()));
+    return ret;
+#endif
+}
+
+QString absolutePathFromOSX(const QString& s)
+{
+    QString result;
+#if !(__ENVIRONMENT_MAC_OS_X_VERSION_MIN_REQUIRED__ < 1060)
+    CFStringRef cfStr = CFStringCreateWithCString(kCFAllocatorDefault, s.toUtf8().constData(),  kCFStringEncodingUTF8);
+    if (cfStr) {
+        CFURLRef cfUrl = CFURLCreateWithString(kCFAllocatorDefault, cfStr, NULL);
+        if (cfUrl) {
+            CFErrorRef error = 0;
+            CFURLRef cfUrlAbs = CFURLCreateFilePathURL(kCFAllocatorDefault, cfUrl, &error);
+            if (cfUrlAbs) {
+                CFStringRef cfStrAbsUrl = CFURLGetString(cfUrlAbs);
+                result = fromCFString(cfStrAbsUrl);
+                CFRelease(cfUrlAbs);
+            }
+            CFRelease(cfUrl);
+        }
+        CFRelease(cfStr);
+    }
+#else
+    Q_UNUSED(s);
+#endif
+    return result;
+}
+#endif //Q_OS_MAC
 /*!
  * \brief getLocalPath
  * get path that works for both ffmpeg and QFile
@@ -41,6 +88,10 @@ static const char kFileScheme[] = "file:";
  */
 QString getLocalPath(const QString& fullPath)
 {
+#ifdef Q_OS_MAC
+    if (fullPath.startsWith(QLatin1String("file:///.file/id=")) || fullPath.startsWith(QLatin1String("/.file/id=")))
+        return absolutePathFromOSX(fullPath);
+#endif
     int pos = fullPath.indexOf(QLatin1String(kFileScheme));
     if (pos >= 0) {
         pos += CHAR_COUNT(kFileScheme);
@@ -63,10 +114,7 @@ QString getLocalPath(const QString& fullPath)
 #undef CHAR_COUNT
 
 namespace Internal {
-
-
 namespace Path {
-
 QString appDataDir()
 {
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
@@ -288,6 +336,5 @@ void setOptionsForQObject(const QVariant& opt, QObject *obj)
         qDebug("%s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
     }
 }
-
 } //namespace Internal
 } //namespace QtAV
