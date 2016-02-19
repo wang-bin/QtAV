@@ -31,6 +31,7 @@ Rectangle {
     signal showInfo
     signal showHelp
     signal openFile
+    signal openUrl
 
     function setPlayingProgress(value) {
         playState = "play"
@@ -428,6 +429,7 @@ Rectangle {
                 height: Utils.scaled(25)
                 icon: Utils.resurl("theme/default/open.svg")
                 onClicked: openFile()
+                onPressAndHold: openUrl()
             }
             Button {
                 id: helpBtn

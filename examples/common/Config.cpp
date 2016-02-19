@@ -35,6 +35,7 @@ class Config::Data
 {
 public:
     Data() {
+        is_loading = false;
         if (!Data::name.isEmpty())
             file = appDataDir() + QString::fromLatin1("/") + Data::name + QString::fromLatin1(".ini");
         else
@@ -44,10 +45,10 @@ public:
                 qWarning() << "Failed to create appDataDir: " << appDataDir();
             }
         }
-        load();
+        moveOldCfg();
     }
 
-    void load() {
+    void moveOldCfg() {
         // for old config data migration
         QString dir_old = qApp->applicationDirPath() + QString::fromLatin1("/data");
         if (!QDir(dir_old).exists()) {
@@ -74,92 +75,11 @@ public:
                 }
             }
         }
-
-        QSettings settings(file, QSettings::IniFormat);
-        log = settings.value(QString::fromLatin1("log"), QString()).toString();
-        last_file = settings.value(QString::fromLatin1("last_file"), QString()).toString();
-        timeout = settings.value(QString::fromLatin1("timeout"), 30.0).toReal();
-        abort_timeout = settings.value(QString::fromLatin1("abort_timeout"), true).toBool();
-        force_fps = settings.value(QString::fromLatin1("force_fps"), 0.0).toReal();
-        settings.beginGroup(QString::fromLatin1("decoder"));
-        settings.beginGroup(QString::fromLatin1("video"));
-        QString decs_default(QString::fromLatin1("FFmpeg"));
-        //decs_default.append(QString::fromLatin1(" CUDA ")).append(QString::fromLatin1(" DXVA ")).append(QString::fromLatin1(" VAAPI ")).append(QString::fromLatin1(" VDA "));
-#if 0
-        QString all_names_string = settings.value("all", QString()).toString();
-        if (!all_names_string.isEmpty()) {
-            all_names = all_names_string.split(" ", QString::SkipEmptyParts);
-        }
-#endif
-        video_decoders = settings.value(QString::fromLatin1("priority"), decs_default).toString().split(QString::fromLatin1(" "), QString::SkipEmptyParts);
-        settings.endGroup(); //video
-        settings.endGroup(); //decoder
-
-        settings.beginGroup(QString::fromLatin1("capture"));
-        capture_dir = settings.value(QString::fromLatin1("dir"), QString()).toString();
-        if (capture_dir.isEmpty()) {
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-            capture_dir = QDesktopServices::storageLocation(QDesktopServices::PicturesLocation);
-#else
-            capture_dir = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
-#endif
-        }
-        capture_fmt = settings.value(QString::fromLatin1("format"), QString::fromLatin1("png")).toString();
-        capture_quality = settings.value(QString::fromLatin1("quality"), 100).toInt();
-        settings.endGroup();
-        settings.beginGroup(QString::fromLatin1("subtitle"));
-        subtitle_autoload = settings.value(QString::fromLatin1("autoLoad"), true).toBool();
-        subtitle_enabled = settings.value(QString::fromLatin1("enabled"), true).toBool();
-        subtitle_engines = settings.value(QString::fromLatin1("engines"), QStringList() << QString::fromLatin1("FFmpeg") << QString::fromLatin1("LibASS")).toStringList();
-        subtitle_delay = settings.value(QString::fromLatin1("delay"), 0.0).toInt();
-        QFont f;
-        f.setPointSize(20);
-        f.setBold(true);
-        subtitle_font = settings.value(QString::fromLatin1("font"), f).value<QFont>();
-        subtitle_color = settings.value(QString::fromLatin1("color"), QColor("white")).value<QColor>();
-        subtitle_outline_color = settings.value(QString::fromLatin1("outline_color"), QColor("blue")).value<QColor>();
-        subtitle_outline = settings.value(QString::fromLatin1("outline"), true).toBool();
-        subtilte_bottom_margin = settings.value(QString::fromLatin1("bottom margin"), 8).toInt();
-        settings.beginGroup(QString::fromLatin1("ass"));
-        ass_font_file = settings.value(QString::fromLatin1("font_file"), QString()).toString();
-        ass_force_font_file = settings.value(QString::fromLatin1("force_font_file"), false).toBool();
-        ass_fonts_dir = settings.value(QString::fromLatin1("fonts_dir"), QString()).toString();
-        settings.endGroup();
-        settings.endGroup();
-        settings.beginGroup(QString::fromLatin1("preview"));
-        preview_enabled = settings.value(QString::fromLatin1("enabled"), true).toBool();
-        preview_w = settings.value(QString::fromLatin1("width"), 160).toInt();
-        preview_h = settings.value(QString::fromLatin1("height"), 90).toInt();
-        settings.endGroup();
-        settings.beginGroup(QString::fromLatin1("avformat"));
-        avformat_on = settings.value(QString::fromLatin1("enable"), false).toBool();
-        direct = settings.value(QString::fromLatin1("avioflags"), 0).toString() == QLatin1String("direct");
-        probe_size = settings.value(QString::fromLatin1("probesize"), 5000000).toUInt();
-        analyze_duration = settings.value(QString::fromLatin1("analyzeduration"), 5000000).toInt();
-        avformat_extra = settings.value(QString::fromLatin1("extra"), QString()).toString();
-        settings.endGroup();
-        settings.beginGroup(QString::fromLatin1("avfilterVideo"));
-        avfilterVideo_on = settings.value(QString::fromLatin1("enable"), true).toBool();
-        avfilterVideo = settings.value(QString::fromLatin1("options"), QString()).toString();
-        settings.endGroup();
-        settings.beginGroup(QString::fromLatin1("avfilterAudio"));
-        avfilterAudio_on = settings.value(QString::fromLatin1("enable"), true).toBool();
-        avfilterAudio = settings.value(QString::fromLatin1("options"), QString()).toString();
-        settings.endGroup();
-        settings.beginGroup(QString::fromLatin1("opengl"));
-        egl = settings.value(QString::fromLatin1("egl"), false).toBool();
-        const QString glname = settings.value(QString::fromLatin1("type"), QString::fromLatin1("OpenGLES")).toString();
-        opengl = (Config::OpenGLType)Config::staticMetaObject.enumerator(Config::staticMetaObject.indexOfEnumerator("OpenGLType")).keysToValue(glname.toLatin1().constData());
-        // d3d11 bad performance (gltexsubimage2d)
-        angle_dx = settings.value(QString::fromLatin1("angle_platform"), QString::fromLatin1("d3d9")).toString();
-        settings.endGroup();
-
-        settings.beginGroup(QString::fromLatin1("buffer"));
-        buffer_value = settings.value(QString::fromLatin1("value"), -1).toInt();
-        settings.endGroup();
     }
 
     void save() {
+        if (is_loading)
+            return;
         qDebug() << "sync config to " << file;
         QSettings settings(file, QSettings::IniFormat);
         // TODO: why crash on mac qt5.4 if call on aboutToQuit()
@@ -227,6 +147,7 @@ public:
     }
 
     QString file;
+    bool is_loading;
 
     qreal force_fps;
     QStringList video_decoders;
@@ -303,6 +224,7 @@ Config::Config(QObject *parent)
 {
     // DO NOT call save() in dtor because it's a singleton and may be deleted later than qApp, QFont is not valid
     connect(qApp, SIGNAL(aboutToQuit()), SLOT(save())); //FIXME: what if qapp not ready
+    reload();
 }
 
 Config::~Config()
@@ -323,19 +245,89 @@ bool Config::reset()
         return false;
     }
     reload();
-    Q_EMIT changed();
     save();
     return true;
 }
 
 void Config::reload()
 {
-    mpData->load();
-    qDebug() << decoderPriorityNames();
-    emit decoderPriorityNamesChanged();
-    emit captureDirChanged(mpData->capture_dir);
-    emit captureFormatChanged(mpData->capture_fmt);
-    emit captureQualityChanged(mpData->capture_quality);
+    mpData->is_loading = true;
+    QSettings settings(mpData->file, QSettings::IniFormat);
+    setLogLevel(settings.value(QString::fromLatin1("log"), QString()).toString());
+    setLastFile(settings.value(QString::fromLatin1("last_file"), QString()).toString());
+    setTimeout(settings.value(QString::fromLatin1("timeout"), 30.0).toReal());
+    setAbortOnTimeout(settings.value(QString::fromLatin1("abort_timeout"), true).toBool());
+    setForceFrameRate(settings.value(QString::fromLatin1("force_fps"), 0.0).toReal());
+    settings.beginGroup(QString::fromLatin1("decoder"));
+    settings.beginGroup(QString::fromLatin1("video"));
+    QString decs_default(QString::fromLatin1("FFmpeg"));
+    setDecoderPriorityNames(settings.value(QString::fromLatin1("priority"), decs_default).toString().split(QString::fromLatin1(" "), QString::SkipEmptyParts));
+    settings.endGroup(); //video
+    settings.endGroup(); //decoder
+
+    settings.beginGroup(QString::fromLatin1("capture"));
+    setCaptureDir(settings.value(QString::fromLatin1("dir"), QString()).toString());
+    if (captureDir().isEmpty()) {
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+        setCaptureDir(QDesktopServices::storageLocation(QDesktopServices::PicturesLocation));
+#else
+        setCaptureDir(QStandardPaths::writableLocation(QStandardPaths::PicturesLocation));
+#endif
+    }
+    setCaptureFormat(settings.value(QString::fromLatin1("format"), QString::fromLatin1("png")).toString());
+    setCaptureQuality(settings.value(QString::fromLatin1("quality"), 100).toInt());
+    settings.endGroup();
+    settings.beginGroup(QString::fromLatin1("subtitle"));
+    setSubtitleAutoLoad(settings.value(QString::fromLatin1("autoLoad"), true).toBool());
+    setSubtitleEnabled(settings.value(QString::fromLatin1("enabled"), true).toBool());
+    setSubtitleEngines(settings.value(QString::fromLatin1("engines"), QStringList() << QString::fromLatin1("FFmpeg") << QString::fromLatin1("LibASS")).toStringList());
+    setSubtitleDelay(settings.value(QString::fromLatin1("delay"), 0.0).toInt());
+    QFont f;
+    f.setPointSize(20);
+    f.setBold(true);
+    setSubtitleFont(settings.value(QString::fromLatin1("font"), f).value<QFont>());
+    setSubtitleColor(settings.value(QString::fromLatin1("color"), QColor("white")).value<QColor>());
+    setSubtitleOutlineColor(settings.value(QString::fromLatin1("outline_color"), QColor("blue")).value<QColor>());
+    setSubtitleOutline(settings.value(QString::fromLatin1("outline"), true).toBool());
+    setSubtitleBottomMargin(settings.value(QString::fromLatin1("bottom margin"), 8).toInt());
+    settings.beginGroup(QString::fromLatin1("ass"));
+    setAssFontFile(settings.value(QString::fromLatin1("font_file"), QString()).toString());
+    setAssFontFileForced(settings.value(QString::fromLatin1("force_font_file"), false).toBool());
+    setAssFontsDir(settings.value(QString::fromLatin1("fonts_dir"), QString()).toString());
+    settings.endGroup();
+    settings.endGroup();
+    settings.beginGroup(QString::fromLatin1("preview"));
+    setPreviewEnabled(settings.value(QString::fromLatin1("enabled"), true).toBool());
+    setPreviewWidth(settings.value(QString::fromLatin1("width"), 160).toInt());
+    setPreviewHeight(settings.value(QString::fromLatin1("height"), 90).toInt());
+    settings.endGroup();
+    settings.beginGroup(QString::fromLatin1("avformat"));
+    setAvformatOptionsEnabled(settings.value(QString::fromLatin1("enable"), false).toBool());
+    reduceBuffering(settings.value(QString::fromLatin1("avioflags"), 0).toString() == QLatin1String("direct"));
+    probeSize(settings.value(QString::fromLatin1("probesize"), 5000000).toUInt());
+    analyzeDuration(settings.value(QString::fromLatin1("analyzeduration"), 5000000).toInt());
+    avformatExtra(settings.value(QString::fromLatin1("extra"), QString()).toString());
+    settings.endGroup();
+    settings.beginGroup(QString::fromLatin1("avfilterVideo"));
+    avfilterVideoEnable(settings.value(QString::fromLatin1("enable"), true).toBool());
+    avfilterVideoOptions(settings.value(QString::fromLatin1("options"), QString()).toString());
+    settings.endGroup();
+    settings.beginGroup(QString::fromLatin1("avfilterAudio"));
+    avfilterAudioEnable(settings.value(QString::fromLatin1("enable"), true).toBool());
+    avfilterAudioOptions(settings.value(QString::fromLatin1("options"), QString()).toString());
+    settings.endGroup();
+    settings.beginGroup(QString::fromLatin1("opengl"));
+    setEGL(settings.value(QString::fromLatin1("egl"), false).toBool());
+    const QString glname = settings.value(QString::fromLatin1("type"), QString::fromLatin1("OpenGLES")).toString();
+    setOpenGLType((Config::OpenGLType)Config::staticMetaObject.enumerator(Config::staticMetaObject.indexOfEnumerator("OpenGLType")).keysToValue(glname.toLatin1().constData()));
+    // d3d11 bad performance (gltexsubimage2d)
+    setANGLEPlatform(settings.value(QString::fromLatin1("angle_platform"), QString::fromLatin1("d3d9")).toString());
+    settings.endGroup();
+
+    settings.beginGroup(QString::fromLatin1("buffer"));
+    setBufferValue(settings.value(QString::fromLatin1("value"), -1).toInt());
+    settings.endGroup();
+    mpData->is_loading = false;
 }
 
 qreal Config::forceFrameRate() const
@@ -602,7 +594,7 @@ Config& Config::setPreviewEnabled(bool value)
     if (mpData->preview_enabled == value)
         return *this;
     mpData->preview_enabled = value;
-    emit previewEnabledChanged();
+    Q_EMIT previewEnabledChanged();
     Q_EMIT changed();
     return *this;
 }

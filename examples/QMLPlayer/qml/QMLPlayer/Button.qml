@@ -30,9 +30,10 @@ Rectangle {
     property color textColor: "white"
     readonly property alias hovered: mouseArea.containsMouse
     signal clicked()
+    signal pressAndHold()
 
     opacity: 0.7
-    color: checked ? bgColorSelected : mouseArea.pressed ? Qt.lighter(bgColorSelected) : bgColor
+    color: checked ? bgColorSelected : mouseArea.pressed ? Qt.darker(bgColor) : bgColor
     border.color: Qt.lighter(color)
 
     Text {
@@ -63,6 +64,7 @@ Rectangle {
                 root.checked = !root.checked
             root.clicked()
         }
+        onPressAndHold: root.pressAndHold()
     }
     states: [
         State {

@@ -3,11 +3,18 @@ import "utils.js" as Utils
 
 Page {
     title: qsTr("Misc")
-    height: titleHeight + (4+glSet.visible*4)*Utils.kItemHeight + detail.contentHeight + 4*Utils.kSpacing
+    height: titleHeight + (5+glSet.visible*4)*Utils.kItemHeight + detail.contentHeight + 4*Utils.kSpacing
 
     Column {
         anchors.fill: content
         spacing: Utils.kSpacing
+        Button {
+            text: qsTr("Reset all")
+            bgColor: "#ff0000"
+            width: parent.width
+            height: Utils.kItemHeight
+            onClicked: PlayerConfig.reset()
+        }
         Row {
             width: parent.width
             height: Utils.kItemHeight
@@ -17,7 +24,10 @@ Page {
                 checked: PlayerConfig.previewEnabled
                 width: parent.width/3
                 height: Utils.kItemHeight
-                onCheckedChanged: PlayerConfig.previewEnabled = checked
+                onCheckedChanged: {
+                    console.log("check changed " + checked )
+                    PlayerConfig.previewEnabled = checked
+                }
             }
             Text {
                 id: detail
@@ -68,6 +78,7 @@ Page {
                 text: "OpenGL\n(" + qsTr("Restart to apply") + ")"
             }
             Menu {
+                id: glMenu
                 width: parent.width/3
                 height: parent.height
                 itemWidth: width
@@ -82,12 +93,13 @@ Page {
                     var gl = glModel.get(index).name
                     PlayerConfig.openGLType = gl
                     if (gl === "OpenGLES") {
-                        angle.sourceComponent = angleMenu
+                        angle.sourceComponent = angleMenuComponent
                     } else {
                         angle.sourceComponent = undefined
                     }
                 }
-                Component.onCompleted: {
+                function updateUi() {
+                    currentIndex = -1
                     for (var i = 0; i < glModel.count; ++i) {
                         console.log("gl: " + glModel.get(i).name)
                         if (PlayerConfig.openGLType === i) {
@@ -96,6 +108,7 @@ Page {
                         }
                     }
                 }
+                Component.onCompleted: updateUi()
             }
             Loader {
                 id: angle
@@ -103,7 +116,7 @@ Page {
                 height: parent.height
             }
             Component {
-                id: angleMenu
+                id: angleMenuComponent
                 Menu {
                     anchors.fill: parent
                     itemWidth: width
@@ -115,7 +128,8 @@ Page {
                         ListElement { name: "WARP" }
                     }
                     onClicked:  PlayerConfig.ANGLEPlatform = angleModel.get(index).name
-                    Component.onCompleted: {
+                    function updateUi() {
+                        currentIndex = -1
                         if (Qt.platform.os !== "windows" && Qt.platform.os !== "wince")
                             return
                         for (var i = 0; i < angleModel.count; ++i) {
@@ -126,6 +140,7 @@ Page {
                             }
                         }
                     }
+                    Component.onCompleted: updateUi()
                 }
             }
         }
@@ -144,6 +159,7 @@ Page {
                 text: "Log level\nDeveloper only"
             }
             Menu {
+                id: logMenu
                 width: parent.width/2
                 height: parent.height
                 itemWidth: width
@@ -155,7 +171,8 @@ Page {
                     ListElement { name: "all" }
                 }
                 onClicked: PlayerConfig.logLevel = logModel.get(index).name
-                Component.onCompleted: {
+                function updateUi() {
+                    currentIndex = -1
                     for (var i = 0; i < logModel.count; ++i) {
                         if (PlayerConfig.logLevel === logModel.get(i).name) {
                             currentIndex = i
@@ -163,15 +180,23 @@ Page {
                         }
                     }
                 }
+                Component.onCompleted: updateUi()
             }
         }
     }
-
     Component.onCompleted: {
         if (Qt.platform.os !== "windows" && Qt.platform.os !== "wince")
             return
         if (PlayerConfig.openGLType === 2) {
-            angle.sourceComponent = angleMenu
+            angle.sourceComponent = angleMenuComponent
+        }
+    }
+    Connections {
+        target: PlayerConfig
+        onLogLevelChanged: logMenu.updateUi()
+        onOpenGLTypeChanged: {
+            if (glSet.visible)
+                glMenu.updateUi()
         }
     }
 }

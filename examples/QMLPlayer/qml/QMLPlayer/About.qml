@@ -10,6 +10,7 @@ Page {
         Text {
             id: about
             color: "white"
+            linkColor: "orange"
             wrapMode: Text.Wrap
             anchors.fill: parent
             anchors.margins: Utils.kMargin
@@ -21,10 +22,11 @@ Page {
             text: "<h3>QMLPlayer for " + Qt.platform.os + " " + qsTr("based on") + " QtAV 1.9.0</h3>"
                   + "<p>" + qsTr("QtAV is a cross platform, high performance multimedia framework") + "</p>"
                   + "<p>Distributed under the terms of LGPLv2.1 or later.</p>"
-                  + "<p>Copyright (C) 2012-2015 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>"
+                  + "<p>Copyright (C) 2012-2016 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>"
                   + "<p>Home page: <a href='http://qtav.org'>http://qtav.org</a></p>"
                   + "\n<p>Double click: show/hide control bar</p>"
                   + "<p>Click right area: show config panel</p>"
+                  + "<p>Open a URL: press and hold open button</p>"
                   + (Qt.platform.os === "android" || Qt.platform.os === "ios" || Qt.platform.os === "winphone" || Qt.platform.os === "blackberry" ?
                       " " :
                     "\n<h3>" + qsTr("Shortcut") + ":</h3>"

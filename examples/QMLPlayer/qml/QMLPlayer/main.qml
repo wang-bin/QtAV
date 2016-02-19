@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 import QtQuick 2.0
-import QtQuick.Dialogs 1.0
+import QtQuick.Dialogs 1.2
 //import QtMultimedia 5.0
 import QtAV 1.6
 import QtQuick.Window 2.1
@@ -199,6 +199,7 @@ Rectangle {
             if (ml < 2.0 || 5*ml < ML)
                 return
             if (t > -1 && t < 1) {
+                player.fastSeek = true
                 if (dx > 0) {
                     player.seekForward()
                 } else {
@@ -347,6 +348,7 @@ Rectangle {
     Item {
         id: configPage
         anchors.right: configPanel.left
+        anchors.rightMargin: 10
         //anchors.bottom: control.top
         y: Math.max(0, Math.min(configPanel.selectedY, root.height - pageLoader.height - control.height))
         width: parent.width < 4*configPanel.width ? parent.width - configPanel.width : parent.width/2 + configPanel.width
@@ -477,9 +479,29 @@ Rectangle {
         }
         volume: player.volume
         onOpenFile: fileDialog.open()
+        onOpenUrl: urlDialog.open()
         onShowInfo: pageLoader.source = "MediaInfoPage.qml"
         onShowHelp: pageLoader.source = "About.qml"
     }
+    Dialog {
+        id: urlDialog
+        standardButtons: StandardButton.Open | StandardButton.Cancel
+        title: qsTr("Open a url")
+        Rectangle {
+            color: "black"
+            anchors.top: parent.top
+            height: Utils.kItemHeight
+            width: parent.width
+            TextInput {
+                id: urlEdit
+                color: "orange"
+                font.pixelSize: Utils.kFontSize
+                anchors.fill: parent
+            }
+        }
+        onAccepted: player.source = urlEdit.displayText
+    }
+
     FileDialog {
         id: fileDialog
         title: "Please choose a media file"
