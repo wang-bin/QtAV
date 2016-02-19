@@ -42,8 +42,8 @@ static const cv_format cv_formats[] = {
 //#endif
     { 0, VideoFormat::Format_Invalid }
 };
-
-static VideoFormat::PixelFormat format_from_cv(int cv)
+namespace cv {
+VideoFormat::PixelFormat format_from_cv(int cv)
 {
     for (int i = 0; cv_formats[i].cv_pixfmt; ++i) {
         if (cv_formats[i].cv_pixfmt == cv)
@@ -51,7 +51,43 @@ static VideoFormat::PixelFormat format_from_cv(int cv)
     }
     return VideoFormat::Format_Invalid;
 }
-namespace cv {
+
+extern InteropResource* CreateInteropCVPixelbuffer();
+extern InteropResource* CreateInteropIOSurface();
+InteropResource* InteropResource::create(InteropType type)
+{
+    switch (type) {
+    case InteropCVPixelBuffer: return CreateInteropCVPixelbuffer();
+#ifdef Q_OS_MACX
+    case InteropIOSurface: return CreateInteropIOSurface();
+#endif
+    default: return NULL;
+    }
+    return NULL;
+}
+
+bool InteropResource::stridesForWidth(int cvfmt, int width, int *strides, VideoFormat::PixelFormat *outFmt)
+{
+    *outFmt = format_from_cv(cvfmt);
+    strides[0] = width;
+    switch (cvfmt) {
+    case '2vuy':
+    case 'yuvs':
+        strides[0] = 2*width;
+        break;
+    case '420v':
+    case '420f':
+        strides[1] = width;
+        break;
+    case 'y420':
+        strides[1] = strides[2] = width/2;
+        break;
+    default:
+        return false;
+    }
+    return true;
+}
+
 void SurfaceInteropCV::setSurface(CVPixelBufferRef buf, int w, int h)
 {
     m_surface = buf;
@@ -91,6 +127,17 @@ void SurfaceInteropCV::unmap(void *handle)
     m_resource->unmap(m_surface, *((GLuint*)handle));
 }
 
+void* SurfaceInteropCV::createHandle(void *handle, SurfaceType type, const VideoFormat &fmt, int plane, int planeWidth, int planeHeight)
+{
+    if (type != GLTextureSurface)
+        return NULL;
+    GLuint tex = m_resource->createTexture(fmt, plane, planeWidth, planeHeight);
+    if (tex == 0)
+        return NULL;
+    *((GLuint*)handle) = tex;
+    return handle;
+}
+
 void* SurfaceInteropCV::mapToHost(const VideoFormat &format, void *handle, int plane)
 {
     Q_UNUSED(plane);
@@ -119,6 +166,21 @@ void* SurfaceInteropCV::mapToHost(const VideoFormat &format, void *handle, int p
     frame.setDisplayAspectRatio(f->displayAspectRatio());
     *f = frame;
     return f;
+}
+
+/*!
+ * \brief The InteropResourceCVPixelBuffer class
+ * The mapping is not 0-copy. Use CVPixelBufferGetBaseAddressOfPlane to upload video frame to opengl.
+ */
+class InteropResourceCVPixelBuffer Q_DECL_FINAL : public InteropResource
+{
+public:
+    bool map(CVPixelBufferRef buf, GLuint tex, int w, int h, int plane) Q_DECL_OVERRIDE;
+};
+
+InteropResource* CreateInteropCVPixelbuffer()
+{
+    return new InteropResourceCVPixelBuffer();
 }
 
 bool InteropResourceCVPixelBuffer::map(CVPixelBufferRef buf, GLuint tex, int w, int h, int plane)

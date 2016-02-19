@@ -29,10 +29,26 @@
 namespace QtAV {
 namespace cv {
 typedef uint32_t GLuint; // define here to avoid including gl headers which are not required by decoder
+
+enum InteropType {
+    InteropCVPixelBuffer,   // osx+ios
+    InteropIOSurface,       // osx
+    InteropCVOpenGL,        // osx
+    InteropCVOpenGLES       // ios
+};
+
 class InteropResource
 {
 public:
+    // Must have CreateInteropXXX in each implemention
+    static InteropResource* create(InteropType type);
     virtual ~InteropResource() {}
+    /*!
+     * \brief stridesForWidth
+     * The stride used by opengl can be different in some interop because frame display format can change (outFmt), for example we can use rgb for uyvy422. The default value use the origial pixel format to comupte the strides
+     */
+    virtual bool stridesForWidth(int cvfmt, int width, int* strides, VideoFormat::PixelFormat* outFmt);
+    virtual bool mapToTexture2D() const { return true;}
     // egl supports yuv extension
     /*!
      * \brief map
@@ -49,6 +65,13 @@ public:
         Q_UNUSED(tex);
         return true;
     }
+    virtual GLuint createTexture(const VideoFormat &fmt, int plane, int planeWidth, int planeHeight) {
+        Q_UNUSED(fmt);
+        Q_UNUSED(plane);
+        Q_UNUSED(planeWidth);
+        Q_UNUSED(planeHeight);
+        return 0;
+    }
 };
 typedef QSharedPointer<InteropResource> InteropResourcePtr;
 
@@ -60,22 +83,13 @@ public:
     void setSurface(CVPixelBufferRef buf, int w, int h);
     void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) Q_DECL_OVERRIDE;
     void unmap(void *handle) Q_DECL_OVERRIDE;
+    virtual void* createHandle(void* handle, SurfaceType type, const VideoFormat &fmt, int plane, int planeWidth, int planeHeight) Q_DECL_OVERRIDE;
 protected:
     void* mapToHost(const VideoFormat &format, void *handle, int plane);
 private:
     int frame_width, frame_height;
     InteropResourcePtr m_resource;
     CVPixelBufferRef m_surface;
-};
-
-/*!
- * \brief The InteropResourceCVPixelBuffer class
- * The mapping is not 0-copy. Use CVPixelBufferGetBaseAddressOfPlane to upload video frame to opengl.
- */
-class InteropResourceCVPixelBuffer Q_DECL_FINAL : public InteropResource
-{
-public:
-    bool map(CVPixelBufferRef buf, GLuint tex, int w, int h, int plane) Q_DECL_OVERRIDE;
 };
 } // namespace cv
 } // namespace QtAV
