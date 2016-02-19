@@ -289,8 +289,8 @@ config_vda {
 config_videotoolbox {
   DEFINES *= QTAV_HAVE_VIDEOTOOLBOX=1
   SOURCES *= codec/video/VideoDecoderVideoToolbox.cpp
-  #HEADERS *= codec/video/SurfaceInteropVideoToolbox.h
-  #SOURCES *= codec/video/SurfaceInteropVideoToolbox.cpp
+  HEADERS *= codec/video/SurfaceInteropCV.h
+  SOURCES *= codec/video/SurfaceInteropCV.cpp
   LIBS += -framework CoreVideo -framework CoreFoundation -framework CoreMedia -framework VideoToolbox
 # iOS use gles and IOSurface is private
   !ios: LIBS += -framework IOSurface

@@ -1,0 +1,154 @@
+/******************************************************************************
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+
+*   This file is part of QtAV (from 2016)
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+******************************************************************************/
+
+#include "SurfaceInteropCV.h"
+#include "QtAV/VideoFrame.h"
+#include "utils/OpenGLHelper.h"
+
+namespace QtAV {
+typedef struct {
+    int cv_pixfmt;
+    VideoFormat::PixelFormat pixfmt;
+} cv_format;
+//https://developer.apple.com/library/Mac/releasenotes/General/MacOSXLionAPIDiffs/CoreVideo.html
+/* use fourcc '420v', 'yuvs' for NV12 and yuyv to avoid build time version check
+ * qt4 targets 10.6, so those enum values is not valid in build time, while runtime is supported.
+ */
+static const cv_format cv_formats[] = {
+    { 'y420', VideoFormat::Format_YUV420P }, //kCVPixelFormatType_420YpCbCr8Planar
+    { '2vuy', VideoFormat::Format_UYVY }, //kCVPixelFormatType_422YpCbCr8
+//#ifdef OSX_TARGET_MIN_LION
+    { '420f' , VideoFormat::Format_NV12 }, // kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
+    { '420v', VideoFormat::Format_NV12 }, //kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
+    { 'yuvs', VideoFormat::Format_YUYV }, //kCVPixelFormatType_422YpCbCr8_yuvs
+//#endif
+    { 0, VideoFormat::Format_Invalid }
+};
+
+static VideoFormat::PixelFormat format_from_cv(int cv)
+{
+    for (int i = 0; cv_formats[i].cv_pixfmt; ++i) {
+        if (cv_formats[i].cv_pixfmt == cv)
+            return cv_formats[i].pixfmt;
+    }
+    return VideoFormat::Format_Invalid;
+}
+namespace cv {
+void SurfaceInteropCV::setSurface(CVPixelBufferRef buf, int w, int h)
+{
+    m_surface = buf;
+    CVPixelBufferRetain(buf); // videotoolbox need it for map and CVPixelBufferRelease
+    frame_width = w;
+    frame_height = h;
+}
+
+SurfaceInteropCV::~SurfaceInteropCV()
+{
+    if (m_surface)
+        CVPixelBufferRelease(m_surface);
+}
+
+void* SurfaceInteropCV::map(SurfaceType type, const VideoFormat &fmt, void *handle, int plane)
+{
+    if (!handle)
+        return NULL;
+    if (!m_surface)
+        return 0;
+    if (type == GLTextureSurface) {
+        if (m_resource->map(m_surface, *((GLuint*)handle), frame_width, frame_height, plane))
+            return handle;
+    } else if (type == HostMemorySurface) {
+        return mapToHost(fmt, handle, plane);
+    } else if (type == SourceSurface) {
+        CVPixelBufferRef *b = reinterpret_cast<CVPixelBufferRef*>(handle);
+        *b = m_surface;
+        return handle;
+    }
+    return NULL;
+}
+
+void SurfaceInteropCV::unmap(void *handle)
+{
+    // TODO: surface type
+    m_resource->unmap(m_surface, *((GLuint*)handle));
+}
+
+void* SurfaceInteropCV::mapToHost(const VideoFormat &format, void *handle, int plane)
+{
+    Q_UNUSED(plane);
+    CVPixelBufferLockBaseAddress(m_surface, 0);
+    const VideoFormat fmt(format_from_cv(CVPixelBufferGetPixelFormatType(m_surface)));
+    if (!fmt.isValid()) {
+        CVPixelBufferUnlockBaseAddress(m_surface, 0);
+        return NULL;
+    }
+    const int w = CVPixelBufferGetWidth(m_surface);
+    const int h = CVPixelBufferGetHeight(m_surface);
+    uint8_t *src[3];
+    int pitch[3];
+    for (int i = 0; i < fmt.planeCount(); ++i) {
+        // get address results in internal copy
+        src[i] = (uint8_t*)CVPixelBufferGetBaseAddressOfPlane(m_surface, i);
+        pitch[i] = CVPixelBufferGetBytesPerRowOfPlane(m_surface, i);
+    }
+    CVPixelBufferUnlockBaseAddress(m_surface, 0);
+    //CVPixelBufferRelease(cv_buffer); // release when video frame is destroyed
+    VideoFrame frame(VideoFrame::fromGPU(fmt, w, h, h, src, pitch));
+    if (fmt != format)
+        frame = frame.to(format);
+    VideoFrame *f = reinterpret_cast<VideoFrame*>(handle);
+    frame.setTimestamp(f->timestamp());
+    frame.setDisplayAspectRatio(f->displayAspectRatio());
+    *f = frame;
+    return f;
+}
+
+bool InteropResourceCVPixelBuffer::map(CVPixelBufferRef buf, GLuint tex, int w, int h, int plane)
+{
+    Q_UNUSED(h);
+    Q_UNUSED(w);
+    CVPixelBufferLockBaseAddress(buf, 0);
+    GLint iformat[4];
+    GLenum format[4];
+    GLenum dtype[4];
+    const VideoFormat fmt(format_from_cv(CVPixelBufferGetPixelFormatType(buf)));
+    OpenGLHelper::videoFormatToGL(fmt, iformat, format, dtype);
+    // TODO: move the followings to videoFormatToGL()?
+    if (plane > 1 && format[2] == GL_LUMINANCE && fmt.bytesPerPixel(1) == 1) { // QtAV uses the same shader for planar and semi-planar yuv format
+        iformat[2] = format[2] = GL_ALPHA;
+        if (plane == 4)
+            iformat[3] = format[3] = format[2]; // vec4(,,,A)
+    }
+    const int texture_w = CVPixelBufferGetBytesPerRowOfPlane(buf, plane)/OpenGLHelper::bytesOfGLFormat(format[plane], dtype[plane]);
+    //qDebug("cv plane%d width: %d, tex width: %d", plane, CVPixelBufferGetWidthOfPlane(buf, plane), texture_w);
+    // get address results in internal copy
+    DYGL(glBindTexture(GL_TEXTURE_2D, tex));
+    DYGL(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0
+                         , texture_w
+                         , CVPixelBufferGetHeightOfPlane(buf, plane)
+                         , format[plane]
+                         , dtype[plane]
+                         , (uint8_t*)CVPixelBufferGetBaseAddressOfPlane(buf, plane)));
+    CVPixelBufferUnlockBaseAddress(buf, 0);
+    return true;
+}
+} // namespace cv
+} // namespace QtAV
