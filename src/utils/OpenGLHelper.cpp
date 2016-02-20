@@ -113,10 +113,18 @@ int GLSLVersion()
     }
     const char* vs = (const char*)DYGL(glGetString(GL_SHADING_LANGUAGE_VERSION));
     int major = 0, minor = 0;
-    if (sscanf(vs, "%d.%d", &major, &minor) == 2)
+    // es: "OpenGL ES GLSL ES 1.00 (ANGLE 2.1.99...)" can use ""%*[ a-zA-Z] %d.%d" in sscanf, desktop: "2.1"
+    //QRegExp rx("(\\d+)\\.(\\d+)");
+    if (strncmp(vs, "OpenGL ES GLSL ES ", 18) == 0)
+        vs += 18;
+    if (sscanf(vs, "%d.%d", &major, &minor) == 2) {
         v = major * 100 + minor;
-    else
-        v = 0;
+    } else {
+        qWarning("Failed to detect glsl version using GL_SHADING_LANGUAGE_VERSION!");
+        v = 110;
+        if (isOpenGLES())
+            v = QOpenGLContext::currentContext()->format().majorVersion() >= 3 ? 300 : 100;
+    }
     return v;
 }
 
