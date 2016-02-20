@@ -102,6 +102,7 @@ bool useDeprecatedFormats()
     return v;
 }
 
+/// current shader works fine for gles 2~3 without compatibleVertexShaderHeader() and compatibleFragmentShaderHeader(). It's mainly for desktop core profile
 QByteArray compatibleVertexShaderHeader()
 {
     QByteArray h;
@@ -125,11 +126,16 @@ QByteArray compatibleFragmentShaderHeader()
     if (isOpenGLES() && QOpenGLContext::currentContext()->format().majorVersion() > 2)
         h.append(" es");
     h.append("\n");
+    if (isOpenGLES())
+        h.append("precision mediump float;\n");
     // es: "precision mediump float;\n"
-    if (GLSLVersion() >= 130) {
+    if (GLSLVersion() >= 130) { // gl(es) 3
         h.append("#define varying in\n");
         h.append("#define gl_FragColor out_color\n");
-        h.append("out vec4 out_color;\n");
+        if (isOpenGLES())
+            h.append("out mediump vec4 out_color;\n");
+        else
+            h.append("out vec4 out_color;\n");
     }
     return h;
 }
@@ -208,7 +214,7 @@ bool isOpenGLES()
 #ifdef QT_OPENGL_DYNAMIC
     QOpenGLContext *ctx = QOpenGLContext::currentContext();
     // desktop can create es compatible context
-    return qApp->testAttribute(Qt::AA_UseOpenGLES) || (ctx ? ctx->isOpenGLES() : QOpenGLContext::openGLModuleType() != QOpenGLContext::LibGL); //
+    return (ctx ? ctx->isOpenGLES() : QOpenGLContext::openGLModuleType() != QOpenGLContext::LibGL) || qApp->testAttribute(Qt::AA_UseOpenGLES); //
 #endif //QT_OPENGL_DYNAMIC
 #ifdef QT_OPENGL_ES_2
     return true;
