@@ -102,6 +102,38 @@ bool useDeprecatedFormats()
     return v;
 }
 
+QByteArray compatibleVertexShaderHeader()
+{
+    QByteArray h;
+    h.append("#version ").append(QByteArray::number(GLSLVersion()));
+    if (isOpenGLES() && QOpenGLContext::currentContext()->format().majorVersion() > 2)
+        h.append(" es");
+    h.append("\n");
+    // es: "precision mediump float;\n"
+    if (GLSLVersion() >= 130) {
+        h.append("#define attribute in\n");
+        h.append("#define varying out\n");
+    }
+    return h;
+}
+
+QByteArray compatibleFragmentShaderHeader()
+{
+    QByteArray h;
+    // #version directive must occur in a compilation unit before anything else, except for comments and white spaces. Default is 100 if not set
+    h.append("#version ").append(QByteArray::number(GLSLVersion()));
+    if (isOpenGLES() && QOpenGLContext::currentContext()->format().majorVersion() > 2)
+        h.append(" es");
+    h.append("\n");
+    // es: "precision mediump float;\n"
+    if (GLSLVersion() >= 130) {
+        h.append("#define varying in\n");
+        h.append("#define gl_FragColor out_color\n");
+        h.append("out vec4 out_color;\n");
+    }
+    return h;
+}
+
 int GLSLVersion()
 {
     static int v = -1;

@@ -201,6 +201,7 @@ const char* VideoShader::vertexShader() const
             vert.prepend("#define HAS_ALPHA\n");
 #endif
     }
+    vert.prepend(OpenGLHelper::compatibleVertexShaderHeader());
     return vert.constData();
 }
 
@@ -248,6 +249,7 @@ const char* VideoShader::fragmentShader() const
     if (textureTarget() == GL_TEXTURE_RECTANGLE)
         frag.prepend("#define MULTI_COORD\n");
     //qDebug() << frag.constData();
+    frag.prepend(OpenGLHelper::compatibleFragmentShaderHeader());
     return frag.constData();
 }
 
@@ -612,8 +614,7 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
     //d.setupQuality();
     // This is necessary for non-power-of-two textures
     DYGL(glTexParameteri(d.target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-    DYGL(glTexParameteri(d.target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-    // TODO: data address use surfaceinterop.map()
+    DYGL(glTexParameteri(d.target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)); //TODO: remove. only call once
     DYGL(glTexSubImage2D(d.target, 0, 0, 0, d.texture_upload_size[p].width(), d.texture_upload_size[p].height(), d.data_format[p], d.data_type[p], d.try_pbo ? 0 : d.frame.constBits(p)));
     if (false) { //texture_upload_size[].width()*gl_bpp != bytesPerLine[]
         for (int y = 0; y < d.plane0Size.height(); ++y)
@@ -884,7 +885,7 @@ bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
      * GLES internal_format == data_format, GL_LUMINANCE_ALPHA is 2 bytes
      * so if NV12 use GL_LUMINANCE_ALPHA, YV12 use GL_ALPHA
      */
-    // GL_GREEN as (internal)format is not supported in new versions
+    // TODO: move the followings to videoFormatToGL()?
     if (nb_planes > 2 && data_format[2] == GL_LUMINANCE && fmt.bytesPerPixel(1) == 1) { // QtAV uses the same shader for planar and semi-planar yuv format
         internal_format[2] = data_format[2] = GL_ALPHA;
         if (nb_planes == 4)
