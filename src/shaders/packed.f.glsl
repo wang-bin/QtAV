@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -18,7 +18,6 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
 #ifdef GL_ES
 // Set default precision to medium
 precision mediump int;
@@ -43,14 +42,14 @@ uniform mat4 u_c;
 
 /***User Sampler code here***%1***/
 #ifndef USER_SAMPLER
-vec4 sample(sampler2D tex, vec2 pos)
+vec4 sample2d(sampler2D tex, vec2 pos)
 {
     return texture(tex, pos);
 }
 #endif
 
 void main() {
-    vec4 c = sample(u_Texture0, v_TexCoords0);
+    vec4 c = sample2d(u_Texture0, v_TexCoords0);
     c = u_c * c;
 #ifndef HAS_ALPHA
     c.a = 1.0;

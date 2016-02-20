@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -83,7 +83,7 @@ const mat4 yuv2rgbMatrix = mat4(1, 1, 1, 0,
 // matrixCompMult for convolution
 /***User Sampler code here***%1***/
 #ifndef USER_SAMPLER
-vec4 sample(sampler2D tex, vec2 pos)
+vec4 sample2d(sampler2D tex, vec2 pos)
 {
     return texture(tex, pos);
 }
@@ -96,40 +96,40 @@ void main()
                          * vec4(
 #ifdef CHANNEL16_TO8
 #ifdef USE_RG
-                             dot(sample(u_Texture0, v_TexCoords0).rg, u_to8),
-                             dot(sample(u_Texture1, v_TexCoords1).rg, u_to8),
-                             dot(sample(u_Texture2, v_TexCoords2).rg, u_to8),
+                             dot(sample2d(u_Texture0, v_TexCoords0).rg, u_to8),
+                             dot(sample2d(u_Texture1, v_TexCoords1).rg, u_to8),
+                             dot(sample2d(u_Texture2, v_TexCoords2).rg, u_to8),
 #ifdef HAS_ALPHA
-                             dot(sample(u_Texture3, v_TexCoords3).rg, u_to8)
+                             dot(sample2d(u_Texture3, v_TexCoords3).rg, u_to8)
 #endif //HAS_ALPHA
 #else
-                             dot(sample(u_Texture0, v_TexCoords0).ra, u_to8),
-                             dot(sample(u_Texture1, v_TexCoords1).ra, u_to8),
-                             dot(sample(u_Texture2, v_TexCoords2).ra, u_to8),
+                             dot(sample2d(u_Texture0, v_TexCoords0).ra, u_to8),
+                             dot(sample2d(u_Texture1, v_TexCoords1).ra, u_to8),
+                             dot(sample2d(u_Texture2, v_TexCoords2).ra, u_to8),
 #ifdef HAS_ALPHA
-                             dot(sample(u_Texture3, v_TexCoords3).ra, u_to8)
+                             dot(sample2d(u_Texture3, v_TexCoords3).ra, u_to8)
 #endif //HAS_ALPHA
 #endif //USE_RG
 #else
 #ifdef USE_RG
-                             sample(u_Texture0, v_TexCoords0).r,
-                             sample(u_Texture1, v_TexCoords1).r,
+                             sample2d(u_Texture0, v_TexCoords0).r,
+                             sample2d(u_Texture1, v_TexCoords1).r,
 #ifdef IS_BIPLANE
-                             sample(u_Texture2, v_TexCoords2).g,
+                             sample2d(u_Texture2, v_TexCoords2).g,
 #else
-                             sample(u_Texture2, v_TexCoords2).r,
+                             sample2d(u_Texture2, v_TexCoords2).r,
 #endif //IS_BIPLANE
 #ifdef HAS_ALPHA
-                             sample(u_Texture3, v_TexCoords3).r
+                             sample2d(u_Texture3, v_TexCoords3).r
 
 #endif //HAS_ALPHA
 #else
 // use r, g, a to work for both yv12 and nv12. idea from xbmc
-                             sample(u_Texture0, v_TexCoords0).r,
-                             sample(u_Texture1, v_TexCoords1).g,
-                             sample(u_Texture2, v_TexCoords2).a,
+                             sample2d(u_Texture0, v_TexCoords0).r,
+                             sample2d(u_Texture1, v_TexCoords1).g,
+                             sample2d(u_Texture2, v_TexCoords2).a,
 #ifdef HAS_ALPHA
-                             sample(u_Texture3, v_TexCoords3).a
+                             sample2d(u_Texture3, v_TexCoords3).a
 #endif //HAS_ALPHA
 #endif //USE_RG
 #endif //CHANNEL16_TO8
