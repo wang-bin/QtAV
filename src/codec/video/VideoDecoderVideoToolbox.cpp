@@ -183,19 +183,18 @@ VideoFrame VideoDecoderVideoToolbox::frame()
     }
 
     uint8_t *src[3];
-    int pitch[3];
+    int pitch[3]; // must get the value from cvbuffer to compute opengl text size in VideoShader
     VideoFormat fmt(pixfmt);
     const bool zero_copy = copyMode() == ZeroCopy;
-    if (!zero_copy) {
-        CVPixelBufferLockBaseAddress(cv_buffer, 0);
-        for (int i = 0; i < fmt.planeCount(); ++i) {
-            // get address results in internal copy
+    CVPixelBufferLockBaseAddress(cv_buffer, 0);
+    for (int i = 0; i < fmt.planeCount(); ++i) {
+        pitch[i] = CVPixelBufferGetBytesPerRowOfPlane(cv_buffer, i);
+        // get address results in internal copy
+        if (!zero_copy)
             src[i] = (uint8_t*)CVPixelBufferGetBaseAddressOfPlane(cv_buffer, i);
-            pitch[i] = CVPixelBufferGetBytesPerRowOfPlane(cv_buffer, i);
-        }
-        CVPixelBufferUnlockBaseAddress(cv_buffer, 0);
-        //CVPixelBufferRelease(cv_buffer); // release when video frame is destroyed
     }
+    CVPixelBufferUnlockBaseAddress(cv_buffer, 0);
+    //CVPixelBufferRelease(cv_buffer); // release when video frame is destroyed
     VideoFrame f;
     // TODO: remove LazyCopy?
     if (zero_copy || copyMode() == VideoDecoderFFmpegHW::LazyCopy) {
@@ -273,7 +272,7 @@ bool VideoDecoderVideoToolboxPrivate::setup(AVCodecContext *avctx)
     vtctx->cv_pix_fmt_type = out_fmt;
 
     qDebug("AVVideotoolboxContext: %p", vtctx);
-    int err = av_videotoolbox_default_init2(codec_ctx, vtctx);
+    int err = av_videotoolbox_default_init2(codec_ctx, vtctx); //ios h264 crashes when processing extra data. null H264Context
     if (err < 0) {
         qWarning("Failed to init videotoolbox decoder (%#x): %s", err, cv_err_str(err));
         return false;

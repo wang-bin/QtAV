@@ -48,9 +48,10 @@ public:
     virtual ~InteropResource() {}
     /*!
      * \brief stridesForWidth
-     * The stride used by opengl can be different in some interop because frame display format can change (outFmt), for example we can use rgb for uyvy422. The default value use the origial pixel format to comupte the strides
+     * The stride used by opengl can be different in some interop because frame display format can change (outFmt), for example we can use rgb for uyvy422. The default value use the origial pixel format to comupte the strides.
+     * If the input strides has a valid value, use this value to compute the output strides. Otherwise, use width to compute the output strides without taking care of padded data size.
      */
-    virtual bool stridesForWidth(int cvfmt, int width, int* strides, VideoFormat::PixelFormat* outFmt);
+    virtual bool stridesForWidth(int cvfmt, int width, int* strides/*in_out*/, VideoFormat::PixelFormat* outFmt);
     virtual bool mapToTexture2D() const { return true;}
     // egl supports yuv extension
     /*!
@@ -68,7 +69,7 @@ public:
         Q_UNUSED(tex);
         return true;
     }
-    virtual GLuint createTexture(const VideoFormat &fmt, int plane, int planeWidth, int planeHeight) {
+    virtual GLuint createTexture(CVPixelBufferRef, const VideoFormat &fmt, int plane, int planeWidth, int planeHeight) {
         Q_UNUSED(fmt);
         Q_UNUSED(plane);
         Q_UNUSED(planeWidth);

@@ -54,6 +54,7 @@ VideoFormat::PixelFormat format_from_cv(int cv)
 
 extern InteropResource* CreateInteropCVPixelbuffer();
 extern InteropResource* CreateInteropIOSurface();
+extern InteropResource* CreateInteropCVOpenGL();
 InteropResource* InteropResource::create(InteropType type)
 {
     if (type == InteropAuto) {
@@ -67,6 +68,7 @@ InteropResource* InteropResource::create(InteropType type)
     case InteropCVPixelBuffer: return CreateInteropCVPixelbuffer();
 #ifdef Q_OS_MACX
     case InteropIOSurface: return CreateInteropIOSurface();
+    //case InteropCVOpenGL: return CreateInteropCVOpenGL();
 #endif
     default: return NULL;
     }
@@ -76,22 +78,29 @@ InteropResource* InteropResource::create(InteropType type)
 bool InteropResource::stridesForWidth(int cvfmt, int width, int *strides, VideoFormat::PixelFormat *outFmt)
 {
     *outFmt = format_from_cv(cvfmt);
-    strides[0] = width;
     switch (cvfmt) {
     case '2vuy':
-    case 'yuvs':
-        strides[0] = 2*width;
+    case 'yuvs': {
+        if (strides[0] <= 0)
+            strides[0] = 2*width;
+    }
         break;
     case '420v':
-    case '420f':
-        strides[1] = width;
+    case '420f': {
+        if (strides[1] <= 0)
+            strides[1] = width;
+    }
         break;
-    case 'y420':
-        strides[1] = strides[2] = width/2;
+    case 'y420': {
+        if (strides[1] <= 0)
+            strides[1] = strides[2] = width/2;
+    }
         break;
     default:
         return false;
     }
+    if (strides[0] <= 0)
+        strides[0] = width;
     return true;
 }
 
@@ -138,7 +147,7 @@ void* SurfaceInteropCV::createHandle(void *handle, SurfaceType type, const Video
 {
     if (type != GLTextureSurface)
         return NULL;
-    GLuint tex = m_resource->createTexture(fmt, plane, planeWidth, planeHeight);
+    GLuint tex = m_resource->createTexture(m_surface, fmt, plane, planeWidth, planeHeight);
     if (tex == 0)
         return NULL;
     *((GLuint*)handle) = tex;
@@ -207,7 +216,7 @@ bool InteropResourceCVPixelBuffer::map(CVPixelBufferRef buf, GLuint tex, int w, 
             iformat[3] = format[3] = format[2]; // vec4(,,,A)
     }
     const int texture_w = CVPixelBufferGetBytesPerRowOfPlane(buf, plane)/OpenGLHelper::bytesOfGLFormat(format[plane], dtype[plane]);
-    //qDebug("cv plane%d width: %d, tex width: %d", plane, CVPixelBufferGetWidthOfPlane(buf, plane), texture_w);
+    //qDebug("cv plane%d width: %d, stride: %d, tex width: %d", plane, CVPixelBufferGetWidthOfPlane(buf, plane), CVPixelBufferGetBytesPerRowOfPlane(buf, plane), texture_w);
     // get address results in internal copy
     DYGL(glBindTexture(GL_TEXTURE_2D, tex));
     DYGL(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0

@@ -37,7 +37,7 @@ public:
     bool stridesForWidth(int cvfmt, int width, int* strides, VideoFormat::PixelFormat* outFmt) Q_DECL_OVERRIDE;
     bool mapToTexture2D() const Q_DECL_OVERRIDE { return false;}
     bool map(CVPixelBufferRef buf, GLuint tex, int w, int h, int plane) Q_DECL_OVERRIDE;
-    GLuint createTexture(const VideoFormat &fmt, int plane, int planeWidth, int planeHeight) Q_DECL_OVERRIDE
+    GLuint createTexture(CVPixelBufferRef, const VideoFormat &fmt, int plane, int planeWidth, int planeHeight) Q_DECL_OVERRIDE
     {
         Q_UNUSED(fmt);
         Q_UNUSED(plane);
@@ -56,12 +56,15 @@ InteropResource* CreateInteropIOSurface()
 
 bool InteropResourceIOSurface::stridesForWidth(int cvfmt, int width, int *strides, VideoFormat::PixelFormat* outFmt)
 {
-    strides[0] = width;
     switch (cvfmt) {
     case '2vuy':
-    case 'yuvs':
+    case 'yuvs': {
         *outFmt = VideoFormat::Format_VYU;
-        strides[0] = 4*width; //RGB layout: BRGX
+        if (strides[0] <= 0)
+            strides[0] = 4*width; //RGB layout: BRGX
+        else
+            strides[0] *= 2;
+    }
         break;
     default:
         return InteropResource::stridesForWidth(cvfmt, width, strides, outFmt);
