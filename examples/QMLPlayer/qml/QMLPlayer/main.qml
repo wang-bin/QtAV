@@ -409,7 +409,7 @@ Rectangle {
             right: parent.right
             bottom: control.top
         }
-        width: Utils.scaled(140)
+        width: Utils.scaled(100)
         onClicked: {
             pageLoader.source = selectedUrl
             if (pageLoader.item)

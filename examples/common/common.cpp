@@ -99,9 +99,9 @@ QOptions get_common_options()
             ("language", QLatin1String("system"), QLatin1String("language on UI. can be 'system', 'none' and locale name e.g. zh_CN"))
             ("log", QString(), QLatin1String("log level. can be 'off', 'fatal', 'critical', 'warning', 'debug', 'all'"))
             ("logfile"
-#if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
+#if defined(Q_OS_IOS)
              , appDataDir().append(QString::fromLatin1("/log-%1.txt"))
-#elif defined(Q_OS_WINRT)
+#elif defined(Q_OS_WINRT) || defined(Q_OS_ANDROID)
              , QString()
 #else
              , QString::fromLatin1("log-%1.txt")
@@ -136,7 +136,7 @@ void do_common_options(const QOptions &options, const QString& appName)
     }
     // has no effect if qInstallMessageHandler() called
     //qSetMessagePattern("%{function} @%{line}: %{message}");
-#if !defined(Q_OS_WINRT)
+#if !defined(Q_OS_WINRT) && !defined(Q_OS_ANDROID)
     QString app(appName);
     if (app.isEmpty() && qApp)
         app = qApp->applicationName();
