@@ -132,8 +132,7 @@ class QMatrix4x4;
 namespace QtAV {
 namespace OpenGLHelper {
 
-QByteArray compatibleVertexShaderHeader();
-QByteArray compatibleFragmentShaderHeader();
+QByteArray compatibleShaderHeader(QOpenGLShader::ShaderType type);
 int GLSLVersion();
 bool isEGL();
 bool isOpenGLES();

@@ -39,6 +39,8 @@
 #endif //QTAV_HAVE(EGL_CAPI)
 #include "utils/Logger.h"
 
+#define BUG_GLES3_ANDROID 1 //FIXME: N7 android6 gles3 displays red images, only rgb32 is correct
+
 namespace QtAV {
 namespace OpenGLHelper {
 
@@ -102,40 +104,57 @@ bool useDeprecatedFormats()
     return v;
 }
 
-/// current shader works fine for gles 2~3 without compatibleVertexShaderHeader() and compatibleFragmentShaderHeader(). It's mainly for desktop core profile
-QByteArray compatibleVertexShaderHeader()
+/// current shader works fine for gles 2~3 only with commonShaderHeader(). It's mainly for desktop core profile
+
+static QByteArray commonShaderHeader(QOpenGLShader::ShaderType type)
 {
     QByteArray h;
-    h.append("#version ").append(QByteArray::number(GLSLVersion()));
-    if (isOpenGLES() && QOpenGLContext::currentContext()->format().majorVersion() > 2)
-        h.append(" es");
-    h.append("\n");
-    // es: "precision mediump float;\n"
-    if (GLSLVersion() >= 130) {
-        h.append("#define attribute in\n");
-        h.append("#define varying out\n");
+    if (isOpenGLES()) {
+        h += "precision mediump int;\n"
+             "precision mediump float;\n"
+             ;
+    } else {
+        h += "#define highp\n"
+             "#define mediump\n"
+             "#define lowp\n"
+             ;
+    }
+    if (type == QOpenGLShader::Fragment) {
+        // >=1.30: texture(sampler2DRect,...). 'texture' is defined in header
+        // we can't check GLSLVersion() here because it the actually version used can be defined by "#version"
+        h += "#if __VERSION__ < 130\n"
+             "#undef texture\n"
+             "#define texture texture2D\n"
+             "#endif // < 130\n"
+        ;
     }
     return h;
 }
 
-QByteArray compatibleFragmentShaderHeader()
+QByteArray compatibleShaderHeader(QOpenGLShader::ShaderType type)
 {
+#if BUG_GLES3_ANDROID
+    if (isOpenGLES())
+        return commonShaderHeader(type);
+#endif //BUG_GLES3_ANDROID
     QByteArray h;
     // #version directive must occur in a compilation unit before anything else, except for comments and white spaces. Default is 100 if not set
     h.append("#version ").append(QByteArray::number(GLSLVersion()));
     if (isOpenGLES() && QOpenGLContext::currentContext()->format().majorVersion() > 2)
-        h.append(" es");
-    h.append("\n");
-    if (isOpenGLES())
-        h.append("precision mediump float;\n");
-    // es: "precision mediump float;\n"
+        h += " es";
+    h += "\n";
+    h += commonShaderHeader(type);
     if (GLSLVersion() >= 130) { // gl(es) 3
-        h.append("#define varying in\n");
-        h.append("#define gl_FragColor out_color\n");
-        if (isOpenGLES())
-            h.append("out mediump vec4 out_color;\n");
-        else
-            h.append("out vec4 out_color;\n");
+        if (type == QOpenGLShader::Vertex) {
+            h += "#define attribute in\n"
+                 "#define varying out\n"
+                    ;
+        } else if (type == QOpenGLShader::Fragment) {
+            h += "#define varying in\n"
+                 "#define gl_FragColor out_color\n"  //can not starts with 'gl_'
+                 "out vec4 gl_FragColor;\n"
+                 ;
+        }
     }
     return h;
 }

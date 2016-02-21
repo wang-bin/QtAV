@@ -18,22 +18,6 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-#ifdef GL_ES
-// Set default precision to medium
-precision mediump int;
-precision mediump float;
-#else
-#define highp
-#define mediump
-#define lowp
-#endif
-// >=1.40: texture(sampler2DRect,...). 'texture' is define in header
-#if __VERSION__ < 130
-#ifndef texture
-#define texture texture2D
-#endif
-#endif
-
 // u_TextureN: yuv. use array?
 uniform sampler2D u_Texture0;
 uniform sampler2D u_Texture1;
@@ -41,12 +25,12 @@ uniform sampler2D u_Texture2;
 #ifdef HAS_ALPHA
 uniform sampler2D u_Texture3;
 #endif //HAS_ALPHA
-varying lowp vec2 v_TexCoords0;
+varying vec2 v_TexCoords0;
 #ifdef MULTI_COORD
-varying lowp vec2 v_TexCoords1;
-varying lowp vec2 v_TexCoords2;
+varying vec2 v_TexCoords1;
+varying vec2 v_TexCoords2;
 #ifdef HAS_ALPHA
-varying lowp vec2 v_TexCoords3;
+varying vec2 v_TexCoords3;
 #endif
 #else
 #define v_TexCoords1 v_TexCoords0
@@ -58,27 +42,6 @@ uniform float u_bpp;
 uniform mat4 u_colorMatrix;
 #ifdef CHANNEL16_TO8
 uniform vec2 u_to8;
-#endif
-#if defined(YUV_MAT_GLSL)
-//http://en.wikipedia.org/wiki/YUV calculation used
-//http://www.fourcc.org/fccyvrgb.php
-//GLSL: col first
-// use bt601
-#if defined(CS_BT709)
-const mat4 yuv2rgbMatrix = mat4(1, 1, 1, 0,
-                              0, -0.187, 1.8556, 0,
-                              1.5701, -0.4664, 0, 0,
-                              0, 0, 0, 1)
-#else //BT601
-const mat4 yuv2rgbMatrix = mat4(1, 1, 1, 0,
-                              0, -0.344, 1.773, 0,
-                              1.403, -0.714, 0, 0,
-                              0, 0, 0, 1)
-#endif
-                        * mat4(1, 0, 0, 0,
-                               0, 1, 0, 0,
-                               0, 0, 1, 0,
-                               0, -0.5, -0.5, 1);
 #endif
 // matrixCompMult for convolution
 /***User Sampler code here***%1***/

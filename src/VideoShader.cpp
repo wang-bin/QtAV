@@ -30,6 +30,7 @@
 
 #define YUVA_DONE 0
 #define glsl(x) #x "\n"
+//#define QTAV_DEBUG_GLSL
 
 namespace QtAV {
 
@@ -201,7 +202,12 @@ const char* VideoShader::vertexShader() const
             vert.prepend("#define HAS_ALPHA\n");
 #endif
     }
-    vert.prepend(OpenGLHelper::compatibleVertexShaderHeader());
+    vert.prepend(OpenGLHelper::compatibleShaderHeader(QOpenGLShader::Vertex));
+#ifdef QTAV_DEBUG_GLSL
+    QString s(vert);
+    s.remove(QRegExp(QStringLiteral("(/\\*([^*]|(\\*+[^*/]))*\\*+/)")));
+    qDebug() << s.toUtf8().constData();
+#endif //QTAV_DEBUG_GLSL
     return vert.constData();
 }
 
@@ -244,12 +250,18 @@ const char* VideoShader::fragmentShader() const
         frag.prepend("#extension GL_ARB_texture_rectangle : enable\n"
                      "#define sampler2D sampler2DRect\n");
         if (OpenGLHelper::GLSLVersion() < 140)
-            frag.prepend("#define texture texture2DRect\n");
+            frag.prepend("#undef texture\n"
+                        "#define texture texture2DRect\n"
+                        );
     }
     if (textureTarget() == GL_TEXTURE_RECTANGLE)
         frag.prepend("#define MULTI_COORD\n");
-    //qDebug() << frag.constData();
-    frag.prepend(OpenGLHelper::compatibleFragmentShaderHeader());
+    frag.prepend(OpenGLHelper::compatibleShaderHeader(QOpenGLShader::Fragment));
+#ifdef QTAV_DEBUG_GLSL
+    QString s(frag);
+    s.remove(QRegExp(QStringLiteral("(/\\*([^*]|(\\*+[^*/]))*\\*+/)")));
+    qDebug() << s.toUtf8().constData();
+#endif //QTAV_DEBUG_GLSL
     return frag.constData();
 }
 
