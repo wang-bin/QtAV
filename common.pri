@@ -351,7 +351,7 @@ defineReplace(shell_quote_win) {
 # - control chars & space
 # - the windows shell meta chars "&()<>^|
 # - the potential separators ,;=
-#TODO: how to deal with  "^", "|"? every char are seperated by "|"?
+#TODO: how to deal with  "^", "|"? every char are separated by "|"?
 #how to avoid replacing "^" again for the second time
     isEmpty(1):error("shell_quote(arg) requires one argument.")
     special_chars = & \( \) < >
