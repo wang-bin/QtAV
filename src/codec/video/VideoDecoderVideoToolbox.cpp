@@ -62,8 +62,9 @@ public:
     enum PixelFormat {
         NV12 = '420v',
         UYVY = '2vuy',
+        BGRA = 'BGRA', //kCVPixelFormatType_32BGRA
         YUV420P = 'y420',
-        YUYV = 'yuvs'
+        YUYV = 'yuvs',
     };
     enum Interop {
         CVPixelBuffer = cv::InteropCVPixelBuffer,
@@ -146,7 +147,7 @@ VideoDecoderVideoToolbox::VideoDecoderVideoToolbox()
     : VideoDecoderFFmpegHW(*new VideoDecoderVideoToolboxPrivate())
 {
     // dynamic properties about static property details. used by UI
-    setProperty("detail_format", tr("Output pixel format from decoder. Performance NV12 > UYVY > YUV420P > YUYV.\nOSX < 10.7 only supports UYVY and YUV420p"));
+    setProperty("detail_format", tr("Output pixel format from decoder. Performance NV12 > UYVY > BGRA > YUV420P > YUYV.\nOSX < 10.7 only supports UYVY, BGRA and YUV420p"));
     setProperty("detail_interop"
                 , tr("Interop with OpenGL.\n"
                      "CVPixelBuffer: OSX+iOS\n"
@@ -278,7 +279,7 @@ bool VideoDecoderVideoToolboxPrivate::setup(AVCodecContext *avctx)
         qWarning("Failed to init videotoolbox decoder (%#x %s): %s", err, av_err2str(err), cv_err_str(err));
         return false;
     }
-    initUSWC(codedWidth(avctx));
+    initUSWC(codedWidth(avctx)); // TODO: use stride
     qDebug() << "VideoToolbox decoder created. format: " << cv::format_from_cv(out_fmt);
     return true;
 }

@@ -90,16 +90,25 @@ bool InteropResourceIOSurface::map(CVPixelBufferRef buf, GLuint tex, int w, int 
         if (plane == 4)
             iformat[3] = format[3] = format[2]; // vec4(,,,A)
     }
-    if (iformat[plane] == GL_RGBA) {
+    switch (pixfmt) {
+    case '2vuy':
+    case 'yuvs':
         iformat[plane] = GL_RGB8; //GL_RGB, sized: GL_RGB8
         format[plane] = GL_RGB_422_APPLE;
         dtype[plane] = pixfmt == '2vuy' ? GL_UNSIGNED_SHORT_8_8_APPLE : GL_UNSIGNED_SHORT_8_8_REV_APPLE;
+        break;
         // OSX: GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV
         // GL_YCBCR_422_APPLE: convert to rgb texture internally (bt601). only supports OSX
         // GL_RGB_422_APPLE: raw yuv422 texture
+    case 'BGRA':
+        iformat[plane] = GL_RGBA8;
+        format[plane] = GL_BGRA;
+        dtype[plane] = GL_UNSIGNED_INT_8_8_8_8_REV;
+        break;
+    default: // TODO: rgb24
+        break;
     }
     const GLenum target = GL_TEXTURE_RECTANGLE;
-
     DYGL(glBindTexture(target, tex));
     //http://stackoverflow.com/questions/24933453/best-path-from-avplayeritemvideooutput-to-opengl-texture
     //CVOpenGLTextureCacheCreate(). kCVPixelBufferOpenGLCompatibilityKey?

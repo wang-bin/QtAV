@@ -40,6 +40,8 @@ static const cv_format cv_formats[] = {
     { '420v', VideoFormat::Format_NV12 }, //kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
     { 'yuvs', VideoFormat::Format_YUYV }, //kCVPixelFormatType_422YpCbCr8_yuvs
 //#endif
+    { 'BGRA', VideoFormat::Format_BGRA32 },
+    { kCVPixelFormatType_24RGB, VideoFormat::Format_RGB24 },
     { 0, VideoFormat::Format_Invalid }
 };
 namespace cv {
