@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -76,14 +76,13 @@ public:
 Q_SIGNALS:
     void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
     void descriptionChanged();
-    virtual void codecNameChanged();//signal can not be decared virtual (winrt)
-
 protected:
     AVDecoder(AVDecoderPrivate& d);
     DPTR_DECLARE(AVDecoder)
     // force a codec. only used by avcodec sw decoders. TODO: move to public? profile set?
     void setCodecName(const QString& name);
     QString codecName() const;
+    virtual void codecNameChanged() {}//signals can not be decared virtual (winrt)
 private:
     Q_DISABLE_COPY(AVDecoder)
     AVDecoder(); // base class, not direct create. only final class has is enough
