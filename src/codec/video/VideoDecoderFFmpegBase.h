@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -34,7 +34,6 @@ class VideoDecoderFFmpegBase : public VideoDecoder
     Q_DISABLE_COPY(VideoDecoderFFmpegBase)
     DPTR_DECLARE_PRIVATE(VideoDecoderFFmpegBase)
 public:
-    QTAV_DEPRECATED virtual bool decode(const QByteArray &encoded) Q_DECL_OVERRIDE;
     virtual bool decode(const Packet& packet) Q_DECL_OVERRIDE;
 protected:
     VideoDecoderFFmpegBase(VideoDecoderFFmpegBasePrivate &d);

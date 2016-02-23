@@ -1,9 +1,9 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
     Miroslav Bendik <miroslav.bendik@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -65,7 +65,6 @@ public:
     QString description() const Q_DECL_OVERRIDE Q_DECL_FINAL{
         return QStringLiteral("Allwinner A10 CedarX video hardware acceleration");
     }
-    bool decode(const QByteArray &encoded) Q_DECL_OVERRIDE Q_DECL_FINAL;
     bool decode(const Packet& packet) Q_DECL_OVERRIDE Q_DECL_FINAL;
     VideoFrame frame() Q_DECL_OVERRIDE Q_DECL_FINAL;
 
@@ -381,47 +380,6 @@ bool VideoDecoderCedarvPrivate::open()
     cedarv->ioctrl(cedarv, CEDARV_COMMAND_RESET, 0);
     cedarv->ioctrl(cedarv, CEDARV_COMMAND_PLAY, 0);
 
-    return true;
-}
-
-bool VideoDecoderCedarv::decode(const QByteArray &encoded)
-{
-    DPTR_D(VideoDecoderCedarv);
-    if (encoded.isEmpty())
-        return true;
-    //d.cedarv->ioctrl(d.cedarv, CEDARV_COMMAND_JUMP, 0);
-    u32 bufsize0, bufsize1;
-    u8 *buf0, *buf1;
-    int ret = d.cedarv->request_write(d.cedarv, encoded.size(), &buf0, &bufsize0, &buf1, &bufsize1);
-    if (ret < 0) {
-        qWarning("CedarV: request_write failed (%d)", ret);
-        return false;
-    }
-    memcpy(buf0, encoded.constData(), bufsize0);
-    if ((u32)encoded.size() > bufsize0)
-        memcpy(buf1, encoded.constData() + bufsize0, bufsize1);
-    cedarv_stream_data_info_t stream_data_info;
-    stream_data_info.type = 0;
-    stream_data_info.lengh = encoded.size();
-    stream_data_info.pts = 0; //packet.pts;
-    stream_data_info.flags = CEDARV_FLAG_FIRST_PART | CEDARV_FLAG_LAST_PART | CEDARV_FLAG_PTS_VALID;
-    if ((ret = d.cedarv->update_data(d.cedarv, &stream_data_info)) < 0) {
-        qWarning("CedarV: update_data failed (%d)", ret);
-        return false;
-    }
-    if ((ret = d.cedarv->decode(d.cedarv)) < 0) {
-       qWarning("CedarV: decode failed (%d)", ret);
-       return false;
-    }
-    ret = d.cedarv->display_request(d.cedarv, &d.cedarPicture);
-    if (ret > 3 || ret < 0) {
-       qWarning("CedarV: display_request failed (%d)", ret);
-       if (d.cedarPicture.id) {
-           d.cedarv->display_release(d.cedarv, d.cedarPicture.id);
-           d.cedarPicture.id = 0;
-       }
-       return false;
-    }
     return true;
 }
 

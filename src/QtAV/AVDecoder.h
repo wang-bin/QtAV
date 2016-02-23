@@ -52,7 +52,6 @@ public:
     void* codecContext() const;
     /*not available if AVCodecContext == 0*/
     bool isAvailable() const;
-    QTAV_DEPRECATED virtual bool decode(const QByteArray&) { return false;}
     virtual bool decode(const Packet& packet) = 0;
     int undecodedSize() const; //TODO: remove. always decode whole input data completely
 
