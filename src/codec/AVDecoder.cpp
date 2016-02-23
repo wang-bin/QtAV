@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -26,6 +26,22 @@
 #include "utils/Logger.h"
 
 namespace QtAV {
+
+static AVCodec* get_codec(const QString &name, AVCodecID cid)
+{
+    AVCodec *codec = 0;
+    if (!name.isEmpty()) {
+        codec = avcodec_find_decoder_by_name(name.toUtf8().constData());
+        if (!codec) {
+            const AVCodecDescriptor* cd = avcodec_descriptor_get_by_name(name.toUtf8().constData());
+            if (cd)
+                codec = avcodec_find_decoder(cd->id);
+        }
+    } else {
+        codec = avcodec_find_decoder(cid);
+    }
+    return codec;
+}
 
 AVDecoder::AVDecoder(AVDecoderPrivate &d)
     :DPTR_INIT(&d)
@@ -56,19 +72,8 @@ bool AVDecoder::open()
         qWarning("FFmpeg codec context not ready");
         return false;
     }
-    AVCodec *codec = 0;
-    if (!d.codec_name.isEmpty()) {
-        codec = avcodec_find_decoder_by_name(d.codec_name.toUtf8().constData());
-        if (!codec) {
-            const AVCodecDescriptor* cd = avcodec_descriptor_get_by_name(d.codec_name.toUtf8().constData());
-            if (cd) {
-                codec = avcodec_find_decoder(cd->id);
-            }
-        }
-    } else {
-        codec = avcodec_find_decoder(d.codec_ctx->codec_id);
-    }
-    if (!codec) { // TODO: can be null for none-ffmpeg based decoders
+    AVCodec* codec = get_codec(codecName(), d.codec_ctx->codec_id);
+    if (!codec)  { // TODO: can be null for none-ffmpeg based decoders
         QString es(tr("No codec could be found for '%1'"));
         if (d.codec_name.isEmpty()) {
             es = es.arg(QLatin1String(avcodec_get_name(d.codec_ctx->codec_id)));
@@ -77,7 +82,7 @@ bool AVDecoder::open()
         }
         qWarning() << es;
         AVError::ErrorCode ec(AVError::CodecError);
-        switch (d.codec_ctx->coder_type) {
+        switch (d.codec_ctx->codec_type) {
         case AVMEDIA_TYPE_VIDEO:
             ec = AVError::VideoCodecNotFound;
             break;
@@ -89,14 +94,15 @@ bool AVDecoder::open()
         default:
             break;
         }
-        emit error(AVError(ec, es));
+        Q_EMIT error(AVError(ec, es));
         return false;
-    }    
+    }
     // hwa extra init can be here
     if (!d.open()) {
         d.close();
         return false;
     }
+    // CODEC_FLAG_OUTPUT_CORRUPT, CODEC_FLAG2_SHOW_ALL?
     // TODO: skip for none-ffmpeg based decoders
     d.applyOptionsForDict();
     av_opt_set_int(d.codec_ctx, "refcounted_frames", d.enableFrameRef(), 0); // why dict may have no effect?
@@ -160,6 +166,7 @@ void AVDecoder::setCodecContext(void *codecCtx)
     }
     if (!d.codec_ctx)
         d.codec_ctx = avcodec_alloc_context3(NULL);
+    // avcodec_alloc_context3(codec) equals to avcodec_alloc_context3(NULL) + avcodec_get_context_defaults3(codec), codec specified private data is initialized
     if (!d.codec_ctx) {
         qWarning("avcodec_alloc_context3 failed");
         return;
@@ -259,5 +266,4 @@ void AVDecoderPrivate::applyOptionsForContext()
     // TODO: wrong if opt is empty
     Internal::setOptionsToFFmpegObj(options.value(QStringLiteral("avcodec")), codec_ctx);
 }
-
 } //namespace QtAV
