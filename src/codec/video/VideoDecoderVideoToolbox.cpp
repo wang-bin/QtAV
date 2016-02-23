@@ -139,7 +139,7 @@ static const char* cv_err_str(int err)
             continue;
         return cv_errors[i].str;
     }
-    return 0;
+    return "Unknown error";
 }
 
 VideoDecoderVideoToolbox::VideoDecoderVideoToolbox()
@@ -268,13 +268,14 @@ bool VideoDecoderVideoToolboxPrivate::setup(AVCodecContext *avctx)
         qDebug("AVVideotoolboxContext ready: %dx%d", dim.width, dim.height);
         return true;
     }
+    //av_videotoolbox_default_free(codec_ctx);
     AVVideotoolboxContext *vtctx = av_videotoolbox_alloc_context();
     vtctx->cv_pix_fmt_type = out_fmt;
 
     qDebug("AVVideotoolboxContext: %p", vtctx);
     int err = av_videotoolbox_default_init2(codec_ctx, vtctx); //ios h264 crashes when processing extra data. null H264Context
     if (err < 0) {
-        qWarning("Failed to init videotoolbox decoder (%#x): %s", err, cv_err_str(err));
+        qWarning("Failed to init videotoolbox decoder (%#x %s): %s", err, av_err2str(err), cv_err_str(err));
         return false;
     }
     initUSWC(codedWidth(avctx));
@@ -311,11 +312,23 @@ bool VideoDecoderVideoToolboxPrivate::open()
     default:
         break;
     }
+    switch (codec_ctx->codec_id) {
+    case AV_CODEC_ID_H264:
+    case AV_CODEC_ID_H263:
+    case AV_CODEC_ID_MPEG4:
+    case AV_CODEC_ID_MPEG2VIDEO:
+    case AV_CODEC_ID_MPEG1VIDEO:
+        break;
+    default:
+        qWarning("VideoToolbox unsupported codec: %s", avcodec_get_name(codec_ctx->codec_id));
+        return false;
+    }
     codec_ctx->thread_count = 1; // to avoid crash at av_videotoolbox_alloc_context/av_videotoolbox_default_free. I have no idea how the are called
     qDebug("opening VideoToolbox module");
-    // codec/profile check?
-    if (!setup(codec_ctx))
-        return false;
+    // setup() must be called in getFormat() from avcodec callback, otherwise in ffmpeg3.0 avctx->priv_data is null and crash
+    // TODO: block AVDecoder.open() until hw callback is done
+    //if (!setup(codec_ctx))
+      //  return false;
     if (copy_mode == VideoDecoderFFmpegHW::ZeroCopy) {
         interop_res = cv::InteropResourcePtr(cv::InteropResource::create(interop_type));
     } else {
