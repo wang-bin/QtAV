@@ -36,15 +36,14 @@ public:
     InteropResourceCVOpenGLES() : InteropResource()
       , texture_cache(NULL)
     {
-        textures.reserve(4);
+        memset(textures, 0, sizeof(textures));
     }
     ~InteropResourceCVOpenGLES() {
-        if (!textures.isEmpty()) {
-            foreach (CVOpenGLESTextureRef t, textures) {
-                if (t)
-                    CFRelease(t);
+        for (int i = 0; i < 4; ++i) {
+            if (textures[i]) {
+                CFRelease(textures[i]);
+                textures[i] = NULL;
             }
-            textures.clear();
         }
         if (texture_cache) {
             CFRelease(texture_cache);
@@ -57,7 +56,7 @@ private:
     bool ensureResource();
 
     CVOpenGLESTextureCacheRef texture_cache;
-    QVector<CVOpenGLESTextureRef> textures;
+    CVOpenGLESTextureRef textures[4];
     QVector<GLuint> tex_mapped;
 };
 
@@ -90,30 +89,23 @@ bool InteropResourceCVOpenGLES::map(CVPixelBufferRef buf, GLuint *texInOut, int 
     Q_UNUSED(h);
     if (!ensureResource())
         return false;
-    GLint iformat[4]; //TODO: as member and compute only when format change
-    GLenum format[4];
-    GLenum dtype[4];
     const OSType pixfmt = CVPixelBufferGetPixelFormatType(buf);
-    const VideoFormat fmt(format_from_cv(pixfmt));
-    OpenGLHelper::videoFormatToGL(fmt, iformat, format, dtype);
-    qDebug("map plane%d gl orig %d %d %d", plane, iformat[plane], format[plane], dtype[plane]);
+    GLint iformat;
+    GLenum format, dtype;
+    getParametersGL(pixfmt, &iformat, &format, &dtype, plane);
     switch (pixfmt) {
     case '2vuy':
     case 'yuvs':
-        iformat[plane] = GL_RGB_422_APPLE; // ES2 requires internal format and format are the same. desktop can use internal format GL_RGB or sized GL_RGB8
-        format[plane] = GL_RGB_422_APPLE;
-        dtype[plane] = pixfmt == '2vuy' ? GL_UNSIGNED_SHORT_8_8_APPLE : GL_UNSIGNED_SHORT_8_8_REV_APPLE;
+        iformat = GL_RGB_422_APPLE; // ES2 requires internal format and format are the same. desktop can use internal format GL_RGB or sized GL_RGB8
+        format = GL_RGB_422_APPLE;
+        dtype = pixfmt == '2vuy' ? GL_UNSIGNED_SHORT_8_8_APPLE : GL_UNSIGNED_SHORT_8_8_REV_APPLE;
         break;
     case 'BGRA': // GL_BGRA error?
-        iformat[plane] = GL_RGBA;
-        format[plane] = GL_RGBA;
+        iformat = GL_RGBA;
+        format = GL_RGBA;
         break;
-    default: // TODO: rgb24
+    default:
         break;
-    }
-
-    if (textures.size() <= fmt.planeCount()) {
-        textures.resize(fmt.planeCount());
     }
     CVOpenGLESTextureCacheFlush(texture_cache, NULL);
     CVOpenGLESTextureRef &tex = textures[plane];
@@ -124,18 +116,18 @@ bool InteropResourceCVOpenGLES::map(CVPixelBufferRef buf, GLuint *texInOut, int 
 
     const int planeW = CVPixelBufferGetWidthOfPlane(buf, plane);
     const int planeH = CVPixelBufferGetHeightOfPlane(buf, plane);
-    //const int texture_w = CVPixelBufferGetBytesPerRowOfPlane(buf, plane)/OpenGLHelper::bytesOfGLFormat(format[plane], dtype[plane]);
-    //qDebug("map plane%d. %dx%d, gl %d %d %d", plane, planeW, planeH, iformat[plane], format[plane], dtype[plane]);
+    //const int texture_w = CVPixelBufferGetBytesPerRowOfPlane(buf, plane)/OpenGLHelper::bytesOfGLFormat(format, dtype);
+    //qDebug("map plane%d. %dx%d, gl %d %d %d", plane, planeW, planeH, iformat, format, dtype);
     CVReturn err = CVOpenGLESTextureCacheCreateTextureFromImage(
                 kCFAllocatorDefault
                 , texture_cache
                 , buf
                 , NULL
                 , GL_TEXTURE_2D
-                , iformat[plane]
+                , iformat
                 , planeW //Why not texture width?
                 , planeH
-                , format[plane], dtype[plane]
+                , format, dtype
                 , plane
                 , &tex);
     if (err != kCVReturnSuccess) {

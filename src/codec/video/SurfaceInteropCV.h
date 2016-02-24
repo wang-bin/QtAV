@@ -32,10 +32,13 @@ namespace cv {
 VideoFormat::PixelFormat format_from_cv(int cv);
 
 typedef uint32_t GLuint; // define here to avoid including gl headers which are not required by decoder
+typedef uint32_t GLenum;
+typedef int32_t  GLint;
+
 enum InteropType {
     InteropCVPixelBuffer,   // osx+ios
     InteropIOSurface,       // osx
-    InteropCVOpenGL,        // osx
+    InteropCVOpenGL,        // osx, not implemented
     InteropCVOpenGLES,       // ios
     InteropAuto
 };
@@ -43,6 +46,7 @@ enum InteropType {
 class InteropResource
 {
 public:
+    InteropResource();
     // Must have CreateInteropXXX in each implemention
     static InteropResource* create(InteropType type);
     virtual ~InteropResource() {}
@@ -76,6 +80,12 @@ public:
         Q_UNUSED(planeHeight);
         return 0;
     }
+    void getParametersGL(OSType cvpixfmt, GLint* internalFormat, GLenum* format, GLenum* dataType, int plane = 0);
+private:
+    OSType m_cvfmt;
+    GLint m_iformat[4];
+    GLenum m_format[4];
+    GLenum m_dtype[4];
 };
 typedef QSharedPointer<InteropResource> InteropResourcePtr;
 

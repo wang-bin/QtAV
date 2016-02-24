@@ -81,6 +81,14 @@ InteropResource* InteropResource::create(InteropType type)
     return NULL;
 }
 
+InteropResource::InteropResource()
+    : m_cvfmt(0)
+{
+    memset(m_iformat, 0, sizeof(m_iformat));
+    memset(m_format, 0, sizeof(m_format));
+    memset(m_dtype, 0, sizeof(m_dtype));
+}
+
 bool InteropResource::stridesForWidth(int cvfmt, int width, int *strides, VideoFormat::PixelFormat *outFmt)
 {
     *outFmt = format_from_cv(cvfmt);
@@ -108,6 +116,18 @@ bool InteropResource::stridesForWidth(int cvfmt, int width, int *strides, VideoF
     if (strides[0] <= 0)
         strides[0] = width;
     return true;
+}
+
+void InteropResource::getParametersGL(OSType cvpixfmt, GLint *internalFormat, GLenum *format, GLenum *dataType, int plane)
+{
+    if (cvpixfmt != m_cvfmt) {
+        const VideoFormat fmt(format_from_cv(cvpixfmt));
+        OpenGLHelper::videoFormatToGL(fmt, m_iformat, m_format, m_dtype);
+        m_cvfmt = cvpixfmt;
+    }
+    *internalFormat = m_iformat[plane];
+    *format = m_format[plane];
+    *dataType = m_dtype[plane];
 }
 
 void SurfaceInteropCV::setSurface(CVPixelBufferRef buf, int w, int h)
@@ -210,20 +230,18 @@ bool InteropResourceCVPixelBuffer::map(CVPixelBufferRef buf, GLuint *tex, int w,
     Q_UNUSED(h);
     Q_UNUSED(w);
     CVPixelBufferLockBaseAddress(buf, 0);
-    GLint iformat[4]; //TODO: compute once only if cfbuf format changed
-    GLenum format[4];
-    GLenum dtype[4];
-    const VideoFormat fmt(format_from_cv(CVPixelBufferGetPixelFormatType(buf)));
-    OpenGLHelper::videoFormatToGL(fmt, iformat, format, dtype);
-    const int texture_w = CVPixelBufferGetBytesPerRowOfPlane(buf, plane)/OpenGLHelper::bytesOfGLFormat(format[plane], dtype[plane]);
+    GLint iformat;
+    GLenum format, dtype;
+    getParametersGL(CVPixelBufferGetPixelFormatType(buf), &iformat, &format, &dtype, plane);
+    const int texture_w = CVPixelBufferGetBytesPerRowOfPlane(buf, plane)/OpenGLHelper::bytesOfGLFormat(format, dtype);
     //qDebug("cv plane%d width: %d, stride: %d, tex width: %d", plane, CVPixelBufferGetWidthOfPlane(buf, plane), CVPixelBufferGetBytesPerRowOfPlane(buf, plane), texture_w);
     // get address results in internal copy
     DYGL(glBindTexture(GL_TEXTURE_2D, *tex));
     DYGL(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0
                          , texture_w
                          , CVPixelBufferGetHeightOfPlane(buf, plane)
-                         , format[plane]
-                         , dtype[plane]
+                         , format
+                         , dtype
                          , (uint8_t*)CVPixelBufferGetBaseAddressOfPlane(buf, plane)));
     CVPixelBufferUnlockBaseAddress(buf, 0);
     return true;

@@ -76,38 +76,36 @@ bool InteropResourceIOSurface::map(CVPixelBufferRef buf, GLuint *tex, int w, int
 {
     Q_UNUSED(w);
     Q_UNUSED(h);
-    GLint iformat[4]; //TODO: as member and compute only when format change
-    GLenum format[4];
-    GLenum dtype[4];
     const OSType pixfmt = CVPixelBufferGetPixelFormatType(buf);
-    const VideoFormat fmt(format_from_cv(pixfmt));
-    OpenGLHelper::videoFormatToGL(fmt, iformat, format, dtype);
+    GLint iformat;
+    GLenum format, dtype;
+    getParametersGL(pixfmt, &iformat, &format, &dtype, plane);
     switch (pixfmt) {
     case '2vuy':
     case 'yuvs':
-        iformat[plane] = GL_RGB8; // ES2 requires internal format and format are the same. OSX can use internal format GL_RGB or sized GL_RGB8
-        format[plane] = GL_RGB_422_APPLE;
-        dtype[plane] = pixfmt == '2vuy' ? GL_UNSIGNED_SHORT_8_8_APPLE : GL_UNSIGNED_SHORT_8_8_REV_APPLE;
+        iformat = GL_RGB8; // ES2 requires internal format and format are the same. OSX can use internal format GL_RGB or sized GL_RGB8
+        format = GL_RGB_422_APPLE;
+        dtype = pixfmt == '2vuy' ? GL_UNSIGNED_SHORT_8_8_APPLE : GL_UNSIGNED_SHORT_8_8_REV_APPLE;
         break;
         // OSX: GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV
         // GL_YCBCR_422_APPLE: convert to rgb texture internally (bt601). only supports OSX
         // GL_RGB_422_APPLE: raw yuv422 texture
     case 'BGRA':
-        iformat[plane] = GL_RGBA8;
-        format[plane] = GL_BGRA;
-        dtype[plane] = GL_UNSIGNED_INT_8_8_8_8_REV;
+        iformat = GL_RGBA8;
+        format = GL_BGRA;
+        dtype = GL_UNSIGNED_INT_8_8_8_8_REV;
         break;
-    default: // TODO: rgb24
+    default:
         break;
     }
     const GLenum target = GL_TEXTURE_RECTANGLE;
     DYGL(glBindTexture(target, *tex));
     const int planeW = CVPixelBufferGetWidthOfPlane(buf, plane);
     const int planeH = CVPixelBufferGetHeightOfPlane(buf, plane);
-    //qDebug("map plane%d. %dx%d, gl %d %d %d", plane, planeW, planeH, iformat[plane], format[plane], dtype[plane]);
+    //qDebug("map plane%d. %dx%d, gl %d %d %d", plane, planeW, planeH, iformat, format, dtype);
 
     const IOSurfaceRef surface  = CVPixelBufferGetIOSurface(buf);
-    CGLError err = CGLTexImageIOSurface2D(CGLGetCurrentContext(), target, iformat[plane], planeW, planeH, format[plane], dtype[plane], surface, plane);
+    CGLError err = CGLTexImageIOSurface2D(CGLGetCurrentContext(), target, iformat, planeW, planeH, format, dtype, surface, plane);
     if (err != kCGLNoError) {
         qWarning("error creating IOSurface texture at plane %d: %s", plane, CGLErrorString(err));
     }
