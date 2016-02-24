@@ -36,7 +36,7 @@ class InteropResourceIOSurface Q_DECL_FINAL : public InteropResource
 public:
     bool stridesForWidth(int cvfmt, int width, int* strides, VideoFormat::PixelFormat* outFmt) Q_DECL_OVERRIDE;
     bool mapToTexture2D() const Q_DECL_OVERRIDE { return false;}
-    bool map(CVPixelBufferRef buf, GLuint tex, int w, int h, int plane) Q_DECL_OVERRIDE;
+    bool map(CVPixelBufferRef buf, GLuint *tex, int w, int h, int plane) Q_DECL_OVERRIDE;
     GLuint createTexture(CVPixelBufferRef, const VideoFormat &fmt, int plane, int planeWidth, int planeHeight) Q_DECL_OVERRIDE
     {
         Q_UNUSED(fmt);
@@ -72,12 +72,10 @@ bool InteropResourceIOSurface::stridesForWidth(int cvfmt, int width, int *stride
     return true;
 }
 
-bool InteropResourceIOSurface::map(CVPixelBufferRef buf, GLuint tex, int w, int h, int plane)
+bool InteropResourceIOSurface::map(CVPixelBufferRef buf, GLuint *tex, int w, int h, int plane)
 {
     Q_UNUSED(w);
     Q_UNUSED(h);
-    int planeW = CVPixelBufferGetWidthOfPlane(buf, plane);
-    int planeH = CVPixelBufferGetHeightOfPlane(buf, plane);
     GLint iformat[4]; //TODO: as member and compute only when format change
     GLenum format[4];
     GLenum dtype[4];
@@ -109,9 +107,9 @@ bool InteropResourceIOSurface::map(CVPixelBufferRef buf, GLuint tex, int w, int 
         break;
     }
     const GLenum target = GL_TEXTURE_RECTANGLE;
-    DYGL(glBindTexture(target, tex));
-    //http://stackoverflow.com/questions/24933453/best-path-from-avplayeritemvideooutput-to-opengl-texture
-    //CVOpenGLTextureCacheCreate(). kCVPixelBufferOpenGLCompatibilityKey?
+    DYGL(glBindTexture(target, *tex));
+    const int planeW = CVPixelBufferGetWidthOfPlane(buf, plane);
+    const int planeH = CVPixelBufferGetHeightOfPlane(buf, plane);
     const IOSurfaceRef surface  = CVPixelBufferGetIOSurface(buf);
     CGLError err = CGLTexImageIOSurface2D(CGLGetCurrentContext(), target, iformat[plane], planeW, planeH, format[plane], dtype[plane], surface, plane);
     if (err != kCGLNoError) {

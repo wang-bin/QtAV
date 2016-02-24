@@ -179,7 +179,7 @@ VideoFrame VideoDecoderVideoToolbox::frame()
     }
     const VideoFormat::PixelFormat pixfmt = cv::format_from_cv(CVPixelBufferGetPixelFormatType(cv_buffer));
     if (pixfmt == VideoFormat::Format_Invalid) {
-        qWarning("unsupported cv pixel format: %#x", CVPixelBufferGetPixelFormatType(cv_buffer));
+        qWarning("unsupported cv pixel format: %#x", (quint32)CVPixelBufferGetPixelFormatType(cv_buffer));
         return VideoFrame();
     }
 

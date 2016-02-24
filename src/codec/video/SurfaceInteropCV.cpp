@@ -57,6 +57,7 @@ VideoFormat::PixelFormat format_from_cv(int cv)
 extern InteropResource* CreateInteropCVPixelbuffer();
 extern InteropResource* CreateInteropIOSurface();
 extern InteropResource* CreateInteropCVOpenGL();
+extern InteropResource* CreateInteropCVOpenGLES();
 InteropResource* InteropResource::create(InteropType type)
 {
     if (type == InteropAuto) {
@@ -64,6 +65,7 @@ InteropResource* InteropResource::create(InteropType type)
         type = InteropIOSurface;
 #else
         type = InteropCVPixelBuffer;
+        type = InteropCVOpenGLES;
 #endif
     }
     switch (type) {
@@ -71,6 +73,8 @@ InteropResource* InteropResource::create(InteropType type)
 #ifdef Q_OS_MACX
     case InteropIOSurface: return CreateInteropIOSurface();
     //case InteropCVOpenGL: return CreateInteropCVOpenGL();
+#else
+    case InteropCVOpenGLES: return CreateInteropCVOpenGLES();
 #endif
     default: return NULL;
     }
@@ -127,7 +131,7 @@ void* SurfaceInteropCV::map(SurfaceType type, const VideoFormat &fmt, void *hand
     if (!m_surface)
         return 0;
     if (type == GLTextureSurface) {
-        if (m_resource->map(m_surface, *((GLuint*)handle), frame_width, frame_height, plane))
+        if (m_resource->map(m_surface, (GLuint*)handle, frame_width, frame_height, plane))
             return handle;
     } else if (type == HostMemorySurface) {
         return mapToHost(fmt, handle, plane);
@@ -193,7 +197,7 @@ void* SurfaceInteropCV::mapToHost(const VideoFormat &format, void *handle, int p
 class InteropResourceCVPixelBuffer Q_DECL_FINAL : public InteropResource
 {
 public:
-    bool map(CVPixelBufferRef buf, GLuint tex, int w, int h, int plane) Q_DECL_OVERRIDE;
+    bool map(CVPixelBufferRef buf, GLuint *tex, int w, int h, int plane) Q_DECL_OVERRIDE;
 };
 
 InteropResource* CreateInteropCVPixelbuffer()
@@ -201,7 +205,7 @@ InteropResource* CreateInteropCVPixelbuffer()
     return new InteropResourceCVPixelBuffer();
 }
 
-bool InteropResourceCVPixelBuffer::map(CVPixelBufferRef buf, GLuint tex, int w, int h, int plane)
+bool InteropResourceCVPixelBuffer::map(CVPixelBufferRef buf, GLuint *tex, int w, int h, int plane)
 {
     Q_UNUSED(h);
     Q_UNUSED(w);
@@ -220,7 +224,7 @@ bool InteropResourceCVPixelBuffer::map(CVPixelBufferRef buf, GLuint tex, int w, 
     const int texture_w = CVPixelBufferGetBytesPerRowOfPlane(buf, plane)/OpenGLHelper::bytesOfGLFormat(format[plane], dtype[plane]);
     //qDebug("cv plane%d width: %d, stride: %d, tex width: %d", plane, CVPixelBufferGetWidthOfPlane(buf, plane), CVPixelBufferGetBytesPerRowOfPlane(buf, plane), texture_w);
     // get address results in internal copy
-    DYGL(glBindTexture(GL_TEXTURE_2D, tex));
+    DYGL(glBindTexture(GL_TEXTURE_2D, *tex));
     DYGL(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0
                          , texture_w
                          , CVPixelBufferGetHeightOfPlane(buf, plane)

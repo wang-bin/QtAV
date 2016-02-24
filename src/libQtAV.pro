@@ -292,9 +292,10 @@ config_videotoolbox {
   HEADERS *= codec/video/SurfaceInteropCV.h
   SOURCES *= codec/video/SurfaceInteropCV.cpp
   ios {
-# iOS use gles and IOSurface is private
+    OBJECTIVE_SOURCES *= codec/video/SurfaceInteropCVOpenGLES.mm
   } else {
     SOURCES *= codec/video/SurfaceInteropIOSurface.cpp
+    #SOURCES *= codec/video/SurfaceInteropCVOpenGL.cpp
     LIBS += -framework IOSurface
   }
   LIBS += -framework CoreVideo -framework CoreFoundation -framework CoreMedia -framework VideoToolbox

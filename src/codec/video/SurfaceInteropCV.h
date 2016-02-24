@@ -57,13 +57,13 @@ public:
     /*!
      * \brief map
      * \param buf vt decoded buffer
-     * \param tex opengl texture
+     * \param texInOut opengl texture. You can modify it
      * \param w frame width(visual width) without alignment, <= dxva surface width
      * \param h frame height(visual height)
      * \param plane useless now
      * \return true if success
      */
-    virtual bool map(CVPixelBufferRef buf, GLuint tex, int w, int h, int plane) = 0;
+    virtual bool map(CVPixelBufferRef buf, GLuint *texInOut, int w, int h, int plane) = 0;
     virtual bool unmap(CVPixelBufferRef buf, GLuint tex) {
         Q_UNUSED(buf);
         Q_UNUSED(tex);
