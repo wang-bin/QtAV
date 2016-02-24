@@ -125,13 +125,17 @@ winrt|wince {
     $$[QT_INSTALL_BINS]/avfilter-*.dll \
     $$[QT_INSTALL_BINS]/swresample-*.dll \
     $$[QT_INSTALL_BINS]/swscale-*.dll
+  exists($$[QT_INSTALL_BINS]/avresample-*.dll): depend_dll.files += $$[QT_INSTALL_BINS]/avresample-*.dll
   exists($$[QT_INSTALL_BINS]/ass.dll): depend_dll.files += $$[QT_INSTALL_BINS]/ass.dll
   #depend_dll.path = $$OUT_PWD
-  DEPLOYMENT = depend_dll fonts #vs2015update1 error about multiple qt5core.dll(in both build dir and qtbin dir), we can remove them in `Deployment Files`
+  DEPLOYMENT = depend_dll #fonts #vs2015update1 error about multiple qt5core.dll(in both build dir and qtbin dir), we can remove them in `Deployment Files`
 # WINRT_MANIFEST file: "=>\"
+  VCLibsSuffix =
   winphone {
+    VCLibsSuffix = .Phone
     WINRT_MANIFEST = winrt/WinPhone8.Package.appxmanifest
   } else:*-msvc2015 {
+    #isEqual(VCPROJ_ARCH, ARM): VCLibsSuffix = .Phone
     WINRT_MANIFEST = winrt/WinRT10.Package.appxmanifest
   } else {
     WINRT_MANIFEST = winrt/WinRT8.Package.appxmanifest

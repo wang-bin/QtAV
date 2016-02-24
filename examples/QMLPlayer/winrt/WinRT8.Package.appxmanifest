@@ -2,9 +2,9 @@
 <Package xmlns=\"http://schemas.microsoft.com/appx/2010/manifest\" xmlns:m2=\"http://schemas.microsoft.com/appx/2013/manifest\">
   <Identity
     Name=\"org.qtav.qmlplayer\"
-    ProcessorArchitecture=\"$$VCPROJ_ARCH\"
+    ProcessorArchitecture=\"$$lower($$VCPROJ_ARCH)\"
     Publisher=\"CN=930FB10A-C50C-4801-84BA-255229D27D44\"
-    Version=\"1.9.1.0\" />
+    Version=\"1.10.0.0\" />
   <Properties>
     <DisplayName>QtAV QMLPlayer</DisplayName>
     <PublisherDisplayName>Lucas Wang</PublisherDisplayName>
@@ -15,7 +15,7 @@
     <OSMaxVersionTested>6.3.0</OSMaxVersionTested>
   </Prerequisites>
   <Resources>
-    <Resource Language=\"en\" />
+    <Resource Language=\"x-generate\" />
   </Resources>
   <Applications>
     <Application

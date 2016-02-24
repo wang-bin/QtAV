@@ -4,13 +4,14 @@
   xmlns=\"http://schemas.microsoft.com/appx/manifest/foundation/windows10\"
   xmlns:mp=\"http://schemas.microsoft.com/appx/2014/phone/manifest\"
   xmlns:uap=\"http://schemas.microsoft.com/appx/manifest/uap/windows10\"
-  IgnorableNamespaces=\"uap mp\">
+  xmlns:mobile=\"http://schemas.microsoft.com/appx/manifest/mobile/windows10\"
+  IgnorableNamespaces=\"uap mp mobile\">
 
   <Identity
     Name=\"org.qtav.qmlplayer\"
     Publisher=\"CN=930FB10A-C50C-4801-84BA-255229D27D44\"
-    Version=\"1.9.1.0\"
-    ProcessorArchitecture=\"$$VCPROJ_ARCH\" /> <!--replaced by qmake-->
+    Version=\"1.10.0.0\"
+    ProcessorArchitecture=\"$$lower($$VCPROJ_ARCH)\" /> <!--replaced by qmake-->
   <mp:PhoneIdentity
     PhoneProductId=\"e556656c-d8e8-49f9-8148-26506e94575a\"
     PhonePublisherId=\"00000000-0000-0000-0000-000000000000\" />
@@ -21,8 +22,8 @@
   </Properties>
 
   <Dependencies>
-    <TargetDeviceFamily Name=\"Windows.Universal\" MinVersion=\"10.0.0.0\" MaxVersionTested=\"10.0.10069.0\" />
-    <PackageDependency Name=\"Microsoft.VCLibs.140.00\" MinVersion=\"14.0.0.0\" Publisher=\"CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US\" />
+    <TargetDeviceFamily Name=\"Windows.Universal\" MinVersion=\"10.0.0.0\" MaxVersionTested=\"10.0.0.0\" />
+    <PackageDependency Name=\"Microsoft.VCLibs.140.00$$VCLibsSuffix\" MinVersion=\"14.0.0.0\" Publisher=\"CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US\" />
   </Dependencies>
 
   <Resources>
@@ -37,7 +38,6 @@
         DisplayName=\"QtAV QMLPlayer\"
         Description=\"A powerful multimedia player for all platforms\"
         BackgroundColor=\"green\"
-        ForegroundText=\"light\"
         Square150x150Logo=\"assets/logo_150x150.png\"
         Square44x44Logo=\"assets/logo_44x44.png\">
 

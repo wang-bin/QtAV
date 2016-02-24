@@ -2,9 +2,9 @@
 <Package xmlns=\"http://schemas.microsoft.com/appx/2010/manifest\" xmlns:m3=\"http://schemas.microsoft.com/appx/2014/manifest\" xmlns:mp=\"http://schemas.microsoft.com/appx/2014/phone/manifest\">
   <Identity
     Name=\"org.qtav.qmlplayer\"
-    ProcessorArchitecture=\"$$VCPROJ_ARCH\"
+    ProcessorArchitecture=\"$$lower($$VCPROJ_ARCH)\"
     Publisher=\"CN=930FB10A-C50C-4801-84BA-255229D27D44\"
-    Version=\"1.9.1.0\" />
+    Version=\"1.10.0.0\" />
   <mp:PhoneIdentity
     PhoneProductId=\"e556656c-d8e8-49f9-8148-26506e94575a\"
     PhonePublisherId=\"00000000-0000-0000-0000-000000000000\" />
