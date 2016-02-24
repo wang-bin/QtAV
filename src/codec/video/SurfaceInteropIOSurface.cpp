@@ -82,16 +82,10 @@ bool InteropResourceIOSurface::map(CVPixelBufferRef buf, GLuint *tex, int w, int
     const OSType pixfmt = CVPixelBufferGetPixelFormatType(buf);
     const VideoFormat fmt(format_from_cv(pixfmt));
     OpenGLHelper::videoFormatToGL(fmt, iformat, format, dtype);
-    // TODO: move the followings to videoFormatToGL()?
-    if (plane > 1 && format[2] == GL_LUMINANCE && fmt.bytesPerPixel(1) == 1) { // QtAV uses the same shader for planar and semi-planar yuv format
-        iformat[2] = format[2] = GL_ALPHA;
-        if (plane == 4)
-            iformat[3] = format[3] = format[2]; // vec4(,,,A)
-    }
     switch (pixfmt) {
     case '2vuy':
     case 'yuvs':
-        iformat[plane] = GL_RGB8; //GL_RGB, sized: GL_RGB8
+        iformat[plane] = GL_RGB8; // ES2 requires internal format and format are the same. OSX can use internal format GL_RGB or sized GL_RGB8
         format[plane] = GL_RGB_422_APPLE;
         dtype[plane] = pixfmt == '2vuy' ? GL_UNSIGNED_SHORT_8_8_APPLE : GL_UNSIGNED_SHORT_8_8_REV_APPLE;
         break;
@@ -110,6 +104,8 @@ bool InteropResourceIOSurface::map(CVPixelBufferRef buf, GLuint *tex, int w, int
     DYGL(glBindTexture(target, *tex));
     const int planeW = CVPixelBufferGetWidthOfPlane(buf, plane);
     const int planeH = CVPixelBufferGetHeightOfPlane(buf, plane);
+    //qDebug("map plane%d. %dx%d, gl %d %d %d", plane, planeW, planeH, iformat[plane], format[plane], dtype[plane]);
+
     const IOSurfaceRef surface  = CVPixelBufferGetIOSurface(buf);
     CGLError err = CGLTexImageIOSurface2D(CGLGetCurrentContext(), target, iformat[plane], planeW, planeH, format[plane], dtype[plane], surface, plane);
     if (err != kCGLNoError) {

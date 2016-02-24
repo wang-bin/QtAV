@@ -727,14 +727,15 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
     GLenum *d_f = data_format;
     GLenum *d_t = data_type;
     gl_param_t* gp = (gl_param_t*)get_gl_param();
+    const int nb_planes = fmt.planeCount();
     if (gp == gl_param_desktop && (
-                fmt.planeCount() == 2 // nv12 UV plane is 16bit, but we use rg
+                nb_planes == 2 // nv12 UV plane is 16bit, but we use rg
                 || (OpenGLHelper::depth16BitTexture() == 16 && OpenGLHelper::has16BitTexture() && fmt.isBigEndian() && fmt.bitsPerComponent() > 8) // 16bit texture does not support be channel now
                 )) {
         gp = (gl_param_t*)gl_param_desktop_fallback;
-        qDebug("desktop_fallback for %s", fmt.planeCount() == 2 ? "bi-plane format" : "16bit big endian channel");
+        qDebug("desktop_fallback for %s", nb_planes == 2 ? "bi-plane format" : "16bit big endian channel");
     }
-    for (int p = 0; p < fmt.planeCount(); ++p) {
+    for (int p = 0; p < nb_planes; ++p) {
         // for packed rgb(swizzle required) and planar formats
         const int c = (fmt.channels(p)-1) + 4*((fmt.bitsPerComponent() + 7)/8 - 1);
         if (gp[c].format == 0)
@@ -743,6 +744,11 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
         *(i_f++) = f.internal_format;
         *(d_f++) = f.format;
         *(d_t++) = f.type;
+    }
+    if (nb_planes > 2 && data_format[2] == GL_LUMINANCE && fmt.bytesPerPixel(1) == 1) { // QtAV uses the same shader for planar and semi-planar yuv format
+        internal_format[2] = data_format[2] = GL_ALPHA;
+        if (nb_planes == 4)
+            internal_format[3] = data_format[3] = data_format[2]; // vec4(,,,A)
     }
     if (mat)
         *mat = channelMap(fmt);

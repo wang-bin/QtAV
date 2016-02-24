@@ -97,13 +97,6 @@ bool InteropResourceCVOpenGLES::map(CVPixelBufferRef buf, GLuint *texInOut, int 
     const VideoFormat fmt(format_from_cv(pixfmt));
     OpenGLHelper::videoFormatToGL(fmt, iformat, format, dtype);
     qDebug("map plane%d gl orig %d %d %d", plane, iformat[plane], format[plane], dtype[plane]);
-
-    // TODO: move the followings to videoFormatToGL()?
-    if (plane > 1 && format[2] == GL_LUMINANCE && fmt.bytesPerPixel(1) == 1) { // QtAV uses the same shader for planar and semi-planar yuv format
-        iformat[2] = format[2] = GL_ALPHA;
-        if (plane == 4)
-            iformat[3] = format[3] = format[2]; // vec4(,,,A)
-    }
     switch (pixfmt) {
     case '2vuy':
     case 'yuvs':

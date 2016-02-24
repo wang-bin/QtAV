@@ -215,12 +215,6 @@ bool InteropResourceCVPixelBuffer::map(CVPixelBufferRef buf, GLuint *tex, int w,
     GLenum dtype[4];
     const VideoFormat fmt(format_from_cv(CVPixelBufferGetPixelFormatType(buf)));
     OpenGLHelper::videoFormatToGL(fmt, iformat, format, dtype);
-    // TODO: move the followings to videoFormatToGL()?
-    if (plane > 1 && format[2] == GL_LUMINANCE && fmt.bytesPerPixel(1) == 1) { // QtAV uses the same shader for planar and semi-planar yuv format
-        iformat[2] = format[2] = GL_ALPHA;
-        if (plane == 4)
-            iformat[3] = format[3] = format[2]; // vec4(,,,A)
-    }
     const int texture_w = CVPixelBufferGetBytesPerRowOfPlane(buf, plane)/OpenGLHelper::bytesOfGLFormat(format[plane], dtype[plane]);
     //qDebug("cv plane%d width: %d, stride: %d, tex width: %d", plane, CVPixelBufferGetWidthOfPlane(buf, plane), CVPixelBufferGetBytesPerRowOfPlane(buf, plane), texture_w);
     // get address results in internal copy

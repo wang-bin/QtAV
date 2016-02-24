@@ -893,16 +893,6 @@ bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
     qDebug() << "texture data format: " << data_format;
     qDebug() << "texture data type: " << data_type;
     qDebug("///////////bpp %d, bpc: %d", fmt.bytesPerPixel(), fmt.bitsPerComponent());
-    /*!
-     * GLES internal_format == data_format, GL_LUMINANCE_ALPHA is 2 bytes
-     * so if NV12 use GL_LUMINANCE_ALPHA, YV12 use GL_ALPHA
-     */
-    // TODO: move the followings to videoFormatToGL()?
-    if (nb_planes > 2 && data_format[2] == GL_LUMINANCE && fmt.bytesPerPixel(1) == 1) { // QtAV uses the same shader for planar and semi-planar yuv format
-        internal_format[2] = data_format[2] = GL_ALPHA;
-        if (nb_planes == 4)
-            internal_format[3] = data_format[3] = data_format[2]; // vec4(,,,A)
-    }
     for (int i = 0; i < nb_planes; ++i) {
         const int bpp_gl = OpenGLHelper::bytesOfGLFormat(data_format[i], data_type[i]);
         const int pad = std::ceil((qreal)(texture_size[i].width() - effective_tex_width[i])/(qreal)bpp_gl);
@@ -912,7 +902,6 @@ bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
         //effective_tex_width_ratio =
         qDebug("texture width: %d - %d = pad: %d. bpp(gl): %d", texture_size[i].width(), effective_tex_width[i], pad, bpp_gl);
     }
-
     /*
      * there are 2 fragment shaders: rgb and yuv.
      * only 1 texture for packed rgb. planar rgb likes yuv
