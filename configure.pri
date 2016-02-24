@@ -42,7 +42,7 @@ defineTest(cache) {
     }
     #log("varstr: $$varstr")
 ##TODO: remove existing lines contain $$srcvar
-    #because write_file() will write 1 line for each value(seperated by space), so the value must be closed with "", then it's 1 value, not list
+    #because write_file() will write 1 line for each value(separated by space), so the value must be closed with "", then it's 1 value, not list
 #erase the existing var and value pair
     win32 {#:isEmpty(QMAKE_SH) { #windows sucks. can not access the cache
 

@@ -45,7 +45,7 @@ if(equals(MAKEFILE_GENERATOR, MSVC.NET)|equals(MAKEFILE_GENERATOR, MSBUILD)) {
 for(f, plugin.files) {
   plugin.commands += $$escape_expand(\\n\\t)$$TRY_COPY $$shell_path($$f) $$shell_path($$plugin.path)
 }
-#join values seperated by space. so quote is needed
+#join values separated by space. so quote is needed
 #plugin.commands = $$join(plugin.commands,$$escape_expand(\\n\\t))
 OTHER_FILES += $$qtav_qml.files
 #just append as a string to $$QMAKE_POST_LINK
