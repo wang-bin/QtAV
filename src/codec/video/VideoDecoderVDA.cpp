@@ -47,7 +47,9 @@ extern "C" {
 #endif
 
 namespace QtAV {
-
+namespace cv {
+VideoFormat::PixelFormat format_from_cv(int cv);
+}
 class VideoDecoderVDAPrivate;
 // qt4 moc can not correctly process Q_DECL_FINAL here
 class VideoDecoderVDA : public VideoDecoderFFmpegHW
@@ -133,44 +135,6 @@ static const char* vda_err_str(int err)
     return 0;
 }
 
-typedef struct {
-    int cv_pixfmt;
-    VideoFormat::PixelFormat pixfmt;
-} cv_format;
-
-//https://developer.apple.com/library/Mac/releasenotes/General/MacOSXLionAPIDiffs/CoreVideo.html
-/* use fourcc '420v', 'yuvs' for NV12 and yuyv to avoid build time version check
- * qt4 targets 10.6, so those enum values is not valid in build time, while runtime is supported.
- */
-static const cv_format cv_formats[] = {
-    { 'y420', VideoFormat::Format_YUV420P }, //kCVPixelFormatType_420YpCbCr8Planar
-    { '2vuy', VideoFormat::Format_UYVY }, //kCVPixelFormatType_422YpCbCr8
-//#ifdef OSX_TARGET_MIN_LION
-    { '420f' , VideoFormat::Format_NV12 }, // kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
-    { '420v', VideoFormat::Format_NV12 }, //kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange
-    { 'yuvs', VideoFormat::Format_YUYV }, //kCVPixelFormatType_422YpCbCr8_yuvs
-//#endif
-    { 0, VideoFormat::Format_Invalid }
-};
-
-static VideoFormat::PixelFormat format_from_cv(int cv)
-{
-    for (int i = 0; cv_formats[i].cv_pixfmt; ++i) {
-        if (cv_formats[i].cv_pixfmt == cv)
-            return cv_formats[i].pixfmt;
-    }
-    return VideoFormat::Format_Invalid;
-}
-
-int format_to_cv(VideoFormat::PixelFormat fmt)
-{
-    for (int i = 0; cv_formats[i].cv_pixfmt; ++i) {
-        if (cv_formats[i].pixfmt == fmt)
-            return cv_formats[i].cv_pixfmt;
-    }
-    return 0;
-}
-
 VideoDecoderVDA::VideoDecoderVDA()
     : VideoDecoderFFmpegHW(*new VideoDecoderVDAPrivate())
 {
@@ -200,7 +164,7 @@ VideoFrame VideoDecoderVDA::frame()
         qDebug("Empty frame buffer");
         return VideoFrame();
     }
-    VideoFormat::PixelFormat pixfmt = format_from_cv(CVPixelBufferGetPixelFormatType(cv_buffer));
+    VideoFormat::PixelFormat pixfmt = cv::format_from_cv(CVPixelBufferGetPixelFormatType(cv_buffer));
     if (pixfmt == VideoFormat::Format_Invalid) {
         qWarning("unsupported vda pixel format: %#x", CVPixelBufferGetPixelFormatType(cv_buffer));
         return VideoFrame();
@@ -219,7 +183,7 @@ VideoFrame VideoDecoderVDA::frame()
         void* mapToHost(const VideoFormat &format, void *handle, int plane) {
             Q_UNUSED(plane);
             CVPixelBufferLockBaseAddress(cvbuf, 0);
-            const VideoFormat fmt(format_from_cv(CVPixelBufferGetPixelFormatType(cvbuf)));
+            const VideoFormat fmt(cv::format_from_cv(CVPixelBufferGetPixelFormatType(cvbuf)));
             if (!fmt.isValid()) {
                 CVPixelBufferUnlockBaseAddress(cvbuf, 0);
                 return NULL;
@@ -412,7 +376,7 @@ bool VideoDecoderVDAPrivate::setup(AVCodecContext *avctx)
     }
     avctx->hwaccel_context = &hw_ctx;
     initUSWC(hw_ctx.width);
-    qDebug() << "VDA decoder created. format: " << format_from_cv(out_fmt);
+    qDebug() << "VDA decoder created. format: " << cv::format_from_cv(out_fmt);
     return true;
 }
 
