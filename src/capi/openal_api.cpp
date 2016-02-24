@@ -47,7 +47,7 @@ static const char* names[] = {
     NULL
 };
 
-class user_dso : public ::capi::dso {}; //%DSO%
+typedef ::capi::dso user_dso; //%DSO%
 
 #if 1
 static const int versions[] = {
