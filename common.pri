@@ -1,5 +1,5 @@
 # qmake common template pri file
-# Copyright (C) 2011-2015 Wang Bin <wbsecg1@gmail.com>
+# Copyright (C) 2011-2016 Wang Bin <wbsecg1@gmail.com>
 # Shanghai, China.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -86,6 +86,19 @@ win32-msvc* {
 }
 
 #################################functions#########################################
+defineTest(qtAtLeast) { #e.g. qtAtLeast(4), qtAtLeast(5, 2), qtAtLeast(5, 4, 2)
+  lessThan(QT_MAJOR_VERSION, $$1):return(false)
+  isEmpty(2):return(true)
+  greaterThan(QT_MAJOR_VERSION, $$1):return(true)
+
+  lessThan(QT_MINOR_VERSION, $$2):return(false)
+  isEmpty(3):return(true)
+  greaterThan(QT_MINOR_VERSION, $$2):return(true)
+
+  lessThan(QT_PATCH_VERSION, $$3):return(false)
+  return(true)
+}
+
 defineTest(qtRunQuitly) {
     #win32 always call windows command
     contains(QMAKE_HOST.os,Windows) {
@@ -119,14 +132,14 @@ defineReplace(qtLibName) {
         unset(RET)
         RET = $$1
 #qt5.4.2 add qt5LibraryTarget to fix qtLibraryTarget break
-    greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) {
+    qtAtLeast(5, 4) {
         mac:CONFIG(shared, static|shared):contains(QT_CONFIG, qt_framework) {
           QMAKE_FRAMEWORK_BUNDLE_NAME = $$RET
           export(QMAKE_FRAMEWORK_BUNDLE_NAME)
        } else {
            # insert the major version of Qt in the library name
            # unless it's a framework build
-           isEqual(QT_MINOR_VERSION,4):lessThan(QT_PATCH_VERSION, 2):RET ~= s,^Qt,Qt$$QT_MAJOR_VERSION,
+           isEqual(QT_MAJOR_VERSION, 5):isEqual(QT_MINOR_VERSION,4):lessThan(QT_PATCH_VERSION, 2):RET ~= s,^Qt,Qt$$QT_MAJOR_VERSION,
        }
     }
         RET = $$RET$$platformTargetSuffix()
