@@ -75,11 +75,15 @@ defineTest(testArch) {
   else:test_cmd_base = "cd $$system_quote($$system_path($$test_out_dir)) &&"
   # Disable qmake features which are typically counterproductive for tests
   qmake_configs = "\"CONFIG -= qt debug_and_release app_bundle lib_bundle\""
+  iphoneos: qmake_configs += "\"CONFIG+=iphoneos\""
+  iphonesimulator: qmake_configs += "\"CONFIG+=iphonesimulator\""
   # Clean up after previous run
   exists($$test_out_dir/Makefile):qtRunCommandQuitly("$$test_cmd_base $$QMAKE_MAKE distclean")
 
 #message("$$test_cmd_base $$system_quote($$system_path($$QMAKE_QMAKE)) $$qmake_configs $$system_path($$test_dir)")
-  qtRunCommandQuitly("$$test_cmd_base  $$system_quote($$system_path($$QMAKE_QMAKE)) $$qmake_configs $$system_path($$test_dir)") {
+  SPEC =
+  !isEmpty(QMAKESPEC): SPEC = "-spec $$QMAKESPEC"
+  qtRunCommandQuitly("$$test_cmd_base  $$system_quote($$system_path($$QMAKE_QMAKE)) $$SPEC $$qmake_configs $$system_path($$test_dir)") {
     MSG=$$system("$$test_cmd_base  $$QMAKE_MAKE 2>&1")
   }
   V = $$find(MSG, ARCH.*=.*)

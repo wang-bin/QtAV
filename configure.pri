@@ -105,6 +105,11 @@ defineTest(qtCompileTest) {
     #system always call win32 cmd in windows, so we need "cd /d" to ensure success cd to a different partition
     contains(QMAKE_HOST.os,Windows):test_cmd_base = "cd /d $$system_quote($$system_path($$test_out_dir)) &&"
     else: test_cmd_base = "cd $$system_quote($$system_path($$test_out_dir)) &&"
+
+# On WinRT we need to change the entry point as we cannot create windows applications
+  winrt {
+     qmake_configs += " \"QMAKE_LFLAGS+=/ENTRY:main\""
+  }
     # Disable qmake features which are typically counterproductive for tests
     qmake_configs = "\"CONFIG -= qt debug_and_release app_bundle lib_bundle\""
 
@@ -112,7 +117,9 @@ defineTest(qtCompileTest) {
     exists($$test_out_dir/Makefile):qtRunLoggedCommand("$$test_cmd_base $$QMAKE_MAKE distclean")
 
     mkpath($$test_out_dir)#|error("Aborting.") #mkpath currently return false, do not know why
-    qtRunLoggedCommand("$$test_cmd_base $$system_quote($$system_path($$QMAKE_QMAKE)) $$qmake_configs $$system_path($$test_dir)") {
+    SPEC =
+    !isEmpty(QMAKESPEC): SPEC = "-spec $$QMAKESPEC"
+    qtRunLoggedCommand("$$test_cmd_base $$system_quote($$system_path($$QMAKE_QMAKE)) $$SPEC $$qmake_configs $$system_path($$test_dir)") {
         qtRunLoggedCommand("$$test_cmd_base $$QMAKE_MAKE") {
             log("yes$$escape_expand(\\n)")
             msg = "test $$1 succeeded"
