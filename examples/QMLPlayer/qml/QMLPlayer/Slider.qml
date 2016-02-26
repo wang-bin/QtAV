@@ -43,7 +43,7 @@ Item {
         hoverEnabled: true
         onHoveredChanged: {
             //console.log("slider.hover mouseX: " + mouseX)
-            if (mouseArea.mouseX == 2147483447) //qt5.6 touch screen release finger becomes 0x7fffffff
+            if (mouseX > 65535) //qt5.6 touch screen release finger becomes very large e.g. 0x7fffffff
                 return
             hovered = mouseArea.containsMouse
         }
@@ -79,7 +79,7 @@ Item {
             hoverEnabled: true
             onHoveredChanged: {
                 //console.log("slider.grip.hover mouseX: " + mouseX)
-                if (gripMouseArea.mouseX == 2147483447) //qt5.6 touch screen release finger becomes 0x7fffffff
+                if (mouseX > 65535) //qt5.6 touch screen release finger becomes very large e.g. 0x7fffffff
                     return
                 hovered = gripMouseArea.containsMouse
             }
