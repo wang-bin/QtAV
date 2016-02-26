@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -93,7 +93,7 @@ void QmlAVPlayer::classBegin()
 
     m_metaData.reset(new MediaMetaData());
 
-    emit mediaObjectChanged();
+    Q_EMIT mediaObjectChanged();
 }
 
 void QmlAVPlayer::componentComplete()
@@ -139,23 +139,23 @@ void QmlAVPlayer::setSource(const QUrl &url)
         return;
     mSource = url;
     mpPlayer->setFile(QUrl::fromPercentEncoding(mSource.toEncoded()));
-    emit sourceChanged(); //TODO: emit only when player loaded a new source
+    Q_EMIT sourceChanged(); //TODO: Q_EMIT only when player loaded a new source
 
     if (mHasAudio) {
         mHasAudio = false;
-        emit hasAudioChanged();
+        Q_EMIT hasAudioChanged();
     }
     if (mHasVideo) {
         mHasVideo = false;
-        emit hasVideoChanged();
+        Q_EMIT hasVideoChanged();
     }
 
     // TODO: in componentComplete()?
     if (m_complete && (mAutoLoad || mAutoPlay)) {
         mError = NoError;
         mErrorString = tr("No error");
-        emit error(mError, mErrorString);
-        emit errorChanged();
+        Q_EMIT error(mError, mErrorString);
+        Q_EMIT errorChanged();
         stop();
         //mpPlayer->load(); //QtAV internal bug: load() or play() results in reload
         if (mAutoPlay) {
@@ -177,7 +177,7 @@ void QmlAVPlayer::setAutoLoad(bool autoLoad)
         return;
 
     mAutoLoad = autoLoad;
-    emit autoLoadChanged();
+    Q_EMIT autoLoadChanged();
 }
 
 bool QmlAVPlayer::autoPlay() const
@@ -191,7 +191,7 @@ void QmlAVPlayer::setAutoPlay(bool autoplay)
         return;
 
     mAutoPlay = autoplay;
-    emit autoPlayChanged();
+    Q_EMIT autoPlayChanged();
 }
 
 MediaMetaData* QmlAVPlayer::metaData() const
@@ -216,15 +216,26 @@ QStringList QmlAVPlayer::videoCodecs() const
 
 void QmlAVPlayer::setVideoCodecPriority(const QStringList &p)
 {
+    if (mVideoCodecs == p)
+        return;
+    mVideoCodecs = p;
+    Q_EMIT videoCodecPriorityChanged();
     if (!mpPlayer) {
         qWarning("player not ready");
         return;
     }
-    if (mVideoCodecs == p)
-        return;
-    mVideoCodecs = p;
+    QVariantHash vcopt;
+    for (QVariantMap::const_iterator cit = vcodec_opt.cbegin(); cit != vcodec_opt.cend(); ++cit) {
+        vcopt[cit.key()] = cit.value();
+    }
+    if (!vcopt.isEmpty())
+        mpPlayer->setOptionsForVideoCodec(vcopt);
     mpPlayer->setVideoDecoderPriority(p);
-    Q_EMIT videoCodecPriorityChanged();
+}
+
+QStringList QmlAVPlayer::videoCodecPriority() const
+{
+    return mVideoCodecs;
 }
 
 QVariantMap QmlAVPlayer::videoCodecOptions() const
@@ -237,8 +248,14 @@ void QmlAVPlayer::setVideoCodecOptions(const QVariantMap &value)
     if (value == vcodec_opt)
         return;
     vcodec_opt = value;
-    emit videoCodecOptionsChanged();
-    // player maybe not ready
+    Q_EMIT videoCodecOptionsChanged();
+    QVariantHash vcopt;
+    for (QVariantMap::const_iterator cit = vcodec_opt.cbegin(); cit != vcodec_opt.cend(); ++cit) {
+        vcopt[cit.key()] = cit.value();
+    }
+    if (!vcopt.isEmpty())
+        mpPlayer->setOptionsForVideoCodec(vcopt);
+    mpPlayer->setVideoDecoderPriority(videoCodecPriority());
 }
 
 bool QmlAVPlayer::useWallclockAsTimestamps() const
@@ -263,7 +280,7 @@ void QmlAVPlayer::setWallclockAsTimestamps(bool use_wallclock_as_timestamps)
         mpPlayer->setBufferValue(-1);
     }
     mpPlayer->setOptionsForFormat(opt);
-    emit useWallclockAsTimestampsChanged();
+    Q_EMIT useWallclockAsTimestampsChanged();
 }
 
 static AudioFormat::ChannelLayout toAudioFormatChannelLayout(QmlAVPlayer::ChannelLayout ch)
@@ -290,7 +307,7 @@ void QmlAVPlayer::setChannelLayout(ChannelLayout channel)
     if (mChannelLayout == channel)
         return;
     mChannelLayout = channel;
-    emit channelLayoutChanged();
+    Q_EMIT channelLayoutChanged();
 }
 
 QmlAVPlayer::ChannelLayout QmlAVPlayer::channelLayout() const
@@ -303,7 +320,7 @@ void QmlAVPlayer::setTimeout(int value)
     if (m_timeout == value)
         return;
     m_timeout = value;
-    emit timeoutChanged();
+    Q_EMIT timeoutChanged();
     if (mpPlayer)
         mpPlayer->setInterruptTimeout(m_timeout);
 }
@@ -318,7 +335,7 @@ void QmlAVPlayer::setAbortOnTimeout(bool value)
     if (m_abort_timeout == value)
         return;
     m_abort_timeout = value;
-    emit abortOnTimeoutChanged();
+    Q_EMIT abortOnTimeoutChanged();
     if (mpPlayer)
         mpPlayer->setInterruptOnTimeout(value);
 }
@@ -338,7 +355,7 @@ void QmlAVPlayer::setAudioTrack(int value)
     if (m_audio_track == value)
         return;
     m_audio_track = value;
-    emit audioTrackChanged();
+    Q_EMIT audioTrackChanged();
     if (mpPlayer)
         mpPlayer->setAudioStream(value);
 }
@@ -354,7 +371,7 @@ void QmlAVPlayer::setExternalAudio(const QUrl &url)
         return;
     m_audio = url;
     mpPlayer->setExternalAudio(QUrl::fromPercentEncoding(m_audio.toEncoded()));
-    emit externalAudioChanged();
+    Q_EMIT externalAudioChanged();
 }
 
 QVariantList QmlAVPlayer::externalAudioTracks() const
@@ -387,11 +404,6 @@ QVariantList QmlAVPlayer::internalSubtitleTracks() const
     return mpPlayer ? mpPlayer->internalSubtitleTracks() : QVariantList();
 }
 
-QStringList QmlAVPlayer::videoCodecPriority() const
-{
-    return mVideoCodecs;
-}
-
 int QmlAVPlayer::loopCount() const
 {
     return mLoopCount;
@@ -407,7 +419,7 @@ void QmlAVPlayer::setLoopCount(int c)
         return;
     }
     mLoopCount = c;
-    emit loopCountChanged();
+    Q_EMIT loopCountChanged();
 }
 
 qreal QmlAVPlayer::volume() const
@@ -425,7 +437,7 @@ void QmlAVPlayer::setVolume(qreal value)
     if (qFuzzyCompare(mVolume + 1.0, value + 1.0))
         return;
     mVolume = value;
-    emit volumeChanged();
+    Q_EMIT volumeChanged();
     applyVolume();
 }
 
@@ -439,7 +451,7 @@ void QmlAVPlayer::setMuted(bool m)
     if (isMuted() == m)
         return;
     m_mute = m;
-    emit mutedChanged();
+    Q_EMIT mutedChanged();
     applyVolume();
 }
 
@@ -468,7 +480,7 @@ void QmlAVPlayer::setFastSeek(bool value)
     if (m_fastSeek == value)
         return;
     m_fastSeek = value;
-    emit fastSeekChanged();
+    Q_EMIT fastSeekChanged();
 }
 
 qreal QmlAVPlayer::bufferProgress() const
@@ -556,7 +568,7 @@ void QmlAVPlayer::setPlaybackRate(qreal s)
     mPlaybackRate = s;
     if (mpPlayer)
         mpPlayer->setSpeed(s);
-    emit playbackRateChanged();
+    Q_EMIT playbackRateChanged();
 }
 
 AVPlayer* QmlAVPlayer::player()
@@ -648,25 +660,25 @@ void QmlAVPlayer::_q_error(const AVError &e)
       //  err = ServiceMissing;
     if (ec != AVError::NoError)
         m_loading = false;
-    emit error(mError, mErrorString);
-    emit errorChanged();
+    Q_EMIT error(mError, mErrorString);
+    Q_EMIT errorChanged();
 }
 
 void QmlAVPlayer::_q_statusChanged()
 {
-    emit statusChanged();
+    Q_EMIT statusChanged();
 }
 
 void QmlAVPlayer::_q_paused(bool p)
 {
     if (p) {
         mPlaybackState = PausedState;
-        emit paused();
+        Q_EMIT paused();
     } else {
         mPlaybackState = PlayingState;
-        emit playing();
+        Q_EMIT playing();
     }
-    emit playbackStateChanged();
+    Q_EMIT playbackStateChanged();
 }
 
 void QmlAVPlayer::_q_started()
@@ -684,22 +696,22 @@ void QmlAVPlayer::_q_started()
     if (!mHasAudio) {
         mHasAudio = !mpPlayer->internalAudioTracks().isEmpty();
         if (mHasAudio)
-            emit hasAudioChanged();
+            Q_EMIT hasAudioChanged();
     }
     if (!mHasVideo) {
         mHasVideo = mpPlayer->videoStreamCount() > 0;
         if (mHasVideo)
-            emit hasVideoChanged();
+            Q_EMIT hasVideoChanged();
     }
-    emit playing();
-    emit playbackStateChanged();
+    Q_EMIT playing();
+    Q_EMIT playbackStateChanged();
 }
 
 void QmlAVPlayer::_q_stopped()
 {
     mPlaybackState = StoppedState;
-    emit stopped();
-    emit playbackStateChanged();
+    Q_EMIT stopped();
+    Q_EMIT playbackStateChanged();
 }
 
 void QmlAVPlayer::applyVolume()
