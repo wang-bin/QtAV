@@ -402,6 +402,11 @@ Rectangle {
             height: Utils.scaled(30)
             icon: Utils.resurl("theme/default/volume.svg")
             iconChecked: Utils.resurl("theme/default/mute.svg")
+            onPressAndHold: { //for qt5.6 mobile
+                volBar.anchors.bottom = parent.top
+                volBar.anchors.bottomMargin = -(y + 2)//height/2)
+                volBar.x = parent.volBarPos - volBar.width/2
+            }
             onHoveredChanged: {
                 volBar.anchors.bottom = parent.top
                 volBar.anchors.bottomMargin = -(y + 2)//height/2)

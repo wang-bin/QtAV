@@ -29,7 +29,7 @@ Item {
     property real gripSize: Utils.scaled(12)
     property real gripTolerance: Utils.scaled(3.0)
     property int orientation: Qt.Horizontal
-    readonly property bool hovered: mouseArea.containsMouse || gripMouseArea.containsMouse
+    property bool hovered: false //mouseArea.containsMouse || gripMouseArea.containsMouse
 
     Rectangle {
         anchors.centerIn: parent
@@ -41,6 +41,12 @@ Item {
         id: mouseArea
         anchors.fill: parent
         hoverEnabled: true
+        onHoveredChanged: {
+            //console.log("slider.hover mouseX: " + mouseX)
+            if (mouseArea.mouseX == 2147483447) //qt5.6 touch screen release finger becomes 0x7fffffff
+                return
+            hovered = mouseArea.containsMouse
+        }
         onClicked: {
             var newValue = mouse.x / parent.width
             if (orientation === Qt.Horizontal) {
@@ -71,6 +77,12 @@ Item {
             id: gripMouseArea
             anchors.fill: parent
             hoverEnabled: true
+            onHoveredChanged: {
+                //console.log("slider.grip.hover mouseX: " + mouseX)
+                if (gripMouseArea.mouseX == 2147483447) //qt5.6 touch screen release finger becomes 0x7fffffff
+                    return
+                hovered = gripMouseArea.containsMouse
+            }
             drag {
                 target: grip
                 axis: orientation === Qt.Horizontal ? Drag.XAxis : Drag.YAxis

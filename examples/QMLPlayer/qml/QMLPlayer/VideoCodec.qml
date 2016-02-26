@@ -86,11 +86,11 @@ Page {
         Button {
             id: copyMode
             text: qsTr("Zero copy")
-            checked: false
+            checked: PlayerConfig.zeroCopy
             checkable: true
             width: parent.width
             height: Utils.kItemHeight
-            onCheckedChanged: root.zeroCopyChanged(checked)
+            onCheckedChanged: PlayerConfig.zeroCopy = checked
         }
     }
     Component.onCompleted: {

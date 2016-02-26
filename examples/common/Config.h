@@ -43,6 +43,7 @@ class COMMON_EXPORT Config : public QObject
     Q_PROPERTY(QString lastFile READ lastFile WRITE setLastFile NOTIFY lastFileChanged)
     Q_PROPERTY(qreal forceFrameRate READ forceFrameRate WRITE setForceFrameRate NOTIFY forceFrameRateChanged)
     Q_PROPERTY(QStringList decoderPriorityNames READ decoderPriorityNames WRITE setDecoderPriorityNames NOTIFY decoderPriorityNamesChanged)
+    Q_PROPERTY(bool zeroCopy READ zeroCopy WRITE setZeroCopy NOTIFY zeroCopyChanged)
     Q_PROPERTY(QString captureDir READ captureDir WRITE setCaptureDir NOTIFY captureDirChanged)
     Q_PROPERTY(QString captureFormat READ captureFormat WRITE setCaptureFormat NOTIFY captureFormatChanged)
     Q_PROPERTY(int captureQuality READ captureQuality WRITE setCaptureQuality NOTIFY captureQualityChanged)
@@ -71,6 +72,7 @@ class COMMON_EXPORT Config : public QObject
     Q_PROPERTY(int bufferValue READ bufferValue WRITE setBufferValue NOTIFY bufferValueChanged)
     Q_PROPERTY(QString logLevel READ logLevel WRITE setLogLevel NOTIFY logLevelChanged)
     Q_ENUMS(OpenGLType)
+    Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
 public:
     enum OpenGLType { // currently only for windows
         Auto,
@@ -100,6 +102,9 @@ public:
     // in priority order. the same order as displayed in ui
     QStringList decoderPriorityNames() const;
     Config& setDecoderPriorityNames(const QStringList& names);
+
+    bool zeroCopy() const;
+    Config& setZeroCopy(bool value);
 
     QString captureDir() const;
     Config& setCaptureDir(const QString& dir);
@@ -198,6 +203,9 @@ public:
     QString logLevel() const;
     Config& setLogLevel(const QString& value);
 
+    QString language() const;
+    Config& setLanguage(const QString& value);
+
     Q_INVOKABLE QVariant operator ()(const QString& key) const;
     Q_INVOKABLE Config& operator ()(const QString& key, const QVariant& value);
 public:
@@ -208,6 +216,7 @@ public:
     Q_SIGNAL void decodingThreadsChanged(int n);
     Q_SIGNAL void decoderPriorityNamesChanged();
     Q_SIGNAL void registeredDecodersChanged(const QVector<int>& r);
+    Q_SIGNAL void zeroCopyChanged();
     Q_SIGNAL void captureDirChanged(const QString& dir);
     Q_SIGNAL void captureFormatChanged(const QString& fmt);
     Q_SIGNAL void captureQualityChanged(int quality);
@@ -236,6 +245,7 @@ public:
     Q_SIGNAL void timeoutChanged();
     Q_SIGNAL void abortOnTimeoutChanged();
     Q_SIGNAL void logLevelChanged();
+    Q_SIGNAL void languageChanged();
 protected:
     explicit Config(QObject *parent = 0);
     ~Config();

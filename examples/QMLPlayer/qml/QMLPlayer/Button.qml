@@ -28,7 +28,7 @@ Rectangle {
     property color bgColor: "#555555"
     property color bgColorSelected: "#ee6666dd"
     property color textColor: "white"
-    readonly property alias hovered: mouseArea.containsMouse
+    property bool hovered: false //mouseArea.containsMouse
     signal clicked()
     signal pressAndHold()
 
@@ -64,6 +64,13 @@ Rectangle {
                 root.checked = !root.checked
             root.clicked()
         }
+        onHoveredChanged: {
+            //console.log("button.hover mouseX: " + mouseX)
+            if (mouseArea.mouseX == 2147483447) //qt5.6 touch screen release finger becomes 0x7fffffff
+                return
+            hovered = mouseArea.containsMouse
+        }
+
         onPressAndHold: root.pressAndHold()
     }
     states: [

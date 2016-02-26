@@ -214,10 +214,15 @@ Rectangle {
                 control.toggleVisible()
             }
             onMouseXChanged: {
-                if (root.width - mouseX < configPanel.width) {
+                if (mouseX > root.width || mouseX < 0
+                        || mouseY > root.height || mouseY < 0)
+                    return;
+                if (root.width - mouseX < configPanel.width) { //qt5.6 mouseX is very large if mouse released
+                    //console.log("configPanel show: root width: " + root.width + " mouseX: " + mouseX + "panel width: " + configPanel.width)
                     configPanel.state = "show"
                 } else {
                     configPanel.state = "hide"
+                    //console.log("configPanel hide: root width: " + root.width + " mouseX: " + mouseX + "panel width: " + configPanel.width)
                 }
                 if (player.playbackState == MediaPlayer.StoppedState || !player.hasVideo)
                     return;
@@ -388,18 +393,6 @@ Rectangle {
             onExternalAudioChanged: player.externalAudio = file
             onAudioTrackChanged: player.audioTrack = track
             onSubtitleTrackChanged: player.internalSubtitleTrack = track
-            onZeroCopyChanged: {
-                var opt = player.videoCodecOptions
-                if (value) {
-                    opt["copyMode"] = "ZeroCopy"
-                } else {
-                    if (Qt.platform.os == "osx")
-                        opt["copyMode"] = "LazyCopy"
-                    else
-                        opt["copyMode"] = "OptimizedCopy"
-                }
-                player.videoCodecOptions = opt
-            }
         }
     }
     ConfigPanel {
@@ -516,7 +509,7 @@ Rectangle {
     Connections {
         target: Qt.application
         onStateChanged: { //since 5.1
-            if (Qt.platform.os !== "android")
+            if (Qt.platform.os === "winrt" || Qt.platform.os === "winphone") //paused by system
                 return
             // winrt is handled by system
             switch (Qt.application.state) {
@@ -527,6 +520,18 @@ Rectangle {
             default:
                 break
             }
+        }
+    }
+    Connections {
+        target: PlayerConfig
+        onZeroCopyChanged: {
+            var opt = player.videoCodecOptions
+            if (PlayerConfig.zeroCopy) {
+                opt["copyMode"] = "ZeroCopy"
+            } else {
+                opt["copyMode"] = "OptimizedCopy"
+            }
+            player.videoCodecOptions = opt
         }
     }
 }

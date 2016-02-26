@@ -3,7 +3,7 @@ import "utils.js" as Utils
 
 Page {
     title: qsTr("Misc")
-    height: titleHeight + (5+glSet.visible*4)*Utils.kItemHeight + detail.contentHeight + 4*Utils.kSpacing
+    height: titleHeight + (7+glSet.visible*4)*Utils.kItemHeight + detail.contentHeight + 5*Utils.kSpacing
 
     Column {
         anchors.fill: content
@@ -146,7 +146,7 @@ Page {
         }
         Row {
             width: parent.width
-            height: 2*Utils.kItemHeight
+            height: 3*Utils.kItemHeight
             spacing: Utils.kSpacing
             Text {
                 font.pixelSize: Utils.kFontSize
@@ -183,6 +183,44 @@ Page {
                 Component.onCompleted: updateUi()
             }
         }
+        Row {
+            width: parent.width
+            height: 2*Utils.kItemHeight
+            spacing: Utils.kSpacing
+            Text {
+                font.pixelSize: Utils.kFontSize
+                color: "white"
+                width: parent.width/3
+                height: parent.height
+                horizontalAlignment: Text.AlignHCenter
+                verticalAlignment: Text.AlignVCenter
+                wrapMode: Text.WrapAnywhere
+                text: qsTr("Language") + "\n" + qsTr("Restart to apply")
+            }
+            Menu {
+                id: langMenu
+                width: parent.width/2
+                height: parent.height
+                itemWidth: width
+                model: ListModel {
+                    id: langModel
+                    ListElement { name: "system" }
+                    ListElement { name: "en_US" }
+                    ListElement { name: "zh_CN" }
+                }
+                onClicked: PlayerConfig.language = langModel.get(index).name
+                function updateUi() {
+                    currentIndex = -1
+                    for (var i = 0; i < langModel.count; ++i) {
+                        if (PlayerConfig.language === langModel.get(i).name) {
+                            currentIndex = i
+                            break
+                        }
+                    }
+                }
+                Component.onCompleted: updateUi()
+            }
+        }
     }
     Component.onCompleted: {
         if (Qt.platform.os !== "windows" && Qt.platform.os !== "wince")
@@ -194,6 +232,7 @@ Page {
     Connections {
         target: PlayerConfig
         onLogLevelChanged: logMenu.updateUi()
+        onLanguageChanged: langMenu.updateUi()
         onOpenGLTypeChanged: {
             if (glSet.visible)
                 glMenu.updateUi()
