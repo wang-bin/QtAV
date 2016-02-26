@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -485,7 +485,8 @@ bool AVPlayer::Private::tryApplyDecoderPriority(AVPlayer *player)
         Q_EMIT player->error(AVError(AVError::VideoCodecNotFound));
         return false;
     }
-    if (vd->id() == vdec->id()) {
+    if (vd->id() == vdec->id()
+            && vd->options() == vdec->options()) {
         qDebug("Video decoder does not change");
         delete vd;
         return true;
