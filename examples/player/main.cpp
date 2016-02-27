@@ -26,6 +26,7 @@
 #include <QtAV/AVPlayer.h>
 #include <QtAV/VideoOutput.h>
 #include <QtAVWidgets>
+#include "config/PropertyEditor.h"
 #include "MainWindow.h"
 #include "../common/common.h"
 
@@ -65,6 +66,7 @@ int main(int argc, char *argv[])
     QOptions options = get_common_options();
     options.add(QString::fromLatin1("player options"))
             ("ffmpeg-log",  QString(), QString::fromLatin1("ffmpeg log level. can be: quiet, panic, fatal, error, warn, info, verbose, debug. this can override env 'QTAV_FFMPEG_LOG'"))
+            ("vd-list", QString::fromLatin1("List video decoders and their properties"))
             ("-vo",
 #ifndef QT_NO_OPENGL
 #if defined(Q_OS_ANDROID) || defined(Q_OS_IOS)
@@ -80,6 +82,17 @@ int main(int argc, char *argv[])
     options.parse(argc, argv);
     do_common_options_before_qapp(options);
 
+    if (options.value(QString::fromLatin1("vd-list")).toBool()) {
+        PropertyEditor pe;
+        VideoDecoderId *vid = NULL;
+        while ((vid = VideoDecoder::next(vid)) != NULL) {
+            VideoDecoder *vd = VideoDecoder::create(*vid);
+            pe.getProperties(vd);
+            qDebug("- %s:", vd->name().toUtf8().constData());
+            qDebug() << pe.buildOptions().toUtf8().constData();
+        }
+        exit(0);
+    }
     QApplication a(argc, argv);
     a.setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
     qDebug() <<a.arguments();

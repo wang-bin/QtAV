@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -40,6 +40,7 @@ void PropertyEditor::getProperties(QObject *obj)
 {
     mMetaProperties.clear();
     mProperties.clear();
+    mPropertyDetails.clear();
     if (!obj)
         return;
     const QMetaObject *mo = obj->metaObject();
@@ -52,6 +53,9 @@ void PropertyEditor::getProperties(QObject *obj)
         } else {
             mProperties.insert(QString::fromLatin1(mp.name()), v);
         }
+        const QVariant detail = obj->property(QByteArray("detail_").append(mp.name()).constData());
+        if (!detail.isNull())
+            mPropertyDetails.insert(QString::fromLatin1(mp.name()), detail.toString());
     }
     mProperties.remove(QString::fromLatin1("objectName"));
 }
@@ -78,12 +82,17 @@ QString PropertyEditor::buildOptions()
     foreach (QMetaProperty mp, mMetaProperties) {
         if (qstrcmp(mp.name(), "objectName") == 0)
             continue;
-        result += QString::fromLatin1(mp.name());
-        result += QString::fromLatin1(": ");
+        result += QString::fromLatin1("  * %1: ").arg(QString::fromLatin1(mp.name()));
         if (mp.isEnumType()) {
+            if (mp.isFlagType())
+                result += QString::fromLatin1("flag ");
+            else
+                result += QString::fromLatin1("enum ");
             QMetaEnum me(mp.enumerator());
             for (int i = 0; i < me.keyCount(); ++i) {
                 result += QString::fromLatin1(me.key(i));
+                result += QString::fromLatin1("=");
+                result += QString::number(me.value(i));
                 if (i < me.keyCount() - 1)
                     result += QString::fromLatin1(",");
             }
@@ -96,6 +105,9 @@ QString PropertyEditor::buildOptions()
         } else if (mp.type() == QVariant::Bool) {
             result += QString::fromLatin1("bool");
         }
+        const QVariant detail =  mPropertyDetails.value(QString::fromLatin1(mp.name()));
+        if (!detail.isNull())
+            result += QString::fromLatin1("\n    > property detail: %1").arg(detail.toString());
         result += QString::fromLatin1("\n");
     }
     return result;
