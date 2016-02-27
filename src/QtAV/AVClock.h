@@ -87,6 +87,7 @@ public:
     inline double videoTime() const;
     inline double delay() const; //playing audio spends some time
     inline void updateDelay(double delay);
+    inline qreal diff() const;
 
     void setSpeed(qreal speed);
     inline qreal speed() const;
@@ -206,6 +207,11 @@ double AVClock::delay() const
 void AVClock::updateDelay(double delay)
 {
     delay_ = delay;
+}
+
+qreal AVClock::diff() const
+{
+    return value() - videoTime();
 }
 
 qreal AVClock::speed() const
