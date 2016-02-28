@@ -446,6 +446,7 @@ void SubtitleProcessorLibASS::updateFontCache()
     // fonts in assets and qrc may change. so check before appFontsDir
     static const QStringList kFontsDirs = QStringList()
             << qApp->applicationDirPath().append(QLatin1String("/fonts"))
+            << qApp->applicationDirPath() // for winrt
             << QStringLiteral("assets:/fonts")
             << QStringLiteral(":/fonts")
             << Internal::Path::appFontsDir()
