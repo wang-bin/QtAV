@@ -44,6 +44,7 @@ public:
         : ctx(0)
         , manager(0)
         , material(new VideoMaterial())
+        , material_type(0)
         , update_geo(true)
         , try_vbo(true)
         , try_vao(true)
@@ -100,6 +101,7 @@ public:
     QOpenGLContext *ctx;
     ShaderManager *manager;
     VideoMaterial *material;
+    qint64 material_type;
     bool update_geo;
     bool try_vbo; // check environment var and opengl support
     QOpenGLBuffer vbo; //VertexBuffer
@@ -278,7 +280,9 @@ void OpenGLVideo::setOpenGLContext(QOpenGLContext *ctx)
         qDebug("GL_RENDERER: %s", DYGL(glGetString(GL_RENDERER)));
         qDebug("GL_SHADING_LANGUAGE_VERSION: %s", DYGL(glGetString(GL_SHADING_LANGUAGE_VERSION)));
         /// check here with current context can ensure the right result. If the first check is in VideoShader/VideoMaterial/decoder or somewhere else, the context can be null
-        bool v = OpenGLHelper::isEGL();
+        bool v = OpenGLHelper::isOpenGLES();
+        qDebug("Is OpenGLES: %d", v);
+        v = OpenGLHelper::isEGL();
         qDebug("Is EGL: %d", v);
         const int glsl_ver = OpenGLHelper::GLSLVersion();
         qDebug("GLSL version: %d", glsl_ver);
@@ -288,6 +292,7 @@ void OpenGLVideo::setOpenGLContext(QOpenGLContext *ctx)
         qDebug("Has 16bit texture: %d", v);
         v = OpenGLHelper::hasRG();
         qDebug("Has RG texture: %d", v);
+        qDebug() << ctx->format();
     }
 }
 
@@ -347,6 +352,11 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
 {
     DPTR_D(OpenGLVideo);
     Q_ASSERT(d.manager);
+    const qint64 mt = d.material->type();
+    if (d.material_type != mt) {
+        qDebug() << "material changed: " << VideoMaterial::typeName(d.material_type) << " => " << VideoMaterial::typeName(mt);
+        d.material_type = mt;
+    }
     VideoShader *shader = d.manager->prepareMaterial(d.material); //TODO: print shader type name if changed. prepareMaterial(,sample_code, pp_code)
     shader->update(d.material);
     shader->program()->setUniformValue(shader->opacityLocation(), (GLfloat)1.0);
