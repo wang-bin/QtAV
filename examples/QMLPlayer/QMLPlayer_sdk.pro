@@ -45,16 +45,18 @@ isEmpty(PROJECTROOT): PROJECTROOT = $$PWD/../..
 
 fonts.files = fonts
 fonts.path = fonts
-QMAKE_BUNDLE_DATA += fonts
+#QMAKE_BUNDLE_DATA += fonts
 mac: RC_FILE = $$PROJECTROOT/src/QtAV.icns
 QMAKE_INFO_PLIST = $$COMMON/Info.plist
-#ios: QMAKE_INFO_PLIST = ios/Info.plist
-
+ios: QMAKE_INFO_PLIST = ios/Info.plist
+videos.files = videos
+videos.path = /
+#QMAKE_BUNDLE_DATA += videos
 defineTest(genRC) {
     RC_ICONS = $$PROJECTROOT/src/QtAV.ico
     QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
     QMAKE_TARGET_DESCRIPTION = "QtAV Multimedia playback framework. http://qtav.org"
-    QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2015 WangBin, wbsecg1@gmail.com"
+    QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2016 WangBin, wbsecg1@gmail.com"
     QMAKE_TARGET_PRODUCT = "QtAV $$1"
     export(RC_ICONS)
     export(QMAKE_TARGET_COMPANY)
