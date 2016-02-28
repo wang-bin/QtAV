@@ -23,6 +23,7 @@
 #include <QtCore/QQueue>
 #include <QtCore/QSemaphore>
 #include <QtCore/QThread>
+#include <QtCore/QMutex> //qt4
 #include <QtCore/QWaitCondition>
 #include <AudioToolbox/AudioToolbox.h>
 #include "QtAV/private/mkid.h"
@@ -67,7 +68,7 @@ FACTORY_REGISTER(AudioOutputBackend, AudioToolbox, kName)
     do { \
         OSStatus ret = FUNC; \
         if (ret != noErr) { \
-            qWarning("AudioOutputAudioToolbox Error>>> " #FUNC " (%d)", ret); \
+            qWarning("AudioOutputAudioToolbox Error>>> " #FUNC " (%d)", (int)ret); \
             return __VA_ARGS__; \
         } \
     } while(0)
