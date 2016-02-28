@@ -114,19 +114,20 @@ bool Packet::fromAVPacket(Packet* pkt, const AVPacket *avpkt, double time_base)
     pkt->pts = qMax<qreal>(0, pkt->pts);
     pkt->dts = qMax<qreal>(0, pkt->dts);
 
+    if (avpkt->duration > 0)
+        pkt->duration = avpkt->duration * time_base;
+    else
+        pkt->duration = 0;
+#if (LIBAVCODEC_VERSION_MAJOR < 57) //FF_API_CONVERGENCE_DURATION since 57
     // subtitle always has a key frame? convergence_duration may be 0
-    if (avpkt->convergence_duration > 0  // mpv demux_lavf only check this
+    if (avpkt->convergence_duration > 0
             && pkt->hasKeyFrame
 #if 0
             && codec->codec_type == AVMEDIA_TYPE_SUBTITLE
 #endif
             )
         pkt->duration = avpkt->convergence_duration * time_base;
-    else if (avpkt->duration > 0)
-        pkt->duration = avpkt->duration * time_base;
-    else
-        pkt->duration = 0;
-
+#endif
     //qDebug("AVPacket.pts=%f, duration=%f, dts=%lld", pkt->pts, pkt->duration, packet.dts);
     pkt->data.clear();
     // TODO: pkt->avpkt. data is not necessary now. see mpv new_demux_packet_from_avpacket
