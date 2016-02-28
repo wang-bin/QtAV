@@ -7,5 +7,5 @@ export QT_SELECT=qt5
 	dh $@ --parallel
 
 override_dh_auto_configure:
-	qmake "CONFIG+=no_rpath recheck config_libass_link"
+        qmake "CONFIG+=no_rpath recheck config_libass_link config_openal_link no-tests"
 
