@@ -66,13 +66,11 @@ public:
         YUV420P = 'y420',
         YUYV = 'yuvs',
     };
+    // no ios macro check in Interop because moc is an idiot
     enum Interop {
         CVPixelBuffer = cv::InteropCVPixelBuffer,
-#ifdef Q_OS_IOS
         CVOpenGLES = cv::InteropCVOpenGLES,
-#else
         IOSurface = cv::InteropIOSurface,
-#endif
         Auto = cv::InteropAuto
     };
 
@@ -154,13 +152,10 @@ VideoDecoderVideoToolbox::VideoDecoderVideoToolbox()
     setProperty("detail_format", tr("Output pixel format from decoder. Performance NV12 > UYVY > BGRA > YUV420P > YUYV.\nOSX < 10.7 only supports UYVY, BGRA and YUV420p"));
     setProperty("detail_interop"
                 , tr("Interop with OpenGL") + QStringLiteral("\n") +
-                     tr("CVPixelBuffer: OSX+iOS") + QStringLiteral("\n") +
-#ifdef Q_OS_IOS
-                     tr("CVOpenGLES: iOS, no copy, fast") + QStringLiteral("\n") +
-#else
-                tr("IOSurface: OSX, no copy, fast") + QStringLiteral("\n") +
-#endif
-                     tr("Auto: choose the fastest"));
+                  tr("CVPixelBuffer: OSX+iOS") + QStringLiteral("\n") +
+                  tr("CVOpenGLES: iOS, no copy, fast") + QStringLiteral("\n") +
+                  tr("IOSurface: OSX, no copy, fast") + QStringLiteral("\n") +
+                  tr("Auto: choose the fastest"));
     Q_UNUSED(QObject::tr("interop"));
     Q_UNUSED(QObject::tr("format"));
 }
