@@ -11,18 +11,6 @@
 <context>
     <name>QObject</name>
     <message>
-        <source>Ok</source>
-        <translation type="vanished">确定</translation>
-    </message>
-    <message>
-        <source>About</source>
-        <translation type="vanished">关于</translation>
-    </message>
-    <message>
-        <source>About FFmpeg</source>
-        <translation type="vanished">关于 FFmpeg</translation>
-    </message>
-    <message>
         <source>Build version</source>
         <translation>编译时版本</translation>
     </message>
@@ -31,37 +19,12 @@
         <translation>运行时版本</translation>
     </message>
     <message>
-        <source>About QtAV</source>
-        <translation type="vanished">关于 QtAV</translation>
-    </message>
-    <message>
-        <source>A media playing library base on Qt and FFmpeg.
-</source>
-        <translation>基于 Qt 和 FFmpeg 的音视频播放库.
-</translation>
-    </message>
-    <message>
-        <source>Shanghai University-&gt;S3 Graphics, Shanghai, China
-</source>
-        <translation type="vanished">上海大学-&gt;S3 Graphics, 中国, 上海</translation>
-    </message>
-    <message>
         <source>Donate</source>
         <translation>捐助</translation>
     </message>
     <message>
-        <source>Shanghai University, Shanghai, China
-</source>
-        <translation type="obsolete">上海大学，中国上海
-</translation>
-    </message>
-    <message>
         <source>Source</source>
         <translation>源码</translation>
-    </message>
-    <message>
-        <source>Downloads</source>
-        <translation type="vanished">下载</translation>
     </message>
     <message>
         <source>Distributed under the terms of LGPLv2.1 or later.
@@ -214,7 +177,7 @@
     </message>
     <message>
         <source>LazyCopy</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>codecName</source>
@@ -223,6 +186,19 @@
     <message>
         <source>copyMode</source>
         <translation>拷贝模式</translation>
+    </message>
+    <message>
+        <source>Multimedia framework base on Qt and FFmpeg.
+</source>
+        <translation>基于Qt、FFmpeg的多媒体框架.</translation>
+    </message>
+    <message>
+        <source>interop</source>
+        <translation>互操作</translation>
+    </message>
+    <message>
+        <source>format</source>
+        <translation>格式</translation>
     </message>
 </context>
 <context>
@@ -260,161 +236,7 @@
     </message>
 </context>
 <context>
-    <name>QtAV::EventFilter</name>
-    <message>
-        <source>Open a video</source>
-        <translation type="obsolete">打开视频</translation>
-    </message>
-    <message>
-        <source>Open an url</source>
-        <translation type="obsolete">打开 url</translation>
-    </message>
-    <message>
-        <source>About QtAV</source>
-        <translation type="obsolete">关于 QtAV</translation>
-    </message>
-    <message>
-        <source>Ctrl+O: open a file
-</source>
-        <translation type="obsolete">Ctrl+O: 打开文件</translation>
-    </message>
-    <message>
-        <source>O: OSD
-</source>
-        <translation type="obsolete">O: OSD</translation>
-    </message>
-    <message>
-        <source>Ctrl+Up/Down: speed +/-
-</source>
-        <translation type="obsolete">Ctrl+光标上下: 速度增减</translation>
-    </message>
-    <message>
-        <source>-&amp;gt;/&amp;lt;-: seek forward/backward
-</source>
-        <translation type="obsolete">光标左右: 快退 快进</translation>
-    </message>
-    <message>
-        <source>Help</source>
-        <translation type="obsolete">帮助</translation>
-    </message>
-    <message>
-        <source>Drag and drop a file to player
-</source>
-        <translation type="obsolete">拖放文件到播放器
-</translation>
-    </message>
-    <message>
-        <source>Double click to switch fullscreen</source>
-        <translation type="obsolete">双击切换全屏</translation>
-    </message>
-    <message>
-        <source>Shortcut:
-</source>
-        <translation type="obsolete">快捷键:
-</translation>
-    </message>
-    <message>
-        <source>Space: pause/continue
-</source>
-        <translation type="obsolete">空格: 暂停/继续
-</translation>
-    </message>
-    <message>
-        <source>F: fullscreen on/off
-</source>
-        <translation type="obsolete">F: 全屏开关
-</translation>
-    </message>
-    <message>
-        <source>I: switch video display quality
-</source>
-        <translation type="obsolete">I: 切换显示质量</translation>
-    </message>
-    <message>
-        <source>T: stays on top on/off
-</source>
-        <translation type="obsolete">T: 窗口置顶开关
-</translation>
-    </message>
-    <message>
-        <source>N: show next frame. Continue the playing by pressing &apos;Space&apos;
-</source>
-        <translation type="obsolete">N: 播放下一帧
-</translation>
-    </message>
-    <message>
-        <source>O: open a file
-</source>
-        <translation type="obsolete">O: 打开文件
-</translation>
-    </message>
-    <message>
-        <source>P: replay
-</source>
-        <translation type="obsolete">P: 重新播放
-</translation>
-    </message>
-    <message>
-        <source>Q/ESC: quit
-</source>
-        <translation type="obsolete">Q/ESC: 退出</translation>
-    </message>
-    <message>
-        <source>S: stop
-</source>
-        <translation type="obsolete">S: 停止播放
-</translation>
-    </message>
-    <message>
-        <source>R: switch aspect ratio</source>
-        <translation type="obsolete">R: 切换显示比例</translation>
-    </message>
-    <message>
-        <source>M: mute on/off
-</source>
-        <translation type="obsolete">M: 静音开关
-</translation>
-    </message>
-    <message>
-        <source>C: capture video</source>
-        <translation type="obsolete">C: 视频截图
-</translation>
-    </message>
-    <message>
-        <source>Up/Down: volume +/-
-</source>
-        <translation type="obsolete">光标上下: 音量增减
-</translation>
-    </message>
-    <message>
-        <source>-&gt;/&lt;-: seek forward/backward
-</source>
-        <translation type="obsolete">光标左右: 快退 快进
-</translation>
-    </message>
-    <message>
-        <source>Open</source>
-        <translation type="obsolete">打开</translation>
-    </message>
-    <message>
-        <source>Open Url</source>
-        <translation type="obsolete">打开 Url</translation>
-    </message>
-    <message>
-        <source>About</source>
-        <translation type="obsolete">关于</translation>
-    </message>
-    <message>
-        <source>About Qt</source>
-        <translation type="obsolete">关于 Qt</translation>
-    </message>
-</context>
-<context>
     <name>QtAV::VideoDecoderCUDA</name>
-    <message>
-        <source>Decoding surfaces.</source>
-        <translation type="vanished">解码表面</translation>
-    </message>
     <message>
         <source>Decoder flags</source>
         <translation>解码器标记</translation>
@@ -442,10 +264,6 @@
 </context>
 <context>
     <name>QtAV::VideoDecoderDXVA</name>
-    <message>
-        <source>Decoding surfaces.</source>
-        <translation type="vanished">解码表面</translation>
-    </message>
     <message>
         <source>0: auto</source>
         <translation>0: 自动</translation>
@@ -520,20 +338,8 @@
 <context>
     <name>QtAV::VideoDecoderVAAPI</name>
     <message>
-        <source>Decoding surfaces.</source>
-        <translation type="vanished">解码表面</translation>
-    </message>
-    <message>
         <source>0: auto</source>
         <translation>0: 自动</translation>
-    </message>
-    <message>
-        <source>Maybe faster if display is not GLX</source>
-        <translation type="vanished">display不是GLX可能更快</translation>
-    </message>
-    <message>
-        <source>GLX is fastest. No data copyback from gpu.</source>
-        <translation type="vanished">GLX 性能最好. 不需要从GPU拷贝数据</translation>
     </message>
     <message>
         <source>Maybe faster</source>
@@ -556,10 +362,30 @@ OSX &lt; 10.7 只支持 UYVY和YUV420P</translation>
 <context>
     <name>QtAV::VideoDecoderVideoToolbox</name>
     <message>
-        <source>Output pixel format from decoder. Performance NV12 &gt; UYVY &gt; YUV420P &gt; YUYV.
-OSX &lt; 10.7 only supports UYVY and YUV420p</source>
-        <translation>解码器输出格式。性能NV12&gt;UYVY&gt;YUV420P&gt;YUYV
-OSX &lt; 10.7 只支持 UYVY和YUV420P</translation>
+        <source>Output pixel format from decoder. Performance NV12 &gt; UYVY &gt; BGRA &gt; YUV420P &gt; YUYV.
+OSX &lt; 10.7 only supports UYVY, BGRA and YUV420p</source>
+        <translation>解码器输出的像素格式。性能NV12 &gt; UYVY &gt; BGRA &gt; YUV420P &gt; YUYV.
+OSX &lt; 10.7只支持UYVY, BGRA and YUV420p</translation>
+    </message>
+    <message>
+        <source>Interop with OpenGL</source>
+        <translation>与OpenGL交互</translation>
+    </message>
+    <message>
+        <source>CVPixelBuffer: OSX+iOS</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>CVOpenGLES: iOS, no copy, fast</source>
+        <translation>CVOpenGLES: iOS, 无拷贝, 快</translation>
+    </message>
+    <message>
+        <source>IOSurface: OSX, no copy, fast</source>
+        <translation>IOSurface: OSX, 无拷贝, 快</translation>
+    </message>
+    <message>
+        <source>Auto: choose the fastest</source>
+        <translation>Auto: 选择最快的</translation>
     </message>
 </context>
 </TS>

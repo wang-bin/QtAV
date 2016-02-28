@@ -137,10 +137,6 @@
 <context>
     <name>DecoderConfigPage</name>
     <message>
-        <source>Threads</source>
-        <translation type="obsolete">线程数</translation>
-    </message>
-    <message>
         <location filename="../config/DecoderConfigPage.cpp" line="168"/>
         <source>Video decoder config page</source>
         <translation>视频解码器配置页</translation>
@@ -170,10 +166,6 @@
         <location filename="../config/DecoderConfigPage.cpp" line="226"/>
         <source>Down</source>
         <translation>下</translation>
-    </message>
-    <message>
-        <source>Decoders</source>
-        <translation type="obsolete">解码器</translation>
     </message>
 </context>
 <context>
@@ -228,11 +220,6 @@
         <translation>F: 全屏切换</translation>
     </message>
     <message>
-        <source>I: switch video display quality
-</source>
-        <translation type="obsolete">I: 视频图像质量切换</translation>
-    </message>
-    <message>
         <location filename="../EventFilter.cpp" line="97"/>
         <source>T: stays on top on/off
 </source>
@@ -275,10 +262,6 @@
         <translation>S：停止</translation>
     </message>
     <message>
-        <source>R: switch aspect ratio</source>
-        <translation type="obsolete">R: 切换比例</translation>
-    </message>
-    <message>
         <location filename="../EventFilter.cpp" line="104"/>
         <source>R: rotate 90</source>
         <translation>R: 旋转90度</translation>
@@ -314,36 +297,28 @@
     </message>
     <message>
         <location filename="../EventFilter.cpp" line="110"/>
-        <location filename="../EventFilter.cpp" line="315"/>
+        <location filename="../EventFilter.cpp" line="326"/>
         <source>Help</source>
         <translation>帮助</translation>
     </message>
     <message>
-        <location filename="../EventFilter.cpp" line="311"/>
+        <location filename="../EventFilter.cpp" line="322"/>
         <source>Open</source>
         <translation>打开</translation>
     </message>
     <message>
-        <location filename="../EventFilter.cpp" line="312"/>
+        <location filename="../EventFilter.cpp" line="323"/>
         <source>Open Url</source>
         <translation>打开 Url</translation>
     </message>
     <message>
-        <location filename="../EventFilter.cpp" line="314"/>
+        <location filename="../EventFilter.cpp" line="325"/>
         <source>About</source>
         <translation>关于</translation>
-    </message>
-    <message>
-        <source>About Qt</source>
-        <translation type="vanished">关于 Qt</translation>
     </message>
 </context>
 <context>
     <name>MainWindow</name>
-    <message>
-        <source>Click black area to use shortcut(see right click menu)</source>
-        <translation type="obsolete">点击黑色区域以使用快捷键(见右键菜单)</translation>
-    </message>
     <message>
         <location filename="../MainWindow.cpp" line="227"/>
         <source>Current time</source>
@@ -376,12 +351,12 @@
         <translation>截图</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1404"/>
+        <location filename="../MainWindow.cpp" line="1421"/>
         <source>Capture video frame</source>
         <translation>视频截图</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1405"/>
+        <location filename="../MainWindow.cpp" line="1422"/>
         <source>Save to</source>
         <translation>保存至</translation>
     </message>
@@ -391,17 +366,9 @@
         <translation>打开 Url</translation>
     </message>
     <message>
-        <source>Online channels</source>
-        <translation type="obsolete">在线频道</translation>
-    </message>
-    <message>
         <location filename="../MainWindow.cpp" line="313"/>
         <source>Setup</source>
         <translation>设置</translation>
-    </message>
-    <message>
-        <source>Report</source>
-        <translation type="obsolete">反馈</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="310"/>
@@ -410,13 +377,9 @@
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="311"/>
-        <location filename="../MainWindow.cpp" line="1071"/>
+        <location filename="../MainWindow.cpp" line="1076"/>
         <source>Help</source>
         <translation>帮助</translation>
-    </message>
-    <message>
-        <source>About Qt</source>
-        <translation type="vanished">关于 Qt</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="318"/>
@@ -438,18 +401,6 @@
         <location filename="../MainWindow.cpp" line="339"/>
         <source>infinity</source>
         <translation>无限</translation>
-    </message>
-    <message>
-        <source>No</source>
-        <translation type="obsolete">否</translation>
-    </message>
-    <message>
-        <source>Single</source>
-        <translation type="obsolete">单个</translation>
-    </message>
-    <message>
-        <source>All</source>
-        <translation type="obsolete">所有</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="341"/>
@@ -514,7 +465,7 @@
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="459"/>
-        <location filename="../MainWindow.cpp" line="1173"/>
+        <location filename="../MainWindow.cpp" line="1178"/>
         <source>Aspect ratio</source>
         <translation>比例</translation>
     </message>
@@ -560,10 +511,6 @@
         <translation>字幕</translation>
     </message>
     <message>
-        <source>Depends on</source>
-        <translation type="obsolete">依赖</translation>
-    </message>
-    <message>
         <location filename="../MainWindow.cpp" line="398"/>
         <source>Auto load</source>
         <translation>自动加载</translation>
@@ -572,10 +519,6 @@
         <location filename="../MainWindow.cpp" line="422"/>
         <source>Charset</source>
         <translation>字符集</translation>
-    </message>
-    <message>
-        <source>Auto Detect</source>
-        <translation type="obsolete">自动检测</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="429"/>
@@ -633,13 +576,13 @@
         <translation>渲染引擎</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="579"/>
+        <location filename="../MainWindow.cpp" line="578"/>
         <source>Open an external audio track</source>
         <translation>打开外部音轨</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="150"/>
-        <location filename="../MainWindow.cpp" line="614"/>
+        <location filename="../MainWindow.cpp" line="613"/>
         <source>not availabe on your platform!</source>
         <translation>你的平台上不可使用!</translation>
     </message>
@@ -649,78 +592,78 @@
         <translation>视频渲染器为</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="637"/>
+        <location filename="../MainWindow.cpp" line="636"/>
         <source>Can not use this renderer</source>
         <translation>无法使用该渲染器</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="755"/>
+        <location filename="../MainWindow.cpp" line="754"/>
         <source>Open a media file</source>
         <translation>打开媒体文件</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1076"/>
+        <location filename="../MainWindow.cpp" line="1081"/>
         <source>Open an url</source>
         <translation>打开 url</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1076"/>
+        <location filename="../MainWindow.cpp" line="1081"/>
         <source>Url</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1108"/>
-        <location filename="../MainWindow.cpp" line="1127"/>
+        <location filename="../MainWindow.cpp" line="1113"/>
+        <location filename="../MainWindow.cpp" line="1132"/>
         <source>External</source>
         <translation>外挂</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1282"/>
+        <location filename="../MainWindow.cpp" line="1287"/>
         <source>Player error</source>
         <translation>播放错误</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1295"/>
+        <location filename="../MainWindow.cpp" line="1300"/>
         <source>No media</source>
         <translation>无媒体</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1298"/>
+        <location filename="../MainWindow.cpp" line="1303"/>
         <source>Invalid meida</source>
         <translation>无效媒体</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1301"/>
+        <location filename="../MainWindow.cpp" line="1306"/>
         <source>Buffering...</source>
         <translation>缓冲中...</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1304"/>
+        <location filename="../MainWindow.cpp" line="1309"/>
         <source>Buffered</source>
         <translation>已缓冲</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1307"/>
+        <location filename="../MainWindow.cpp" line="1312"/>
         <source>Loading...</source>
         <translation>加载中...</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1310"/>
+        <location filename="../MainWindow.cpp" line="1315"/>
         <source>Loaded</source>
         <translation>已加载</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1313"/>
+        <location filename="../MainWindow.cpp" line="1318"/>
         <source>Stalled</source>
         <translation>停止</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1407"/>
+        <location filename="../MainWindow.cpp" line="1424"/>
         <source>Format</source>
         <translation>格式</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="1492"/>
+        <location filename="../MainWindow.cpp" line="1501"/>
         <source>Open a subtitle file</source>
         <translation>打开字幕文件</translation>
     </message>
@@ -799,7 +742,12 @@
         <translation>需要重新启动播放器</translation>
     </message>
     <message>
-        <location filename="../config/MiscPage.cpp" line="92"/>
+        <location filename="../config/MiscPage.cpp" line="93"/>
+        <source>Currently only works for Qt&gt;=5.5 XCB build</source>
+        <translation>目前需要Qt&gt;=5.5 XCB支持</translation>
+    </message>
+    <message>
+        <location filename="../config/MiscPage.cpp" line="109"/>
         <source>Misc</source>
         <translation>杂项</translation>
     </message>
@@ -887,10 +835,6 @@
         <translation></translation>
     </message>
     <message>
-        <source>Average frame rate</source>
-        <translation type="obsolete">平均帧率</translation>
-    </message>
-    <message>
         <location filename="../StatisticsView.cpp" line="48"/>
         <source>Frames</source>
         <translation>帧数</translation>
@@ -966,14 +910,6 @@
         <location filename="../StatisticsView.cpp" line="147"/>
         <source>Audio</source>
         <translation>音频</translation>
-    </message>
-    <message>
-        <source>Software</source>
-        <translation type="obsolete">软解</translation>
-    </message>
-    <message>
-        <source>Hardware</source>
-        <translation type="obsolete">硬解</translation>
     </message>
 </context>
 <context>
