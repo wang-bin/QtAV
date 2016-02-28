@@ -47,6 +47,19 @@ lib_name() {
       echo lib${lib_base}.so.${lib_ver}
     fi
 }
+libd_name() {
+  local lib_base=$1
+  local lib_ver=$2
+    if host_is Darwin; then
+      echo lib${lib_base}_debug.${lib_ver}.dylib
+    elif host_is MinGW; then
+      echo ${lib_base}d${lib_ver}.dll
+    elif host_is MSYS; then
+      echo ${lib_base}d${lib_ver}.dll
+    else
+      echo lib${lib_base}.so.${lib_ver}
+    fi
+}
 qt5lib_name() {
   local m=$1
     if host_is Darwin; then
@@ -71,6 +84,7 @@ cp -af packages $TARGET
 mkdir -p $TARGET/packages/com.qtav.product.runtime/data/bin/{plugins,qml}
 mkdir -p $TARGET/packages/com.qtav.product.player/data/bin
 mkdir -p $TARGET/packages/com.qtav.product.examples/data/bin
+mkdir -p $TARGET/packages/com.qtav.product.dev/data/bin/QtAV
 mkdir -p $TARGET/packages/com.qtav.product.dev/data/include
 mkdir -p $TARGET/packages/com.qtav.product.dev/data/lib
 mkdir -p $TARGET/packages/com.qtav.product/data/
@@ -80,8 +94,9 @@ mkdir -p $TARGET/packages/com.qtav.product/data/
 echo "coping runtime files..."
 RT_DIR=$TARGET/packages/com.qtav.product.runtime
 declare -a QTMODULES=(Core Gui OpenGL Widgets Qml Quick Network Svg) #TODO: use readelf, objdump or otool to get depends
-host_is Linux && QTMODULES+=(DBus)
+host_is Linux && QTMODULES+=(DBus XcbQpa X11Extras)
 cp -af $BUILD/bin/* $RT_DIR/data/bin
+rm -rf $RT_DIR/data/bin/QtAV*d${QTAV_VER_MAJOR}.*
 cat > $RT_DIR/data/bin/qt.conf <<EOF
 [Paths]
 Prefix=.
@@ -103,37 +118,41 @@ done
 
 QTPLUGIN=`qmake -query QT_INSTALL_PLUGINS`
 QTQML=`qmake -query QT_INSTALL_QML`
-cp -af $QTPLUGIN/{imageformats,platform*} $RT_DIR/data/bin/plugins
+for qplugin in imageformats platforms platforminputcontexts platformthemes xcbglintegrations iconengines egldeviceintegrations generic; do
+  test -d $QTPLUGIN/$qplugin && cp -af $QTPLUGIN/$qplugin $RT_DIR/data/bin/plugins
+done
 # find dir -name "*d.dll" -o -name "*.pdb" -delete fail, why?
 cp -af $QTQML/{Qt,QtQml,QtQuick,QtQuick.2} $RT_DIR/data/bin/qml
 rm -f $RT_DIR/data/bin/plugins/platforms/{*mini*,*offscreen*,*eglfs*,*linuxfb*,*kms*}
 rm -f $RT_DIR/data/bin/plugins/imageformats/{*dds*,*icns*,*tga*,*tiff*,*wbmp*,*webp*}
-find $RT_DIR/data/bin -name "*.pdb" -delete
+find $RT_DIR/data/bin/plugins -name "*.pdb" -delete
+find $RT_DIR/data/bin/qml -name "*.pdb" -delete
 find $RT_DIR/data/bin/qml -name "*plugind.dll" -delete
 find $RT_DIR/data/bin/plugins -name "*d.dll" -delete #qml: *plugind.dll
 find $RT_DIR/data/bin -name "*.exp" -delete
 find $RT_DIR/data/bin -name "*.lib" -delete
 
 ##ffmpegs
-## QtAV, Qt5AV
+## QtAV, Qt5AV. TODO: debug
 LIBQTAV=$LIBDIR/`lib_name "Qt*AV" ${QTAV_VER_MAJOR}`
 echo "LIBQTAV=$LIBQTAV"
 cp -Lf $LIBQTAV $RT_DIR/data/bin
 LIBQTAVWIDGETS=$LIBDIR/`lib_name "Qt*AVWidgets" ${QTAV_VER_MAJOR}`
 echo "LIBQTAVWIDGETS=$LIBQTAVWIDGETS"
 cp -Lf $LIBQTAVWIDGETS $RT_DIR/data/bin
-
+ls $RT_DIR/data/bin/QtAV*
 # delete prl to avoid link error for sdk user
 find $RT_DIR -name "QtAV*.prl" -exec rm -f {} \;
 
 
 ### dev
 echo "coping development files..."
+cp -aLf $LIBDIR/../bin/QtAV*d${QTAV_VER_MAJOR}.* $TARGET/packages/com.qtav.product.dev/data/bin
 cp -af ../../src/QtAV $TARGET/packages/com.qtav.product.dev/data/include
 cp -af ../../widgets/QtAVWidgets $TARGET/packages/com.qtav.product.dev/data/include
 #cp -af ../../qml/QmlAV $TARGET/packages/com.qtav.product.dev/data/include
 cp -af $BUILD/tools/install_sdk/mkspecs $TARGET/packages/com.qtav.product.dev/data
-cp -af ../../{README.md,lgpl-2.1.txt,gpl-3.0.txt,doc} $TARGET/packages/com.qtav.product/data
+cp -af ../../{README.md,lgpl-2.1.txt,doc} $TARGET/packages/com.qtav.product/data
 
 # copy qml files for simplify deployment sdk
 cd $TARGET/packages/com.qtav.product.dev/data
@@ -146,6 +165,8 @@ elif [ -d $RT_DIR/data/bin/qml/QtAV ]; then
   cp -af $RT_DIR/data/bin/qml/QtAV qml
 fi
 cd -
+rm -rf $RT_DIR/data/bin/QtAV/QmlAVd*
+
 pwd
 echo "coping libs..."
 #mingw: libQt5AV1.a
@@ -160,6 +181,10 @@ cp -af $LIBDIR/*Qt*AV* .
 [ -f libQtAV${QTAV_VER_MAJOR}.a ] && ln -sf libQtAV${QTAV_VER_MAJOR}.a libQt5AV.a
 [ -f QtAVWidgets${QTAV_VER_MAJOR}.lib ] && cp -af QtAVWidgets${QTAV_VER_MAJOR}.lib Qt5AVWidgets.lib
 [ -f libQtAVWidgets${QTAV_VER_MAJOR}.a ] && ln -sf libQtAVWidgets${QTAV_VER_MAJOR}.a libQt5AVWidgets.a
+[ -f QtAVd${QTAV_VER_MAJOR}.lib ] && cp -af QtAVd${QTAV_VER_MAJOR}.lib Qt5AVd.lib
+[ -f libQtAVd${QTAV_VER_MAJOR}.a ] && ln -sf libQtAVd${QTAV_VER_MAJOR}.a libQt5AVd.a
+[ -f QtAVWidgetsd${QTAV_VER_MAJOR}.lib ] && cp -af QtAVWidgetsd${QTAV_VER_MAJOR}.lib Qt5AVWidgetsd.lib
+[ -f libQtAVWidgetsd${QTAV_VER_MAJOR}.a ] && ln -sf libQtAVWidgetsd${QTAV_VER_MAJOR}.a libQt5AVWidgetsd.a
 rm -f {*.dll,*.prl,*.exp}
 [ -f libQtAV.so ] && ln -sf libQtAV.so libQt5AV.so
 [ -f libQtAVWidgets.so ] && ln -sf libQtAVWidgets.so libQt5AVWidgets.so
@@ -183,7 +208,7 @@ mv $RT_DIR/data/bin/{player${EXE},QMLPlayer${EXE}} $TARGET/packages/com.qtav.pro
 ### examples
 echo "coping examples..."
 EXAMPLE_DIR=$TARGET/packages/com.qtav.product.examples
-mv `find $RT_DIR/data/bin/* -maxdepth 0 -type f |grep -v "\.so" |grep -v "\.dylib" |grep -v "\.conf" |grep -v "\.dll"` $EXAMPLE_DIR/data/bin
+mv `find $RT_DIR/data/bin/* -maxdepth 0 -type f |grep -v "\.so" |grep -v "\.dylib" |grep -v "\.conf" |grep -v "\.dll" |grep -v "\.pdb"` $EXAMPLE_DIR/data/bin
 
 if host_is Linux; then
 echo "patch elf runpath..."

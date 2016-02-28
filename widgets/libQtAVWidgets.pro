@@ -29,7 +29,7 @@ QTAVSRC=$$PROJECTROOT/src
     RC_ICONS = $$PROJECTROOT/src/QtAV.ico
     QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
     QMAKE_TARGET_DESCRIPTION = "QtAVWidgets module. QtAV Multimedia framework. http://qtav.org"
-    QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2015 WangBin, wbsecg1@gmail.com"
+    QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2016 WangBin, wbsecg1@gmail.com"
     QMAKE_TARGET_PRODUCT = "QtAV Widgets"
 } else:win32 {
     RC_FILE = QtAVWidgets.rc
@@ -74,7 +74,7 @@ SOURCES *= \
 contains(QT_CONFIG, opengl):greaterThan(QT_MAJOR_VERSION, 4) {
   SDK_HEADERS *= QtAVWidgets/OpenGLWidgetRenderer.h
   SOURCES *= $$QTAVSRC/output/video/OpenGLWidgetRenderer.cpp
-  lessThan(QT_MINOR_VERSION, 4) {
+  isEqual(QT_MAJOR_VERSION, 5):lessThan(QT_MINOR_VERSION, 4) {
     SDK_HEADERS *= QtAVWidgets/QOpenGLWidget.h
     SOURCES *= QOpenGLWidget.cpp
   }

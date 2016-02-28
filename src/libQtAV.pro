@@ -332,7 +332,7 @@ config_openglwindow {
 }
 config_libass {
 #link against libass instead of dynamic load
-  !capi|android|ios|config_libass_link {
+  !capi|winrt|android|ios|config_libass_link {
     LIBS += -lass #-lfribidi -lfontconfig -lxml2 -lfreetype -lharfbuzz -lz
     DEFINES += CAPI_LINK_ASS
   }
@@ -366,7 +366,7 @@ winrt {
 glibc_compat: *linux*: LIBS += -lrt  # do not use clock_gettime in libc, GLIBC_2.17 is not available on old system
 static_ffmpeg {
 # libs needed by mac static ffmpeg. corefoundation: vda, avdevice
-  mac|ios: LIBS += -liconv -lbz2 -lz -framework CoreFoundation  -Wl,-framework,Security
+  mac|ios: LIBS += -liconv -lbz2 -llzma -lz -framework CoreFoundation  -Wl,-framework,Security
   win32: LIBS *= -lws2_32 -lstrmiids -lvfw32 -luuid
   !mac:*g++* {
     LIBS *= -lz

@@ -37,7 +37,6 @@
 #include <QtAV/AudioOutput.h>
 #include <QtAV/VideoCapture.h>
 #include <QtAV/VideoRenderer.h>
-#include "filters/OSDFilter.h"
 
 using namespace QtAV;
 
@@ -131,6 +130,9 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         int key = key_event->key();
         Qt::KeyboardModifiers modifiers = key_event->modifiers();
         switch (key) {
+        case Qt::Key_0:
+            player->seek(0LL);
+            break;
         case Qt::Key_C: //capture
             player->videoCapture()->capture();
             break;
@@ -276,16 +278,24 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
     case QEvent::DragEnter:
     case QEvent::DragMove: {
         QDropEvent *e = static_cast<QDropEvent*>(event);
-        e->acceptProposedAction();
+        if (e->mimeData()->hasUrls())
+            e->acceptProposedAction();
+        else
+            e->ignore();
     }
         break;
     case QEvent::Drop: {
         QDropEvent *e = static_cast<QDropEvent*>(event);
-        QString path = e->mimeData()->urls().first().toLocalFile();
-        player->stop();
-        player->load(path);
-        player->play();
-        e->acceptProposedAction();
+        if (e->mimeData()->hasUrls()) {
+            QString path = e->mimeData()->urls().first().toLocalFile();
+            player->stop();
+            player->load(path);
+            player->play();
+            e->acceptProposedAction();
+        } else {
+            e->ignore();
+        }
+
     }
         break;
     case QEvent::GraphicsSceneContextMenu: {

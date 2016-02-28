@@ -22,7 +22,7 @@ BEGIN
             VALUE "CompanyName", "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
             VALUE "FileDescription", "QtAV Multimedia framework. http://qtav.org"
             VALUE "FileVersion", QTAV_VERSION_STR ".0"
-            VALUE "LegalCopyright", "Copyright (C) 2012-2015 WangBin, wbsecg1@gmail.com"
+            VALUE "LegalCopyright", "Copyright (C) 2012-2016 WangBin, wbsecg1@gmail.com"
             VALUE "InternalName", "QtAV"
             VALUE "OriginalFilename", "QtAV.dll"
             VALUE "ProductName", "QtAV"

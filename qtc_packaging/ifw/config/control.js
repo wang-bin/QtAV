@@ -15,7 +15,12 @@ function Controller()
     })
 }
 
-
+Controller.prototype.LicenseAgreementPageCallback = function()
+{
+    var w = gui.currentPageWidget()
+    if (w != null)
+        w.AcceptLicenseRadioButton.checked = true
+}
 /*
 Controller.prototype.PerformInstallationPageCallback() {
     if (installer.isInstaller()) {

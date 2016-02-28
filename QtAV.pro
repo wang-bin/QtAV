@@ -35,9 +35,10 @@ OTHER_FILES += \
 	templates/final.h templates/final.cpp
 #OTHER_FILES += config.test/mktest.sh
 EssentialDepends = avutil avcodec avformat swscale
+winrt: CONFIG *= no-avdevice no-openal no-portaudio no-dsound no-gdiplus
 OptionalDepends = swresample avresample
 !no-avfilter: OptionalDepends *= avfilter
-!winrt:!android:!no-avdevice: OptionalDepends *= avdevice
+!no-avdevice: OptionalDepends *= avdevice
 # QtOpenGL module. In Qt5 we can disable it and still have opengl support
 contains(QT_CONFIG, opengl):!no-gl:!no-widgets {
   greaterThan(QT_MAJOR_VERSION, 4):qtHaveModule(opengl):!config_gl {
@@ -48,7 +49,8 @@ contains(QT_CONFIG, opengl):!no-gl:!no-widgets {
   }
 }
 ## sse2 sse4_1 may be defined in Qt5 qmodule.pri but is not included. Qt4 defines sse and sse2
-!no-sse4_1:!sse4_1: OptionalDepends *= sse4_1
+#configure.prf always use simulator
+!iphoneos:!no-sse4_1:!sse4_1: OptionalDepends *= sse4_1
 # no-xxx can set in $$PWD/user.conf
 !no-openal:!mac:!ios: OptionalDepends *= openal #FIXME: ios openal header not found in qtCompileTest but fine if manually make
 !no-libass: OptionalDepends *= libass
@@ -58,10 +60,8 @@ win32 {
   !no-xaudio2: OptionalDepends *= xaudio2
   !no-direct2d:!no-widgets: OptionalDepends *= direct2d
   !no-dxva: OptionalDepends *= dxva
-  !winrt: {
-    !no-dsound: OptionalDepends *= dsound
-    !no-gdiplus:!no-widgets: OptionalDepends *= gdiplus
-  }
+  !no-dsound: OptionalDepends *= dsound
+  !no-gdiplus:!no-widgets: OptionalDepends *= gdiplus
 }
 unix:!mac {
   !android {

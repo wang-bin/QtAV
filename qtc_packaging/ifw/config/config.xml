@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
  <Installer>
      <Name>QtAV</Name>
-     <Version>1.9.0</Version>
+     <Version>1.10.0</Version>
      <Title>QtAV Multimedia framework</Title>
      <Publisher>WangBin wbsecg1@gmail.com</Publisher>
      <ProductUrl>http://qtav.org</ProductUrl>
-     <Logo></Logo>
+     <Logo>../../src/QtAV.png</Logo>
+     <InstallerApplicationIcon>../../src/QtAV</InstallerApplicationIcon>
+     <InstallerWindowIcon>../../src/QtAV.png</InstallerWindowIcon>
      <Watermark></Watermark>
      <ControlScript>control.js</ControlScript>
      <RunProgramDescription></RunProgramDescription>
@@ -14,4 +16,9 @@
      <StartMenuDir>QtAV</StartMenuDir>
      <TargetDir>@rootDir@/QtAV</TargetDir>
      <AdminTargetDir>@rootDir@/QtAV</AdminTargetDir>
+     <RepositorySettingsPageVisible>false</RepositorySettingsPageVisible>
+     <Translations>
+        <Translation>zh_CN.qm</Translation>
+     </Translations>
  </Installer>
+ <!--https://github.com/MBach/Miam-Player/blob/master/windows/config/config.xml-->
