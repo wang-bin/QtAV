@@ -8,10 +8,14 @@ Page {
     signal subtitleChanged(string file)
     signal subtitleTrackChanged(int track)
     property var supportedFormats: ["ass" , "ssa"]
-    height: titleHeight + tracksMenu.height + 6*Utils.kItemHeight + engine.contentHeight + Utils.kSpacing*5
     property var internalSubtitleTracks : "unkown"
-    Column {
+    height: Math.min(maxHeight, scroll.contentHeight)
+    Flickable {
+        id: scroll
         anchors.fill: content
+        contentHeight: titleHeight + tracksMenu.height + 6*Utils.kItemHeight + engine.contentHeight + Utils.kSpacing*5
+    Column {
+        anchors.fill: parent
         spacing: Utils.kSpacing
         Row {
             width: parent.width
@@ -332,6 +336,7 @@ Page {
             }
         }
     }
+    } //Flickable
 
     onInternalSubtitleTracksChanged: updateTracksMenu()
     function updateTracksMenu() {

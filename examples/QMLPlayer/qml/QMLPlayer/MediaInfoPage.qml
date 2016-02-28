@@ -4,8 +4,10 @@ import "utils.js" as Utils
 Page {
     id: root
     title: qsTr("Media Information")
+    height: Math.min(maxHeight, scroll.contentHeight)
     property var information: "unknow" //let it be defined
-    Item {
+    Flickable {
+        id: scroll
         anchors.fill: content
         Text {
             id: info
@@ -14,7 +16,7 @@ Page {
             font.pixelSize: Utils.kFontSize
             anchors.fill: parent
             onContentSizeChanged: {
-                root.height = contentHeight + Utils.scaled(64)
+                scroll.contentHeight = contentHeight + Utils.scaled(32)
             }
         }
     }

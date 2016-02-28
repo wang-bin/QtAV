@@ -8,7 +8,8 @@ Rectangle {
     focus: true
     property alias title: title.text
     property alias content: content
-    property int titleHeight: title.height + 2*Utils.kMargin
+    property real titleHeight: title.height + 2*Utils.kMargin
+    property real maxHeight: Utils.scaled(300)
 
     Text {
         id: title
@@ -53,7 +54,7 @@ Rectangle {
     // TODO: why must put here otherwise can't clicked?
     Button {
         anchors.top: parent.top
-        anchors.left: parent.left
+        anchors.right: parent.right
         width: Utils.scaled(20)
         height: Utils.scaled(20)
         bgColor: "transparent"

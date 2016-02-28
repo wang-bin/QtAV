@@ -3,10 +3,13 @@ import "utils.js" as Utils
 
 Page {
     title: qsTr("Misc")
-    height: titleHeight + (7+glSet.visible*4)*Utils.kItemHeight + detail.contentHeight + 5*Utils.kSpacing
-
-    Column {
+    height: Math.min(maxHeight, scroll.contentHeight)
+    Flickable {
+        id: scroll
         anchors.fill: content
+        contentHeight: titleHeight + (7+glSet.visible*4)*Utils.kItemHeight + detail.contentHeight + 5*Utils.kSpacing
+    Column {
+        anchors.fill: parent
         spacing: Utils.kSpacing
         Button {
             text: qsTr("Reset all")
@@ -156,7 +159,7 @@ Page {
                 horizontalAlignment: Text.AlignHCenter
                 verticalAlignment: Text.AlignVCenter
                 wrapMode: Text.WrapAnywhere
-                text: "Log level\nDeveloper only"
+                text: "Log level\n" + qsTr("Developer only")
             }
             Menu {
                 id: logMenu
@@ -237,5 +240,6 @@ Page {
             if (glSet.visible)
                 glMenu.updateUi()
         }
+    }
     }
 }

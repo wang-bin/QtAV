@@ -12,10 +12,14 @@ Page {
     property var internalAudioTracks : "unkown"
     property var externalAudioTracks : "unkown"
     property alias isExternal: externalCheck.checked
-    height: titleHeight + channelLabel.height + (channels.visible ? channels.contentHeight : 0)
-            + Utils.kItemHeight + trackLabel.height + tracksMenu.contentHeight + Utils.kSpacing*5
-    Column {
+    height: Math.min(maxHeight, scroll.contentHeight)
+    Flickable {
+        id: scroll
         anchors.fill: content
+        contentHeight: titleHeight + channelLabel.height + (channels.visible ? channels.contentHeight : 0)
+                       + Utils.kItemHeight + trackLabel.height + tracksMenu.contentHeight + Utils.kSpacing*5
+    Column {
+        anchors.fill: parent
         spacing: Utils.kSpacing
         Text {
             id: channelLabel
@@ -90,6 +94,8 @@ Page {
             }
         }
     }
+    } //Flickable
+
     Component.onCompleted: {
         channelModel.append({name: qsTr("Stereo"), value: MediaPlayer.Stereo })
         channelModel.append({name: qsTr("Mono"), value: MediaPlayer.Mono })

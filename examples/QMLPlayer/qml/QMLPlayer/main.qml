@@ -353,11 +353,12 @@ Rectangle {
     Item {
         id: configPage
         anchors.right: configPanel.left
-        anchors.rightMargin: 10
+        anchors.rightMargin: -configPanel.anchors.rightMargin*Utils.scaled(20)/configPanel.width
         //anchors.bottom: control.top
         y: Math.max(0, Math.min(configPanel.selectedY, root.height - pageLoader.height - control.height))
-        width: parent.width < 4*configPanel.width ? parent.width - configPanel.width : parent.width/2 + configPanel.width
-        height: Utils.scaled(200)
+        width: parent.width < 4*configPanel.width ? parent.width - configPanel.width : parent.width/2 + configPanel.width -16
+       // height: maxHeight
+        readonly property real maxHeight: control.y //- Math.max(0, configPanel.selectedY)
         Loader {
             id: pageLoader
             anchors.right: parent.right
@@ -366,6 +367,7 @@ Rectangle {
             onLoaded: {
                 if (!item)
                     return
+                item.maxHeight = configPage.maxHeight
                 if (item.information) {
                     item.information = {
                         source: player.source,
@@ -479,7 +481,7 @@ Rectangle {
     Dialog {
         id: urlDialog
         standardButtons: StandardButton.Open | StandardButton.Cancel
-        title: qsTr("Open a url")
+        title: qsTr("Open a URL")
         Rectangle {
             color: "black"
             anchors.top: parent.top
