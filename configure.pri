@@ -112,7 +112,8 @@ defineTest(qtCompileTest) {
   }
     # Disable qmake features which are typically counterproductive for tests
     qmake_configs = "\"CONFIG -= qt debug_and_release app_bundle lib_bundle\""
-
+    iphoneos: qmake_configs += "\"CONFIG+=iphoneos\""
+    iphonesimulator: qmake_configs += "\"CONFIG+=iphonesimulator\""
     # Clean up after previous run
     exists($$test_out_dir/Makefile):qtRunLoggedCommand("$$test_cmd_base $$QMAKE_MAKE distclean")
 

@@ -176,9 +176,9 @@ defineReplace(qtSharedLib) {
 }
 
 defineReplace(qtLongName) {
-	unset(LONG_NAME)
-		LONG_NAME = $$1$${_OS}_$${TARGET_ARCH}$${_EXTRA}
-	return($$LONG_NAME)
+  unset(LONG_NAME)
+  LONG_NAME = $$1$${_OS}_$$join(TARGET_ARCH,+)$${_EXTRA}
+  return($$LONG_NAME)
 }
 
 defineTest(empty_file) {

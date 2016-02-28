@@ -59,7 +59,7 @@ RESOURCES += QtAV.qrc \
     RC_ICONS = QtAV.ico
     QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
     QMAKE_TARGET_DESCRIPTION = "QtAV Multimedia framework. http://qtav.org"
-    QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2015 WangBin, wbsecg1@gmail.com"
+    QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2016 WangBin, wbsecg1@gmail.com"
     QMAKE_TARGET_PRODUCT = "QtAV"
 } else:win32 {
     RC_FILE = QtAV.rc
@@ -101,7 +101,7 @@ win32-msvc2010|win32-msvc2008: QMAKE_LFLAGS *= /DEBUG #workaround for CoInitiali
 #UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
 DEFINES += __STDC_CONSTANT_MACROS
 android {
-  CONFIG += config_opensl
+  CONFIG *= config_opensl
   !no_gui_private:qtHaveModule(androidextras) { #qt5.2 has QAndroidJniObject
     QT *= androidextras gui-private #QPlatformNativeInterface get "QtActivity"
     SOURCES *= io/AndroidIO.cpp
@@ -162,6 +162,7 @@ config_ipp {
     #omp for static link. _t is multi-thread static link
 }
 mac|ios {
+  CONFIG *= config_openal
   SOURCES += output/audio/AudioOutputAudioToolbox.cpp
   LIBS += -framework AudioToolbox
 }
@@ -242,7 +243,7 @@ include(../depends/dllapi/src/libdllapi.pri)
         DEFINES += CUDA_LINK
         INCLUDEPATH += $$(CUDA_PATH)/include
         LIBS += -L$$(CUDA_PATH)/lib
-        isEqual(TARGET_ARCH, x86): LIBS += -L$$(CUDA_PATH)/lib/Win32
+        contains(TARGET_ARCH, x86): LIBS += -L$$(CUDA_PATH)/lib/Win32
         else: LIBS += -L$$(CUDA_PATH)/lib/x64
         LIBS += -lnvcuvid -lcuda
     }

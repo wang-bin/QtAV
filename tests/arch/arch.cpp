@@ -1,110 +1,118 @@
-/****************************************************************************
-**
-** Copyright (C) 2013 Digia Plc and/or its subsidiary(-ies).
-** Copyright (C) 2012 Intel Corporation
-** Contact: http://www.qt-project.org/legal
-**
-** This file is part of the FOO module of the Qt Toolkit.
-**
-** $QT_BEGIN_LICENSE:LGPL$
-** Commercial License Usage
-** Licensees holding valid commercial Qt licenses may use this file in
-** accordance with the commercial license agreement provided with the
-** Software or, alternatively, in accordance with the terms contained in
-** a written agreement between you and Digia.  For licensing terms and
-** conditions see http://qt.digia.com/licensing.  For further information
-** use the contact form at http://qt.digia.com/contact-us.
-**
-** GNU Lesser General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU Lesser
-** General Public License version 2.1 as published by the Free Software
-** Foundation and appearing in the file LICENSE.LGPL included in the
-** packaging of this file.  Please review the following information to
-** ensure the GNU Lesser General Public License version 2.1 requirements
-** will be met: http://www.gnu.org/licenses/old-licenses/lgpl-2.1.html.
-**
-** In addition, as a special exception, Digia gives you certain additional
-** rights.  These rights are described in the Digia Qt LGPL Exception
-** version 1.1, included in the file LGPL_EXCEPTION.txt in this package.
-**
-** GNU General Public License Usage
-** Alternatively, this file may be used under the terms of the GNU
-** General Public License version 3.0 as published by the Free Software
-** Foundation and appearing in the file LICENSE.GPL included in the
-** packaging of this file.  Please review the following information to
-** ensure the GNU General Public License version 3.0 requirements will be
-** met: http://www.gnu.org/copyleft/gpl.html.
-**
-**
-** $QT_END_LICENSE$
-**
-****************************************************************************/
+/******************************************************************************
+    QtAV:  Media play library based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+
+*   This file is part of QtAV
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+******************************************************************************/
+// change from qtbase/config.tests/arch/arch.cpp
 
 #define QGLOBAL_H
 #include "qprocessordetection.h"
 
 /* vc: arm, mips, sh, x86, x86_64, ia64*/
 #if defined(Q_PROCESSOR_ALPHA)
-#warning "ARCH=alpha"
-#elif defined(Q_PROCESSOR_ARM_32)
+#warning "ARCH*=alpha"
+#define ARCH_DETECTED
+#endif
+#if defined(Q_PROCESSOR_ARM_32)
 #ifdef _MSC_VER
-#pragma message ("ARCH=arm")
+#pragma message ("ARCH*=arm")
 #else
-#warning "ARCH=arm"
+#warning "ARCH*=arm"
 #endif /*_MSC_VER*/
-#elif defined(Q_PROCESSOR_ARM_64)
+#define ARCH_DETECTED
+#endif
+#if defined(Q_PROCESSOR_ARM_64)
 #ifdef _MSC_VER
-#pragma message ("ARCH=arm64")
+#pragma message ("ARCH*=arm64")
 #else
-#warning "ARCH=arm64"
+#warning "ARCH*=arm64"
 #endif /*_MSC_VER*/
-#elif defined(Q_PROCESSOR_ARM)
+#define ARCH_DETECTED
+#endif
+#if defined(Q_PROCESSOR_ARM)
 #ifdef _MSC_VER
-#pragma message ("ARCH=arm")
+#pragma message ("ARCH*=arm")
 #else
-#warning "ARCH=arm"
+#warning "ARCH*=arm"
 #endif /*_MSC_VER*/
-#elif defined(Q_PROCESSOR_AVR32)
-#warning "ARCH=avr32"
-#elif defined(Q_PROCESSOR_BLACKFIN)
-#warning "ARCH=bfin"
-#elif defined(Q_PROCESSOR_X86_32)
+#define ARCH_DETECTED
+#endif
+#if defined(Q_PROCESSOR_AVR32)
+#warning "ARCH*=avr32"
+#define ARCH_DETECTED
+#endif
+#if defined(Q_PROCESSOR_BLACKFIN)
+#warning "ARCH*=bfin"
+#define ARCH_DETECTED
+#endif
+#if defined(Q_PROCESSOR_X86_32)
 #ifdef _MSC_VER
-#pragma message ("ARCH=x86")
+#pragma message ("ARCH*=x86")
 #else
-#warning "ARCH=x86"
+#warning "ARCH*=x86"
 #endif /*_MSC_VER*/
-#elif defined(Q_PROCESSOR_X86_64)
+#define ARCH_DETECTED
+#endif
+#if defined(Q_PROCESSOR_X86_64)
 #ifdef _MSC_VER
-#pragma message ("ARCH=x86_64")
+#pragma message ("ARCH*=x86_64")
 #else
-#warning "ARCH=x86_64"
+#warning "ARCH*=x86_64"
 #endif /*_MSC_VER*/
-#elif defined(Q_PROCESSOR_IA64)
+#define ARCH_DETECTED
+#endif
+#if defined(Q_PROCESSOR_IA64)
 #ifdef _MSC_VER
-#pragma message ("ARCH=ia64")
+#pragma message ("ARCH*=ia64")
 #else
-#warning "ARCH=ia64"
+#warning "ARCH*=ia64"
 #endif /*_MSC_VER*/
-#elif defined(Q_PROCESSOR_MIPS)
+#define ARCH_DETECTED
+#endif
+#if defined(Q_PROCESSOR_MIPS)
 #ifdef _MSC_VER
-#pragma message ("ARCH=mips")
+#pragma message ("ARCH*=mips")
 #else
-#warning "ARCH=mips"
+#warning "ARCH*=mips"
 #endif /*_MSC_VER*/
-#elif defined(Q_PROCESSOR_POWER)
-#warning "ARCH=power"
-#elif defined(Q_PROCESSOR_S390)
-#warning "ARCH=s390"
-#elif defined(Q_PROCESSOR_SH)
+#define ARCH_DETECTED
+#endif
+#if defined(Q_PROCESSOR_POWER)
+#warning "ARCH*=power"
+#define ARCH_DETECTED
+#endif
+#if defined(Q_PROCESSOR_S390)
+#warning "ARCH*=s390"
+#define ARCH_DETECTED
+#endif
+#if defined(Q_PROCESSOR_SH)
 #ifdef _MSC_VER
-#pragma message ("ARCH=sh")
+#pragma message ("ARCH*=sh")
 #else
-#warning "ARCH=sh"
+#warning "ARCH*=sh"
 #endif /*_MSC_VER*/
-#elif defined(Q_PROCESSOR_SPARC)
-#warning "ARCH=sparc"
-#else
+#define ARCH_DETECTED
+#endif
+#if defined(Q_PROCESSOR_SPARC)
+#warning "ARCH*=sparc"
+#define ARCH_DETECTED
+#endif
+#ifndef ARCH_DETECTED
 #warning "ARCH=unknown"
 #endif
 

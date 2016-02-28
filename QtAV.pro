@@ -48,9 +48,9 @@ contains(QT_CONFIG, opengl):!no-gl:!no-widgets {
   }
 }
 ## sse2 sse4_1 may be defined in Qt5 qmodule.pri but is not included. Qt4 defines sse and sse2
-!ios:!no-sse4_1:!sse4_1: OptionalDepends *= sse4_1
+!no-sse4_1:!sse4_1: OptionalDepends *= sse4_1
 # no-xxx can set in $$PWD/user.conf
-!no-openal: OptionalDepends *= openal
+!no-openal:!mac:!ios: OptionalDepends *= openal #FIXME: ios openal header not found in qtCompileTest but fine if manually make
 !no-libass: OptionalDepends *= libass
 !no-uchardet: OptionalDepends *= uchardet
 win32:macx:!android:!winrt:!no-portaudio: OptionalDepends *= portaudio
