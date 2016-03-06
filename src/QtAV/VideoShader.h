@@ -137,6 +137,12 @@ public:
     qreal validTextureWidth() const;
     QSize frameSize() const;
     /*!
+     * \brief texelSize
+     * The size of texture unit. It can be used with a uniform to emulate GLSL texelSize() which exists in new versions.
+     * \return (1.0/textureWidth, 1.0/textureHeight)
+     */
+    QSizeF texelSize() const; //vec2?
+    /*!
      * \brief normalizedROI
      * \param roi logical roi of a video frame.
      * the same as mapToTexture(roi, 1)

@@ -728,6 +728,12 @@ QSize VideoMaterial::frameSize() const
 {
     return QSize(d_func().width, d_func().height);
 }
+
+QSizeF VideoMaterial::texelSize() const
+{
+    return QSizeF(1.0/d_func().width, 1.0/d_func().height);
+}
+
 QRectF VideoMaterial::normalizedROI(const QRectF &roi) const
 {
     return mapToTexture(0, roi, 1);
