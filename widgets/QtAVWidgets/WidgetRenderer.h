@@ -36,10 +36,6 @@ class Q_AVWIDGETS_EXPORT WidgetRenderer : public QWidget, public QPainterRendere
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(WidgetRenderer)
-    Q_PROPERTY(qreal brightness READ brightness WRITE setBrightness NOTIFY brightnessChanged)
-    Q_PROPERTY(qreal contrast READ contrast WRITE setContrast NOTIFY contrastChanged)
-    Q_PROPERTY(qreal hue READ hue WRITE setHue NOTIFY hueChanged)
-    Q_PROPERTY(qreal saturation READ saturation WRITE setSaturation NOTIFY saturationChanged)
     Q_PROPERTY(QColor backgroundColor READ backgroundColor WRITE setBackgroundColor NOTIFY backgroundColorChanged)
     Q_PROPERTY(QRectF regionOfInterest READ regionOfInterest WRITE setRegionOfInterest NOTIFY regionOfInterestChanged)
     Q_PROPERTY(qreal sourceAspectRatio READ sourceAspectRatio NOTIFY sourceAspectRatioChanged)
