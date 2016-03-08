@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,10 @@
 
 #include "QtAV/VideoOutput.h"
 #include "QtAV/private/VideoRenderer_p.h"
+#include "QtAV/version.h"
+#include <QtCore/QLibrary>
 #include <QtGui/QResizeEvent>
+#include "utils/Logger.h"
 /*!
  * onSetXXX(...): impl->onSetXXX(...); set value as impl; return ;
  */
@@ -32,11 +35,29 @@ class VideoOutputPrivate : public VideoRendererPrivate
 {
 public:
     VideoOutputPrivate(VideoRendererId rendererId, bool force) {
+        if (!VideoRenderer::id("Widget")) {
+            //TODO: dso version check?
+#if defined(Q_OS_DARWIN)
+            avwidgets.setFileName(QStringLiteral("QtAVWidgets.framework/QtAVWidgets")); //no dylib check
+#elif defined(Q_OS_WIN)
+            avwidgets.setFileName(QStringLiteral("QtAVWidgets").append(QString::number(QTAV_VERSION_MAJOR(QtAV_Version()))));
+#else
+            avwidgets.setFileNameAndVersion(QStringLiteral("QtAVWidgets"), QTAV_VERSION_MAJOR(QtAV_Version()));
+#endif
+            qDebug() << "Loading QtAVWidgets module: " << avwidgets.fileName();
+            if (!avwidgets.load()) {
+                qWarning("Failed to load QtAVWidgets module");
+            }
+        }
         impl = VideoRenderer::create(rendererId);
         if (!impl && !force) {
             VideoRendererId *vid = NULL;
             while ((vid = VideoRenderer::next(vid))) {
                 qDebug("next id: %d, name: %s", *vid, VideoRenderer::name(*vid));
+                if (impl) {
+                    delete impl;
+                    impl = 0;
+                }
                 impl = VideoRenderer::create(*vid);
                 if (impl && impl->isAvailable() && impl->widget())
                     break;
@@ -74,6 +95,7 @@ public:
     }
 
     VideoRenderer *impl;
+    QLibrary avwidgets;
 };
 
 VideoOutput::VideoOutput(QObject *parent)
