@@ -335,6 +335,14 @@ int VideoShader::channelMapLocation() const
     return d_func().u_c;
 }
 
+int VideoShader::uniformLocation(const char *name) const
+{
+    DPTR_D(const VideoShader);
+    if (!d.program)
+        return -1;
+    return d.program->uniformLocation(name); //TODO: store in a hash
+}
+
 int VideoShader::textureTarget() const
 {
     return d_func().texture_target;

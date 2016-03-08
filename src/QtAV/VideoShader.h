@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -80,9 +80,47 @@ public:
     int textureTarget() const;
     QOpenGLShaderProgram* program();
     bool update(VideoMaterial* material);
+
+    int uniformLocation(const char* name) const;
+
+    /// User configurable shader BEGIN
+    /*!
+     * \brief userUniforms
+     * The additional uniforms will be used in shader.
+     * TODO: add to shader code automatically(need uniformType(const char*name))?
+     * \return
+     */
+    virtual QStringList userUniforms() const { return QStringList();}
+    // uniformType()? QGenericMatrix is not supported by QVariant
+    virtual QVariant userUniformValue(const char* name) const { Q_UNUSED(name); return QVariant();}
+    /*!
+     * \brief userSample
+     * The custom sampling function to replace texture2D()/texture() (replace %1 in shader).
+     * \code
+     *     vec4 sample2d(sampler2D tex, vec2 pos) { .... }
+     * \endcode
+     */
+    virtual const char* userSample() const { return 0;}
+    /*!
+     * \brief userColorTransform
+     * Override the default color transform matrix.
+     * TODO: no override, just partial? call it everytime?
+     * \return
+     */
+    virtual QMatrix4x4 userColorTransform() const {return QMatrix4x4();}
+    /*!
+     * \brief userPostProcess
+     * Process rgb color
+     */
+    virtual const char* userPostProcess() const {return 0;}
+    /*!
+     * \brief userUpload
+     * It's the code in C++ side. You can upload a texture for blending in userPostProcessor(), or LUT texture used by userSampler() or userPostProcessor() etc.
+     */
+    virtual bool userUpload() {return false;}
 protected:
     QByteArray shaderSourceFromFile(const QString& fileName) const;
-    virtual void compile(QOpenGLShaderProgram* shaderProgram);
+    void compile(QOpenGLShaderProgram* shaderProgram);
 
     VideoShader(VideoShaderPrivate &d);
     DPTR_DECLARE(VideoShader)
@@ -142,6 +180,7 @@ public:
      * \return (1.0/textureWidth, 1.0/textureHeight)
      */
     QSizeF texelSize() const; //vec2?
+    QSize textureSize() const;
     /*!
      * \brief normalizedROI
      * \param roi logical roi of a video frame.
