@@ -30,7 +30,7 @@
 
 #define YUVA_DONE 0
 #define glsl(x) #x "\n"
-//#define QTAV_DEBUG_GLSL
+#define QTAV_DEBUG_GLSL
 
 namespace QtAV {
 
@@ -225,7 +225,8 @@ const char* VideoShader::fragmentShader() const
         qWarning("Empty fragment shader!");
         return 0;
     }
-    if (d.video_format.planeCount() == 2) //TODO: nv21 must be swapped
+    const int nb_planes = d.video_format.planeCount();
+    if (nb_planes == 2) //TODO: nv21 must be swapped
         frag.prepend("#define IS_BIPLANE\n");
     if (OpenGLHelper::hasRG() && !OpenGLHelper::useDeprecatedFormats())
         frag.prepend("#define USE_RG\n");
@@ -257,6 +258,36 @@ const char* VideoShader::fragmentShader() const
     if (textureTarget() == GL_TEXTURE_RECTANGLE)
         frag.prepend("#define MULTI_COORD\n");
     frag.prepend(OpenGLHelper::compatibleShaderHeader(QOpenGLShader::Fragment));
+
+    QByteArray header("*/");
+    if (userFragmentShaderHeader()) {
+        header.append(userFragmentShaderHeader());
+    } else {
+        if (!userUniforms().isEmpty()) {
+            foreach (QString u, userUniforms()) {
+
+            }
+        }
+    }
+    header += "\n";
+    header += "uniform vec2 u_texelSize[" + QByteArray::number(nb_planes-1) + "];\n";
+    header += "/*";
+    frag.replace("%userHeader%", header);
+
+    if (userSample()) {
+        QByteArray sample_code("*/#define USER_SAMPLER\n");
+        sample_code.append(userSample());
+        sample_code += "/*";
+        frag.replace("%userSample%", sample_code);
+    }
+
+    if (userPostProcess()) {
+        QByteArray pp_code("*/");
+        pp_code.append(userPostProcess());
+        pp_code += "/*";
+        frag.replace("%userPostProcess%", pp_code);
+    }
+
 #ifdef QTAV_DEBUG_GLSL
     QString s(frag);
     s.remove(QRegExp(QStringLiteral("(/\\*([^*]|(\\*+[^*/]))*\\*+/)")));
@@ -284,19 +315,23 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     d.u_to8 = shaderProgram->uniformLocation("u_to8");
     d.u_opacity = shaderProgram->uniformLocation("u_opacity");
     d.u_c = shaderProgram->uniformLocation("u_c");
+    d.u_texelSize = shaderProgram->uniformLocation("u_texelSize");
     d.u_Texture.resize(textureLocationCount());
+    qDebug("uniform locations:");
     for (int i = 0; i < d.u_Texture.size(); ++i) {
         const QString tex_var = QStringLiteral("u_Texture%1").arg(i);
         d.u_Texture[i] = shaderProgram->uniformLocation(tex_var);
-        qDebug("glGetUniformLocation(\"%s\") = %d", tex_var.toUtf8().constData(), d.u_Texture[i]);
+        qDebug("%s: %d", tex_var.toUtf8().constData(), d.u_Texture[i]);
     }
-    qDebug("glGetUniformLocation(\"u_MVP_matrix\") = %d", d.u_MVP_matrix);
-    qDebug("glGetUniformLocation(\"u_colorMatrix\") = %d", d.u_colorMatrix);
-    qDebug("glGetUniformLocation(\"u_opacity\") = %d", d.u_opacity);
+    qDebug("u_MVP_matrix: %d", d.u_MVP_matrix);
+    qDebug("u_colorMatrix: %d", d.u_colorMatrix);
+    qDebug("u_opacity: %d", d.u_opacity);
     if (d.u_c >= 0)
-        qDebug("glGetUniformLocation(\"u_c\") = %d", d.u_c);
+        qDebug("u_c: %d", d.u_c);
     if (d.u_to8 >= 0)
-        qDebug("glGetUniformLocation(\"u_to8\") = %d", d.u_to8);
+        qDebug("u_to8: %d", d.u_to8);
+    if (d.u_texelSize >= 0)
+        qDebug("u_texelSize: %d", d.u_texelSize);
 }
 
 int VideoShader::textureLocationCount() const
@@ -333,6 +368,11 @@ int VideoShader::opacityLocation() const
 int VideoShader::channelMapLocation() const
 {
     return d_func().u_c;
+}
+
+int VideoShader::texelSizeLocation() const
+{
+    return d_func().u_texelSize;
 }
 
 int VideoShader::uniformLocation(const char *name) const
@@ -404,6 +444,16 @@ bool VideoShader::update(VideoMaterial *material)
     if (channelMapLocation() >= 0)
         program()->setUniformValue(channelMapLocation(), material->channelMap());
     //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
+    if (texelSizeLocation() >= 0)
+        program()->setUniformValueArray(texelSizeLocation(), material->texelSize().constData(), nb_planes);
+
+    if (!userUniforms().isEmpty()) {
+        if (!setUserUniformValues()) {
+            foreach (QString u, userUniforms()) {
+                setUserUniformValue(u.toLatin1().constData());
+            }
+        }
+    }
     // uniform end. attribute begins
     return true;
 }
@@ -743,6 +793,11 @@ QSizeF VideoMaterial::texelSize(int plane) const
     return QSizeF(1.0/(qreal)d.texture_size[plane].width(), 1.0/(qreal)d.texture_size[plane].height());
 }
 
+QVector<QVector2D> VideoMaterial::texelSize() const
+{
+    return d_func().v_texel_size;
+}
+
 QSize VideoMaterial::textureSize(int plane) const
 {
     return d_func().texture_size[plane];
@@ -923,6 +978,7 @@ bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
         effective_tex_width[i] /= bpp_gl; //fmt.bytesPerPixel(i);
         //effective_tex_width_ratio =
         qDebug("texture width: %d - %d = pad: %d. bpp(gl): %d", texture_size[i].width(), effective_tex_width[i], pad, bpp_gl);
+        v_texel_size[i] = QVector2D(1.0/(float)texture_size[i].width(), 1.0/(float)texture_size[i].height());
     }
     /*
      * there are 2 fragment shaders: rgb and yuv.
@@ -967,6 +1023,7 @@ bool VideoMaterialPrivate::ensureResources()
             || (plane1_linesize > 0 && frame.bytesPerLine(1) != plane1_linesize)) { // no need to check height if plane 0 sizes are equal?
         update_textures = true;
         //qDebug("---------------------update texture: %dx%d, %s", width, frame.height(), video_format.name().toUtf8().constData());
+        v_texel_size.resize(nb_planes);
         texture_size.resize(nb_planes);
         texture_upload_size.resize(nb_planes);
         effective_tex_width.resize(nb_planes);

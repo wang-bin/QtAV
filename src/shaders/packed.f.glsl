@@ -24,8 +24,8 @@ varying vec2 v_TexCoords0;
 uniform mat4 u_colorMatrix;
 uniform float u_opacity;
 uniform mat4 u_c;
-
-/***User Sampler code here***%1***/
+/***User header code***%userHeader%***/
+/***User sampling function here***%userSample%***/
 #ifndef USER_SAMPLER
 vec4 sample2d(sampler2D tex, vec2 pos)
 {
@@ -40,4 +40,5 @@ void main() {
     c.a = 1.0;
 #endif //HAS_ALPHA
     gl_FragColor = clamp(u_colorMatrix * c, 0.0, 1.0) * u_opacity;
+    /***User post processing here***%userPostProcess%***/
 }

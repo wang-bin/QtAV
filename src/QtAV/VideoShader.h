@@ -75,6 +75,7 @@ public:
     int colorMatrixLocation() const;
     int opacityLocation() const;
     int channelMapLocation() const;
+    int texelSizeLocation() const;
     VideoFormat videoFormat() const;
     // defalut is GL_TEXTURE_2D
     int textureTarget() const;
@@ -83,7 +84,13 @@ public:
 
     int uniformLocation(const char* name) const;
 
-    /// User configurable shader BEGIN
+    /// User configurable shader APIs BEGIN
+    /*!
+     * Keywords will be replaced in user shader code:
+     * %planes%, %planes-1% => plane count, plane count -1
+     * Uniforms can be used: (N: 0 ~ planes-1)
+     * u_TextureN, v_TexCoordsN, u_texelSize(array of vec2), u_opacity, u_c(channel map), u_colorMatrix, u_to8(vec2, computing 16bit value with 8bit components)
+     */
     /*!
      * \brief userUniforms
      * The additional uniforms will be used in shader.
@@ -91,8 +98,28 @@ public:
      * \return
      */
     virtual QStringList userUniforms() const { return QStringList();}
-    // uniformType()? QGenericMatrix is not supported by QVariant
-    virtual QVariant userUniformValue(const char* name) const { Q_UNUSED(name); return QVariant();}
+    /*!
+     * \brief userFragmentShaderHeader
+     * Must add additional uniform declarations here
+     */
+    virtual const char* userFragmentShaderHeader() const {return 0;}
+    /*!
+     * \brief setUserUniformValue
+     * There is a type issue if use \code QVariant userUniformValue() const \endcode , for example QGenericMatrix is not supported by QVariant.
+     * Call program()->setUniformValue(...) here
+     * NOTE: setUserUniformValues() should be faster
+     * \param name uniform name
+     */
+    virtual bool setUserUniformValue(const char* name) {
+        Q_UNUSED(name);
+        return false;
+    }
+    /*!
+     * \brief setUserUniformValues
+     * If return false (not implemented for example), fallback to call setUserUniformValue(name) for each userUniforms()
+     * Call program()->setUniformValue(...) here
+     */
+    virtual bool setUserUniformValues() {return false;}
     /*!
      * \brief userSample
      * The custom sampling function to replace texture2D()/texture() (replace %1 in shader).
@@ -118,6 +145,8 @@ public:
      * It's the code in C++ side. You can upload a texture for blending in userPostProcessor(), or LUT texture used by userSampler() or userPostProcessor() etc.
      */
     virtual bool userUpload() {return false;}
+    /// User configurable shader APIs BEGIN
+
 protected:
     QByteArray shaderSourceFromFile(const QString& fileName) const;
     void compile(QOpenGLShaderProgram* shaderProgram);
@@ -180,6 +209,7 @@ public:
      * \return (1.0/textureWidth, 1.0/textureHeight)
      */
     QSizeF texelSize(int plane) const; //vec2?
+    QVector<QVector2D> texelSize() const;
     /*!
      * \brief textureSize
      * It can be used with a uniform to emulate GLSL textureSize() which exists in new versions.

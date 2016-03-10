@@ -38,13 +38,13 @@ varying vec2 v_TexCoords3;
 #define v_TexCoords3 v_TexCoords0
 #endif //MULTI_COORD
 uniform float u_opacity;
-uniform float u_bpp;
 uniform mat4 u_colorMatrix;
 #ifdef CHANNEL16_TO8
 uniform vec2 u_to8;
 #endif
+/***User header code***%userHeader%***/
 // matrixCompMult for convolution
-/***User Sampler code here***%1***/
+/***User sampling function here***%userSample%***/
 #ifndef USER_SAMPLER
 vec4 sample2d(sampler2D tex, vec2 pos)
 {
@@ -101,4 +101,5 @@ void main()
 #endif //HAS_ALPHA
                             )
                          , 0.0, 1.0) * u_opacity;
+/***User post processing here***%userPostProcess%***/
 }
