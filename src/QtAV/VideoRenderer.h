@@ -178,7 +178,6 @@ public:
      * \return default is 0. A QGraphicsItem subclass can return \a this
      */
     virtual QGraphicsItem* graphicsItem() { return 0; }
-
     /*!
      * \brief brightness, contrast, hue, saturation
      *  values range between -1.0 and 1.0, the default is 0.
@@ -202,9 +201,7 @@ protected:
     //TODO: batch drawBackground(color, region)=>loop drawBackground(color,rect)
     virtual bool receiveFrame(const VideoFrame& frame) = 0;
     QRegion backgroundRegion() const;
-    QTAV_DEPRECATED virtual bool needUpdateBackground() const;
     virtual void drawBackground();
-    QTAV_DEPRECATED virtual bool needDrawFrame() const; //TODO: no virtual func. it's a solution for temporary
     //draw the current frame using the current paint engine. called by paintEvent()
     // TODO: parameter VideoFrame
     virtual void drawFrame() = 0; //You MUST reimplement this to display a frame. Other draw functions are not essential

@@ -1,6 +1,6 @@
 /******************************************************************************
     VideoCapture.cpp: description
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -140,7 +140,7 @@ void VideoCapture::setAsync(bool value)
     if (async == value)
         return;
     async = value;
-    emit asyncChanged();
+    Q_EMIT asyncChanged();
 }
 
 bool VideoCapture::isAsync() const
@@ -153,7 +153,7 @@ void VideoCapture::setAutoSave(bool value)
     if (auto_save == value)
         return;
     auto_save = value;
-    emit autoSaveChanged();
+    Q_EMIT autoSaveChanged();
 }
 
 bool VideoCapture::autoSave() const
@@ -166,7 +166,7 @@ void VideoCapture::setOriginalFormat(bool value)
     if (original_fmt == value)
         return;
     original_fmt = value;
-    emit originalFormatChanged();
+    Q_EMIT originalFormatChanged();
 }
 
 bool VideoCapture::isOriginalFormat() const
@@ -187,12 +187,7 @@ void VideoCapture::handleAppQuit()
 
 void  VideoCapture::capture()
 {
-    request();
-}
-
-void VideoCapture::request()
-{
-    emit requested();
+    Q_EMIT requested();
 }
 
 void VideoCapture::start()
@@ -224,7 +219,7 @@ void VideoCapture::setSaveFormat(const QString &format)
     if (format.toLower() == fmt.toLower())
         return;
     fmt = format;
-    emit saveFormatChanged();
+    Q_EMIT saveFormatChanged();
 }
 
 QString VideoCapture::saveFormat() const
@@ -237,7 +232,7 @@ void VideoCapture::setQuality(int value)
     if (qual == value)
         return;
     qual = value;
-    emit qualityChanged();
+    Q_EMIT qualityChanged();
 }
 
 int VideoCapture::quality() const
@@ -250,7 +245,7 @@ void VideoCapture::setCaptureName(const QString &value)
     if (name == value)
         return;
     name = value;
-    emit captureNameChanged();
+    Q_EMIT captureNameChanged();
 }
 
 QString VideoCapture::captureName() const
@@ -263,7 +258,7 @@ void VideoCapture::setCaptureDir(const QString &value)
     if (dir == value)
         return;
     dir = value;
-    emit captureDirChanged();
+    Q_EMIT captureDirChanged();
 }
 
 QString VideoCapture::captureDir() const

@@ -1,6 +1,6 @@
 /******************************************************************************
     VideoCapture.h: description
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -87,7 +87,6 @@ public:
     QString captureDir() const;
 public Q_SLOTS:
     void capture();
-    QTAV_DEPRECATED void request();
 Q_SIGNALS:
     void requested();
     /*use it to popup a dialog for selecting dir, name etc. TODO: block avthread if not async*/

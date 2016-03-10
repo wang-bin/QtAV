@@ -237,26 +237,6 @@ const Statistics& AVPlayer::statistics() const
     return d->statistics;
 }
 
-bool AVPlayer::installAudioFilter(Filter *filter)
-{
-    if (!FilterManager::instance().registerAudioFilter(filter, this)) {
-        return false;
-    }
-    if (!d->athread)
-        return false; //install later when avthread created
-    return d->athread->installFilter(filter);
-}
-
-bool AVPlayer::installVideoFilter(Filter *filter)
-{
-    if (!FilterManager::instance().registerVideoFilter(filter, this)) {
-        return false;
-    }
-    if (!d->vthread)
-        return false; //install later when avthread created
-    return d->vthread->installFilter(filter);
-}
-
 bool AVPlayer::installFilter(AudioFilter *filter, int index)
 {
     if (!FilterManager::instance().registerAudioFilter((Filter*)filter, this, index))
@@ -295,22 +275,6 @@ bool AVPlayer::uninstallFilter(VideoFilter *filter)
     if (!avthread->filters().contains(filter))
         return false;
     return avthread->uninstallFilter(filter, true);
-}
-
-bool AVPlayer::uninstallFilter(Filter *filter)
-{
-    if (!FilterManager::instance().unregisterVideoFilter(filter, this)) {
-        FilterManager::instance().unregisterAudioFilter(filter, this);
-    }
-    AVThread *avthread = d->vthread;
-    if (!avthread || !avthread->filters().contains(filter)) {
-        avthread = d->athread;
-    }
-    if (!avthread || !avthread->filters().contains(filter)) {
-        return false;
-    }
-    avthread->uninstallFilter(filter, true);
-    return true;
 }
 
 QList<Filter*> AVPlayer::audioFilters() const
@@ -581,14 +545,6 @@ VideoCapture* AVPlayer::videoCapture() const
     return d->vcapture;
 }
 
-bool AVPlayer::captureVideo()
-{
-    if (!d->vcapture || !d->vthread)
-        return false;
-    d->vcapture->request();
-    return true;
-}
-
 bool AVPlayer::play(const QString& path)
 {
     setFile(path);
@@ -700,7 +656,7 @@ bool AVPlayer::load(bool reload)
             if (d->current_source.canConvert<QIODevice*>()) {
                 reload = d->demuxer.ioDevice() != d->current_source.value<QIODevice*>();
             } else { // MediaIO
-                reload = d->demuxer.input() != d->current_source.value<QtAV::MediaIO*>();
+                reload = d->demuxer.mediaIO() != d->current_source.value<QtAV::MediaIO*>();
             }
         }
         reload = reload || !d->demuxer.isLoaded();
@@ -922,11 +878,6 @@ void AVPlayer::setStopPosition(qint64 pos)
 bool AVPlayer::isSeekable() const
 {
     return d->demuxer.isSeekable();
-}
-
-qreal AVPlayer::positionF() const
-{
-    return d->clock->value();
 }
 
 qint64 AVPlayer::position() const
@@ -1572,11 +1523,6 @@ void AVPlayer::timerEvent(QTimerEvent *te)
             setPosition(startPosition());
         }
     }
-}
-
-void AVPlayer::playNextFrame()
-{
-    stepForward();
 }
 
 //FIXME: If not playing, it will just play but not play one frame.

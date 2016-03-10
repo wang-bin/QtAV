@@ -83,7 +83,6 @@ public:
     VideoFilter(QObject* parent = 0);
 
     VideoFilterContext* context();
-    QTAV_DEPRECATED virtual VideoFilterContext::Type contextType() const;
     virtual bool isSupported(VideoFilterContext::Type ct) const;
     bool installTo(AVPlayer *player);
     /*
@@ -94,12 +93,9 @@ public:
      */
     // install to an output and do not modify frames. e.g. OSD
     bool installTo(AVOutput *output); //only for video. move to video filter installToRenderer
-    /*!
-     * check context and apply the filter
-     * if context is null, or contextType() != context->type(), then create a right one and assign it to context.
-     */
-    bool prepareContext(VideoFilterContext*& ctx, Statistics* statistics = 0, VideoFrame* frame = 0);
     void apply(Statistics* statistics, VideoFrame *frame = 0);
+
+    bool prepareContext(VideoFilterContext*& ctx, Statistics* statistics = 0, VideoFrame* frame = 0); //internal use
 protected:
     VideoFilter(VideoFilterPrivate& d, QObject *parent = 0);
     virtual void process(Statistics* statistics, VideoFrame* frame = 0) = 0;

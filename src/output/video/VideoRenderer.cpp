@@ -452,21 +452,8 @@ QRegion VideoRenderer::backgroundRegion() const
     return QRegion(0, 0, rendererWidth(), rendererHeight()) - QRegion(d_func().out_rect);
 }
 
-bool VideoRenderer::needUpdateBackground() const
-{
-    DPTR_D(const VideoRenderer);
-    const QRect rendererRect(QPoint(), rendererSize());
-    return d.update_background || !d.video_frame.isValid()
-            || d.out_rect.intersected(rendererRect)  != rendererRect;
-}
-
 void VideoRenderer::drawBackground()
 {
-}
-
-bool VideoRenderer::needDrawFrame() const
-{
-    return d_func().video_frame.isValid();
 }
 
 void VideoRenderer::handlePaintEvent()

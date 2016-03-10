@@ -199,26 +199,12 @@ bool VideoOutput::receiveFrame(const VideoFrame& frame)
     return d.impl->receiveFrame(frame);
 }
 
-bool VideoOutput::needUpdateBackground() const
-{
-    if (!isAvailable())
-        return false;
-    DPTR_D(const VideoOutput);
-    return d.impl->needUpdateBackground();
-}
-
 void VideoOutput::drawBackground()
 {
     if (!isAvailable())
         return;
     DPTR_D(VideoOutput);
     d.impl->drawBackground();
-}
-
-bool VideoOutput::needDrawFrame() const
-{
-    DPTR_D(const VideoOutput);
-    return d.impl->needDrawFrame();
 }
 
 void VideoOutput::drawFrame()

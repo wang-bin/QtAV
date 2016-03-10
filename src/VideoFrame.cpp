@@ -161,13 +161,6 @@ VideoFrame::VideoFrame(int width, int height, const VideoFormat &format, const Q
     d->data = data;
 }
 
-VideoFrame::VideoFrame(const QByteArray& data, int width, int height, const VideoFormat &format)
-    : Frame(new VideoFramePrivate(width, height, format))
-{
-    Q_D(VideoFrame);
-    d->data = data;
-}
-
 VideoFrame::VideoFrame(const QImage& image)
     : Frame(new VideoFramePrivate(image.width(), image.height(), VideoFormat(image.format())))
 {

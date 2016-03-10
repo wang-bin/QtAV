@@ -170,7 +170,6 @@ public:
      * If media stream is not a local file, stopPosition()==max value of qint64
      */
     qint64 stopPosition() const; //unit: ms
-    QTAV_DEPRECATED qreal positionF() const; //unit: s.
     qint64 position() const; //unit: ms
     //0: play once. N: play N+1 times. <0: infinity
     int repeat() const; //or repeatMax()?
@@ -236,13 +235,10 @@ public:
     int videoStreamCount() const;
     int subtitleStreamCount() const;
     /*!
-     * \brief capture and save current frame to "$HOME/.QtAV/filename_pts.png".
-     * To capture with custom configurations, such as name and dir, use
-     * VideoCapture api through AVPlayer::videoCapture()
-     * deprecated, use AVPlayer.videoCapture()->request() instead
-     * \return
+     * \brief videoCapture
+     * Capture the current frame using videoCapture()->capture()
+     * \sa VideoCapture
      */
-    QTAV_DEPRECATED bool captureVideo();
     VideoCapture *videoCapture() const;
     /*
      * replay without parsing the stream if it's already loaded. (not implemented)
@@ -311,13 +307,6 @@ public:
     qreal forcedFrameRate() const;
     //Statistics& statistics();
     const Statistics& statistics() const;
-    /*
-     * install the filter in AVThread. Filter will apply before rendering data
-     * return false if filter is already registered or audio/video thread is not ready(will install when ready)
-     */
-    QTAV_DEPRECATED bool installAudioFilter(Filter *filter);
-    QTAV_DEPRECATED bool installVideoFilter(Filter *filter);
-    QTAV_DEPRECATED bool uninstallFilter(Filter *filter);
     /*!
      * \brief installFilter
      * Insert a filter at position 'index' of current filter list.
@@ -402,7 +391,6 @@ public slots:
      */
     void play(); //replay
     void stop();
-    QTAV_DEPRECATED void playNextFrame(); //deprecated. use stepForward instead
     /*!
      * \brief stepForward
      * Play the next frame and pause

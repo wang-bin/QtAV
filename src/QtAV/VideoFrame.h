@@ -52,9 +52,8 @@ public:
 
     VideoFrame();
     //must set planes and linesize manually if data is empty
+    // must set planes and linesize manually
     VideoFrame(int width, int height, const VideoFormat& format, const QByteArray& data = QByteArray());
-    //set planes and linesize manually or call init
-    QTAV_DEPRECATED VideoFrame(const QByteArray& data, int width, int height, const VideoFormat& format);
     VideoFrame(const QImage& image);
     VideoFrame(const VideoFrame &other);
     ~VideoFrame();

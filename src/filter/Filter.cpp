@@ -118,15 +118,10 @@ VideoFilterContext *VideoFilter::context()
     return d.context;
 }
 
-VideoFilterContext::Type VideoFilter::contextType() const
-{
-    return VideoFilterContext::None;
-}
-
 bool VideoFilter::isSupported(VideoFilterContext::Type ct) const
 {
     // TODO: return false
-    return contextType() == ct;
+    return VideoFilterContext::None == ct;
 }
 
 bool VideoFilter::installTo(AVPlayer *player)

@@ -88,9 +88,7 @@ Q_SIGNALS:
 protected:
     bool eventFilter(QObject *obj, QEvent *event) Q_DECL_OVERRIDE;
     bool receiveFrame(const VideoFrame& frame) Q_DECL_OVERRIDE;
-    bool needUpdateBackground() const Q_DECL_OVERRIDE;
     void drawBackground() Q_DECL_OVERRIDE;
-    bool needDrawFrame() const Q_DECL_OVERRIDE; //not important.
     void drawFrame() Q_DECL_OVERRIDE;
     void handlePaintEvent() Q_DECL_OVERRIDE;
 

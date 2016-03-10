@@ -58,7 +58,6 @@ public:
     QIODevice* ioDevice() const;
     /// not null for QIODevice, custom protocols
     MediaIO* mediaIO() const;
-    QTAV_DEPRECATED MediaIO* input() const;
     /*!
      * \brief setMedia
      * \return whether the media source is changed

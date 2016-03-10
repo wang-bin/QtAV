@@ -632,11 +632,6 @@ MediaIO* AVDemuxer::mediaIO() const
     return d->input;
 }
 
-MediaIO* AVDemuxer::input() const
-{
-    return d->input;
-}
-
 bool AVDemuxer::setMedia(const QString &fileName)
 {
     if (d->input) {
