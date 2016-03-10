@@ -44,7 +44,11 @@ include($${PROJECTROOT}/examples/common/libcommon.pri)
 preparePaths($$OUT_PWD/../../out)
 mac: RC_FILE = $$PROJECTROOT/src/QtAV.icns
 genRC($$TARGET)
-
+ios {
+  RCC_DIR = #in qt_preprocess.mk, rule name is relative path while dependency name is absolute path
+  MOC_DIR =
+  QMAKE_INFO_PLIST = ios/Info.plist
+}
 DISTFILES += \
     android/src/org/qtav/qmlplayer/QMLPlayerActivity.java \
     android/gradle/wrapper/gradle-wrapper.jar \
