@@ -737,9 +737,15 @@ QSize VideoMaterial::frameSize() const
     return QSize(d_func().width, d_func().height);
 }
 
-QSizeF VideoMaterial::texelSize() const
+QSizeF VideoMaterial::texelSize(int plane) const
 {
-    return QSizeF(1.0/d_func().width, 1.0/d_func().height);
+    DPTR_D(const VideoMaterial);
+    return QSizeF(1.0/(qreal)d.texture_size[plane].width(), 1.0/(qreal)d.texture_size[plane].height());
+}
+
+QSize VideoMaterial::textureSize(int plane) const
+{
+    return d_func().texture_size[plane];
 }
 
 QRectF VideoMaterial::normalizedROI(const QRectF &roi) const

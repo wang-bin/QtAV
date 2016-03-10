@@ -176,11 +176,15 @@ public:
     QSize frameSize() const;
     /*!
      * \brief texelSize
-     * The size of texture unit. It can be used with a uniform to emulate GLSL texelSize() which exists in new versions.
+     * The size of texture unit
      * \return (1.0/textureWidth, 1.0/textureHeight)
      */
-    QSizeF texelSize() const; //vec2?
-    QSize textureSize() const;
+    QSizeF texelSize(int plane) const; //vec2?
+    /*!
+     * \brief textureSize
+     * It can be used with a uniform to emulate GLSL textureSize() which exists in new versions.
+     */
+    QSize textureSize(int plane) const;
     /*!
      * \brief normalizedROI
      * \param roi logical roi of a video frame.
