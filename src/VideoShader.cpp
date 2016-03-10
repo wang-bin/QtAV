@@ -844,8 +844,10 @@ bool VideoMaterialPrivate::initPBO(int plane, int size)
         try_pbo = false;
         return false;
     }
+    //pb.setUsagePattern(QOpenGLBuffer::DynamicCopy);
     qDebug("Allocate PBO size %d", size);
     pb.allocate(size);
+    pb.release(); //bind to 0
     return true;
 }
 
