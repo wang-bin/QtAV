@@ -56,6 +56,7 @@ public:
         , u_to8(-1)
         , u_opacity(-1)
         , u_c(-1)
+        , material_type(0)
         , texture_target(GL_TEXTURE_2D)
     {}
     virtual ~VideoShaderPrivate() {
@@ -77,6 +78,7 @@ public:
     int u_opacity;
     int u_c;
     int u_texelSize;
+    qint32 material_type;
     QVector<int> u_Texture;
     GLenum texture_target;
     VideoFormat video_format;

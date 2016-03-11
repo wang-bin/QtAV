@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -50,6 +50,7 @@ public:
         , try_vao(true)
         , tex_target(0)
         , valiad_tex_width(1.0)
+        , user_shader(NULL)
     {
         static bool disable_vbo = qgetenv("QTAV_NO_VBO").toInt() > 0;
         try_vbo = !disable_vbo;
@@ -117,6 +118,7 @@ public:
     TexturedGeometry geometry;
     QRectF rect;
     QMatrix4x4 matrix;
+    VideoShader *user_shader;
 };
 
 void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, const QRectF &r)
@@ -342,6 +344,11 @@ void OpenGLVideo::setSaturation(qreal value)
     d_func().material->setSaturation(value);
 }
 
+void OpenGLVideo::setUserShader(VideoShader *shader)
+{
+    d_func().user_shader = shader;
+}
+
 void OpenGLVideo::fill(const QColor &color)
 {
     DYGL(glClearColor(color.red(), color.green(), color.blue(), color.alpha()));
@@ -357,7 +364,9 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
         qDebug() << "material changed: " << VideoMaterial::typeName(d.material_type) << " => " << VideoMaterial::typeName(mt);
         d.material_type = mt;
     }
-    VideoShader *shader = d.manager->prepareMaterial(d.material); //TODO: print shader type name if changed. prepareMaterial(,sample_code, pp_code)
+    VideoShader *shader = d.user_shader;
+    if (!shader)
+        shader = d.manager->prepareMaterial(d.material, mt); //TODO: print shader type name if changed. prepareMaterial(,sample_code, pp_code)
     shader->update(d.material);
     shader->program()->setUniformValue(shader->opacityLocation(), (GLfloat)1.0);
     shader->program()->setUniformValue(shader->matrixLocation(), transform*d.matrix);

@@ -18,9 +18,9 @@ ShaderManager::~ShaderManager()
     invalidated();
 }
 
-VideoShader* ShaderManager::prepareMaterial(VideoMaterial *material)
+VideoShader* ShaderManager::prepareMaterial(VideoMaterial *material, qint32 materialType)
 {
-    const qint64 type = material->type();
+    const qint32 type = materialType != -1 ? materialType : material->type();
     VideoShader *shader = shader_cache.value(type, 0);
     if (shader)
         return shader;

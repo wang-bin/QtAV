@@ -270,7 +270,7 @@ const char* VideoShader::fragmentShader() const
         }
     }
     header += "\n";
-    header += "uniform vec2 u_texelSize[" + QByteArray::number(nb_planes-1) + "];\n";
+    header += "uniform vec2 u_texelSize[" + QByteArray::number(nb_planes) + "];\n";
     header += "/*";
     frag.replace("%userHeader%", header);
 
@@ -307,7 +307,7 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     }
     shaderProgram = program();
     if (!shaderProgram->isLinked()) {
-        compile(shaderProgram);
+        build(shaderProgram);
     }
     d.u_MVP_matrix = shaderProgram->uniformLocation("u_MVP_matrix");
     // fragment shader
@@ -393,6 +393,11 @@ void VideoShader::setTextureTarget(int type)
     d_func().texture_target = type;
 }
 
+void VideoShader::setMaterialType(qint32 value)
+{
+    d_func().material_type = value;
+}
+
 VideoFormat VideoShader::videoFormat() const
 {
     return d_func().video_format;
@@ -417,9 +422,18 @@ bool VideoShader::update(VideoMaterial *material)
 {
     if (!material)
         return false;
+    DPTR_D(VideoShader);
+    const qint32 mt = material->type();
+    if (mt != d.material_type) {
+        qDebug("Material type changed %d=>%d. Update shader code", d.material_type, mt);
+        program()->removeAllShaders(); //not linked
+        material->initializeShader(this);
+        initialize();
+    }
     if (!material->bind())
         return false;
     //material->unbind();
+    userUpload();
     const VideoFormat fmt(material->currentFormat()); //FIXME: maybe changed in setCurrentFrame(
     //format is out of date because we may use the same shader for different formats
     setVideoFormat(fmt);
@@ -467,9 +481,12 @@ QByteArray VideoShader::shaderSourceFromFile(const QString &fileName) const
     return src;
 }
 
-void VideoShader::compile(QOpenGLShaderProgram *shaderProgram)
+void VideoShader::build(QOpenGLShaderProgram *shaderProgram)
 {
-    Q_ASSERT_X(!shaderProgram->isLinked(), "VideoShader::compile()", "Compile called multiple times!");
+    if (shaderProgram->isLinked()) {
+        qWarning("Shader program is already linked");
+    }
+    shaderProgram->removeAllShaders();
     shaderProgram->addShaderFromSourceCode(QOpenGLShader::Vertex, vertexShader());
     shaderProgram->addShaderFromSourceCode(QOpenGLShader::Fragment, fragmentShader());
     int maxVertexAttribs = 0;
@@ -579,12 +596,18 @@ VideoFormat VideoMaterial::currentFormat() const
 
 VideoShader* VideoMaterial::createShader() const
 {
-    DPTR_D(const VideoMaterial);
     VideoShader *shader = new VideoShader();
-    shader->setVideoFormat(d.video_format);
-    shader->setTextureTarget(d.target);
+    initializeShader(shader);
     //resize texture locations to avoid access format later
     return shader;
+}
+
+void VideoMaterial::initializeShader(VideoShader *shader) const
+{
+    DPTR_D(const VideoMaterial);
+    shader->setVideoFormat(d.video_format);
+    shader->setTextureTarget(d.target);
+    shader->setMaterialType(type());
 }
 
 QString VideoMaterial::typeName(qint32 value)

@@ -80,6 +80,11 @@ public:
     // defalut is GL_TEXTURE_2D
     int textureTarget() const;
     QOpenGLShaderProgram* program();
+    /*!
+     * \brief update
+     * Upload textures, setup uniforms before rendering.
+     * If material type changed, build a new shader program.
+     */
     bool update(VideoMaterial* material);
 
     int uniformLocation(const char* name) const;
@@ -138,13 +143,14 @@ public:
 
 protected:
     QByteArray shaderSourceFromFile(const QString& fileName) const;
-    void compile(QOpenGLShaderProgram* shaderProgram);
+    void build(QOpenGLShaderProgram* shaderProgram);
 
     VideoShader(VideoShaderPrivate &d);
     DPTR_DECLARE(VideoShader)
 private:
     void setVideoFormat(const VideoFormat& format);
     void setTextureTarget(int type);
+    void setMaterialType(qint32 value);
     friend class VideoMaterial;
 };
 
@@ -163,6 +169,7 @@ public:
     void setCurrentFrame(const VideoFrame& frame);
     VideoFormat currentFormat() const;
     VideoShader* createShader() const;
+    void initializeShader(VideoShader* shader) const;
     virtual qint32 type() const;
     static QString typeName(qint32 value);
 

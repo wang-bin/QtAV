@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -32,8 +32,6 @@
 #endif
 
 namespace QtAV {
-
-
 class MaterialType;
 class VideoShader;
 class VideoMaterial;
@@ -47,14 +45,15 @@ class ShaderManager : public QObject
 public:
     explicit ShaderManager(QOpenGLContext *ctx);
     ~ShaderManager();
-    VideoShader* prepareMaterial(VideoMaterial *material);
+    VideoShader* prepareMaterial(VideoMaterial *material, qint32 materialType = -1);
+    void setCacheSize(int value);
 
 public Q_SLOTS:
     void invalidated();
 
 private:
     QOpenGLContext *m_ctx;
-    QHash<qint64, VideoShader*> shader_cache;
+    QHash<qint32, VideoShader*> shader_cache;
 };
 } //namespace QtAV
 #endif // QTAV_SHADERMANAGER_H
