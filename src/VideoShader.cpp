@@ -446,14 +446,8 @@ bool VideoShader::update(VideoMaterial *material)
     //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
     if (texelSizeLocation() >= 0)
         program()->setUniformValueArray(texelSizeLocation(), material->texelSize().constData(), nb_planes);
-
-    if (!userUniforms().isEmpty()) {
-        if (!setUserUniformValues()) {
-            foreach (QString u, userUniforms()) {
-                setUserUniformValue(u.toLatin1().constData());
-            }
-        }
-    }
+    if (!userUniforms().isEmpty())
+        setUserUniformValues();
     // uniform end. attribute begins
     return true;
 }
@@ -593,7 +587,7 @@ VideoShader* VideoMaterial::createShader() const
     return shader;
 }
 
-QString VideoMaterial::typeName(qint64 value)
+QString VideoMaterial::typeName(qint32 value)
 {
     return QString("gl material 16to8bit: %1, planar: %2, has alpha: %3, 2d texture: %4, 2nd plane rg: %5")
             .arg(!!(value&1))
@@ -604,7 +598,7 @@ QString VideoMaterial::typeName(qint64 value)
             ;
 }
 
-qint64 VideoMaterial::type() const
+qint32 VideoMaterial::type() const
 {
     DPTR_D(const VideoMaterial);
     const VideoFormat &fmt = d.video_format;

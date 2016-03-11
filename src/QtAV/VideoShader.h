@@ -104,17 +104,6 @@ public:
      */
     virtual const char* userFragmentShaderHeader() const {return 0;}
     /*!
-     * \brief setUserUniformValue
-     * There is a type issue if use \code QVariant userUniformValue() const \endcode , for example QGenericMatrix is not supported by QVariant.
-     * Call program()->setUniformValue(...) here
-     * NOTE: setUserUniformValues() should be faster
-     * \param name uniform name
-     */
-    virtual bool setUserUniformValue(const char* name) {
-        Q_UNUSED(name);
-        return false;
-    }
-    /*!
      * \brief setUserUniformValues
      * If return false (not implemented for example), fallback to call setUserUniformValue(name) for each userUniforms()
      * Call program()->setUniformValue(...) here
@@ -174,8 +163,8 @@ public:
     void setCurrentFrame(const VideoFrame& frame);
     VideoFormat currentFormat() const;
     VideoShader* createShader() const;
-    virtual qint64 type() const;
-    static QString typeName(qint64 value);
+    virtual qint32 type() const;
+    static QString typeName(qint32 value);
 
     bool bind(); // TODO: roi
     void unbind();
