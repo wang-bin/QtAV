@@ -995,7 +995,10 @@ bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
         effective_tex_width[i] /= bpp_gl; //fmt.bytesPerPixel(i);
         //effective_tex_width_ratio =
         qDebug("texture width: %d - %d = pad: %d. bpp(gl): %d", texture_size[i].width(), effective_tex_width[i], pad, bpp_gl);
-        v_texel_size[i] = QVector2D(1.0/(float)texture_size[i].width(), 1.0/(float)texture_size[i].height());
+        if (target == GL_TEXTURE_RECTANGLE)
+            v_texel_size[i] = QVector2D(1.0, 1.0);
+        else
+            v_texel_size[i] = QVector2D(1.0/(float)texture_size[i].width(), 1.0/(float)texture_size[i].height());
     }
     /*
      * there are 2 fragment shaders: rgb and yuv.
