@@ -78,6 +78,8 @@ public:
      */
     bool isOpenGL() const;
     void setOpenGL(bool o);
+
+    OpenGLVideo* opengl() const Q_DECL_OVERRIDE;
 Q_SIGNALS:
     void sourceAspectRatioChanged(qreal value) Q_DECL_OVERRIDE Q_DECL_FINAL;
     void regionOfInterestChanged() Q_DECL_OVERRIDE;

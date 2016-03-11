@@ -150,7 +150,15 @@ void GraphicsItemRenderer::setOpenGL(bool o)
     if (d.opengl == o)
         return;
     d.opengl = o;
-    emit openGLChanged();
+    Q_EMIT openGLChanged();
+}
+
+OpenGLVideo* GraphicsItemRenderer::opengl() const
+{
+#if QTAV_HAVE(OPENGL)
+    return const_cast<OpenGLVideo*>(&d_func().glv);
+#endif
+    return NULL;
 }
 
 void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)

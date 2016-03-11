@@ -113,7 +113,7 @@ public:
      * If return false (not implemented for example), fallback to call setUserUniformValue(name) for each userUniforms()
      * Call program()->setUniformValue(...) here
      */
-    virtual bool setUserUniformValues() {return false;}
+    virtual void setUserUniformValues() {}
     /*!
      * \brief userSample
      * The custom sampling function to replace texture2D()/texture() (replace %1 in shader).
