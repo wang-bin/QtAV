@@ -118,8 +118,9 @@ public:
      * \brief userSample
      * The custom sampling function to replace texture2D()/texture() (replace %1 in shader).
      * \code
-     *     vec4 sample2d(sampler2D tex, vec2 pos) { .... }
+     *     vec4 sample2d(sampler2D tex, vec2 pos, int plane) { .... }
      * \endcode
+     * The 3rd parameter can be used to get texel size of a given plane u_texelSize[plane];
      */
     virtual const char* userSample() const { return 0;}
     /*!

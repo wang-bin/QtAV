@@ -34,7 +34,7 @@ vec4 sample2d(sampler2D tex, vec2 pos)
 #endif
 
 void main() {
-    vec4 c = sample2d(u_Texture0, v_TexCoords0);
+    vec4 c = sample2d(u_Texture0, v_TexCoords0, 0);
     c = u_c * c;
 #ifndef HAS_ALPHA
     c.a = 1.0;
