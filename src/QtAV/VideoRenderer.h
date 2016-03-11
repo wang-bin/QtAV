@@ -43,6 +43,7 @@ namespace QtAV {
 typedef int VideoRendererId;
 extern Q_AV_EXPORT VideoRendererId VideoRendererId_OpenGLWindow;
 class Filter;
+class OpenGLVideo;
 class VideoFormat;
 class VideoRendererPrivate;
 class Q_AV_EXPORT VideoRenderer : public AVOutput
@@ -196,6 +197,7 @@ public:
     QColor backgroundColor() const;
     void setBackgroundColor(const QColor& c);
 
+    virtual OpenGLVideo* opengl() const { return NULL;}
 protected:
     VideoRenderer(VideoRendererPrivate &d);
     //TODO: batch drawBackground(color, region)=>loop drawBackground(color,rect)
