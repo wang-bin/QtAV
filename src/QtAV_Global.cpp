@@ -243,6 +243,10 @@ void setFFmpegLogLevel(const QByteArray &level)
         Internal::gAVLogLevel = AV_LOG_VERBOSE;
     else if (level == "debug")
         Internal::gAVLogLevel = AV_LOG_DEBUG;
+#ifdef AV_LOG_TRACE
+    else if (level == "trace")
+        Internal::gAVLogLevel = AV_LOG_TRACE;
+#endif
     else
         Internal::gAVLogLevel = AV_LOG_INFO;
     av_log_set_level(Internal::gAVLogLevel);

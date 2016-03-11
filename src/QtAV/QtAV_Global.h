@@ -70,7 +70,7 @@ Q_AV_EXPORT LogLevel logLevel();
 Q_AV_EXPORT void setFFmpegLogHandler(void(*)(void *, int, const char *, va_list));
 /*!
  * \brief setFFmpegLogLevel
- * \param level can be: quiet, panic, fatal, error, warn, info, verbose, debug
+ * \param level can be: quiet, panic, fatal, error, warn, info, verbose, debug, trace
  */
 Q_AV_EXPORT void setFFmpegLogLevel(const QByteArray& level);
 } //namespace QtAV
