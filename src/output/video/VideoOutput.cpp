@@ -175,6 +175,13 @@ QGraphicsItem* VideoOutput::graphicsItem()
     return d_func().impl->graphicsItem();
 }
 
+OpenGLVideo* VideoOutput::opengl() const
+{
+    if (!isAvailable())
+        return 0;
+    return d_func().impl->opengl();
+}
+
 bool VideoOutput::eventFilter(QObject *obj, QEvent *event)
 {
     DPTR_D(VideoOutput);

@@ -71,7 +71,7 @@ public:
     QWindow* qwindow() Q_DECL_OVERRIDE Q_DECL_FINAL;
     QWidget* widget() Q_DECL_OVERRIDE Q_DECL_FINAL;
     QGraphicsItem* graphicsItem() Q_DECL_OVERRIDE Q_DECL_FINAL;
-
+    OpenGLVideo* opengl() const Q_DECL_OVERRIDE;
 Q_SIGNALS:
     void sourceAspectRatioChanged(qreal value) Q_DECL_OVERRIDE Q_DECL_FINAL;
     void regionOfInterestChanged() Q_DECL_OVERRIDE;
