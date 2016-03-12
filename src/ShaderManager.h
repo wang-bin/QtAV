@@ -23,37 +23,27 @@
 #define QTAV_SHADERMANAGER_H
 
 #include <QtCore/QObject>
-#include <QtCore/QHash>
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-#include <QtGui/QOpenGLContext>
-#else
-#include <QtOpenGL/QGLContext>
-#define QOpenGLContext QGLContext
-#endif
 
 namespace QtAV {
-class MaterialType;
 class VideoShader;
 class VideoMaterial;
 /*!
  * \brief The ShaderManager class
- * cache VideoShader for different video formats etc.
+ * Cache VideoShader and shader programes for different video material type.
+ * TODO: ShaderManager does not change for a given vo, so we can expose VideoRenderer.shaderManager() to set custom shader. It's better than VideoRenderer.opengl() because OpenGLVideo exposes too many apis that may confuse user.
  */
 class ShaderManager : public QObject
 {
     Q_OBJECT
 public:
-    explicit ShaderManager(QOpenGLContext *ctx);
+    ShaderManager(QObject *parent = 0);
     ~ShaderManager();
     VideoShader* prepareMaterial(VideoMaterial *material, qint32 materialType = -1);
-    void setCacheSize(int value);
-
-public Q_SLOTS:
-    void invalidated();
+//    void setCacheSize(int value);
 
 private:
-    QOpenGLContext *m_ctx;
-    QHash<qint32, VideoShader*> shader_cache;
+    class Private;
+    Private* d;
 };
 } //namespace QtAV
 #endif // QTAV_SHADERMANAGER_H

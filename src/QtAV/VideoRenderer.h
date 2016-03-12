@@ -197,6 +197,10 @@ public:
     QColor backgroundColor() const;
     void setBackgroundColor(const QColor& c);
 
+    /*!
+     * \brief opengl
+     * Currently you can only use it to set custom shader OpenGLVideo.setUserShader()
+     */
     virtual OpenGLVideo* opengl() const { return NULL;}
 protected:
     VideoRenderer(VideoRendererPrivate &d);

@@ -265,11 +265,13 @@ void OpenGLVideo::setOpenGLContext(QOpenGLContext *ctx)
     if (d.manager)
         return;
     // TODO: what if ctx is delete?
-    d.manager = new ShaderManager(ctx);
-    d.manager->setObjectName(QStringLiteral("__qtav_shader_manager"));
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    d.manager = new ShaderManager(ctx);
     QObject::connect(ctx, SIGNAL(aboutToBeDestroyed()), this, SLOT(resetGL()), Qt::DirectConnection); //direct?
+#else
+    d.manager = new ShaderManager(this);
 #endif
+    d.manager->setObjectName(QStringLiteral("__qtav_shader_manager"));
     /// get gl info here because context is current(qt ensure it)
     //const QByteArray extensions(reinterpret_cast<const char *>(glGetString(GL_EXTENSIONS)));
     bool hasGLSL = QOpenGLShaderProgram::hasOpenGLShaderPrograms();
