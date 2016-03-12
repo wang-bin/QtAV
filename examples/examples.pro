@@ -5,6 +5,7 @@ SUBDIRS = common
   SUBDIRS += audiopipeline
 !no-widgets {
   SUBDIRS += \
+    shader \
     sharedoutput \
     simpletranscode \
     simpleplayer \
