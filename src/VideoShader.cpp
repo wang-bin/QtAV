@@ -26,11 +26,13 @@
 #include <cmath>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QFile>
+#include <QtCore/QRegExp>
+#include <QtCore/QStringList>
 #include "utils/Logger.h"
 
 #define YUVA_DONE 0
 #define glsl(x) #x "\n"
-#define QTAV_DEBUG_GLSL
+//#define QTAV_DEBUG_GLSL
 
 namespace QtAV {
 
