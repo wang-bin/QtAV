@@ -95,11 +95,14 @@ public:
      */
     void setFile(const QString& path);
     QString file() const;
-    //QIODevice support
+    /*!
+     * \brief setIODevice
+     * Play media stream from QIODevice. AVPlayer does not take the ownership. You have to manage device lifetime.
+     */
     void setIODevice(QIODevice* device);
     /*!
      * \brief setInput
-     * AVPlayer's demuxer takes the ownership. Call it when player is stopped.
+     * Play media stream from custom MediaIO. AVPlayer's demuxer takes the ownership. Call it when player is stopped.
      */
     void setInput(MediaIO* in);
     MediaIO* input() const;
