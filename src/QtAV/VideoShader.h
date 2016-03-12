@@ -58,7 +58,6 @@ public:
      * \brief initialize
      * \param shaderProgram: 0 means create a shader program internally. if not linked, vertex/fragment shader will be added and linked
      */
-    // initialize(VideoMaterial*, QOpenGLShaderProgram*)
     virtual void initialize(QOpenGLShaderProgram* shaderProgram = 0);
     /*!
      * \brief textureLocationCount
@@ -92,17 +91,10 @@ public:
     /// User configurable shader APIs BEGIN
     /*!
      * Keywords will be replaced in user shader code:
-     * %planes%, %planes-1% => plane count, plane count -1
+     * %planes% => plane count
      * Uniforms can be used: (N: 0 ~ planes-1)
      * u_TextureN, v_TexCoordsN, u_texelSize(array of vec2), u_opacity, u_c(channel map), u_colorMatrix, u_to8(vec2, computing 16bit value with 8bit components)
      */
-    /*!
-     * \brief userUniforms
-     * The additional uniforms will be used in shader.
-     * TODO: add to shader code automatically(need uniformType(const char*name))?
-     * \return
-     */
-    virtual QStringList userUniforms() const { return QStringList();}
     /*!
      * \brief userFragmentShaderHeader
      * Must add additional uniform declarations here
@@ -110,8 +102,9 @@ public:
     virtual const char* userFragmentShaderHeader() const {return 0;}
     /*!
      * \brief setUserUniformValues
-     * If return false (not implemented for example), fallback to call setUserUniformValue(name) for each userUniforms()
      * Call program()->setUniformValue(...) here
+     * You can upload a texture for blending in userPostProcess(),
+     * or LUT texture used by userSample() or userPostProcess() etc.
      */
     virtual void setUserUniformValues() {}
     /*!
@@ -124,23 +117,11 @@ public:
      */
     virtual const char* userSample() const { return 0;}
     /*!
-     * \brief userColorTransform
-     * Override the default color transform matrix.
-     * TODO: no override, just partial? call it everytime?
-     * \return
-     */
-    virtual QMatrix4x4 userColorTransform() const {return QMatrix4x4();}
-    /*!
      * \brief userPostProcess
      * Process rgb color
      */
     virtual const char* userPostProcess() const {return 0;}
-    /*!
-     * \brief userUpload
-     * It's the code in C++ side. You can upload a texture for blending in userPostProcessor(), or LUT texture used by userSampler() or userPostProcessor() etc.
-     */
-    virtual bool userUpload() {return false;}
-    /// User configurable shader APIs BEGIN
+    /// User configurable shader APIs END
 
 protected:
     QByteArray shaderSourceFromFile(const QString& fileName) const;

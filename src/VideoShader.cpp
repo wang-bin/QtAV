@@ -260,15 +260,8 @@ const char* VideoShader::fragmentShader() const
     frag.prepend(OpenGLHelper::compatibleShaderHeader(QOpenGLShader::Fragment));
 
     QByteArray header("*/");
-    if (userFragmentShaderHeader()) {
+    if (userFragmentShaderHeader())
         header.append(userFragmentShaderHeader());
-    } else {
-        if (!userUniforms().isEmpty()) {
-            foreach (QString u, userUniforms()) {
-
-            }
-        }
-    }
     header += "\n";
     header += "uniform vec2 u_texelSize[" + QByteArray::number(nb_planes) + "];\n";
     header += "/*";
@@ -287,7 +280,7 @@ const char* VideoShader::fragmentShader() const
         pp_code += "/*";
         frag.replace("%userPostProcess%", pp_code);
     }
-
+    frag.replace("%planes%", QByteArray::number(nb_planes));
 #ifdef QTAV_DEBUG_GLSL
     QString s(frag);
     s.remove(QRegExp(QStringLiteral("(/\\*([^*]|(\\*+[^*/]))*\\*+/)")));
@@ -332,6 +325,23 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
         qDebug("u_to8: %d", d.u_to8);
     if (d.u_texelSize >= 0)
         qDebug("u_texelSize: %d", d.u_texelSize);
+
+    if (userFragmentShaderHeader()) {
+        qDebug("user uniform locations:");
+        const QString fsh = QString::fromUtf8(userFragmentShaderHeader()).remove(QRegExp(QStringLiteral("(/\\*([^*]|(\\*+[^*/]))*\\*+/)")));
+        const QStringList lines = fsh.split(';');
+        foreach (QString line, lines) {
+            line = line.trimmed();
+            if (!line.startsWith(QStringLiteral("uniform ")))
+                continue;
+            // remove array spaces: a [ 2 ]
+            line.replace(QRegExp(QStringLiteral("\\s*\\[\\s*")), QStringLiteral("[")).replace(QRegExp(QStringLiteral("\\s*\\]")), QStringLiteral("]"));
+            QString u = line.split(' ').last();
+            // uniform array: remove "[\d+]"
+            u.remove(QRegExp(QStringLiteral("\\[\\d+\\]")));
+            qDebug("%s: %d", u.toLatin1().constData(), shaderProgram->uniformLocation(u));
+        }
+    }
 }
 
 int VideoShader::textureLocationCount() const
@@ -433,7 +443,6 @@ bool VideoShader::update(VideoMaterial *material)
     if (!material->bind())
         return false;
     //material->unbind();
-    userUpload();
     const VideoFormat fmt(material->currentFormat()); //FIXME: maybe changed in setCurrentFrame(
     //format is out of date because we may use the same shader for different formats
     setVideoFormat(fmt);
@@ -460,8 +469,7 @@ bool VideoShader::update(VideoMaterial *material)
     //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
     if (texelSizeLocation() >= 0)
         program()->setUniformValueArray(texelSizeLocation(), material->texelSize().constData(), nb_planes);
-    if (!userUniforms().isEmpty())
-        setUserUniformValues();
+    setUserUniformValues();
     // uniform end. attribute begins
     return true;
 }
