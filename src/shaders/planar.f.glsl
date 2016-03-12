@@ -38,15 +38,15 @@ varying vec2 v_TexCoords3;
 #define v_TexCoords3 v_TexCoords0
 #endif //MULTI_COORD
 uniform float u_opacity;
-uniform float u_bpp;
 uniform mat4 u_colorMatrix;
 #ifdef CHANNEL16_TO8
 uniform vec2 u_to8;
 #endif
+/***User header code***%userHeader%***/
 // matrixCompMult for convolution
-/***User Sampler code here***%1***/
+/***User sampling function here***%userSample%***/
 #ifndef USER_SAMPLER
-vec4 sample2d(sampler2D tex, vec2 pos)
+vec4 sample2d(sampler2D tex, vec2 pos, int)
 {
     return texture(tex, pos);
 }
@@ -59,40 +59,40 @@ void main()
                          * vec4(
 #ifdef CHANNEL16_TO8
 #ifdef USE_RG
-                             dot(sample2d(u_Texture0, v_TexCoords0).rg, u_to8),
-                             dot(sample2d(u_Texture1, v_TexCoords1).rg, u_to8),
-                             dot(sample2d(u_Texture2, v_TexCoords2).rg, u_to8),
+                             dot(sample2d(u_Texture0, v_TexCoords0, 0).rg, u_to8),
+                             dot(sample2d(u_Texture1, v_TexCoords1, 1).rg, u_to8),
+                             dot(sample2d(u_Texture2, v_TexCoords2, 2).rg, u_to8),
 #ifdef HAS_ALPHA
-                             dot(sample2d(u_Texture3, v_TexCoords3).rg, u_to8)
+                             dot(sample2d(u_Texture3, v_TexCoords3, 3).rg, u_to8)
 #endif //HAS_ALPHA
 #else
-                             dot(sample2d(u_Texture0, v_TexCoords0).ra, u_to8),
-                             dot(sample2d(u_Texture1, v_TexCoords1).ra, u_to8),
-                             dot(sample2d(u_Texture2, v_TexCoords2).ra, u_to8),
+                             dot(sample2d(u_Texture0, v_TexCoords0, 0).ra, u_to8),
+                             dot(sample2d(u_Texture1, v_TexCoords1, 1).ra, u_to8),
+                             dot(sample2d(u_Texture2, v_TexCoords2, 2).ra, u_to8),
 #ifdef HAS_ALPHA
-                             dot(sample2d(u_Texture3, v_TexCoords3).ra, u_to8)
+                             dot(sample2d(u_Texture3, v_TexCoords3, 3).ra, u_to8)
 #endif //HAS_ALPHA
 #endif //USE_RG
 #else
 #ifdef USE_RG
-                             sample2d(u_Texture0, v_TexCoords0).r,
-                             sample2d(u_Texture1, v_TexCoords1).r,
+                             sample2d(u_Texture0, v_TexCoords0, 0).r,
+                             sample2d(u_Texture1, v_TexCoords1, 1).r,
 #ifdef IS_BIPLANE
-                             sample2d(u_Texture2, v_TexCoords2).g,
+                             sample2d(u_Texture2, v_TexCoords2, 2).g,
 #else
-                             sample2d(u_Texture2, v_TexCoords2).r,
+                             sample2d(u_Texture2, v_TexCoords2, 2).r,
 #endif //IS_BIPLANE
 #ifdef HAS_ALPHA
-                             sample2d(u_Texture3, v_TexCoords3).r
+                             sample2d(u_Texture3, v_TexCoords3, 3).r
 
 #endif //HAS_ALPHA
 #else
 // use r, g, a to work for both yv12 and nv12. idea from xbmc
-                             sample2d(u_Texture0, v_TexCoords0).r,
-                             sample2d(u_Texture1, v_TexCoords1).g,
-                             sample2d(u_Texture2, v_TexCoords2).a,
+                             sample2d(u_Texture0, v_TexCoords0, 0).r,
+                             sample2d(u_Texture1, v_TexCoords1, 1).g,
+                             sample2d(u_Texture2, v_TexCoords2, 2).a,
 #ifdef HAS_ALPHA
-                             sample2d(u_Texture3, v_TexCoords3).a
+                             sample2d(u_Texture3, v_TexCoords3, 3).a
 #endif //HAS_ALPHA
 #endif //USE_RG
 #endif //CHANNEL16_TO8
@@ -101,4 +101,5 @@ void main()
 #endif //HAS_ALPHA
                             )
                          , 0.0, 1.0) * u_opacity;
+/***User post processing here***%userPostProcess%***/
 }

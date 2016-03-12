@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -58,7 +58,6 @@ public:
      * \brief initialize
      * \param shaderProgram: 0 means create a shader program internally. if not linked, vertex/fragment shader will be added and linked
      */
-    // initialize(VideoMaterial*, QOpenGLShaderProgram*)
     virtual void initialize(QOpenGLShaderProgram* shaderProgram = 0);
     /*!
      * \brief textureLocationCount
@@ -75,20 +74,65 @@ public:
     int colorMatrixLocation() const;
     int opacityLocation() const;
     int channelMapLocation() const;
+    int texelSizeLocation() const;
     VideoFormat videoFormat() const;
     // defalut is GL_TEXTURE_2D
     int textureTarget() const;
     QOpenGLShaderProgram* program();
+    /*!
+     * \brief update
+     * Upload textures, setup uniforms before rendering.
+     * If material type changed, build a new shader program.
+     */
     bool update(VideoMaterial* material);
+
+    int uniformLocation(const char* name) const;
+
+    /// User configurable shader APIs BEGIN
+    /*!
+     * Keywords will be replaced in user shader code:
+     * %planes% => plane count
+     * Uniforms can be used: (N: 0 ~ planes-1)
+     * u_TextureN, v_TexCoordsN, u_texelSize(array of vec2), u_opacity, u_c(channel map), u_colorMatrix, u_to8(vec2, computing 16bit value with 8bit components)
+     */
+    /*!
+     * \brief userFragmentShaderHeader
+     * Must add additional uniform declarations here
+     */
+    virtual const char* userFragmentShaderHeader() const {return 0;}
+    /*!
+     * \brief setUserUniformValues
+     * Call program()->setUniformValue(...) here
+     * You can upload a texture for blending in userPostProcess(),
+     * or LUT texture used by userSample() or userPostProcess() etc.
+     */
+    virtual void setUserUniformValues() {}
+    /*!
+     * \brief userSample
+     * The custom sampling function to replace texture2D()/texture() (replace %1 in shader).
+     * \code
+     *     vec4 sample2d(sampler2D tex, vec2 pos, int plane) { .... }
+     * \endcode
+     * The 3rd parameter can be used to get texel size of a given plane u_texelSize[plane];
+     */
+    virtual const char* userSample() const { return 0;}
+    /*!
+     * \brief userPostProcess
+     * Process rgb color
+     */
+    virtual const char* userPostProcess() const {return 0;}
+    /// User configurable shader APIs END
+
 protected:
     QByteArray shaderSourceFromFile(const QString& fileName) const;
-    virtual void compile(QOpenGLShaderProgram* shaderProgram);
+    void build(QOpenGLShaderProgram* shaderProgram);
 
     VideoShader(VideoShaderPrivate &d);
     DPTR_DECLARE(VideoShader)
 private:
     void setVideoFormat(const VideoFormat& format);
     void setTextureTarget(int type);
+    void setMaterialType(qint32 value);
     friend class VideoMaterial;
 };
 
@@ -107,8 +151,9 @@ public:
     void setCurrentFrame(const VideoFrame& frame);
     VideoFormat currentFormat() const;
     VideoShader* createShader() const;
-    virtual qint64 type() const;
-    static QString typeName(qint64 value);
+    void initializeShader(VideoShader* shader) const;
+    virtual qint32 type() const;
+    static QString typeName(qint32 value);
 
     bool bind(); // TODO: roi
     void unbind();
@@ -138,10 +183,16 @@ public:
     QSize frameSize() const;
     /*!
      * \brief texelSize
-     * The size of texture unit. It can be used with a uniform to emulate GLSL texelSize() which exists in new versions.
+     * The size of texture unit
      * \return (1.0/textureWidth, 1.0/textureHeight)
      */
-    QSizeF texelSize() const; //vec2?
+    QSizeF texelSize(int plane) const; //vec2?
+    QVector<QVector2D> texelSize() const;
+    /*!
+     * \brief textureSize
+     * It can be used with a uniform to emulate GLSL textureSize() which exists in new versions.
+     */
+    QSize textureSize(int plane) const;
     /*!
      * \brief normalizedROI
      * \param roi logical roi of a video frame.
