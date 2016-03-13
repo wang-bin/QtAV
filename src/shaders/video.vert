@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -20,7 +20,7 @@
 ******************************************************************************/
 attribute vec4 a_Position;
 attribute vec2 a_TexCoords0;
-uniform mat4 u_MVP_matrix;
+uniform mat4 u_Matrix;
 varying vec2 v_TexCoords0;
 #ifdef MULTI_COORD
 attribute vec2 a_TexCoords1;
@@ -32,14 +32,16 @@ attribute vec2 a_TexCoords3;
 varying vec2 v_TexCoords3;
 #endif
 #endif //MULTI_COORD
+/***User header code***%userHeader%***/
+
 void main() {
-  gl_Position = u_MVP_matrix * a_Position;
-  v_TexCoords0 = a_TexCoords0;
+    gl_Position = u_Matrix * a_Position;
+    v_TexCoords0 = a_TexCoords0;
 #ifdef MULTI_COORD
-  v_TexCoords1 = a_TexCoords1;
-  v_TexCoords2 = a_TexCoords2;
+    v_TexCoords1 = a_TexCoords1;
+    v_TexCoords2 = a_TexCoords2;
 #ifdef HAS_ALPHA
-  v_TexCoords3 = a_TexCoords3;
+    v_TexCoords3 = a_TexCoords3;
 #endif
 #endif //MULTI_COORD
 }

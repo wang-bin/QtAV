@@ -205,6 +205,14 @@ const char* VideoShader::vertexShader() const
 #endif
     }
     vert.prepend(OpenGLHelper::compatibleShaderHeader(QOpenGLShader::Vertex));
+
+    if (userShaderHeader(QOpenGLShader::Vertex)) {
+        QByteArray header("*/");
+        header.append(userShaderHeader(QOpenGLShader::Vertex));
+        header += "/*";
+        vert.replace("%userHeader%", header);
+    }
+
 #ifdef QTAV_DEBUG_GLSL
     QString s(vert);
     s.remove(QRegExp(QStringLiteral("(/\\*([^*]|(\\*+[^*/]))*\\*+/)")));
@@ -304,7 +312,7 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     if (!shaderProgram->isLinked()) {
         build(shaderProgram);
     }
-    d.u_MVP_matrix = shaderProgram->uniformLocation("u_MVP_matrix");
+    d.u_Matrix = shaderProgram->uniformLocation("u_Matrix");
     // fragment shader
     d.u_colorMatrix = shaderProgram->uniformLocation("u_colorMatrix");
     d.u_to8 = shaderProgram->uniformLocation("u_to8");
@@ -318,7 +326,7 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
         d.u_Texture[i] = shaderProgram->uniformLocation(tex_var);
         qDebug("%s: %d", tex_var.toUtf8().constData(), d.u_Texture[i]);
     }
-    qDebug("u_MVP_matrix: %d", d.u_MVP_matrix);
+    qDebug("u_Matrix: %d", d.u_Matrix);
     qDebug("u_colorMatrix: %d", d.u_colorMatrix);
     qDebug("u_opacity: %d", d.u_opacity);
     if (d.u_c >= 0)
@@ -365,7 +373,7 @@ int VideoShader::textureLocation(int channel) const
 
 int VideoShader::matrixLocation() const
 {
-    return d_func().u_MVP_matrix;
+    return d_func().u_Matrix;
 }
 
 int VideoShader::colorMatrixLocation() const
@@ -472,7 +480,7 @@ bool VideoShader::update(VideoMaterial *material)
     //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
     if (texelSizeLocation() >= 0)
         program()->setUniformValueArray(texelSizeLocation(), material->texelSize().constData(), nb_planes);
-    setUserUniformValues(QOpenGLShader::Fragment);
+    setUserUniformValues();
     // uniform end. attribute begins
     return true;
 }

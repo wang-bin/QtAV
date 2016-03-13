@@ -53,16 +53,14 @@ public:
                         return texture(tex, coord);
                     });
     }
-    void setUserUniformValues(QOpenGLShader::ShaderType type) {
-        if (type == QOpenGLShader::Vertex)
-            return;
+    void setUserUniformValues() {
         program()->setUniformValue("u_A", A);
         program()->setUniformValue("u_omega", omega);
         program()->setUniformValue("u_t", t);
     }
 protected:
     void timerEvent(QTimerEvent*) {
-        t+=2.0*M_PI/50;
+        t+=2.0*M_PI/50.0;
     }
 private:
     float t;

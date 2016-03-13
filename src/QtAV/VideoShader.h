@@ -58,6 +58,12 @@ public:
      * \return
      */
     virtual char const *const *attributeNames() const;
+    /*!
+     * \brief vertexShader
+     * mvp uniform: u_Matrix
+     * Vertex shader in: a_Position, a_TexCoordsN (see attributeNames())
+     * Vertex shader out: v_TexCoordsN
+     */
     virtual const char *vertexShader() const;
     virtual const char *fragmentShader() const;
     /*!
@@ -96,7 +102,10 @@ public:
      * Keywords will be replaced in user shader code:
      * %planes% => plane count
      * Uniforms can be used: (N: 0 ~ planes-1)
+     * u_Matrix (vertex shader),
      * u_TextureN, v_TexCoordsN, u_texelSize(array of vec2), u_opacity, u_c(channel map), u_colorMatrix, u_to8(vec2, computing 16bit value with 8bit components)
+     * Vertex shader in: a_Position, a_TexCoordsN (see attributeNames())
+     * Vertex shader out: v_TexCoordsN
      */
     /*!
      * \brief userShaderHeader
@@ -109,7 +118,7 @@ public:
      * You can upload a texture for blending in userPostProcess(),
      * or LUT texture used by userSample() or userPostProcess() etc.
      */
-    virtual void setUserUniformValues(QOpenGLShader::ShaderType) {}
+    virtual void setUserUniformValues() {}
     /*!
      * \brief userSample
      * Fragment shader only. The custom sampling function to replace texture2D()/texture() (replace %1 in shader).
@@ -125,6 +134,7 @@ public:
     /*!
      * \brief userPostProcess
      * Fragment shader only. Process rgb color
+     * TODO: parameter ShaderType?
      */
     virtual const char* userPostProcess() const {return 0;}
     /// User configurable shader APIs END

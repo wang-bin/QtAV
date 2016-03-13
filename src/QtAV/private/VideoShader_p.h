@@ -1,5 +1,5 @@
 ﻿/******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
@@ -51,7 +51,7 @@ public:
     VideoShaderPrivate()
         : owns_program(false)
         , program(0)
-        , u_MVP_matrix(-1)
+        , u_Matrix(-1)
         , u_colorMatrix(-1)
         , u_to8(-1)
         , u_opacity(-1)
@@ -72,7 +72,7 @@ public:
 
     bool owns_program; // shader program is not created by this. e.g. scene graph create it's own program and we store it here
     QOpenGLShaderProgram *program;
-    int u_MVP_matrix;
+    int u_Matrix;
     int u_colorMatrix;
     int u_to8;
     int u_opacity;
