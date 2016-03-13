@@ -27,7 +27,7 @@ uniform mat4 u_c;
 /***User header code***%userHeader%***/
 /***User sampling function here***%userSample%***/
 #ifndef USER_SAMPLER
-vec4 sample2d(sampler2D tex, vec2 pos, int)
+vec4 sample2d(sampler2D tex, vec2 pos, int plane)
 {
     return texture(tex, pos);
 }

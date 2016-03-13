@@ -46,7 +46,7 @@ uniform vec2 u_to8;
 // matrixCompMult for convolution
 /***User sampling function here***%userSample%***/
 #ifndef USER_SAMPLER
-vec4 sample2d(sampler2D tex, vec2 pos, int)
+vec4 sample2d(sampler2D tex, vec2 pos, int plane)
 {
     return texture(tex, pos);
 }

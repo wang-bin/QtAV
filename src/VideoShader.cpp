@@ -278,7 +278,7 @@ const char* VideoShader::fragmentShader() const
     frag.replace("%userHeader%", header);
 
     if (userSample()) {
-        QByteArray sample_code("*/#define USER_SAMPLER\n");
+        QByteArray sample_code("*/\n#define USER_SAMPLER\n");
         sample_code.append(userSample());
         sample_code += "/*";
         frag.replace("%userSample%", sample_code);
