@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2016 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -18,9 +18,14 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
+//if qt<5.3, remove lines: sed '/\/\/IF_QT53/,/\/\/ENDIF_QT53/d'
 import QtQuick 2.0
+//IF_QT53
 import QtQuick.Dialogs 1.2
+/*
+//ENDIF_QT53
+import QtQuick.Dialogs 1.1 /*
+*/
 //import QtMultimedia 5.0
 import QtAV 1.6
 import QtQuick.Window 2.1
@@ -474,10 +479,13 @@ Rectangle {
         }
         volume: player.volume
         onOpenFile: fileDialog.open()
+        //IF_QT53
         onOpenUrl: urlDialog.open()
+        //ENDIF_QT53
         onShowInfo: pageLoader.source = "MediaInfoPage.qml"
         onShowHelp: pageLoader.source = "About.qml"
     }
+//IF_QT53
     Dialog {
         id: urlDialog
         standardButtons: StandardButton.Open | StandardButton.Cancel
@@ -496,7 +504,7 @@ Rectangle {
         }
         onAccepted: player.source = urlEdit.displayText
     }
-
+//ENDIF_QT53
     FileDialog {
         id: fileDialog
         title: "Please choose a media file"
