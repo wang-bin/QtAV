@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
@@ -25,9 +25,12 @@
 #include <QtAV/VideoFrame.h>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLShaderProgram>
+#include <QtGui/QOpenGLShader>
 #else
 #include <QtOpenGL/QGLShaderProgram>
+#include <QtOpenGL/QGLShader>
 #define QOpenGLShaderProgram QGLShaderProgram
+#define QOpenGLShader QGLShader
 #endif
 
 class QOpenGLShaderProgram;
@@ -39,6 +42,9 @@ class VideoShaderPrivate;
  * \brief The VideoShader class
  * Represents a shader for rendering a video frame.
  * Low-level api. Used by OpenGLVideo and Scene Graph.
+ * You can also create your own shader. Usually only sampling function and rgb post processing are enough.
+ * Transforming color to rgb is done internally.
+ * TODO: vertex shader (fully controlled by user?)
  */
 class Q_AV_EXPORT VideoShader
 {
@@ -64,9 +70,6 @@ public:
      * number of texture locations is
      * 1: packed RGB
      * number of channels: yuv or plannar RGB
-     * TODO: always use plannar shader and 1 tex per channel?
-     * \param index
-     * \return texture location in shader
      */
     int textureLocationCount() const;
     int textureLocation(int index) const;
@@ -96,29 +99,32 @@ public:
      * u_TextureN, v_TexCoordsN, u_texelSize(array of vec2), u_opacity, u_c(channel map), u_colorMatrix, u_to8(vec2, computing 16bit value with 8bit components)
      */
     /*!
-     * \brief userFragmentShaderHeader
+     * \brief userShaderHeader
      * Must add additional uniform declarations here
      */
-    virtual const char* userFragmentShaderHeader() const {return 0;}
+    virtual const char* userShaderHeader(QOpenGLShader::ShaderType) const {return 0;}
     /*!
      * \brief setUserUniformValues
      * Call program()->setUniformValue(...) here
      * You can upload a texture for blending in userPostProcess(),
      * or LUT texture used by userSample() or userPostProcess() etc.
      */
-    virtual void setUserUniformValues() {}
+    virtual void setUserUniformValues(QOpenGLShader::ShaderType) {}
     /*!
      * \brief userSample
-     * The custom sampling function to replace texture2D()/texture() (replace %1 in shader).
+     * Fragment shader only. The custom sampling function to replace texture2D()/texture() (replace %1 in shader).
      * \code
      *     vec4 sample2d(sampler2D tex, vec2 pos, int plane) { .... }
      * \endcode
      * The 3rd parameter can be used to get texel size of a given plane u_texelSize[plane];
+     * Convolution of result rgb and kernel has the same effect as convolution of input yuv and kernel, ensured by
+     * Σ_i c_i* Σ_j k_j*x_j=Σ_i k_i* Σ_j c_j*x_j
+     * Because because the input yuv is from a real rgb color, so no clamp() is required for the transformed color.
      */
     virtual const char* userSample() const { return 0;}
     /*!
      * \brief userPostProcess
-     * Process rgb color
+     * Fragment shader only. Process rgb color
      */
     virtual const char* userPostProcess() const {return 0;}
     /// User configurable shader APIs END

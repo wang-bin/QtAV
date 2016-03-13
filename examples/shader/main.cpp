@@ -18,44 +18,56 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 #include <QtAV>
+#include <QtCore/qmath.h>
 #include <QApplication>
 #include <QtCore/QScopedPointer>
 #include <QWidget>
 using namespace QtAV;
 
 #define GLSL(x) #x "\n"
-class MediumBlurShader : public VideoShader {
+class WaveShader : public QObject, public VideoShader {
 public:
-    const char* userFragmentShaderHeader() const {
-        return GLSL(uniform float u_kernel[9];);
+    WaveShader(QObject *parent = 0) : QObject(parent)
+      , t(0)
+      , A(0.06)
+      , omega(5)
+    {
+        startTimer(20);
+    }
+    const char* userShaderHeader(QOpenGLShader::ShaderType type) const {
+        if (type == QOpenGLShader::Vertex)
+            return 0;
+        return GLSL(
+        uniform float u_kernel[9];
+        uniform float u_omega;
+        uniform float u_A;
+        uniform float u_t;
+        );
     }
     const char* userSample() const {
         return GLSL(
                     vec4 sample2d(sampler2D tex, vec2 pos, int p)
                     {
-                        vec4 c = vec4(0.0);
-                        c += texture(tex, pos -u_texelSize[p])*u_kernel[0];
-                        c += texture(tex, pos + u_texelSize[p]*vec2(0.0, -1.0))*u_kernel[1];
-                        c += texture(tex, pos + u_texelSize[p]*vec2(1.0, -1.0))*u_kernel[2];
-                        c += texture(tex, pos + u_texelSize[p]*vec2(-1.0, 0.0))*u_kernel[3];
-                        c += texture(tex, pos)*u_kernel[4];
-                        c += texture(tex, pos + u_texelSize[p]*vec2(1.0, 0.0))*u_kernel[5];
-                        c += texture(tex, pos + u_texelSize[p]*vec2(-1.0, 1.0))*u_kernel[6];
-                        c += texture(tex, pos + u_texelSize[p]*vec2(0.0, 1.0))*u_kernel[7];
-                        c += texture(tex, pos + u_texelSize[p])*u_kernel[8];
-                        c.a = texture(tex, pos).a;
-                        return c;
+                        vec2 pulse = sin(u_t - u_omega * pos);
+                        vec2 coord = pos + u_A*vec2(pulse.x, -pulse.x);
+                        return texture(tex, coord);
                     });
     }
-    void setUserUniformValues() {
-        const float v=1.0/9.0;
-        static const float kernel[9] =  {
-            v, v, v,
-            v, v, v,
-            v, v, v
-        };
-        program()->setUniformValueArray("u_kernel", kernel, 9, 1);
+    void setUserUniformValues(QOpenGLShader::ShaderType type) {
+        if (type == QOpenGLShader::Vertex)
+            return;
+        program()->setUniformValue("u_A", A);
+        program()->setUniformValue("u_omega", omega);
+        program()->setUniformValue("u_t", t);
     }
+protected:
+    void timerEvent(QTimerEvent*) {
+        t+=2.0*M_PI/50;
+    }
+private:
+    float t;
+    float A;
+    float omega;
 };
 
 int main(int argc, char *argv[])
@@ -70,7 +82,7 @@ int main(int argc, char *argv[])
     player.addVideoRenderer(&vo);
     player.addVideoRenderer(&vo0);
     vo0.widget()->setWindowTitle("No shader");
-    vo.widget()->setWindowTitle("Medium blur shader");
+    vo.widget()->setWindowTitle("Wave effect shader");
     vo0.widget()->show();
     vo.widget()->show();
     vo0.widget()->move(0, 0);
@@ -81,7 +93,7 @@ int main(int argc, char *argv[])
     QScopedPointer<VideoShader> shader;
     if (!vo.opengl())
         qFatal("No opengl in the renderer");
-    shader.reset(new MediumBlurShader());
+    shader.reset(new WaveShader());
     vo.opengl()->setUserShader(shader.data());
     return a.exec();
 }

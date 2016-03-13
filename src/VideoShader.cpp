@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
@@ -262,8 +262,8 @@ const char* VideoShader::fragmentShader() const
     frag.prepend(OpenGLHelper::compatibleShaderHeader(QOpenGLShader::Fragment));
 
     QByteArray header("*/");
-    if (userFragmentShaderHeader())
-        header.append(userFragmentShaderHeader());
+    if (userShaderHeader(QOpenGLShader::Fragment))
+        header.append(userShaderHeader(QOpenGLShader::Fragment));
     header += "\n";
     header += "uniform vec2 u_texelSize[" + QByteArray::number(nb_planes) + "];\n";
     header += "/*";
@@ -328,9 +328,10 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     if (d.u_texelSize >= 0)
         qDebug("u_texelSize: %d", d.u_texelSize);
 
-    if (userFragmentShaderHeader()) {
+    // TODO: vertex shader
+    if (userShaderHeader(QOpenGLShader::Fragment)) {
         qDebug("user uniform locations:");
-        const QString fsh = QString::fromUtf8(userFragmentShaderHeader()).remove(QRegExp(QStringLiteral("(/\\*([^*]|(\\*+[^*/]))*\\*+/)")));
+        const QString fsh = QString::fromUtf8(userShaderHeader(QOpenGLShader::Fragment)).remove(QRegExp(QStringLiteral("(/\\*([^*]|(\\*+[^*/]))*\\*+/)")));
         const QStringList lines = fsh.split(';');
         foreach (QString line, lines) {
             line = line.trimmed();
@@ -471,7 +472,7 @@ bool VideoShader::update(VideoMaterial *material)
     //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
     if (texelSizeLocation() >= 0)
         program()->setUniformValueArray(texelSizeLocation(), material->texelSize().constData(), nb_planes);
-    setUserUniformValues();
+    setUserUniformValues(QOpenGLShader::Fragment);
     // uniform end. attribute begins
     return true;
 }
