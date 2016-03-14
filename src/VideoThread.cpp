@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -212,42 +212,23 @@ bool VideoThread::deliverVideoFrame(VideoFrame &frame)
      */
     d.outputSet->lock();
     QList<AVOutput *> outputs = d.outputSet->outputs();
-    if (outputs.size() > 1) { //FIXME!
-        VideoFrame outFrame(d.conv.convert(frame, VideoFormat::Format_RGB32));
+    VideoRenderer *vo = 0;
+    if (!outputs.isEmpty())
+        vo = static_cast<VideoRenderer*>(outputs.first());
+    if (vo && (!vo->isSupported(frame.pixelFormat())
+            || (vo->isPreferredPixelFormatForced() && vo->preferredPixelFormat() != frame.pixelFormat())
+            )) {
+        VideoFrame outFrame(d.conv.convert(frame, vo->preferredPixelFormat()));
         if (!outFrame.isValid()) {
-            /*
-             * use VideoFormat::Format_User to deliver user defined frame
-             * renderer may update background but no frame to graw, so flickers
-             * may crash for some renderer(e.g. d2d) without validate and render an invalid frame
-             */
             d.outputSet->unlock();
             return false;
         }
         frame = outFrame;
-    } else {
-        VideoRenderer *vo = 0;
-        if (!outputs.isEmpty())
-            vo = static_cast<VideoRenderer*>(outputs.first());
-        if (vo && (!vo->isSupported(frame.pixelFormat())
-                || (vo->isPreferredPixelFormatForced() && vo->preferredPixelFormat() != frame.pixelFormat())
-                )) {
-            VideoFrame outFrame(d.conv.convert(frame, vo->preferredPixelFormat()));
-            if (!outFrame.isValid()) {
-                /*
-                 * use VideoFormat::Format_User to deliver user defined frame
-                 * renderer may update background but no frame to graw, so flickers
-                 * may crash for some renderer(e.g. d2d) without validate and render an invalid frame
-                 */
-                d.outputSet->unlock();
-                return false;
-            }
-            frame = outFrame;
-        }
     }
     d.outputSet->sendVideoFrame(frame); //TODO: group by format, convert group by group
     d.outputSet->unlock();
 
-    emit frameDelivered();
+    Q_EMIT frameDelivered();
     return true;
 }
 
@@ -601,6 +582,7 @@ void VideoThread::run()
         // no return even if d.stop is true. ensure frame is displayed. otherwise playing an image may be failed to display
         if (!deliverVideoFrame(frame))
             continue;
+        //qDebug("clock.diff: %.3f", d.clock->diff());
         if (d.force_dt > 0)
             last_deliver_time = QDateTime::currentMSecsSinceEpoch();
         // TODO: store original frame. now the frame is filtered and maybe converted to renderer perferred format
