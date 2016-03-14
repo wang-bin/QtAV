@@ -7,6 +7,5 @@ export QT_SELECT=qt5
 	dh $@ --parallel
 
 override_dh_auto_configure:
-	test `qmake -query QT_VERSION |cut -d '.' -f 2` -lt 3 && sed -i '/\/\/IF_QT53/,/\/\/ENDIF_QT53/d' examples/QMLPlayer/qml/QMLPlayer/main.qml #ubuntu14.04 use qt5.2, remove incompatible code in qmlplayer. only minor version is checked
 	qmake "CONFIG+=no_rpath recheck config_libass_link config_openal_link no-tests"
 

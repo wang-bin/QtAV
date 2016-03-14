@@ -26,10 +26,9 @@ SOURCES += main.cpp
 lupdate_only{
 SOURCES = qml/QMLPlayer/*.qml qml/QMLPlayer/*.js
 }
+
 # Installation path
 target.path = $$[QT_INSTALL_BINS]
-
-
 desktopfile.files = $$PWD/../../qtc_packaging/debian_generic/QMLPlayer.desktop
 desktopfile.path = /usr/share/applications
 
@@ -60,3 +59,6 @@ DISTFILES += \
     android/gradlew.bat
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+
+#ubuntu14.04 use qt5.2, remove incompatible code in qmlplayer
+!qtAtLeast(5, 3):unix: system("sed -i '/\/\/IF_QT53/,/\/\/ENDIF_QT53/d' qml/QMLPlayer/main.qml")
