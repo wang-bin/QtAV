@@ -159,7 +159,7 @@ public:
       , deinterlace(cudaVideoDeinterlaceMode_Adaptive)
       , yuv_range(ColorRange_Limited)
       , nb_dec_surface(kMaxDecodeSurfaces)
-      , copy_mode(VideoDecoderCUDA::GenericCopy) //TODO: check whether intel driver is used
+      , copy_mode(VideoDecoderCUDA::DirectCopy)
     {
 #if QTAV_HAVE(DLLAPI_CUDA)
         can_load = dllapi::testLoad("nvcuvid");
@@ -311,7 +311,7 @@ VideoDecoderCUDA::VideoDecoderCUDA():
     setProperty("detail_copyMode", QString("%1\n%2\n%3\%4")
                 .arg(tr("Performace: ZeroCopy > DirectCopy > GenericCopy"))
                 .arg(tr("ZeroCopy: no copy back from GPU to System memory. Directly render the decoded data on GPU"))
-                .arg(tr("DirectCopy: copy back to host memory but video frames use the same host memory address and maybe not safe"))
+                .arg(tr("DirectCopy: copy back to host memory but video frames and map to GL texture"))
                 .arg(tr("GenericCopy: copy back to host memory and each video frame"))
                 );
     Q_UNUSED(QObject::tr("ZeroCopy"));
@@ -597,6 +597,11 @@ bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int c
 #endif //QTAV_HAVE(CUDA_EGL)
 
     }
+#ifndef QT_NO_OPENGL
+    else if (copy_mode == VideoDecoderCUDA::DirectCopy) {
+        interop_res = cuda::InteropResourcePtr(new cuda::HostInteropResource(cudev, dec, vid_ctx_lock));
+    }
+#endif //QT_NO_OPENGL
     return true;
 }
 
@@ -715,8 +720,8 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
         //qDebug("cuCtxPopCurrent %p", cuctx);
 
         VideoFrame frame;
-        if (copy_mode == VideoDecoderCUDA::ZeroCopy && interop_res) {
-            if (OpenGLHelper::isOpenGLES()) {
+        if (copy_mode != VideoDecoderCUDA::GenericCopy && interop_res) {
+            if (OpenGLHelper::isOpenGLES() && copy_mode == VideoDecoderCUDA::ZeroCopy) {
                 proc_params.Reserved[0] = pitch; // TODO: pass pitch to setSurface()
                 frame = VideoFrame(codec_ctx->width, codec_ctx->height, VideoFormat::Format_RGB32);
                 frame.setBytesPerLine(codec_ctx->width * 4); //used by gl to compute texture size

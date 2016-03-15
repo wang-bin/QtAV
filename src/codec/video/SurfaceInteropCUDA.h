@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -107,6 +107,25 @@ private:
     QWeakPointer<InteropResource> m_resource;
     int w, h, H;
 };
+
+#ifndef QT_NO_OPENGL
+class HostInteropResource Q_DECL_FINAL: public InteropResource
+{
+public:
+    HostInteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock lk);
+    bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int w, int h, int H, int plane) Q_DECL_OVERRIDE;
+    bool unmap(GLuint) Q_DECL_OVERRIDE;
+private:
+    bool ensureResource(int pitch, int height);
+
+    struct {
+        int index;
+        uchar* data;
+        int height;
+        int pitch;
+    } host_mem;
+};
+#endif //QT_NO_OPENGL
 
 #if QTAV_HAVE(CUDA_EGL)
 class EGL;

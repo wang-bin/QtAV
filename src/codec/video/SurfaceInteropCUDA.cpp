@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -89,9 +89,70 @@ void* InteropResource::mapToHost(const VideoFormat &format, void *handle, int pi
     else
         *f = frame.to(format);
 
-    cuMemFreeHost(host_data);
+    CUDA_ENSURE(cuMemFreeHost(host_data), f);
     return f;
 }
+
+#ifndef QT_NO_OPENGL
+HostInteropResource::HostInteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock lk)
+    : InteropResource(d, decoder, lk)
+{
+    memset(&host_mem, 0, sizeof(host_mem));
+    host_mem.index = -1;
+}
+
+bool HostInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint tex, int w, int h, int H, int plane)
+{
+    Q_UNUSED(w);
+    Q_UNUSED(H);
+    if (host_mem.index != picIndex || !host_mem.data) {
+        AutoCtxLock locker((cuda_api*)this, lock);
+        Q_UNUSED(locker);
+        CUdeviceptr devptr;
+        unsigned int pitch;
+        //qDebug("index: %d=>%d, plane: %d", host_mem.index, picIndex, plane);
+        CUDA_ENSURE(cuvidMapVideoFrame(dec, picIndex, &devptr, &pitch, const_cast<CUVIDPROCPARAMS*>(&param)), NULL);
+        CUVIDAutoUnmapper unmapper(this, dec, devptr);
+        Q_UNUSED(unmapper);
+        if (!ensureResource(pitch, h))
+            return false;
+        CUDA_ENSURE(cuMemcpyDtoH(host_mem.data, devptr, pitch*h*3/2), NULL);
+        host_mem.index = picIndex;
+    }
+    // map to texture
+    //qDebug("map plane %d @%d", plane, picIndex);
+    GLint iformat[2];
+    GLenum format[2], dtype[2];
+    OpenGLHelper::videoFormatToGL(VideoFormat::Format_NV12, iformat, format, dtype);
+    DYGL(glBindTexture(GL_TEXTURE_2D, tex));
+    const int chroma = plane != 0;
+    // chroma pitch for gl is 1/2 (gl_rg)
+    DYGL(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, host_mem.pitch>>chroma, host_mem.height>>chroma, format[plane], dtype[plane], host_mem.data + chroma*host_mem.pitch*host_mem.height));
+    //DYGL(glTexImage2D(GL_TEXTURE_2D, 0, iformat[plane], host_mem.pitch>>chroma, host_mem.height>>chroma, 0, format[plane], dtype[plane], host_mem.data + chroma*host_mem.pitch*host_mem.height));
+    return true;
+}
+
+bool HostInteropResource::unmap(GLuint)
+{
+    return true;
+}
+
+bool HostInteropResource::ensureResource(int pitch, int height)
+{
+    if (host_mem.data && host_mem.pitch == pitch && host_mem.height == height)
+        return true;
+    if (host_mem.data) {
+        CUDA_ENSURE(cuMemFreeHost(host_mem.data), false);
+        host_mem.data = NULL;
+    }
+    qDebug("update cuda host mem. %dx%d=>%dx%d", host_mem.pitch, host_mem.height, pitch, height);
+    host_mem.pitch = pitch;
+    host_mem.height = height;
+    // NV12
+    CUDA_ENSURE(cuMemAllocHost((void**)&host_mem.data, pitch*height*3/2), NULL);
+    return true;
+}
+#endif //QT_NO_OPENGL
 
 void SurfaceInteropCUDA::setSurface(int picIndex, CUVIDPROCPARAMS param, int width, int height, int surface_height)
 {
