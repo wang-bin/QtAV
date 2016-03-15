@@ -354,6 +354,7 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
         }
     }
     d.rebuild_program = false;
+    d.update_builtin_uniforms = true;
 }
 
 int VideoShader::textureLocationCount() const
@@ -461,11 +462,15 @@ bool VideoShader::update(VideoMaterial *material)
     setVideoFormat(fmt);
     // uniforms begin
     program()->bind(); //glUseProgram(id). for glUniform
+    setUserUniformValues();
+    if (!d.update_builtin_uniforms)
+        return true;
+    d.update_builtin_uniforms = false;
     // all texture ids should be binded when renderering even for packed plane!
     const int nb_planes = fmt.planeCount(); //number of texture id
+    // TODO: sample2D array
     for (int i = 0; i < nb_planes; ++i) {
         // use glUniform1i to swap planes. swap uv: i => (3-i)%3
-        // TODO: in shader, use uniform sample2D u_Texture[], and use glUniform1iv(u_Texture, 3, {...})
         program()->setUniformValue(textureLocation(i), (GLint)i);
     }
     if (nb_planes < textureLocationCount()) {
@@ -473,7 +478,7 @@ bool VideoShader::update(VideoMaterial *material)
             program()->setUniformValue(textureLocation(i), (GLint)(nb_planes - 1));
         }
     }
-    //qDebug() << "color mat " << material->colorMatrix();
+    program()->setUniformValue(opacityLocation(), (GLfloat)1.0);
     program()->setUniformValue(colorMatrixLocation(), material->colorMatrix());
     if (d_func().u_to8 >= 0)
         program()->setUniformValue(d_func().u_to8, material->vectorTo8bit());
@@ -482,7 +487,6 @@ bool VideoShader::update(VideoMaterial *material)
     //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
     if (texelSizeLocation() >= 0)
         program()->setUniformValueArray(texelSizeLocation(), material->texelSize().constData(), nb_planes);
-    setUserUniformValues();
     // uniform end. attribute begins
     return true;
 }

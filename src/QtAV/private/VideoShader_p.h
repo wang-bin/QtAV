@@ -51,6 +51,7 @@ public:
     VideoShaderPrivate()
         : owns_program(false)
         , rebuild_program(false)
+        , update_builtin_uniforms(true)
         , program(0)
         , u_Matrix(-1)
         , u_colorMatrix(-1)
@@ -73,6 +74,7 @@ public:
 
     bool owns_program; // shader program is not created by this. e.g. scene graph create it's own program and we store it here
     bool rebuild_program;
+    bool update_builtin_uniforms; //builtin uniforms are static, set the values once is enough if no change
     QOpenGLShaderProgram *program;
     int u_Matrix;
     int u_colorMatrix;
