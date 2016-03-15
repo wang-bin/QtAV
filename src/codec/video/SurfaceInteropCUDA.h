@@ -46,8 +46,15 @@ namespace cuda {
 class InteropResource : protected cuda_api
 {
 public:
-    InteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock declock);
-    ~InteropResource();
+    InteropResource();
+    void setDevice(CUdevice d) { dev = d;}
+    void setShareContext(CUcontext c) {
+        ctx = c;
+        share_ctx = !!c;
+    }
+    void setDecoder(CUvideodecoder d) { dec = d;}
+    void setLock(CUvideoctxlock l) { lock = l;}
+    virtual ~InteropResource();
     /// copy from gpu (optimized if possible) and convert to target format if necessary
     // mapToHost
     /*!
@@ -64,6 +71,7 @@ public:
     /// copy from gpu and convert to target format if necessary. used by VideoCapture
     void* mapToHost(const VideoFormat &format, void *handle, int picIndex, const CUVIDPROCPARAMS &param, int width, int height, int surface_height);
 protected:
+    bool share_ctx;
     CUdevice dev;
     CUcontext ctx;
     CUvideodecoder dec;
@@ -112,14 +120,13 @@ private:
 class HostInteropResource Q_DECL_FINAL: public InteropResource
 {
 public:
-    HostInteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock lk);
+    HostInteropResource();
     ~HostInteropResource();
     bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int w, int h, int H, int plane) Q_DECL_OVERRIDE;
     bool unmap(GLuint) Q_DECL_OVERRIDE;
 private:
     bool ensureResource(int pitch, int height);
 
-    CUcontext ctx;
     struct {
         int index;
         uchar* data;
@@ -140,7 +147,7 @@ class EGL;
 class EGLInteropResource Q_DECL_FINAL: public InteropResource
 {
 public:
-    EGLInteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock declock);
+    EGLInteropResource();
     ~EGLInteropResource();
     bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int w, int h, int H, int plane) Q_DECL_OVERRIDE;
 private:
@@ -168,7 +175,6 @@ private:
 class GLInteropResource Q_DECL_FINAL: public InteropResource
 {
 public:
-    GLInteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock lk);
     bool map(int picIndex, const CUVIDPROCPARAMS& param, GLuint tex, int w, int h, int H, int plane) Q_DECL_OVERRIDE;
     bool unmap(GLuint tex) Q_DECL_OVERRIDE;
 private:

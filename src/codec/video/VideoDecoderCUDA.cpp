@@ -181,6 +181,7 @@ public:
             return;
         if (!isLoaded()) //cuda_api
             return;
+        interop_res = cuda::InteropResourcePtr();
     }
     ~VideoDecoderCUDAPrivate() {
         if (bitstream_filter_ctx)
@@ -198,6 +199,30 @@ public:
     bool initCuda();
     bool releaseCuda();
     bool createCUVIDDecoder(cudaVideoCodec cudaCodec, int cw, int ch);
+    void createInterop() {
+        if (copy_mode == VideoDecoderCUDA::ZeroCopy) {
+#if QTAV_HAVE(CUDA_GL)
+            if (!OpenGLHelper::isOpenGLES())
+                interop_res = cuda::InteropResourcePtr(new cuda::GLInteropResource());
+#endif //QTAV_HAVE(CUDA_GL)
+#if QTAV_HAVE(CUDA_EGL)
+            if (OpenGLHelper::isOpenGLES())
+                interop_res = cuda::InteropResourcePtr(new cuda::EGLInteropResource());
+#endif //QTAV_HAVE(CUDA_EGL)
+        }
+#ifndef QT_NO_OPENGL
+        else if (copy_mode == VideoDecoderCUDA::DirectCopy) {
+            interop_res = cuda::InteropResourcePtr(new cuda::HostInteropResource());
+        }
+#endif //QT_NO_OPENGL
+        if (!interop_res)
+            return;
+        interop_res->setDevice(cudev);
+        interop_res->setShareContext(cuctx); //it not share the context, interop res will create it's own context, context switch is slow
+        interop_res->setDecoder(dec);
+        interop_res->setLock(vid_ctx_lock);
+    }
+
     bool createCUVIDParser();
     bool flushParser();
     bool processDecodedData(CUVIDPARSERDISPINFO *cuviddisp, VideoFrame* outFrame = 0);
@@ -243,6 +268,7 @@ public:
             // how about parser.ulMaxNumDecodeSurfaces? recreate?
             AVCodecID codec = mapCodecToFFmpeg(cuvidfmt->codec);
             p->setBSF(codec);
+            p->createInterop();
         }
         //TODO: lavfilter
         return 1;
@@ -470,11 +496,15 @@ bool VideoDecoderCUDAPrivate::open()
     if (!isLoaded()) //cuda_api
         return false;
     if (!cuctx)
-        available = initCuda();
+        initCuda();
     setBSF(codec_ctx->codec_id);
     // max decoder surfaces is computed in createCUVIDDecoder. createCUVIDParser use the value
-    return createCUVIDDecoder(mapCodecFromFFmpeg(codec_ctx->codec_id), codec_ctx->coded_width, codec_ctx->coded_height)
-            && createCUVIDParser();
+    if (!createCUVIDDecoder(mapCodecFromFFmpeg(codec_ctx->codec_id), codec_ctx->coded_width, codec_ctx->coded_height))
+        return false;
+    if (!createCUVIDParser())
+        return false;
+    available = true;
+    return true;
 }
 
 bool VideoDecoderCUDAPrivate::initCuda()
@@ -491,7 +521,7 @@ bool VideoDecoderCUDAPrivate::initCuda()
     description = QStringLiteral("CUDA device: %1 %2.%3 %4 MHz @%5").arg(QLatin1String((const char*)devname)).arg(major).arg(minor).arg(clockRate/1000).arg(cudev);
 
     // cuD3DCtxCreate > cuGLCtxCreate(deprecated) > cuCtxCreate (fallback if d3d and gl return status is failed)
-    CUDA_ENSURE(cuCtxCreate(&cuctx, CU_CTX_SCHED_BLOCKING_SYNC, cudev), false); //CU_CTX_SCHED_AUTO?
+    CUDA_ENSURE(cuCtxCreate(&cuctx, CU_CTX_SCHED_BLOCKING_SYNC, cudev), false); //CU_CTX_SCHED_AUTO: slower in my test
     CUDA_ENSURE(cuCtxPopCurrent(&cuctx), false);
     CUDA_ENSURE(cuvidCtxLockCreate(&vid_ctx_lock, cuctx), 0);
     {
@@ -510,7 +540,7 @@ bool VideoDecoderCUDAPrivate::releaseCuda()
 {
     available = false;
     if (cuctx)
-        CUDA_WARN(cuCtxPushCurrent(cuctx)); //cuMemFreeHost need the context
+        CUDA_WARN(cuCtxPushCurrent(cuctx)); //cuMemFreeHost need the context of cuMemAllocHost which was called in VideoThread, while releaseCuda() in dtor can be called in any thread
     if (!can_load)
         return true;
     if (dec) {
@@ -584,24 +614,6 @@ bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int c
     available = false;
     CUDA_ENSURE(cuvidCreateDecoder(&dec, &dec_create_info), false);
     available = true;
-    if (copy_mode == VideoDecoderCUDA::ZeroCopy) {
-#if QTAV_HAVE(CUDA_GL)
-        // TODO: runtime gles check
-        if (!OpenGLHelper::isOpenGLES())
-            interop_res = cuda::InteropResourcePtr(new cuda::GLInteropResource(cudev, dec, vid_ctx_lock));
-#endif //QTAV_HAVE(CUDA_GL)
-#if QTAV_HAVE(CUDA_EGL)
-        // TODO: runtime gles check
-        if (OpenGLHelper::isOpenGLES())
-            interop_res = cuda::InteropResourcePtr(new cuda::EGLInteropResource(cudev, dec, vid_ctx_lock));
-#endif //QTAV_HAVE(CUDA_EGL)
-
-    }
-#ifndef QT_NO_OPENGL
-    else if (copy_mode == VideoDecoderCUDA::DirectCopy) {
-        interop_res = cuda::InteropResourcePtr(new cuda::HostInteropResource(cudev, dec, vid_ctx_lock));
-    }
-#endif //QT_NO_OPENGL
     return true;
 }
 
