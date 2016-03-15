@@ -34,25 +34,18 @@ public:
     }
     void updateShaderCode() {
         const int ks = (2*radius+1)*(2*radius+1);
-        header = QByteArray("uniform float u_Kernel[")
-                .append(QByteArray::number(ks))
-                .append("];");
-        QByteArray s("vec4 sample2d(sampler2D tex, vec2 pos, int p) { vec4 c = vec4(0.0);");
+        header = QStringLiteral("uniform float u_Kernel[%1];").arg(ks).toUtf8();
+        QString s = QStringLiteral("vec4 sample2d(sampler2D tex, vec2 pos, int p) { vec4 c = vec4(0.0);");
         const int kd = 2*radius+1;
         for (int i = 0; i < ks; ++i) {
             const int x = i % kd - radius;
             const int y = i / kd - radius;
-            s += "c += texture(tex, pos + u_texelSize[p]*vec2(";
-            s += QByteArray::number((float)x, 'f', 1);
-            s += ",";
-            s += QByteArray::number((float)y, 'f', 1);
-            s += "))*u_Kernel[";
-            s += QByteArray::number(i);
-            s += "];\n";
+            s += QStringLiteral("c += texture(tex, pos + u_texelSize[p]*vec2(%1.0,%2.0))*u_Kernel[%3];")
+                    .arg(x).arg(y).arg(i);
         }
         s += "c.a = texture(tex, pos).a;"
              "return c;}\n";
-        sample_func = s;
+        sample_func = s.toUtf8();
     }
 
     int u_Kernel;
@@ -82,6 +75,7 @@ void ConvolutionShader::setKernelRadius(int value)
     d.radius = value;
     d.kernel.resize(kernelSize());
     d.updateShaderCode();
+    rebuildLater();
 }
 
 int ConvolutionShader::kernelSize() const
