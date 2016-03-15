@@ -96,9 +96,21 @@ void* InteropResource::mapToHost(const VideoFormat &format, void *handle, int pi
 #ifndef QT_NO_OPENGL
 HostInteropResource::HostInteropResource(CUdevice d, CUvideodecoder decoder, CUvideoctxlock lk)
     : InteropResource(d, decoder, lk)
+    , ctx(0)
 {
     memset(&host_mem, 0, sizeof(host_mem));
     host_mem.index = -1;
+}
+
+HostInteropResource::~HostInteropResource()
+{
+    if (ctx) { //cuMemFreeHost need the context of mem allocated
+        CUDA_WARN(cuCtxPushCurrent(ctx));
+    }
+    if (host_mem.data) { //FIXME: CUDA_ERROR_INVALID_VALUE
+        CUDA_ENSURE(cuMemFreeHost(host_mem.data));
+        host_mem.data = NULL;
+    }
 }
 
 bool HostInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint tex, int w, int h, int H, int plane)
@@ -148,6 +160,10 @@ bool HostInteropResource::ensureResource(int pitch, int height)
     qDebug("allocate cuda host mem. %dx%d=>%dx%d", host_mem.pitch, host_mem.height, pitch, height);
     host_mem.pitch = pitch;
     host_mem.height = height;
+    if (!ctx) {
+        CUDA_ENSURE(cuCtxCreate(&ctx, CU_CTX_SCHED_BLOCKING_SYNC, dev), false);
+        CUDA_WARN(cuCtxPopCurrent(&ctx));
+    }
     // NV12
     CUDA_ENSURE(cuMemAllocHost((void**)&host_mem.data, pitch*height*3/2), NULL);
     return true;
