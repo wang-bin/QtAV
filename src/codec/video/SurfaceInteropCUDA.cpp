@@ -67,7 +67,7 @@ void* InteropResource::mapToHost(const VideoFormat &format, void *handle, int pi
     CUVIDAutoUnmapper unmapper(this, dec, devptr);
     Q_UNUSED(unmapper);
     uchar* host_data = NULL;
-    const size_t host_size = pitch*coded_height*3/2;
+    const unsigned int host_size = pitch*coded_height*3/2;
     CUDA_ENSURE(cuMemAllocHost((void**)&host_data, host_size), NULL);
     // copy to the memory not allocated by cuda is possible but much slower
     CUDA_ENSURE(cuMemcpyDtoH(host_data, devptr, host_size), NULL);
@@ -104,7 +104,6 @@ HostInteropResource::HostInteropResource(CUdevice d, CUvideodecoder decoder, CUv
 bool HostInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint tex, int w, int h, int H, int plane)
 {
     Q_UNUSED(w);
-    Q_UNUSED(H);
     if (host_mem.index != picIndex || !host_mem.data) {
         AutoCtxLock locker((cuda_api*)this, lock);
         Q_UNUSED(locker);
@@ -114,9 +113,9 @@ bool HostInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint
         CUDA_ENSURE(cuvidMapVideoFrame(dec, picIndex, &devptr, &pitch, const_cast<CUVIDPROCPARAMS*>(&param)), NULL);
         CUVIDAutoUnmapper unmapper(this, dec, devptr);
         Q_UNUSED(unmapper);
-        if (!ensureResource(pitch, h))
+        if (!ensureResource(pitch, H)) //copy height is coded height
             return false;
-        CUDA_ENSURE(cuMemcpyDtoH(host_mem.data, devptr, pitch*h*3/2), NULL);
+        CUDA_ENSURE(cuMemcpyDtoH(host_mem.data, devptr, pitch*H*3/2), NULL);
         host_mem.index = picIndex;
     }
     // map to texture
@@ -127,8 +126,9 @@ bool HostInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint
     DYGL(glBindTexture(GL_TEXTURE_2D, tex));
     const int chroma = plane != 0;
     // chroma pitch for gl is 1/2 (gl_rg)
-    DYGL(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, host_mem.pitch>>chroma, host_mem.height>>chroma, format[plane], dtype[plane], host_mem.data + chroma*host_mem.pitch*host_mem.height));
-    //DYGL(glTexImage2D(GL_TEXTURE_2D, 0, iformat[plane], host_mem.pitch>>chroma, host_mem.height>>chroma, 0, format[plane], dtype[plane], host_mem.data + chroma*host_mem.pitch*host_mem.height));
+    // texture height is not coded height!
+    DYGL(glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, host_mem.pitch>>chroma, h>>chroma, format[plane], dtype[plane], host_mem.data + chroma*host_mem.pitch*host_mem.height));
+    //DYGL(glTexImage2D(GL_TEXTURE_2D, 0, iformat[plane], host_mem.pitch>>chroma, h>>chroma, 0, format[plane], dtype[plane], host_mem.data + chroma*host_mem.pitch*host_mem.height));
     return true;
 }
 
@@ -145,7 +145,7 @@ bool HostInteropResource::ensureResource(int pitch, int height)
         CUDA_ENSURE(cuMemFreeHost(host_mem.data), false);
         host_mem.data = NULL;
     }
-    qDebug("update cuda host mem. %dx%d=>%dx%d", host_mem.pitch, host_mem.height, pitch, height);
+    qDebug("allocate cuda host mem. %dx%d=>%dx%d", host_mem.pitch, host_mem.height, pitch, height);
     host_mem.pitch = pitch;
     host_mem.height = height;
     // NV12
