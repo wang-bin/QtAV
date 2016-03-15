@@ -353,6 +353,7 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
             qDebug("%s: %d", u.toLatin1().constData(), shaderProgram->uniformLocation(u));
         }
     }
+    d.rebuild_program = false;
 }
 
 int VideoShader::textureLocationCount() const
@@ -445,8 +446,9 @@ bool VideoShader::update(VideoMaterial *material)
         return false;
     DPTR_D(VideoShader);
     const qint32 mt = material->type();
-    if (mt != d.material_type) {
-        qDebug("Material type changed %d=>%d. Update shader code", d.material_type, mt);
+    if (mt != d.material_type || d.rebuild_program) {
+        // TODO: use shader program cache (per shader), check shader type
+        qDebug("Rebuild shader program requested: %d. Material type %d=>%d", d.rebuild_program, d.material_type, mt);
         program()->removeAllShaders(); //not linked
         material->initializeShader(this);
         initialize();
@@ -530,6 +532,11 @@ void VideoShader::build(QOpenGLShaderProgram *shaderProgram)
         qWarning("QSGMaterialShader: Shader compilation failed:");
         qWarning() << shaderProgram->log();
     }
+}
+
+void VideoShader::rebuildLater()
+{
+    d_func().rebuild_program = true;
 }
 
 VideoMaterial::VideoMaterial()

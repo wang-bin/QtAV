@@ -50,6 +50,7 @@ class Q_AV_PRIVATE_EXPORT VideoShaderPrivate : public DPtrPrivate<VideoShader>
 public:
     VideoShaderPrivate()
         : owns_program(false)
+        , rebuild_program(false)
         , program(0)
         , u_Matrix(-1)
         , u_colorMatrix(-1)
@@ -71,6 +72,7 @@ public:
     }
 
     bool owns_program; // shader program is not created by this. e.g. scene graph create it's own program and we store it here
+    bool rebuild_program;
     QOpenGLShaderProgram *program;
     int u_Matrix;
     int u_colorMatrix;

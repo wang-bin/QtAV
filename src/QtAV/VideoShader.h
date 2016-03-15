@@ -44,7 +44,7 @@ class VideoShaderPrivate;
  * Low-level api. Used by OpenGLVideo and Scene Graph.
  * You can also create your own shader. Usually only sampling function and rgb post processing are enough.
  * Transforming color to rgb is done internally.
- * TODO: vertex shader (fully controlled by user?)
+ * TODO: vertex shader (fully controlled by user?). Mesh
  */
 class Q_AV_EXPORT VideoShader
 {
@@ -142,6 +142,8 @@ public:
 protected:
     QByteArray shaderSourceFromFile(const QString& fileName) const;
     void build(QOpenGLShaderProgram* shaderProgram);
+    /// rebuild shader program before next rendering. call this if shader code is updated
+    void rebuildLater();
 
     VideoShader(VideoShaderPrivate &d);
     DPTR_DECLARE(VideoShader)
