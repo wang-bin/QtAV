@@ -13,7 +13,7 @@ Page {
     Flickable {
         id: scroll
         anchors.fill: content
-        contentHeight: titleHeight + tracksMenu.height + 6*Utils.kItemHeight + engine.contentHeight + Utils.kSpacing*5
+        contentHeight: titleHeight + tracksMenu.height + 5*Utils.kItemHeight + engine.contentHeight + Utils.kSpacing*4
     Column {
         anchors.fill: parent
         spacing: Utils.kSpacing
@@ -113,14 +113,12 @@ Page {
                         onTextChanged: PlayerConfig.subtitleBottomMargin = parseInt(text)
                     }
                     Button {
-                        visible: Qt.platform.os !== "winphone" // qt5.6 bug
                         text: qsTr("Font")
                         width: Utils.scaled(60)
                         height: Utils.kItemHeight
                         onClicked: fontDialog.open()
                     }
                     Rectangle {
-                        visible: Qt.platform.os !== "winphone" // qt5.6 bug
                         color: PlayerConfig.subtitleColor
                         width: Utils.kItemHeight
                         height: Utils.kItemHeight
@@ -138,7 +136,6 @@ Page {
                         onCheckedChanged: PlayerConfig.subtitleOutline = checked
                     }
                     Rectangle {
-                        visible: Qt.platform.os !== "winphone" // qt5.6 bug
                         color: PlayerConfig.subtitleOutlineColor
                         width: Utils.kItemHeight
                         height: Utils.kItemHeight
@@ -160,18 +157,7 @@ Page {
             Component {
                 id: libass
                 Column {
-                    Text {
-                        id: unsupportedText
-                        visible: Qt.platform.os === "winphone" || Qt.platform.os === "winrt"
-                        text: qsTr("Unsupported")
-                        color: "red"
-                        font.bold: true
-                        font.pixelSize: Utils.kFontSize
-                        width: parent.width
-                        height: Utils.kItemHeight
-                    }
                     Item {
-                        visible: !unsupportedText.visible
                         width: parent.width
                         height: Utils.kItemHeight
                         Text {
@@ -212,7 +198,7 @@ Page {
                         }
                     }
                     Item {
-                        visible: !unsupportedText.visible
+                        visible: Qt.platform.os !== "winphone" && Qt.platform.os !== "winrt"
                         width: parent.width
                         height: Utils.kItemHeight
                         Text {
@@ -308,29 +294,10 @@ Page {
                         text: qsTr("Auto load")
                         checkable: true
                         checked: enabled && PlayerConfig.subtitleAutoLoad
-                        enabled: Qt.platform.os !== "winrt" &&Qt.platform.os !== "winphone"
+                        visible: Qt.platform.os !== "winrt"
                         width: parent.width/2
                         height: Utils.kItemHeight
                         onCheckedChanged: PlayerConfig.subtitleAutoLoad = checked
-                    }
-                }
-                Row {
-                    width: parent.width
-                    height: Utils.kItemHeight
-                    Text {
-                        id: file
-                        color: "orange"
-                        elide: Text.ElideMiddle
-                        font.pixelSize: Utils.kFontSize
-                        width: parent.width - open.width
-                        height: parent.height
-                    }
-                    Button {
-                        id: open
-                        text: qsTr("Open")
-                        width: Utils.scaled(60)
-                        height: Utils.kItemHeight
-                        onClicked: fileDialog.open()
                     }
                 }
             }
@@ -367,15 +334,6 @@ Page {
         selectFolder: true
         folder: PlayerConfig.assFontsDir
         onAccepted: PlayerConfig.assFontsDir = folder
-    }
-
-    FileDialog {
-        id: fileDialog
-        title: qsTr("Open a subtitle file")
-        onAccepted: {
-            file.text = fileUrl
-            root.subtitleChanged(fileUrl.toString())
-        }
     }
     FontDialog {
         id: fontDialog

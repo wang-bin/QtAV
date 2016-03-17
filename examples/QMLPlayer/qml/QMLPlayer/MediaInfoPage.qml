@@ -56,15 +56,19 @@ Page {
         if (information.hasVideo) {
             text += "<h4>" + qsTr("Video") + "</h4>"
                     + "<p>" + qsTr("Resolution") + ": " + metaData.resolution.width + "x" +  + metaData.resolution.height
-                    + ", " + qsTr("Bit rate") + ": " + metaData.videoBitRate + "</p>"
-                    + "<p>" + qsTr("Codec") + ": " + metaData.videoCodec + ", " + qsTr("Pixel format") + ": " + metaData.pixelFormat + "</p>"
-                    + "<p>" + qsTr("Frames") + ": " + metaData.videoFrames + ", " + qsTr("Frame rate") + ": " + Math.round(100*metaData.videoFrameRate)/100 + "</p>"
+                    + "</p><p>" + qsTr("Bit rate") + ": " + metaData.videoBitRate
+                    + "</p><p>" + qsTr("Codec") + ": " + metaData.videoCodec
+                    + "</p><p>" + qsTr("Pixel format") + ": " + metaData.pixelFormat
+                    + "</p><p>" + qsTr("Frames") + ": " + metaData.videoFrames + ", " + qsTr("Frame rate") + ": " + Math.round(100*metaData.videoFrameRate)/100 + "</p>"
         }
         if (information.hasAudio) {
             text += "<h4>" + qsTr("Audio") + "</h4>"
-                    + "<p>" + qsTr("Codec") + ": " + metaData.audioCodec + ", " + qsTr("Sample format") + ": " + metaData.sampleFormat + "</p>"
-                    + "<p>" + qsTr("Bit rate") + ": " + metaData.audioBitRate + ", " + qsTr("Sample rate") + ": " + metaData.sampleRate + "</p>"
-                    + "<p>" + qsTr("Channels") + ": " + metaData.channelCount + " (" + metaData.channelLayout + ")</p>"
+                    + "<p>" + qsTr("Codec") + ": " + metaData.audioCodec
+                    + "</p><p>" + qsTr("Sample format") + ": " + metaData.sampleFormat
+                    + "</p><p>" + qsTr("Sample rate") + ": " + metaData.sampleRate
+                    + "</p><p>" + qsTr("Channels") + ": " + metaData.channelCount + " (" + metaData.channelLayout + ")"
+                    + "</p><p>" + qsTr("Bit rate") + ": " + metaData.audioBitRate
+            + "</p>"
         }
         info.text = text
     }
