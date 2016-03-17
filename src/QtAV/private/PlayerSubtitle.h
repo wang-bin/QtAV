@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -35,6 +35,7 @@ class Subtitle;
 /*!
  * \brief The PlayerSubtitle class
  * Bind Subtitle to AVPlayer. Used by SubtitleFilter and QuickSubtitle.
+ * Subtitle load priority: user specified file (setFile(...)) > auto load external (autoLoad() must be true) > embedded subtitle
  */
 class Q_AV_PRIVATE_EXPORT PlayerSubtitle : public QObject
 {
@@ -45,19 +46,14 @@ public:
     Subtitle* subtitle();
     /*!
      * \brief setFile
-     * load user selected subtitle. autoLoad must be false.
-     * if replay the same video, subtitle does not change
-     * if play a new video, you have to set subtitle again
+     * Load user selected subtitle. The subtitle will not change unless you manually setFile(QString()).
      */
     void setFile(const QString& file);
     QString file() const;
     /*!
      * \brief autoLoad
-     * auto find a suitable subtitle.
-     * if false, load the user selected subtile in setFile() (empty if start a new video)
-     * \return
+     * Auto find and load a suitable external subtitle if file() is not empty.
      */
-    // TODO: enable changed & autoload=> load
     void setAutoLoad(bool value);
     bool autoLoad() const;
 Q_SIGNALS:

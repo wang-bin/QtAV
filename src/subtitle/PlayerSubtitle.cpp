@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -107,7 +107,7 @@ void PlayerSubtitle::setAutoLoad(bool value)
     if (m_auto == value)
         return;
     m_auto = value;
-    emit autoLoadChanged(value);
+    Q_EMIT autoLoadChanged(value);
 }
 
 bool PlayerSubtitle::autoLoad() const
@@ -117,10 +117,12 @@ bool PlayerSubtitle::autoLoad() const
 
 void PlayerSubtitle::onPlayerSourceChanged()
 {
-    m_file = QString();
-    if (!m_auto || !m_enabled) {
+    if (!m_auto) {
+        m_sub->setFileName(QString());
         return;
     }
+    if (!m_enabled)
+        return;
     AVPlayer *p = qobject_cast<AVPlayer*>(sender());
     if (!p)
         return;
@@ -141,61 +143,54 @@ void PlayerSubtitle::onPlayerStart()
 {
     if (!m_enabled)
         return;
-    if (!autoLoad()) {
+    // priority: user file > auto load file > embedded
+    if (!m_file.isEmpty()) {
         if (m_file == m_sub->fileName())
             return;
         m_sub->setFileName(m_file);
         m_sub->setFuzzyMatch(false);
-        if (m_file.isEmpty()) {
-            const int n = m_player->currentSubtitleStream();
-            if (n < 0 || m_tracks.isEmpty() || m_tracks.size() <= n) {
-                m_sub->processHeader(QByteArray(), QByteArray()); // reset
-                return;
-            }
-            QVariantMap track = m_tracks[n].toMap();
-            QByteArray codec(track.value(QStringLiteral("codec")).toByteArray());
-            QByteArray data(track.value(QStringLiteral("extra")).toByteArray());
-            m_sub->processHeader(codec, data);
-        } else {
-            m_sub->loadAsync();
-        }
+        m_sub->loadAsync();
         return;
     }
-    if (m_file != m_sub->fileName())
+    if (autoLoad() && !m_sub->fileName().isEmpty())
+        return; //already loaded in onPlayerSourceChanged()
+    // try embedded subtitles
+    const int n = m_player->currentSubtitleStream();
+    if (n < 0 || m_tracks.isEmpty() || m_tracks.size() <= n) {
+        m_sub->processHeader(QByteArray(), QByteArray()); // reset
         return;
-    if (!m_player)
-        return;
-    // autoLoad was false then reload then true then reload
-    // previous loaded is user selected subtitle
-    m_sub->setFileName(getSubtitleBasePath(m_player->file()));
-    m_sub->setFuzzyMatch(true);
-    m_sub->loadAsync();
+    }
+    QVariantMap track = m_tracks[n].toMap();
+    QByteArray codec(track.value(QStringLiteral("codec")).toByteArray());
+    QByteArray data(track.value(QStringLiteral("extra")).toByteArray());
+    m_sub->processHeader(codec, data);
     return;
 }
 
 void PlayerSubtitle::onEnabledChanged(bool value)
 {
     m_enabled = value;
-    if (value) {
-        if (m_player) {
-            connectSignals();
-        }
-        if (autoLoad()) {
-            if (!m_player)
-                return;
-            m_sub->setFileName(getSubtitleBasePath(m_player->file()));
-            m_sub->setFuzzyMatch(true);
-            m_sub->loadAsync();
-        } else {
-            m_sub->setFileName(m_file);
-            m_sub->setFuzzyMatch(false);
-            m_sub->loadAsync();
-        }
-    } else {
-        if (m_player) {
-            disconnectSignals();
-        }
+    if (!m_enabled) {
+        disconnectSignals();
+        return;
     }
+    connectSignals();
+    // priority: user file > auto load file > embedded
+    if (!m_file.isEmpty()) {
+        if (m_sub->fileName() == m_file && m_sub->isLoaded())
+            return;
+        m_sub->setFileName(m_file);
+        m_sub->setFuzzyMatch(false);
+        m_sub->loadAsync();
+    }
+    if (!m_player)
+        return;
+    if (!autoLoad()) // fallback to internal subtitles
+        return;
+    m_sub->setFileName(getSubtitleBasePath(m_player->file()));
+    m_sub->setFuzzyMatch(true);
+    m_sub->loadAsync();
+    return;
 }
 
 void PlayerSubtitle::tryReload()
@@ -210,37 +205,26 @@ void PlayerSubtitle::tryReloadInternalSub()
 
 void PlayerSubtitle::tryReload(int flag)
 {
-    if (!m_player)
+    if (!m_enabled)
         return;
     if (!m_player->isPlaying())
         return;
-    const int kReloadInternal = 1;
     const int kReloadExternal = 1<<1;
     if (flag & kReloadExternal) {
-        if (!m_file.isEmpty() && m_enabled) { //engine changed
-            m_sub->processHeader(QByteArray(), QByteArray()); // reset
-            m_sub->loadAsync();
-            return;
-        }
-    }
-    if (!(flag & kReloadInternal)) { // if internal flag is set, try internal first, then fallback to external if internal is failed
-        if (!m_enabled)
-            return;
-        if (flag & kReloadExternal) {
-            m_sub->processHeader(QByteArray(), QByteArray()); // reset
-            m_sub->loadAsync();
-        }
+        //engine or charset changed
+        m_sub->processHeader(QByteArray(), QByteArray()); // reset
+        m_sub->loadAsync();
         return;
     }
-
+    // kReloadExternal is not set, kReloadInternal is unknown
+    //fallback to external sub if no valid internal sub track is set
     const int n = m_player->currentSubtitleStream();
     if (n < 0 || m_tracks.isEmpty() || m_tracks.size() <= n) {
         m_sub->processHeader(QByteArray(), QByteArray()); // reset, null processor
-        //try to fallback to external sub if an invalid internal sub track is set
-        if ((flag & kReloadExternal) && m_enabled)
-            m_sub->loadAsync();
+        m_sub->loadAsync();
         return;
     }
+    // try internal subtitles
     QVariantMap track = m_tracks[n].toMap();
     QByteArray codec(track.value(QStringLiteral("codec")).toByteArray());
     QByteArray data(track.value(QStringLiteral("extra")).toByteArray());
@@ -270,6 +254,8 @@ void PlayerSubtitle::processInternalSubtitleHeader(const QByteArray& codec, cons
 
 void PlayerSubtitle::connectSignals()
 {
+    if (!m_player)
+        return;
     connect(m_player, SIGNAL(sourceChanged()), this, SLOT(onPlayerSourceChanged()));
     connect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(onPlayerPositionChanged()));
     connect(m_player, SIGNAL(started()), this, SLOT(onPlayerStart()));
@@ -284,6 +270,8 @@ void PlayerSubtitle::connectSignals()
 
 void PlayerSubtitle::disconnectSignals()
 {
+    if (!m_player)
+        return;
     disconnect(m_player, SIGNAL(sourceChanged()), this, SLOT(onPlayerSourceChanged()));
     disconnect(m_player, SIGNAL(positionChanged(qint64)), this, SLOT(onPlayerPositionChanged()));
     disconnect(m_player, SIGNAL(started()), this, SLOT(onPlayerStart()));

@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -84,6 +84,11 @@ SubtitleFilter::SubtitleFilter(QObject *parent) :
     connect(this, SIGNAL(enabledChanged(bool)), d.player_sub.data(), SLOT(onEnabledChanged(bool)));
     connect(d.player_sub.data(), SIGNAL(autoLoadChanged(bool)), this, SIGNAL(autoLoadChanged(bool)));
     connect(d.player_sub.data(), SIGNAL(fileChanged()), this, SIGNAL(fileChanged()));
+
+    if (parent && !qstrcmp(parent->metaObject()->className(), "AVPlayer")) {
+        AVPlayer* p = reinterpret_cast<AVPlayer*>(parent);
+        setPlayer(p);
+    }
 }
 
 void SubtitleFilter::setPlayer(AVPlayer *player)
@@ -162,9 +167,9 @@ void SubtitleFilter::process(Statistics *statistics, VideoFrame *frame)
         qWarning("no paint device!");
         return;
     }
+    if (frame && frame->timestamp() > 0.0)
+        d.player_sub->subtitle()->setTimestamp(frame->timestamp());
     if (d.player_sub->subtitle()->canRender()) {
-        if (frame && frame->timestamp() > 0.0)
-            d.player_sub->subtitle()->setTimestamp(frame->timestamp()); //TODO: set to current display video frame's timestamp
         QRect rect;
         /*
          * image quality maybe to low if use video frame resolution for large display.
