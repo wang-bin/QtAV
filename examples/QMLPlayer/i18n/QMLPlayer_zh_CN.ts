@@ -45,81 +45,97 @@
     </message>
     <message>
         <location filename="../qml/QMLPlayer/About.qml" line="29"/>
-        <source>Open a URL</source>
-        <translation>打开URL</translation>
+        <location filename="../qml/QMLPlayer/About.qml" line="30"/>
+        <source>Open</source>
+        <translation>打开</translation>
     </message>
     <message>
         <location filename="../qml/QMLPlayer/About.qml" line="29"/>
+        <source>a subtitle</source>
+        <translation>字幕</translation>
+    </message>
+    <message>
+        <location filename="../qml/QMLPlayer/About.qml" line="29"/>
+        <source>press open button to select a subtitle, or a video + a subtitle</source>
+        <translation>点击打开按钮选择一个字幕,或选择一个视频和字幕</translation>
+    </message>
+    <message>
+        <location filename="../qml/QMLPlayer/About.qml" line="30"/>
         <source>press and hold open button</source>
         <translation>长按打开按钮</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="32"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="30"/>
+        <source>a URL</source>
+        <translation>URL</translation>
+    </message>
+    <message>
+        <location filename="../qml/QMLPlayer/About.qml" line="33"/>
         <source>Shortcut</source>
         <translation>快捷键</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="33"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="34"/>
         <source>Mute</source>
         <translation>静音</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="33"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="34"/>
         <source>Fullscreen</source>
         <translation>全屏</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="33"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="34"/>
         <source>Up/Down</source>
         <translation>上/下</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="33"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="34"/>
         <source>Volume</source>
         <translation>音量</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="34"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="35"/>
         <source>Left/Right</source>
         <translation>左/右</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="34"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="35"/>
         <source>Seek backward/forward</source>
         <translation>快退快进</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="34"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="35"/>
         <source>Swipe</source>
         <translation>挥动</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="35"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="36"/>
         <source>Space</source>
         <translation>空格</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="35"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="36"/>
         <source>Pause/Resume</source>
         <translation>暂停/恢复</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="35"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="36"/>
         <source>Quit</source>
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="36"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="37"/>
         <source>Rotate</source>
         <translation>旋转90度</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="36"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="37"/>
         <source>Aspect ratio</source>
         <translation>比例</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/About.qml" line="40"/>
+        <location filename="../qml/QMLPlayer/About.qml" line="41"/>
         <source>Donate</source>
         <translation>捐赠</translation>
     </message>
@@ -290,48 +306,48 @@
     </message>
     <message>
         <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="60"/>
-        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="65"/>
+        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="66"/>
         <source>Codec</source>
         <translation>编码</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="60"/>
+        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="61"/>
         <source>Pixel format</source>
         <translation>像素格式</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="61"/>
+        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="62"/>
         <source>Frame rate</source>
         <translation>帧率</translation>
     </message>
     <message>
         <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="59"/>
-        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="66"/>
+        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="70"/>
         <source>Bit rate</source>
         <translation>码率</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="61"/>
+        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="62"/>
         <source>Frames</source>
         <translation>帧数</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="64"/>
+        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="65"/>
         <source>Audio</source>
         <translation>音频</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="65"/>
+        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="67"/>
         <source>Sample format</source>
         <translation>采样格式</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="66"/>
+        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="68"/>
         <source>Sample rate</source>
         <translation>采样率</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="67"/>
+        <location filename="../qml/QMLPlayer/MediaInfoPage.qml" line="69"/>
         <source>Channels</source>
         <translation>声道</translation>
     </message>
@@ -396,48 +412,43 @@
         <translation>字幕</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="166"/>
-        <source>Unsupported</source>
-        <translation>不支持</translation>
-    </message>
-    <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="189"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="175"/>
         <source>Font file</source>
         <translation>字体文件</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="197"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="183"/>
         <source>Force</source>
         <translation>强制</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="207"/>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="238"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="193"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="224"/>
         <source>Clear</source>
         <translation>清除</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="230"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="216"/>
         <source>Fonts dir</source>
         <translation>字体目录</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="256"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="242"/>
         <source>Embedded Subtitles</source>
         <translation>内嵌字幕</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="286"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="272"/>
         <source>External Subtitle</source>
         <translation>外挂字幕</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="299"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="285"/>
         <source>Enabled</source>
         <translation>启用</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="308"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="294"/>
         <source>Auto load</source>
         <translation>自动加载</translation>
     </message>
@@ -452,19 +463,14 @@
         <translation>毫秒</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="359"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="326"/>
         <source>Choose a font file</source>
         <translation>选择一个字体文件</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="366"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="333"/>
         <source>Choose a fonts dir</source>
         <translation>选择一个字体目录</translation>
-    </message>
-    <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="374"/>
-        <source>Open a subtitle file</source>
-        <translation>打开一个字幕文件</translation>
     </message>
     <message>
         <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="80"/>
@@ -472,12 +478,12 @@
         <translation>支持格式</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="117"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="116"/>
         <source>Font</source>
         <translation>字体</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="133"/>
+        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="131"/>
         <source>Outline</source>
         <translation>轮廓</translation>
     </message>
@@ -485,11 +491,6 @@
         <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="103"/>
         <source>Bottom margin</source>
         <translation>底部距离</translation>
-    </message>
-    <message>
-        <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="330"/>
-        <source>Open</source>
-        <translation>打开</translation>
     </message>
     <message>
         <location filename="../qml/QMLPlayer/SubtitlePage.qml" line="52"/>
@@ -533,12 +534,12 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../qml/QMLPlayer/main.qml" line="168"/>
+        <location filename="../qml/QMLPlayer/main.qml" line="173"/>
         <source>Subtitle</source>
         <translation>字幕</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/main.qml" line="484"/>
+        <location filename="../qml/QMLPlayer/main.qml" line="492"/>
         <source>Open a URL</source>
         <translation>打开URL</translation>
     </message>

@@ -508,12 +508,37 @@ Rectangle {
     FileDialog {
         id: fileDialog
         title: "Please choose a media file"
+        selectMultiple: true
         folder: PlayerConfig.lastFile
         onAccepted: {
-            PlayerConfig.lastFile = fileUrl.toString()
-            player.source = fileDialog.fileUrl
-            //player.stop() //remove this if autoLoad works
-            //player.play()
+            var sub, av
+            for (var i = 0; i < fileUrls.length; ++i) {
+                var s = fileUrls[i].toString()
+                if (s.endsWith(".srt")
+                        || s.endsWith(".ass")
+                        || s.endsWith(".ssa")
+                        || s.endsWith(".sub")
+                        || s.endsWith(".idx") //vob
+                        || s.endsWith(".mpl2")
+                        || s.endsWith(".smi")
+                        || s.endsWith(".sami")
+                        || s.endsWith(".sup")
+                        || s.endsWith(".txt"))
+                    sub = fileUrls[i]
+                else
+                    av = fileUrls[i]
+            }
+            if (sub) {
+                subtitle.autoLoad = false
+                subtitle.file = sub
+            } else {
+                subtitle.autoLoad = PlayerConfig.subtitleAutoLoad
+                subtitle.file = ""
+            }
+            if (av) {
+                player.source = av
+                PlayerConfig.lastFile = av
+            }
         }
     }
     Connections {

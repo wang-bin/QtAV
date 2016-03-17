@@ -26,7 +26,8 @@ Page {
                   + qsTr("Home page") + ": <a href='http://qtav.org'>http://qtav.org</a></p>"
                   + "\n<p>" + qsTr("Double click") + ": " + qsTr("show/hide control bar") + "</p><p>"
                   + qsTr("Click right area") + ": " + qsTr("show config panel") + "</p><p>"
-                  + qsTr("Open a URL") + ": " + qsTr("press and hold open button") + "</p>"
+                  + qsTr("Open") + " " + qsTr("a subtitle") + ": " + qsTr("press open button to select a subtitle, or a video + a subtitle") + "</p>"
+                  + qsTr("Open") + " " + qsTr("a URL") + ": " + qsTr("press and hold open button") + "</p>"
                   + (Qt.platform.os === "android" || Qt.platform.os === "ios" || Qt.platform.os === "winphone" || Qt.platform.os === "blackberry" ?
                       " " :
                     "<h3>" + qsTr("Shortcut") + ":</h3>"
