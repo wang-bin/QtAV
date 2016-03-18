@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -545,11 +545,10 @@ VideoCapture* AVPlayer::videoCapture() const
     return d->vcapture;
 }
 
-bool AVPlayer::play(const QString& path)
+void AVPlayer::play(const QString& path)
 {
     setFile(path);
     play();
-    return true;//isPlaying();
 }
 
 bool AVPlayer::isPlaying() const

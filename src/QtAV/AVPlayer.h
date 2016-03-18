@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -243,12 +243,12 @@ public:
      * \sa VideoCapture
      */
     VideoCapture *videoCapture() const;
-    /*
-     * replay without parsing the stream if it's already loaded. (not implemented)
-     * to force reload the stream, unload() then play()
+    //TODO: no replay, replay without parsing the stream if it's already loaded. (not implemented). to force reload the stream, unload() then play()
+    /*!
+     * \brief play
+     * If isAsyncLoad() is true (default), play() will return immediately. Signals started() and stateChanged() will be emitted if media is loaded and playback starts.
      */
-    //TODO: no replay
-    bool play(const QString& path);
+    void play(const QString& path);
     bool isPlaying() const;
     bool isPaused() const;
     /*!
@@ -390,9 +390,13 @@ public slots:
     void pause(bool p = true);
     /*!
      * \brief play
-     * If media is not loaded, load()
+     * Load media and start playback. The same as play(const QString&)
      */
     void play(); //replay
+    /*!
+     * \brief stop
+     * Stop playback. It blocks current thread until the playback is stopped.
+     */
     void stop();
     /*!
      * \brief stepForward
