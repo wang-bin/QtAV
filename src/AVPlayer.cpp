@@ -80,7 +80,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     d->read_thread = new AVDemuxThread(this);
     d->read_thread->setDemuxer(&d->demuxer);
     //direct connection can not sure slot order?
-    connect(d->read_thread, SIGNAL(finished()), this, SLOT(stopFromDemuxerThread()));
+    connect(d->read_thread, SIGNAL(finished()), this, SLOT(stopFromDemuxerThread()), Qt::DirectConnection); // ensure state after stop() is StoppedState
     connect(d->read_thread, SIGNAL(requestClockPause(bool)), masterClock(), SLOT(pause(bool)), Qt::DirectConnection);
     connect(d->read_thread, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SLOT(updateMediaStatus(QtAV::MediaStatus)));
     connect(d->read_thread, SIGNAL(bufferProgressChanged(qreal)), this, SIGNAL(bufferProgressChanged(qreal)));
@@ -1318,7 +1318,8 @@ void AVPlayer::stopFromDemuxerThread()
         qDebug("stopPosition() == mediaStopPosition() or !seekable. repeate: %d/%d", currentRepeat(), repeat());
         d->repeat_current++;
         d->last_position = startPosition(); // for seeking to startPosition() if seekable. already set in stop()
-        play();
+        QMetaObject::invokeMethod(this, "play", Qt::AutoConnection);
+        //play();
     }
 }
 
