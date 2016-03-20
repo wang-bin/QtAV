@@ -23,10 +23,12 @@
 
 #include <QWidget>
 
+QT_BEGIN_NAMESPACE
 class QCheckBox;
 class QComboBox;
 class QPushButton;
 class QSlider;
+QT_END_NAMESPACE
 class VideoEQConfigPage : public QWidget
 {
     Q_OBJECT

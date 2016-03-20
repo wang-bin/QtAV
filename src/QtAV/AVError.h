@@ -98,7 +98,9 @@ private:
 Q_DECLARE_METATYPE(QtAV::AVError)
 
 #ifndef QT_NO_DEBUG_STREAM
+QT_BEGIN_NAMESPACE
 class QDebug;
+QT_END_NAMESPACE
 Q_AV_EXPORT QDebug operator<<(QDebug debug, const QtAV::AVError &error);
 #endif
 

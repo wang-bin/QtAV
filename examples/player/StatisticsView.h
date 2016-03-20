@@ -26,8 +26,10 @@
 
 using namespace QtAV;
 
+QT_BEGIN_NAMESPACE
 class QTreeWidget;
 class QTreeWidgetItem;
+QT_END_NAMESPACE
 class StatisticsView : public QDialog
 {
     Q_OBJECT

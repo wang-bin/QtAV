@@ -22,10 +22,12 @@
 
 #include "ConfigPageBase.h"
 
+QT_BEGIN_NAMESPACE
 class QCheckBox;
 class QComboBox;
 class QLabel;
 class QTextEdit;
+QT_END_NAMESPACE
 class AVFilterConfigPage : public ConfigPageBase
 {
     Q_OBJECT

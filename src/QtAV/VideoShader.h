@@ -33,7 +33,9 @@
 #define QOpenGLShader QGLShader
 #endif
 
+QT_BEGIN_NAMESPACE
 class QOpenGLShaderProgram;
+QT_END_NAMESPACE
 namespace QtAV {
 
 class VideoMaterial;

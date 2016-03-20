@@ -26,8 +26,10 @@
 #include <QtCore/QModelIndex>
 #include "PlayListItem.h"
 
+QT_BEGIN_NAMESPACE
 class QListView;
 class QToolButton;
+QT_END_NAMESPACE
 class PlayListDelegate;
 
 class PlayListModel;

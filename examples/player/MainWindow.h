@@ -24,8 +24,10 @@
 #include <QWidget>
 #include <QUrl>
 
+QT_BEGIN_NAMESPACE
 class QWidgetAction;
 class QToolButton;
+QT_END_NAMESPACE
 namespace QtAV {
 class AudioOutput;
 class AVError;
@@ -37,6 +39,7 @@ class LibAVFilterVideo;
 class SubtitleFilter;
 class VideoPreviewWidget;
 }
+QT_BEGIN_NAMESPACE
 class QMenu;
 class QTimeEdit;
 class QVBoxLayout;
@@ -44,6 +47,7 @@ class QLabel;
 class QPushButton;
 class QSpinBox;
 class QTimeEdit;
+QT_END_NAMESPACE
 class Button;
 class Slider;
 class PlayList;

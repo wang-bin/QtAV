@@ -28,8 +28,10 @@
 #include <QtCore/QObject>
 #include <QtCore/QPoint>
 
+QT_BEGIN_NAMESPACE
 class QMenu;
 class QPoint;
+QT_END_NAMESPACE
 namespace QtAV {
 class AVPlayer;
 }

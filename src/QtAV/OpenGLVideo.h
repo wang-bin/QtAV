@@ -33,7 +33,9 @@
 #include <QtOpenGL/QGLContext>
 #define QOpenGLContext QGLContext
 #endif
+QT_BEGIN_NAMESPACE
 class QColor;
+QT_END_NAMESPACE
 
 namespace QtAV {
 

@@ -25,7 +25,9 @@
 #include <QtAV/AVPlayer.h>
 #include <QtAVWidgets/WidgetRenderer.h>
 
+QT_BEGIN_NAMESPACE
 class QMenu;
+QT_END_NAMESPACE
 class VideoWall : public QObject
 {
     Q_OBJECT

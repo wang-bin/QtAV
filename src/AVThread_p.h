@@ -29,7 +29,9 @@
 #include "PacketBuffer.h"
 #include "utils/ring.h"
 
+QT_BEGIN_NAMESPACE
 class QRunnable;
+QT_END_NAMESPACE
 namespace QtAV {
 
 const double kSyncThreshold = 0.2; // 200 ms

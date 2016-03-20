@@ -25,7 +25,9 @@
 #include <QtAVWidgets/GraphicsItemRenderer.h>
 #include <QWidget>
 
+QT_BEGIN_NAMESPACE
 class QGraphicsView;
+QT_END_NAMESPACE
 class VideoPlayer : public QWidget
 {
     Q_OBJECT

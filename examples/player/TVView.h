@@ -24,8 +24,10 @@
 #include <QWidget>
 
 
+QT_BEGIN_NAMESPACE
 class QTreeWidget;
 class QTreeWidgetItem;
+QT_END_NAMESPACE
 
 class TVView : public QWidget
 {

@@ -31,7 +31,9 @@
 
 struct AVFormatContext;
 struct AVCodecContext;
+QT_BEGIN_NAMESPACE
 class QIODevice;
+QT_END_NAMESPACE
 // TODO: force codec name. clean code
 namespace QtAV {
 class AVError;

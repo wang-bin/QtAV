@@ -33,8 +33,10 @@
  * Region of Interest(ROI)
  * use matrix to compute out rect, mapped point etc
  */
+QT_BEGIN_NAMESPACE
 class QObject;
 class QWidget;
+QT_END_NAMESPACE
 namespace QtAV {
 class Filter;
 class Q_AV_PRIVATE_EXPORT VideoRendererPrivate : public AVOutputPrivate
