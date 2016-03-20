@@ -26,10 +26,12 @@
 #include <QWidget>
 #include "ConfigPageBase.h"
 
+QT_BEGIN_NAMESPACE
 class QListWidget;
 class QToolButton;
 class QSpinBox;
 class QVBoxLayout;
+QT_END_NAMESPACE
 class DecoderConfigPage : public ConfigPageBase
 {
     Q_OBJECT

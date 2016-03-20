@@ -128,7 +128,9 @@ typedef QGLBuffer QOpenGLBuffer;
         } \
     } while(0)
 
+QT_BEGIN_NAMESPACE
 class QMatrix4x4;
+QT_END_NAMESPACE
 namespace QtAV {
 namespace OpenGLHelper {
 

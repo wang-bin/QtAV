@@ -34,9 +34,11 @@
  * Every public setter call it's virtual onSetXXX(...) which has default behavior.
  * While VideoOutput.onSetXXX(...) simply calls backend's setXXX(...) and return whether the result is desired.
  */
+QT_BEGIN_NAMESPACE
 class QWidget;
 class QWindow;
 class QGraphicsItem;
+QT_END_NAMESPACE
 
 namespace QtAV {
 

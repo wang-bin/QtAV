@@ -25,8 +25,10 @@
 #include <QtCore/QMetaProperty>
 #include <QtCore/QMetaEnum>
 
+QT_BEGIN_NAMESPACE
 class QAction;
 class QWidget;
+QT_END_NAMESPACE
 class PropertyEditor : public QObject
 {
     Q_OBJECT
