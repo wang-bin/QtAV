@@ -86,6 +86,7 @@ public:
         settings.setValue(QString::fromLatin1("log"), log);
         settings.setValue(QString::fromLatin1("language"), lang);
         settings.setValue(QString::fromLatin1("last_file"), last_file);
+        settings.setValue(QString::fromLatin1("history"), history);
         settings.setValue(QString::fromLatin1("timeout"), timeout);
         settings.setValue(QString::fromLatin1("abort_timeout"), abort_timeout);
         settings.setValue(QString::fromLatin1("force_fps"), force_fps);
@@ -196,6 +197,8 @@ public:
     QString log;
     QString lang;
 
+    QVariantList history;
+
     static QString name;
 };
 
@@ -266,6 +269,7 @@ void Config::reload()
 #endif
                                ).toString());
     setLastFile(settings.value(QString::fromLatin1("last_file"), QString()).toString());
+    mpData->history =     settings.value(QString::fromLatin1("history"), QVariantList()).toList();
     setTimeout(settings.value(QString::fromLatin1("timeout"), 30.0).toReal());
     setAbortOnTimeout(settings.value(QString::fromLatin1("abort_timeout"), true).toBool());
     setForceFrameRate(settings.value(QString::fromLatin1("force_fps"), 0.0).toReal());
@@ -908,6 +912,45 @@ Config& Config::setLanguage(const QString& value)
     Q_EMIT languageChanged();
     Q_EMIT changed();
     return *this;
+}
+
+QVariantList Config::history() const
+{
+    return mpData->history;
+}
+
+void Config::addHistory(const QVariantMap &value)
+{
+    mpData->history.prepend(value);
+    Q_EMIT historyChanged();
+    save();
+}
+
+void Config::removeHistory(const QString &url)
+{
+    QVariantList::Iterator it = mpData->history.begin();
+    bool change;
+    while (it != mpData->history.end()) {
+        if (it->toMap().value("url") != url) {
+            ++it;
+            continue;
+        }
+        it = mpData->history.erase(it);
+        change = true;
+    }
+    if (change) {
+        Q_EMIT historyChanged();
+        save();
+    }
+}
+
+void Config::clearHistory()
+{
+    if (mpData->history.isEmpty())
+        return;
+    mpData->history.clear();
+    Q_EMIT historyChanged();
+    save();
 }
 
 bool Config::abortOnTimeout() const

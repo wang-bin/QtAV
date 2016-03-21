@@ -37,4 +37,33 @@ Rectangle {
         contentModel.append({name: qsTr("Misc"), url: "MiscPage.qml" })
         contentModel.append({name: qsTr("About"), url: "About.qml" })
     }
+
+    states: [
+        State {
+            name: "show"
+            PropertyChanges {
+                target: root
+                opacity: 0.9
+                anchors.rightMargin: 0
+            }
+        },
+        State {
+            name: "hide"
+            PropertyChanges {
+                target: root
+                opacity: 0
+                anchors.rightMargin: -root.width
+            }
+        }
+    ]
+    transitions: [
+        Transition {
+            from: "*"; to: "*"
+            PropertyAnimation {
+                properties: "opacity,anchors.rightMargin"
+                easing.type: Easing.OutQuart
+                duration: 500
+            }
+        }
+    ]
 }

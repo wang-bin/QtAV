@@ -39,6 +39,7 @@
 class COMMON_EXPORT Config : public QObject
 {
     Q_OBJECT
+    Q_PROPERTY(QVariantList history READ history NOTIFY historyChanged)
     // last file opened by file dialog
     Q_PROPERTY(QString lastFile READ lastFile WRITE setLastFile NOTIFY lastFileChanged)
     Q_PROPERTY(qreal forceFrameRate READ forceFrameRate WRITE setForceFrameRate NOTIFY forceFrameRateChanged)
@@ -208,6 +209,13 @@ public:
 
     Q_INVOKABLE QVariant operator ()(const QString& key) const;
     Q_INVOKABLE Config& operator ()(const QString& key, const QVariant& value);
+
+    /// history will not be clear in reset()
+    QVariantList history() const;
+    // {url: urlString, start: ms, duration: ms}
+    Q_INVOKABLE void addHistory(const QVariantMap& value);
+    Q_INVOKABLE void removeHistory(const QString& url);
+    Q_INVOKABLE void clearHistory();
 public:
     Q_SIGNAL void changed();
     Q_SIGNAL void lastFileChanged();
@@ -246,6 +254,7 @@ public:
     Q_SIGNAL void abortOnTimeoutChanged();
     Q_SIGNAL void logLevelChanged();
     Q_SIGNAL void languageChanged();
+    Q_SIGNAL void historyChanged();
 protected:
     explicit Config(QObject *parent = 0);
     ~Config();

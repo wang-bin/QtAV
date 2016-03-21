@@ -9,7 +9,7 @@
 	<key>CFBundleGetInfoString</key>
         <string>Created by Wang Bin</string>
 	<key>CFBundleSignature</key>
-	<string>@TYPEINFO@</string>
+        <string>???</string>
 	<key>CFBundleExecutable</key>
 	<string>QMLPlayer</string>
 	<key>CFBundleIdentifier</key>

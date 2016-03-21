@@ -218,10 +218,26 @@ Rectangle {
             onDoubleClicked: {
                 control.toggleVisible()
             }
+            onClicked: {
+                if (playList.state === "show")
+                    return
+                if (playList.state === "hide")
+                    playList.state = "ready"
+                else
+                    playList.state = "hide"
+
+            }
+
             onMouseXChanged: {
                 if (mouseX > root.width || mouseX < 0
                         || mouseY > root.height || mouseY < 0)
                     return;
+                if (mouseX < Utils.scaled(20)) {
+                    if (playList.state === "hide") {
+                        playList.state = "ready"
+                    }
+                }
+
                 if (root.width - mouseX < configPanel.width) { //qt5.6 mouseX is very large if mouse released
                     //console.log("configPanel show: root width: " + root.width + " mouseX: " + mouseX + "panel width: " + configPanel.width)
                     configPanel.state = "show"
@@ -416,35 +432,32 @@ Rectangle {
                 pageLoader.item.visible = true
         }
         onSelectedUrlChanged: pageLoader.source = selectedUrl
-        states: [
-            State {
-                name: "show"
-                PropertyChanges {
-                    target: configPanel
-                    opacity: 0.9
-                    anchors.rightMargin: 0
-                }
-            },
-            State {
-                name: "hide"
-                PropertyChanges {
-                    target: configPanel
-                    opacity: 0
-                    anchors.rightMargin: -configPanel.width
-                }
-            }
-        ]
-        transitions: [
-            Transition {
-                from: "*"; to: "*"
-                PropertyAnimation {
-                    properties: "opacity,anchors.rightMargin"
-                    easing.type: Easing.OutQuart
-                    duration: 500
-                }
-            }
-        ]
     }
+
+    PlayListPanel {
+        id: playList
+        anchors {
+            top: parent.top
+            left: parent.left
+            bottom: control.top
+        }
+        width: Math.min(parent.width, Utils.scaled(480)) - Utils.scaled(20)
+        Connections {
+            target: player
+            // onStatusChanged: too late to call status is wrong value
+            onDurationChanged: {
+                if (player.duration <= 0)
+                    return
+                playList.addHistory(player.source.toString(), player.duration)
+            }
+        }
+        onPlay: {
+            player.source = source
+            if (start > 0)
+                player.seek(start)
+        }
+    }
+
     ControlPanel {
         id: control
         anchors {

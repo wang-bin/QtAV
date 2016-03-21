@@ -17,5 +17,6 @@
         <file>qml/QMLPlayer/About.qml</file>
         <file>i18n/QMLPlayer_zh_CN.qm</file>
         <file>qml/QMLPlayer/MiscPage.qml</file>
+        <file>qml/QMLPlayer/PlayListPanel.qml</file>
     </qresource>
 </RCC>

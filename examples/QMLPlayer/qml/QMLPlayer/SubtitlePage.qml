@@ -65,7 +65,7 @@ Page {
                     ListElement { name: "LibASS" }
                 }
                 onClicked: {
-                    PlayerConfig.subtitleEngines = [ model.get(index).name ]
+                    PlayerConfig.subtitleEngines = [ model.get(index).name, model.get((index+1)%model.count).name ]
                     var e = model.get(index).name
                     if (e === "FFmpeg")
                         engineDetail.sourceComponent = ffmpeg

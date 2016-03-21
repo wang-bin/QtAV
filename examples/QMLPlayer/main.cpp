@@ -26,6 +26,7 @@
 #include <QtQml/QQmlEngine>
 #include <QtQml/QQmlContext>
 #include <QtGui/QScreen>
+#include <QTouchDevice>
 #ifdef Q_OS_ANDROID
 #include <QAndroidJniObject>
 #endif
@@ -68,7 +69,7 @@ int main(int argc, char *argv[])
     qDebug() << "dpi phy: " << sc->physicalDotsPerInch() << ", logical: " << sc->logicalDotsPerInch() << ", dpr: " << sc->devicePixelRatio()
                 << "; vis rect:" << sc->virtualGeometry();
     // define a global var for js and qml
-    engine->rootContext()->setContextProperty(QStringLiteral("screenPixelDensity"), qApp->primaryScreen()->physicalDotsPerInch()*qApp->primaryScreen()->devicePixelRatio());
+    engine->rootContext()->setContextProperty(QStringLiteral("screenPixelDensity"), sc->physicalDotsPerInch()*sc->devicePixelRatio());
     qreal r = sc->physicalDotsPerInch()/sc->logicalDotsPerInch();
     if (std::isinf(r) || std::isnan(r))
 #if defined(Q_OS_ANDROID)
@@ -85,6 +86,14 @@ int main(int argc, char *argv[])
     if (qFuzzyIsNull(sr))
         sr = r;
     engine->rootContext()->setContextProperty(QStringLiteral("scaleRatio"), sr);
+    qDebug() << "touch devices: " << QTouchDevice::devices();
+    engine->rootContext()->setContextProperty(QStringLiteral("isTouchScreen"), false);
+    foreach (const QTouchDevice* dev, QTouchDevice::devices()) {
+        if (dev->type() == QTouchDevice::TouchScreen) {
+            engine->rootContext()->setContextProperty(QStringLiteral("isTouchScreen"), true);
+            break;
+        }
+    }
     QString qml = QStringLiteral("qml/QMLPlayer/main.qml");
     if (QFile(qApp->applicationDirPath() + QLatin1String("/") + qml).exists())
         qml.prepend(qApp->applicationDirPath() + QLatin1String("/"));

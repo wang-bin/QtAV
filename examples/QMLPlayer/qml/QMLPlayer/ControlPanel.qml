@@ -402,10 +402,8 @@ Rectangle {
             height: Utils.scaled(30)
             icon: Utils.resurl("theme/default/volume.svg")
             iconChecked: Utils.resurl("theme/default/mute.svg")
-            readonly property bool isTouchDevice: !(Qt.platform.os === "windows" || Qt.platform.os === "wince" || Qt.platform.os === "winrt" || Qt.platform.os === "linux" || Qt.platform.os === "osx")
             onClicked: {
-                if (!isTouchDevice) {
-                    console.log("desktop checked: " + checked)
+                if (!Utils.isTouchDevice()) {
                     root.mute = checked
                     return
                 }
@@ -413,14 +411,14 @@ Rectangle {
                 checked = root.mute
             }
             onPressAndHold: { //for qt5.6 mobile
-                if (!isTouchDevice)
+                if (!Utils.isTouchDevice())
                     return
                 root.mute = !root.mute
                 checked = root.mute
             }
             onHoveredChanged: {
                 volBar.anchors.bottom = parent.top
-                if (isTouchDevice)
+                if (Utils.isTouchDevice())
                     volBar.anchors.bottomMargin = 0 //ensure grip does not cover volBtn
                 else
                     volBar.anchors.bottomMargin = -(y + 2)//height/2)
