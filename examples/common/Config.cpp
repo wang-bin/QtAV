@@ -28,6 +28,8 @@
 #else
 #include <QtCore/QStandardPaths>
 #endif
+#include <QtSql/QSqlDatabase>
+#include <QtSql/QSqlQuery>
 #include <QtDebug>
 #include "common.h"
 
@@ -86,7 +88,6 @@ public:
         settings.setValue(QString::fromLatin1("log"), log);
         settings.setValue(QString::fromLatin1("language"), lang);
         settings.setValue(QString::fromLatin1("last_file"), last_file);
-        settings.setValue(QString::fromLatin1("history"), history);
         settings.setValue(QString::fromLatin1("timeout"), timeout);
         settings.setValue(QString::fromLatin1("abort_timeout"), abort_timeout);
         settings.setValue(QString::fromLatin1("force_fps"), force_fps);
@@ -258,6 +259,22 @@ bool Config::reset()
 
 void Config::reload()
 {
+    QSqlDatabase db(QSqlDatabase::database());
+    if (!db.isOpen()) {
+        db = QSqlDatabase::addDatabase(QString::fromUtf8("QSQLITE"));
+        db.setDatabaseName(appDataDir().append(QString("/%1.db").arg(mpData->name)));
+        if (!db.open())
+            qWarning("error open db");
+        db.exec("CREATE TABLE IF NOT EXISTS history (url TEXT primary key, start BIGINT, duration BIGINT)");
+    }
+    QSqlQuery query(db.exec(QString::fromUtf8("SELECT * FROM history")));
+    while (query.next()) {
+        QVariantMap var;
+        var[QString::fromUtf8("url")] = query.value(0).toString();
+        var[QString::fromUtf8("start")] = query.value(1).toLongLong();
+        var[QString::fromUtf8("duration")] = query.value(2).toLongLong();
+        mpData->history.append(var);
+    }
     mpData->is_loading = true;
     QSettings settings(mpData->file, QSettings::IniFormat);
     setLogLevel(settings.value(QString::fromLatin1("log"), QString()).toString());
@@ -269,7 +286,6 @@ void Config::reload()
 #endif
                                ).toString());
     setLastFile(settings.value(QString::fromLatin1("last_file"), QString()).toString());
-    mpData->history =     settings.value(QString::fromLatin1("history"), QVariantList()).toList();
     setTimeout(settings.value(QString::fromLatin1("timeout"), 30.0).toReal());
     setAbortOnTimeout(settings.value(QString::fromLatin1("abort_timeout"), true).toBool());
     setForceFrameRate(settings.value(QString::fromLatin1("force_fps"), 0.0).toReal());
@@ -923,13 +939,23 @@ void Config::addHistory(const QVariantMap &value)
 {
     mpData->history.prepend(value);
     Q_EMIT historyChanged();
-    save();
+    QSqlDatabase db = QSqlDatabase::database();
+    QSqlQuery query(db);
+    if (!query.prepare(QString::fromUtf8("INSERT INTO history (url, start, duration) "
+                              "VALUES (:url, :start, :duration)"))) {
+            qWarning("error prepare sql query");
+    }
+    query.bindValue(QString::fromUtf8(":url"), value.value("url").toString());
+    query.bindValue(QString::fromUtf8(":start"), value.value("start").toLongLong());
+    query.bindValue(QString::fromUtf8(":duration"), value.value("duration").toLongLong());
+    if (!query.exec())
+        qWarning("failed to add history: %d", db.isOpen());
 }
 
 void Config::removeHistory(const QString &url)
 {
     QVariantList::Iterator it = mpData->history.begin();
-    bool change;
+    bool change = false;
     while (it != mpData->history.end()) {
         if (it->toMap().value("url") != url) {
             ++it;
@@ -938,10 +964,15 @@ void Config::removeHistory(const QString &url)
         it = mpData->history.erase(it);
         change = true;
     }
-    if (change) {
-        Q_EMIT historyChanged();
-        save();
-    }
+    if (!change)
+        return;
+    Q_EMIT historyChanged();
+    QSqlDatabase db = QSqlDatabase::database();
+    QSqlQuery query(db);
+    query.prepare(QString::fromUtf8("DELETE FROM history WHERE url = :url"));
+    query.bindValue(QString::fromUtf8(":url"), url);
+    if (!query.exec())
+        qWarning("failed to remove history");
 }
 
 void Config::clearHistory()
@@ -950,7 +981,12 @@ void Config::clearHistory()
         return;
     mpData->history.clear();
     Q_EMIT historyChanged();
-    save();
+    QSqlDatabase db = QSqlDatabase::database();
+    QSqlQuery query(db);
+    query.prepare(QString::fromUtf8("DELETE FROM history"));
+    // 'TRUNCATE table history' is faster
+    if (!query.exec())
+        qWarning("failed to clear history");
 }
 
 bool Config::abortOnTimeout() const

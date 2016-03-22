@@ -1045,7 +1045,6 @@ void MainWindow::wheelEvent(QWheelEvent *e)
     if (!dp.isNull()) {
         zoom = 1.0 + (qreal)dp.y()/100.0;
     }
-    qDebug("deg: %d, %d zoom: %.2f", e->angleDelta().x(), e->angleDelta().y(), zoom);
     QTransform m;
     m.translate(fp.x(), fp.y());
     m.scale(1.0/zoom, 1.0/zoom);

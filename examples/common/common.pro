@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 # Qt4 need QDesktopServices
-QT = core gui
+QT = core gui sql
 
 TARGET = common
 TEMPLATE = lib
