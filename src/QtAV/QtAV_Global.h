@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -73,6 +73,10 @@ Q_AV_EXPORT void setFFmpegLogHandler(void(*)(void *, int, const char *, va_list)
  * \param level can be: quiet, panic, fatal, error, warn, info, verbose, debug, trace
  */
 Q_AV_EXPORT void setFFmpegLogLevel(const QByteArray& level);
+
+/// query the common options of avformat/avcodec that can be used by AVPlayer::setOptionsForXXX. Format/codec specified options are also included
+Q_AV_EXPORT QString avformatOptions();
+Q_AV_EXPORT QString avcodecOptions();
 } //namespace QtAV
 
 // TODO: internal use. move to a private header
