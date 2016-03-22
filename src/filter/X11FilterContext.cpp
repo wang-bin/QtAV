@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -183,7 +183,7 @@ void X11FilterContext::drawPlainText(const QPointF &pos, const QString &text)
 
     QFontMetrics fm(font);
     text_q = QImage(fm.width(text), fm.height(), QImage::Format_ARGB32);
-    text_q.fill(QColor(0, 0, 0, 0));
+    text_q.fill(0);
     painter->begin(&text_q);
     painter->translate(0, 0);
     prepare();
@@ -218,7 +218,7 @@ void X11FilterContext::drawPlainText(const QRectF &rect, int flags, const QStrin
     this->plain = true;
 
     text_q = QImage(br.size().toSize(), QImage::Format_ARGB32);
-    text_q.fill(QColor(0, 0, 0, 0));
+    text_q.fill(0);
     painter->begin(&text_q);
     prepare();
     painter->drawText(0, 0, br.width(), br.height(), Qt::AlignCenter, text);
@@ -247,7 +247,7 @@ void X11FilterContext::drawRichText(const QRectF &rect, const QString &text, boo
     QMatrix4x4 m(transform);
     const QRectF r = m.mapRect(QRectF(rect.x(), rect.y(), doc->size().width(), doc->size().height()));
     text_q = QImage(r.size().toSize(), QImage::Format_ARGB32);
-    text_q.fill(QColor(0, 0, 0, 0));
+    text_q.fill(0);
     painter->begin(&text_q);
     prepare();
     const QPointF tl = m.map(rect.topLeft());
