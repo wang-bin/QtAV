@@ -5,11 +5,12 @@ Rectangle {
     id: root
     color: "#aa204010"
     layer.enabled: true
+    readonly property int kMaxItems: 128
     border {
         color: "white"
         width: 1
     }
-
+    readonly property int kMargin: Utils.scaled(20)
     signal play(url source, int start)
     function addHistory(url, duration) {
         console.log("add history: " + url)
@@ -20,16 +21,33 @@ Rectangle {
             if (historyModel.get(i).url === url)
                 historyModel.remove(i, 1)
         }
-        if (historyModel.count > 32) {
-            historyModel.remove(32, 1)
+        if (historyModel.count > kMaxItems) {
+            historyModel.remove(kMaxItems, 1)
         }
         PlayerConfig.removeHistory(url)
         PlayerConfig.addHistory(info)
     }
 
+    MouseArea {
+        anchors.fill: parent
+        hoverEnabled: !isTouchScreen
+        onEntered: {
+            if (mouseY < closeBtn.height)
+                return
+            if (root.state !== "show")
+                root.state = "show"
+        }
+        onExited: {
+            if (isTouchScreen)
+                return
+            if (root.state === "show")
+                root.state = "ready"
+        }
+    }
     Column {
         anchors.fill: parent
         anchors.margins: Utils.scaled(6)
+        anchors.rightMargin: kMargin
         spacing: Utils.kSpacing
         Text {
             id: title
@@ -48,8 +66,7 @@ Rectangle {
             width: parent.width
             height: parent.height - title.height
             focus: true
-            model: historyModel
-            ListModel { id: historyModel }
+            model: ListModel { id: historyModel}
             delegate: Component {
                 Item {
                     width: parent.width
@@ -65,7 +82,7 @@ Rectangle {
                             text: file
                         }
                         Text {
-                            font.pixelSize: Utils.kFontSize/2
+                            font.pixelSize: Utils.kFontSize*2/3
                             color: "white"
                             text: Utils.msec2string(start) + "/" + Utils.msec2string(duration)
                         }
@@ -93,8 +110,8 @@ Rectangle {
         id: closeBtn
         anchors.top: parent.top
         anchors.right: parent.right
-        width: Utils.scaled(20)
-        height: Utils.scaled(20)
+        width: kMargin
+        height: kMargin
         bgColor: "transparent"
         bgColorSelected: "transparent"
         icon: Utils.resurl("theme/default/close.svg")
@@ -102,24 +119,6 @@ Rectangle {
             if (root.state === "ready")
                 root.state = "hide"
             else
-                root.state = "ready"
-        }
-    }
-
-    MouseArea {
-        anchors.fill: parent
-        propagateComposedEvents: true //for list item
-        hoverEnabled: true
-        onEntered: {
-            if (mouseY < closeBtn.height)
-                return
-            if (root.state !== "show")
-                root.state = "show"
-        }
-        onExited: {
-            if (isTouchScreen)
-                return
-            if (root.state === "show")
                 root.state = "ready"
         }
     }
@@ -145,7 +144,7 @@ Rectangle {
             PropertyChanges {
                 target: root
                 opacity: 0.9
-                anchors.leftMargin: -root.width + Utils.scaled(20)
+                anchors.leftMargin: -root.width + kMargin
             }
         }
     ]

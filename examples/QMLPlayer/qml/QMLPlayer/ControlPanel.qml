@@ -403,7 +403,7 @@ Rectangle {
             icon: Utils.resurl("theme/default/volume.svg")
             iconChecked: Utils.resurl("theme/default/mute.svg")
             onClicked: {
-                if (!Utils.isTouchDevice()) {
+                if (!isTouchScreen) {
                     root.mute = checked
                     return
                 }
@@ -411,14 +411,14 @@ Rectangle {
                 checked = root.mute
             }
             onPressAndHold: { //for qt5.6 mobile
-                if (!Utils.isTouchDevice())
+                if (!isTouchScreen)
                     return
                 root.mute = !root.mute
                 checked = root.mute
             }
             onHoveredChanged: {
                 volBar.anchors.bottom = parent.top
-                if (Utils.isTouchDevice())
+                if (isTouchScreen)
                     volBar.anchors.bottomMargin = 0 //ensure grip does not cover volBtn
                 else
                     volBar.anchors.bottomMargin = -(y + 2)//height/2)

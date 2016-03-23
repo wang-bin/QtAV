@@ -1,4 +1,5 @@
 VERSION = $$QTAV_VERSION
+QT += sql
 android {
   QT += androidextras
 }
