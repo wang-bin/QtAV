@@ -361,6 +361,7 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
 {
     DPTR_D(OpenGLVideo);
     Q_ASSERT(d.manager);
+    DYGL(glViewport(0, 0, d.rect.width(), d.rect.height())); // viewport may be set in gpu filters
     const qint64 mt = d.material->type();
     if (d.material_type != mt) {
         qDebug() << "material changed: " << VideoMaterial::typeName(d.material_type) << " => " << VideoMaterial::typeName(mt);

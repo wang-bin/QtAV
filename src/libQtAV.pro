@@ -311,6 +311,7 @@ config_gl|config_opengl {
   }
   OTHER_FILES += shaders/planar.f.glsl shaders/rgb.f.glsl
   SDK_HEADERS *= \
+    QtAV/GLSLFilter.h \
     QtAV/OpenGLRendererBase.h \
     QtAV/OpenGLVideo.h \
     QtAV/ConvolutionShader.h \
@@ -321,6 +322,7 @@ config_gl|config_opengl {
     utils/OpenGLHelper.h \
     ShaderManager.h
   SOURCES *= \
+    filter/GLSLFilter.cpp \
     output/video/OpenGLRendererBase.cpp \
     OpenGLVideo.cpp \
     VideoShader.cpp \
@@ -539,7 +541,6 @@ HEADERS *= \
     utils/internal.h \
     output/OutputSet.h \
     QtAV/ColorTransform.h
-
 # from mkspecs/features/qt_module.prf
 # OS X and iOS frameworks
 mac_framework { # from common.pri
@@ -552,7 +553,7 @@ mac_framework { # from common.pri
         FRAMEWORK_HEADERS.path = Headers
 # 5.4(beta) workaround for wrong include path
 # TODO: why <QtCore/qglobal.h> can be found?
-        isEqual(QT_MAJOR_VERSION, 5):greaterThan(QT_MINOR_VERSION, 3)|greaterThan(QT_MAJOR_VERSION, 5): FRAMEWORK_HEADERS.path = Headers/$$MODULE_INCNAME
+        qtAtLeast(5,3): FRAMEWORK_HEADERS.path = Headers/$$MODULE_INCNAME
         FRAMEWORK_PRIVATE_HEADERS.version = Versions
         FRAMEWORK_PRIVATE_HEADERS.files = $$SDK_PRIVATE_HEADERS
         FRAMEWORK_PRIVATE_HEADERS.path = Headers/$$VERSION/$$MODULE_INCNAME/private
