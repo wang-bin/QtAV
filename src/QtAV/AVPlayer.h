@@ -516,6 +516,7 @@ Q_SIGNALS:
     void paused(bool p);
     void started();
     void stopped();
+    void stoppedAt(qint64 position);
     void stateChanged(QtAV::AVPlayer::State state);
     void speedChanged(qreal speed);
     void repeatChanged(int r);

@@ -80,7 +80,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     d->read_thread = new AVDemuxThread(this);
     d->read_thread->setDemuxer(&d->demuxer);
     //direct connection can not sure slot order?
-    connect(d->read_thread, SIGNAL(finished()), this, SLOT(stopFromDemuxerThread()), Qt::DirectConnection); // ensure state after stop() is StoppedState
+    connect(d->read_thread, SIGNAL(finished()), this, SLOT(stopFromDemuxerThread()));
     connect(d->read_thread, SIGNAL(requestClockPause(bool)), masterClock(), SLOT(pause(bool)), Qt::DirectConnection);
     connect(d->read_thread, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SLOT(updateMediaStatus(QtAV::MediaStatus)));
     connect(d->read_thread, SIGNAL(bufferProgressChanged(qreal)), this, SIGNAL(bufferProgressChanged(qreal)));
@@ -1304,6 +1304,9 @@ void AVPlayer::stopFromDemuxerThread()
     qDebug("demuxer thread emit finished.");
     d->seeking = false;
     if (currentRepeat() >= repeat() && repeat() >= 0) {
+        qreal stop_pts = masterClock()->videoTime();
+        if (stop_pts <= 0)
+            stop_pts = masterClock()->value();
         masterClock()->reset();
         stopNotifyTimer();
         d->start_position = 0;
@@ -1314,12 +1317,12 @@ void AVPlayer::stopFromDemuxerThread()
         d->state = StoppedState;
         Q_EMIT stateChanged(d->state);
         Q_EMIT stopped();
+        Q_EMIT stoppedAt(stop_pts*1000.0);
     } else {
         qDebug("stopPosition() == mediaStopPosition() or !seekable. repeate: %d/%d", currentRepeat(), repeat());
         d->repeat_current++;
         d->last_position = startPosition(); // for seeking to startPosition() if seekable. already set in stop()
-        QMetaObject::invokeMethod(this, "play", Qt::AutoConnection);
-        //play();
+        play();
     }
 }
 
@@ -1412,7 +1415,6 @@ void AVPlayer::tryClearVideoRenderers()
     }
 }
 
-// TODO: doc about when the state will be reset
 void AVPlayer::stop()
 {
     // check d->timer_id, <0 return?
@@ -1460,6 +1462,7 @@ void AVPlayer::stop()
         // interrupt to quit av_read_frame quickly.
         d->demuxer.setInterruptStatus(-1);
     }
+    d->state = StoppedState;
     qDebug("all audio/video threads  stopped...");
 }
 
