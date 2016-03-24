@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
@@ -136,7 +136,6 @@ void OpenGLRendererBase::onResizeGL(int w, int h)
     if (!QOpenGLContext::currentContext())
         return;
     DPTR_D(OpenGLRendererBase);
-    glViewport(0, 0, w, h);
     d.glv.setProjectionMatrixToRect(QRectF(0, 0, w, h));
     d.setupAspectRatio();
 }

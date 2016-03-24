@@ -62,6 +62,8 @@ public:
      * 0: current context in OpenGL is done. shaders will be released.
      * QOpenGLContext is QObject in Qt5, and gl resources here will be released automatically if context is destroyed.
      * But you have to call setOpenGLContext(0) for Qt4 explicitly in the old context.
+     * Viewport is also set here using context surface/paintDevice size and devicePixelRatio.
+     * devicePixelRatio may be wrong for multi-screen with 5.0<qt<5.5, so you should call setProjectionMatrixToRect later in this case
      */
     void setOpenGLContext(QOpenGLContext *ctx);
     QOpenGLContext* openGLContext();
@@ -76,8 +78,11 @@ public:
      * \param transform: additinal transformation.
      */
     void render(const QRectF& target = QRectF(), const QRectF& roi = QRectF(), const QMatrix4x4& transform = QMatrix4x4());
+    /*!
+     * \brief setProjectionMatrixToRect
+     * the rect will be viewport
+     */
     void setProjectionMatrixToRect(const QRectF& v);
-    void setProjectionMatrix(const QMatrix4x4 &matrix);
 
     void setBrightness(qreal value);
     void setContrast(qreal value);

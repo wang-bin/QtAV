@@ -22,6 +22,8 @@
 #include "QtAV/OpenGLVideo.h"
 #include <QtGui/QColor>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QGuiApplication>
+#include <QtGui/QScreen>
 #include <QtGui/QSurface>
 #define QT_VAO (QT_VERSION >= QT_VERSION_CHECK(5, 1, 0))
 #if QT_VAO
@@ -241,7 +243,6 @@ bool OpenGLVideo::isSupported(VideoFormat::PixelFormat pixfmt)
     return pixfmt != VideoFormat::Format_RGB48BE;
 }
 
-// TODO: set surface/device size here (viewport?)
 void OpenGLVideo::setOpenGLContext(QOpenGLContext *ctx)
 {
     DPTR_D(OpenGLVideo);
@@ -257,7 +258,12 @@ void OpenGLVideo::setOpenGLContext(QOpenGLContext *ctx)
     d.material = new VideoMaterial();
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     d.manager = ctx->findChild<ShaderManager*>(QStringLiteral("__qtav_shader_manager"));
-    QSizeF surfaceSize = QOpenGLContext::currentContext()->surface()->size();
+    QSizeF surfaceSize = ctx->surface()->size();
+#if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
+    surfaceSize *= ctx->screen()->devicePixelRatio();
+#else
+    surfaceSize *= qApp->devicePixelRatio(); //TODO: window()->devicePixelRatio() is the window screen's
+#endif
 #else
     QSizeF surfaceSize = QSizeF(ctx->device()->width(), ctx->device()->height());
 #endif
@@ -319,11 +325,9 @@ void OpenGLVideo::setProjectionMatrixToRect(const QRectF &v)
     // Mirrored relative to the usual Qt coordinate system with origin in the top left corner.
     //mirrored = mat(0, 0) * mat(1, 1) - mat(0, 1) * mat(1, 0) > 0;
     d.update_geo = true; // even true for target_rect != d.rect
-}
-
-void OpenGLVideo::setProjectionMatrix(const QMatrix4x4 &matrix)
-{
-    d_func().matrix = matrix;
+    if (d.ctx && d.ctx == QOpenGLContext::currentContext()) {
+        DYGL(glViewport(d.rect.x(), d.rect.y(), d.rect.width(), d.rect.height()));
+    }
 }
 
 void OpenGLVideo::setBrightness(qreal value)
@@ -361,7 +365,7 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
 {
     DPTR_D(OpenGLVideo);
     Q_ASSERT(d.manager);
-    DYGL(glViewport(0, 0, d.rect.width(), d.rect.height())); // viewport may be set in gpu filters
+    DYGL(glViewport(d.rect.x(), d.rect.y(), d.rect.width(), d.rect.height())); // viewport was used in gpu filters is wrong, qt quick fbo item's is right(so must ensure setProjectionMatrixToRect was called correctly)
     const qint64 mt = d.material->type();
     if (d.material_type != mt) {
         qDebug() << "material changed: " << VideoMaterial::typeName(d.material_type) << " => " << VideoMaterial::typeName(mt);

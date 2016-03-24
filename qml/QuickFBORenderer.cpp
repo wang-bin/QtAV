@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2015)
@@ -45,15 +45,15 @@ class FBORenderer : public QQuickFramebufferObject::Renderer
 {
 public:
     FBORenderer(QuickFBORenderer* item) : m_item(item) {}
-    QOpenGLFramebufferObject* createFramebufferObject(const QSize &size) {
+    QOpenGLFramebufferObject* createFramebufferObject(const QSize &size) Q_DECL_OVERRIDE {
         m_item->fboSizeChanged(size);
         return QQuickFramebufferObject::Renderer::createFramebufferObject(size);
     }
-    void render() {
+    void render() Q_DECL_OVERRIDE {
         Q_ASSERT(m_item);
         m_item->renderToFbo();
     }
-    void synchronize(QQuickFramebufferObject *item) {
+    void synchronize(QQuickFramebufferObject *item) Q_DECL_OVERRIDE {
         m_item = static_cast<QuickFBORenderer*>(item);
     }
 private:
@@ -200,6 +200,11 @@ void QuickFBORenderer::fboSizeChanged(const QSize &size)
     DPTR_D(QuickFBORenderer);
     d.update_background = true;
     resizeRenderer(size);
+    if (d.glctx != QOpenGLContext::currentContext()) {
+        d.glctx = QOpenGLContext::currentContext();
+        d.glv.setOpenGLContext(d.glctx); // will set viewport. but maybe wrong value for hi dpi
+    }
+    // ensure viewport is correct set
     d.glv.setProjectionMatrixToRect(QRectF(0, 0, size.width(), size.height()));
     d.setupAspectRatio();
 }
@@ -219,10 +224,6 @@ void QuickFBORenderer::drawBackground()
 void QuickFBORenderer::drawFrame()
 {
     DPTR_D(QuickFBORenderer);
-    if (d.glctx != QOpenGLContext::currentContext()) {
-        d.glctx = QOpenGLContext::currentContext();
-        d.glv.setOpenGLContext(d.glctx);
-    }
     if (!d.video_frame.isValid()) {
         d.glv.fill(QColor(0, 0, 0, 0));
         return;
