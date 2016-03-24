@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2016)
@@ -57,7 +57,6 @@ private:
 
     CVOpenGLESTextureCacheRef texture_cache;
     CVOpenGLESTextureRef textures[4];
-    QVector<GLuint> tex_mapped;
 };
 
 InteropResource* CreateInteropCVOpenGLES()
@@ -135,14 +134,7 @@ bool InteropResourceCVOpenGLES::map(CVPixelBufferRef buf, GLuint *texInOut, int 
         return false;
     }
     //CVOpenGLESTextureGetCleanTexCoords
-    if (tex_mapped.indexOf(*texInOut) < 0) {
-        DYGL(glDeleteTextures(1, texInOut));
-        qDebug("delete texture generated from VideoShader: %u", *texInOut);
-    } else {
-        tex_mapped.removeAll(*texInOut);
-    }
     *texInOut = CVOpenGLESTextureGetName(tex);
-    tex_mapped.append(*texInOut);
     DYGL(glBindTexture(GL_TEXTURE_2D, *texInOut));
     DYGL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     DYGL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));

@@ -148,6 +148,7 @@ public:
     // textures.d in updateTextureParameters() changed. happens in qml. why?
     quint8 workaround_vector_crash_on_linux[8]; //TODO: remove
     QVector<GLuint> textures; //texture ids. size is plane count
+    QHash<GLuint, bool> owns_texture;
     QVector<QSize> texture_size;
     /*
      * actually if render a full frame, only plane 0 is enough. other planes are the same as texture size.

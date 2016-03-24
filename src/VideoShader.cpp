@@ -563,7 +563,7 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
         d.target = new_target;
         d.init_textures_required = true;
     }
-
+    // TODO: check hw interop change. if change from an interop owns texture to not owns texture, VideoShader must recreate textures because old textures are deleted by previous interop
     const VideoFormat fmt(frame.format());
     const int bpc_old = d.bpc;
     d.bpc = fmt.bitsPerComponent();
@@ -699,7 +699,14 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
         return;
     }
     // try_pbo ? pbo_id : 0. 0= > interop.createHandle
+    GLuint tex0 = tex;
     if (d.frame.map(GLTextureSurface, &tex, p)) {
+        if (tex0 != tex) {
+            if (d.owns_texture[tex0])
+                DYGL(glDeleteTextures(1, &tex0));
+            d.owns_texture.remove(tex0);
+            d.owns_texture[tex] = false;
+        }
         DYGL(glBindTexture(d.target, tex)); // glActiveTexture was called, but maybe bind to 0 in map
         return;
     }
@@ -730,8 +737,6 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
     DYGL(glBindTexture(d.target, tex));
     //d.setupQuality();
     // This is necessary for non-power-of-two textures
-    DYGL(glTexParameteri(d.target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-    DYGL(glTexParameteri(d.target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE)); //TODO: remove. only call once
     DYGL(glTexSubImage2D(d.target, 0, 0, 0, d.texture_upload_size[p].width(), d.texture_upload_size[p].height(), d.data_format[p], d.data_type[p], d.try_pbo ? 0 : d.frame.constBits(p)));
     if (false) { //texture_upload_size[].width()*gl_bpp != bytesPerLine[]
         for (int y = 0; y < d.plane0Size.height(); ++y)
@@ -987,8 +992,14 @@ VideoMaterialPrivate::~VideoMaterialPrivate()
         return;
     }
     if (!textures.isEmpty()) {
-        DYGL(glDeleteTextures(textures.size(), textures.data()));
+        for (int i = 0; i < textures.size(); ++i) {
+            GLuint &tex = textures[i];
+            if (owns_texture[tex])
+                DYGL(glDeleteTextures(1, &tex));
+        }
+        //DYGL(glDeleteTextures(textures.size(), textures.data()));
     }
+    owns_texture.clear();
     textures.clear();
     pbo.clear();
 }
@@ -1040,12 +1051,19 @@ bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
      * Which means the number of texture id equals to plane count
      */
     // always delete old textures otherwise old textures are not initialized with correct parameters
-    if (textures.size() > nb_planes) {
+    if (textures.size() > nb_planes) { //TODO: why check this?
         const int nb_delete = textures.size() - nb_planes;
-        qDebug("delete %d textures", nb_delete);
+        qDebug("try to delete %d textures", nb_delete);
         if (!textures.isEmpty()) {
-            DYGL(glDeleteTextures(nb_delete, textures.data() + nb_planes));
+            for (int i = 0; i < nb_delete; ++i) {
+                GLuint &t = textures[nb_planes+i];
+                qDebug("try to delete texture[%d]: %u. can delete: %d", nb_planes+i, t, owns_texture[t]);
+                if (owns_texture[t])
+                    DYGL(glDeleteTextures(1, &t));
+            }
+            //DYGL(glDeleteTextures(nb_delete, textures.data() + nb_planes));
         }
+        owns_texture.clear();
     }
     textures.resize(nb_planes);
     init_textures_required = true;
@@ -1135,17 +1153,21 @@ bool VideoMaterialPrivate::ensureTextures()
     for (int p = 0; p < nb_planes; ++p) {
         GLuint &tex = textures[p];
         if (tex) { // can be 0 if resized to a larger size
-            qDebug("deleting texture for plane %d (id=%u)", p, tex);
-            DYGL(glDeleteTextures(1, &tex));
+            qDebug("try to delete texture for plane %d (id=%u). can delete: %d", p, tex, owns_texture[tex]);
+            if (owns_texture[tex])
+                DYGL(glDeleteTextures(1, &tex));
+            owns_texture.remove(tex);
             tex = 0;
         }
         if (!tex) {
             qDebug("creating texture for plane %d", p);
-            GLuint* handle = (GLuint*)frame.createInteropHandle(&tex, GLTextureSurface, p);
+            GLuint* handle = (GLuint*)frame.createInteropHandle(&tex, GLTextureSurface, p); // take the ownership
             if (handle) {
                 tex = *handle;
+                owns_texture[tex] = true;
             } else {
                 DYGL(glGenTextures(1, &tex));
+                owns_texture[tex] = true;
                 initTexture(tex, internal_format[p], data_format[p], data_type[p], texture_size[p].width(), texture_size[p].height());
             }
             qDebug("texture for plane %d is created (id=%u)", p, tex);

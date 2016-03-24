@@ -83,15 +83,25 @@ void GLSLFilter::process(Statistics *statistics, VideoFrame *frame)
     if (!frame || !*frame)
         return;
     // now use the frame size
-    if (d.fbo && !d.size.isEmpty() && d.fbo->size() != d.size) {
-        delete d.fbo;
-        d.fbo = 0;
+    if (d.fbo) {
+        if (d.size.isEmpty()) {
+            if (d.fbo->size() != frame->size()) {
+                delete d.fbo;
+                d.fbo = 0;
+            }
+        } else {
+            if (d.fbo->size() != d.size) {
+                delete d.fbo;
+                d.fbo = 0;
+            }
+        }
     }
     if (!d.fbo) {
         d.fbo = new QOpenGLFramebufferObject(outputSize().isEmpty() ? frame->size() : outputSize(), GL_TEXTURE_2D); //TODO: prefer 16bit rgb
         QOpenGLContext *ctx = const_cast<QOpenGLContext*>(QOpenGLContext::currentContext()); //qt4 returns const
         d.glv.setOpenGLContext(ctx);
         d.glv.setProjectionMatrixToRect(QRectF(0, 0, d.fbo->width(), d.fbo->height()));
+        qDebug("new fbo texture: %d %dx%d", d.fbo->texture(), d.fbo->width(), d.fbo->height());
     }
     d.fbo->bind();
     DYGL(glViewport(0, 0, d.fbo->width(), d.fbo->height()));
@@ -105,22 +115,18 @@ void GLSLFilter::process(Statistics *statistics, VideoFrame *frame)
     VideoFrame f(d.fbo->width(), d.fbo->height(), fmt); //
     f.setBytesPerLine(d.fbo->width()*fmt.bytesPerPixel(), 0);
     // set interop;
-
     class GLTextureInterop : public VideoSurfaceInterop
     {
         GLuint tex;
     public:
         GLTextureInterop(GLuint id) : tex(id) {}
-        // FIXME: texture will be deleted in VideoShader. TODO: VideoShader check whether it's texture owner
-        void* map(SurfaceType, const VideoFormat &, void *handle, int plane)
-        {
+        void* map(SurfaceType, const VideoFormat &, void *handle, int plane) {
             Q_UNUSED(plane);
             GLuint* t = reinterpret_cast<GLuint*>(handle);
             *t = tex;
             return t;
         }
     };
-
     GLTextureInterop *interop = new GLTextureInterop(d.fbo->texture());
     f.setMetaData(QStringLiteral("surface_interop"), QVariant::fromValue(VideoSurfaceInteropPtr((interop))));
     *frame = f;

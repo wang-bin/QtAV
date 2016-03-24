@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2016)
@@ -232,7 +232,7 @@ bool InteropResourceCVPixelBuffer::map(CVPixelBufferRef buf, GLuint *tex, int w,
     CVPixelBufferLockBaseAddress(buf, 0);
     GLint iformat;
     GLenum format, dtype;
-    getParametersGL(CVPixelBufferGetPixelFormatType(buf), &iformat, &format, &dtype, plane);
+    getParametersGL(CVPixelBufferGetPixelFormatType(buf), &iformat, &format, &dtype, plane); //TODO: call once when format changed
     const int texture_w = CVPixelBufferGetBytesPerRowOfPlane(buf, plane)/OpenGLHelper::bytesOfGLFormat(format, dtype);
     //qDebug("cv plane%d width: %d, stride: %d, tex width: %d", plane, CVPixelBufferGetWidthOfPlane(buf, plane), CVPixelBufferGetBytesPerRowOfPlane(buf, plane), texture_w);
     // get address results in internal copy
