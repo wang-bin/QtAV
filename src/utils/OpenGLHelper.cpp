@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -108,6 +108,7 @@ bool useDeprecatedFormats()
 
 static QByteArray commonShaderHeader(QOpenGLShader::ShaderType type)
 {
+    // TODO: check useDeprecatedFormats() or useDeprecated()?
     QByteArray h;
     if (isOpenGLES()) {
         h += "precision mediump int;\n"
@@ -123,7 +124,6 @@ static QByteArray commonShaderHeader(QOpenGLShader::ShaderType type)
         // >=1.30: texture(sampler2DRect,...). 'texture' is defined in header
         // we can't check GLSLVersion() here because it the actually version used can be defined by "#version"
         h += "#if __VERSION__ < 130\n"
-             "#undef texture\n"
              "#define texture texture2D\n"
              "#endif // < 130\n"
         ;
@@ -491,7 +491,7 @@ bool hasRG()
     }
     qDebug("check gl es>=3 rg");
     if (QOpenGLContext::currentContext())
-        has_rg = isOpenGLES() && QOpenGLContext::currentContext()->format().majorVersion() > 2;
+        has_rg = isOpenGLES() && QOpenGLContext::currentContext()->format().majorVersion() > 2; // Mesa GLES3 does not support (from qt)
     return has_rg;
 }
 
