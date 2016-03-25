@@ -23,7 +23,7 @@
 #define QTAV_VIDEOSHADER_P_H
 
 #include "QtAV/VideoFrame.h"
-#include "QtAV/ColorTransform.h"
+#include "ColorTransform.h"
 #include <QVector4D>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLBuffer>

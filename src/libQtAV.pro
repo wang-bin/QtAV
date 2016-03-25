@@ -395,7 +395,6 @@ SOURCES += \
     AudioFrame.cpp \
     AudioResampler.cpp \
     AudioResamplerTemplate.cpp \
-    AudioResamplerTypes.cpp \
     codec/audio/AudioDecoder.cpp \
     codec/audio/AudioDecoderFFmpeg.cpp \
     codec/audio/AudioEncoder.cpp \
@@ -437,15 +436,13 @@ SOURCES += \
     output/OutputSet.cpp \
     Statistics.cpp \
     codec/video/VideoDecoder.cpp \
-    codec/video/VideoDecoderTypes.cpp \
     codec/video/VideoDecoderFFmpegBase.cpp \
     codec/video/VideoDecoderFFmpeg.cpp \
     codec/video/VideoDecoderFFmpegHW.cpp \
     codec/video/VideoEncoder.cpp \
     codec/video/VideoEncoderFFmpeg.cpp \
     VideoThread.cpp \
-    VideoFrameExtractor.cpp \
-    CommonTypes.cpp
+    VideoFrameExtractor.cpp
 
 SDK_HEADERS *= \
     QtAV/QtAV \
@@ -453,7 +450,6 @@ SDK_HEADERS *= \
     QtAV/dptr.h \
     QtAV/QtAV_Global.h \
     QtAV/AudioResampler.h \
-    QtAV/AudioResamplerTypes.h \
     QtAV/AudioDecoder.h \
     QtAV/AudioEncoder.h \
     QtAV/AudioFormat.h \
@@ -463,7 +459,6 @@ SDK_HEADERS *= \
     QtAV/AVEncoder.h \
     QtAV/AVDemuxer.h \
     QtAV/AVMuxer.h \
-    QtAV/CommonTypes.h \
     QtAV/Filter.h \
     QtAV/FilterContext.h \
     QtAV/LibAVFilter.h \
@@ -481,7 +476,6 @@ SDK_HEADERS *= \
     QtAV/AVOutput.h \
     QtAV/AVClock.h \
     QtAV/VideoDecoder.h \
-    QtAV/VideoDecoderTypes.h \
     QtAV/VideoEncoder.h \
     QtAV/VideoFormat.h \
     QtAV/VideoFrame.h \
@@ -540,7 +534,7 @@ HEADERS *= \
     utils/ring.h \
     utils/internal.h \
     output/OutputSet.h \
-    QtAV/ColorTransform.h
+    ColorTransform.h
 # from mkspecs/features/qt_module.prf
 # OS X and iOS frameworks
 mac_framework { # from common.pri

@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -22,12 +22,21 @@
 #include "QtAV/VideoDecoder.h"
 #include "QtAV/private/AVDecoder_p.h"
 #include "QtAV/private/factory.h"
+#include "QtAV/private/mkid.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
 FACTORY_DEFINE(VideoDecoder)
 
-void VideoDecoder_RegisterAll()
+VideoDecoderId VideoDecoderId_FFmpeg = mkid::id32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
+VideoDecoderId VideoDecoderId_CUDA = mkid::id32base36_4<'C', 'U', 'D', 'A'>::value;
+VideoDecoderId VideoDecoderId_DXVA = mkid::id32base36_4<'D', 'X', 'V', 'A'>::value;
+VideoDecoderId VideoDecoderId_VAAPI = mkid::id32base36_5<'V', 'A', 'A', 'P', 'I'>::value;
+VideoDecoderId VideoDecoderId_Cedarv = mkid::id32base36_6<'C', 'e', 'd', 'a', 'r', 'V'>::value;
+VideoDecoderId VideoDecoderId_VDA = mkid::id32base36_3<'V', 'D', 'A'>::value;
+VideoDecoderId VideoDecoderId_VideoToolbox = mkid::id32base36_5<'V', 'T', 'B', 'o', 'x'>::value;
+
+static void VideoDecoder_RegisterAll()
 {
     extern bool RegisterVideoDecoderFFmpeg_Man();
     RegisterVideoDecoderFFmpeg_Man();
@@ -58,6 +67,7 @@ void VideoDecoder_RegisterAll()
 }
 QVector<VideoDecoderId> VideoDecoder::registered()
 {
+    VideoDecoder_RegisterAll();
     return QVector<VideoDecoderId>::fromStdVector(VideoDecoderFactory::Instance().registeredIds());
 }
 

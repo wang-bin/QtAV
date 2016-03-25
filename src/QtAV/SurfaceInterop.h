@@ -22,9 +22,7 @@
 #ifndef QTAV_SURFACEINTEROP_H
 #define QTAV_SURFACEINTEROP_H
 
-#include <QtCore/QMetaType>
 #include <QtCore/QSharedPointer>
-#include <QtAV/CommonTypes.h>
 #include <QtAV/VideoFormat.h>
 
 namespace QtAV {

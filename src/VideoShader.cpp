@@ -21,7 +21,7 @@
 
 #include "QtAV/VideoShader.h"
 #include "QtAV/private/VideoShader_p.h"
-#include "QtAV/ColorTransform.h"
+#include "ColorTransform.h"
 #include "utils/OpenGLHelper.h"
 #include <cmath>
 #include <QtCore/QCoreApplication>

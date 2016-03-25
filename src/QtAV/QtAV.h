@@ -40,7 +40,6 @@
 #include <QtAV/AudioFormat.h>
 #include <QtAV/AudioOutput.h>
 #include <QtAV/AudioResampler.h>
-#include <QtAV/AudioResamplerTypes.h>
 
 #include <QtAV/Filter.h>
 #include <QtAV/FilterContext.h>
@@ -53,7 +52,6 @@
 #include <QtAV/VideoCapture.h>
 #include <QtAV/VideoEncoder.h>
 #include <QtAV/VideoDecoder.h>
-#include <QtAV/VideoDecoderTypes.h>
 #include <QtAV/VideoFormat.h>
 #include <QtAV/VideoFrame.h>
 #include <QtAV/VideoFrameExtractor.h>

@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
@@ -24,19 +24,16 @@
 
 #include <QtCore/QSharedDataPointer>
 #include <QtGui/QMatrix4x4>
-#include <QtAV/CommonTypes.h>
-
+#include <QtAV/QtAV_Global.h>
 // TODO: kernel QGenericMatrix<M,N>
 //http://www.graficaobscura.com/matrix/index.html
 
 namespace QtAV {
-
 /*!
  * \brief The ColorTransform class
  *  A convenience class to get color transformation matrix.
  *  Implicitly shared.
  */
-
 class ColorTransform
 {
 public:
@@ -105,7 +102,5 @@ private:
     class Private;
     QSharedDataPointer<ColorTransform::Private> d;
 };
-
 } //namespace QtAV
-
 #endif // QTAV_COLORTRANSFORM_H

@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -72,6 +72,7 @@ public:
     QString name() const; //name from factory
     virtual VideoFrame frame() = 0;
 public:
+    typedef int Id;
     static QVector<VideoDecoderId> registered();
     template<class C> static bool Register(VideoDecoderId id, const char* name) { return Register(id, create<C>, name);}
     /*!
@@ -92,5 +93,13 @@ private:
     VideoDecoder();
 };
 
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_CUDA;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_DXVA;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_VAAPI;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_Cedarv;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_VDPAU;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_VDA;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_VideoToolbox;
 } //namespace QtAV
 #endif // QTAV_VIDEODECODER_H

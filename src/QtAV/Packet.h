@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -22,8 +22,6 @@
 #ifndef QAV_PACKET_H
 #define QAV_PACKET_H
 
-#include <QtCore/QByteArray>
-#include <QtCore/QMetaType>
 #include <QtCore/QSharedData>
 #include <QtAV/QtAV_Global.h>
 

@@ -25,7 +25,6 @@
 #include <limits>
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/AVPlayer.h"
-#include "QtAV/CommonTypes.h"
 #include "AudioThread.h"
 #include "VideoThread.h"
 #include "AVDemuxThread.h"

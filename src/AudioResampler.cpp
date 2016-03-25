@@ -1,6 +1,6 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,10 +23,14 @@
 #include "QtAV/AudioFormat.h"
 #include "QtAV/private/AudioResampler_p.h"
 #include "QtAV/private/factory.h"
+#include "QtAV/private/mkid.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
 FACTORY_DEFINE(AudioResampler)
+
+AudioResamplerId AudioResamplerId_FF = mkid::id32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
+AudioResamplerId AudioResamplerId_Libav = mkid::id32base36_5<'L', 'i', 'b', 'a', 'v'>::value;
 
 extern bool RegisterAudioResamplerFF_Man();
 extern bool RegisterAudioResamplerLibav_Man();
@@ -42,10 +46,6 @@ void AudioResampler::registerAll()
 #if QTAV_HAVE(AVRESAMPLE)
     RegisterAudioResamplerLibav_Man();
 #endif
-}
-
-AudioResampler::AudioResampler()
-{
 }
 
 AudioResampler::AudioResampler(AudioResamplerPrivate& d):DPTR_INIT(&d)

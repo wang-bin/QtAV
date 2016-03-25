@@ -36,7 +36,6 @@
 #include "QtAV/VideoRenderer.h"
 #include "QtAV/AVClock.h"
 #include "QtAV/VideoCapture.h"
-#include "QtAV/VideoDecoderTypes.h"
 #include "QtAV/VideoCapture.h"
 #include "filter/FilterManager.h"
 #include "output/OutputSet.h"

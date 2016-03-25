@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
@@ -19,7 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#include "QtAV/ColorTransform.h"
+#include "ColorTransform.h"
 #include <QtCore/qmath.h>
 
 namespace QtAV {
@@ -77,7 +77,7 @@ static QMatrix4x4 ColorRangeYUV(ColorRange from, ColorRange to)
         return QMatrix4x4();
     static const qreal Y2 = 235, Y1 = 16, C2 = 240, C1 = 16;
     static const qreal s = 255; //TODO: can be others
-    if (from == ColorRange_Limited) {
+    if (from == ColorRange_Limited) { //TODO: Unknown. But what if realy want unknown?
         qDebug("input yuv limited range");
         // [Y1, Y2] => [0, s]
         QMatrix4x4 m;
@@ -110,7 +110,7 @@ static QMatrix4x4 ColorRangeRGB(ColorRange from, ColorRange to)
         m.scale((R2 - R1)/s, (R2 - R1)/s, (R2 - R1)/s);
         return m;
     }
-    if (to == ColorRange_Full) {
+    if (to == ColorRange_Full) { // TODO: Unknown
         QMatrix4x4 m;
         m.scale(s/(R2 - R1), s/(R2 - R1), s/(R2 - R1));
         m.translate(-s/R1, -s/R1, -s/R1);
@@ -170,13 +170,13 @@ public:
         //http://www.graficaobscura.com/matrix/index.html
         //http://beesbuzz.biz/code/hsv_color_transforms.php
         // ??
-        float b = brightness;
+        const float b = brightness;
         // brightness R,G,B
         QMatrix4x4 B(1, 0, 0, b,
                      0, 1, 0, b,
                      0, 0, 1, b,
                      0, 0, 0, 1);
-        float c = contrast+1.0;
+        const float c = contrast+1.0;
         // Contrast (offset) R,G,B
         QMatrix4x4 C(c, 0, 0, 0,
                      0, c, 0, 0,

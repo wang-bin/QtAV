@@ -384,6 +384,44 @@ const QStringList& supportedSubtitleMimeTypes()
     return s_subtitle_mimes;
 }
 #endif
+
+
+/*
+ * AVColorSpace:
+ * libav11 libavutil54.3.0 pixfmt.h, ffmpeg2.1*libavutil52.48.101 frame.h
+ * ffmpeg2.5 pixfmt.h. AVFrame.colorspace
+ * earlier versions: avcodec.h, avctx.colorspace
+ */
+ColorSpace colorSpaceFromFFmpeg(AVColorSpace cs)
+{
+    switch (cs) {
+    // from ffmpeg: order of coefficients is actually GBR
+    case AVCOL_SPC_RGB: return ColorSpace_GBR;
+    case AVCOL_SPC_BT709: return ColorSpace_BT709;
+    case AVCOL_SPC_BT470BG: return ColorSpace_BT601;
+    case AVCOL_SPC_SMPTE170M: return ColorSpace_BT601;
+    default: return ColorSpace_Unknown;
+    }
+}
+
+ColorRange colorRangeFromFFmpeg(AVColorRange cr)
+{
+    switch (cr) {
+    case AVCOL_RANGE_MPEG: return ColorRange_Limited;
+    case AVCOL_RANGE_JPEG: return ColorRange_Full;
+    default: return ColorRange_Unknown;
+    }
+}
+
+namespace
+{
+static const struct RegisterMetaTypes {
+    RegisterMetaTypes() {
+        qRegisterMetaType<QtAV::MediaStatus>("QtAV::MediaStatus");
+    }
+} _registerMetaTypes;
+}
+
 // TODO: static link. move all into 1
 namespace {
 class InitFFmpegLog {

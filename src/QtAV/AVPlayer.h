@@ -27,7 +27,7 @@
 #include <QtAV/AudioOutput.h>
 #include <QtAV/AVClock.h>
 #include <QtAV/Statistics.h>
-#include <QtAV/VideoDecoderTypes.h>
+#include <QtAV/VideoDecoder.h>
 #include <QtAV/AVError.h>
 
 QT_BEGIN_NAMESPACE

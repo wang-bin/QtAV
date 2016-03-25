@@ -22,7 +22,6 @@
 #ifndef QAV_DEMUXER_H
 #define QAV_DEMUXER_H
 
-#include <QtAV/CommonTypes.h>
 #include <QtAV/AVError.h>
 #include <QtAV/Packet.h>
 #include <QtCore/QVariant>
