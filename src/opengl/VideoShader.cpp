@@ -135,6 +135,52 @@ void TexturedGeometry::setTextureRect(const QRectF &tr, int texIndex)
     }
 }
 
+QVector<Uniform> ParseUniforms(const QByteArray &text)
+{
+    QVector<Uniform> uniforms;
+    const QString code = QString(text).remove(QRegExp(QStringLiteral("(/\\*([^*]|(\\*+[^*/]))*\\*+/)")));
+    const QStringList lines = code.split(';');
+    const QString exp(QStringLiteral("\\s*uniform\\s+([\\w\\d]+)\\s+([\\w\\d]+)\\s*"));
+    const QString exp_array = exp + QStringLiteral("\\[(\\d+)\\]\\s*");
+    foreach (QString line, lines) {
+        line = line.trimmed();
+        if (!line.startsWith(QStringLiteral("uniform ")))
+            continue;
+        QRegExp rx(exp_array);
+        if (rx.indexIn(line) < 0) {
+            rx = QRegExp(exp);
+            if (rx.indexIn(line) < 0)
+                continue;
+        }
+        Uniform u;
+        const QStringList x = rx.capturedTexts();
+        //qDebug() << x;
+        u.name = x.at(2).toUtf8();
+        if (x.size() > 3)
+            u.value.resize(x[3].toInt());
+        const QString t(x[1]);
+        if (t == "bool") {
+            u.value.fill(QVariant(false));
+        } else if (t == "int") {
+            u.value.fill(QVariant(int(0)));
+        } else if (t == "float") {
+            u.value.fill(QVariant(float(0)));
+        } else if (t == "vec2") {
+            u.value.fill(QVariant(QVector2D()));
+        } else if (t == "vec3") {
+            u.value.fill(QVariant(QVector3D()));
+        } else if (t == "vec4") {
+            u.value.fill(QVariant(QVector4D()));
+        } else if (t == "mat4") {
+            u.value.fill(QVariant(QMatrix4x4()));
+        } else if (t == "sample2D") {
+            u.type = Uniform::Sampler;
+        }
+        uniforms.append(u);
+    }
+    return uniforms;
+}
+
 VideoShader::VideoShader(VideoShaderPrivate &d):
     DPTR_INIT(&d)
 {
@@ -337,20 +383,24 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
         qDebug("u_texelSize: %d", d.u_texelSize);
 
     // TODO: vertex shader
+    d.user_uniforms[VertexShader].clear();
+    d.user_uniforms[FragmentShader].clear();
+    if (userShaderHeader(QOpenGLShader::Vertex)) {
+        qDebug("user uniform locations in vertex shader:");
+        d.user_uniforms[VertexShader] = ParseUniforms(QByteArray(userShaderHeader(QOpenGLShader::Vertex)));
+        for (int i = 0; i < d.user_uniforms[VertexShader].size(); ++i) {
+            Uniform& u = d.user_uniforms[VertexShader][i];
+            u.loc = shaderProgram->uniformLocation(u.name);
+            qDebug("%s: %d", u.name.constData(), u.loc);
+        }
+    }
     if (userShaderHeader(QOpenGLShader::Fragment)) {
-        qDebug("user uniform locations:");
-        const QString fsh = QString::fromUtf8(userShaderHeader(QOpenGLShader::Fragment)).remove(QRegExp(QStringLiteral("(/\\*([^*]|(\\*+[^*/]))*\\*+/)")));
-        const QStringList lines = fsh.split(';');
-        foreach (QString line, lines) {
-            line = line.trimmed();
-            if (!line.startsWith(QStringLiteral("uniform ")))
-                continue;
-            // remove array spaces: a [ 2 ]
-            line.replace(QRegExp(QStringLiteral("\\s*\\[\\s*")), QStringLiteral("[")).replace(QRegExp(QStringLiteral("\\s*\\]")), QStringLiteral("]"));
-            QString u = line.split(' ').last();
-            // uniform array: remove "[\d+]"
-            u.remove(QRegExp(QStringLiteral("\\[\\d+\\]")));
-            qDebug("%s: %d", u.toLatin1().constData(), shaderProgram->uniformLocation(u));
+        qDebug("user uniform locations in fragment shader:");
+        d.user_uniforms[FragmentShader] = ParseUniforms(QByteArray(userShaderHeader(QOpenGLShader::Fragment)));
+        for (int i = 0; i < d.user_uniforms[FragmentShader].size(); ++i) {
+            Uniform& u = d.user_uniforms[FragmentShader][i];
+            u.loc = shaderProgram->uniformLocation(u.name);
+            qDebug("%s: %d", u.name.constData(), u.loc);
         }
     }
     d.rebuild_program = false;
@@ -506,7 +556,7 @@ QByteArray VideoShader::shaderSourceFromFile(const QString &fileName) const
     return src;
 }
 
-void VideoShader::build(QOpenGLShaderProgram *shaderProgram)
+bool VideoShader::build(QOpenGLShaderProgram *shaderProgram)
 {
     if (shaderProgram->isLinked()) {
         qWarning("Shader program is already linked");
@@ -535,7 +585,10 @@ void VideoShader::build(QOpenGLShaderProgram *shaderProgram)
     if (!shaderProgram->link()) {
         qWarning("QSGMaterialShader: Shader compilation failed:");
         qWarning() << shaderProgram->log();
+        return false;
     }
+    programReady();
+    return true;
 }
 
 void VideoShader::rebuildLater()

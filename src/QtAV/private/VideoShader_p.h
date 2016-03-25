@@ -43,6 +43,42 @@ typedef QGLBuffer QOpenGLBuffer;
 #endif
 
 namespace QtAV {
+// can not move to OpenGLHelper.h because that's not public/private header
+enum ShaderType {
+    VertexShader,
+    FragmentShader,
+    ShaderTypeCount
+};
+
+struct Uniform {
+    enum Type { Base, Sampler };
+    Uniform() : loc(-1), type(Base), dirty(true) {}
+    int loc;
+    QByteArray name;
+    // do not support ivec, bvec because of QVectorND is always float
+    // do not support mat2, mat3 because of QVariant limitation
+    // TODO: UniformValue struct { enum {i,b,f} t; union {float[9]; int[4];}}
+    QVector<QVariant> value; //uniform array
+    Type type;
+    bool dirty;
+    bool operator == (const Uniform &other) const {
+        if (type != other.type)
+            return false;
+        if (name != other.name)
+            return false;
+        if (value != other.value)
+            return false;
+        return true;
+    }
+    template<typename T> QVector<T> as() const {
+        QVector<T> vv;
+        foreach (const QVariant v, value) {
+            vv.append(v.value<T>());
+        }
+        return vv;
+    }
+};
+QVector<Uniform> ParseUniforms(const QByteArray& text);
 
 class VideoShader;
 class Q_AV_PRIVATE_EXPORT VideoShaderPrivate : public DPtrPrivate<VideoShader>
@@ -88,6 +124,7 @@ public:
     VideoFormat video_format;
     mutable QByteArray planar_frag, packed_frag;
     mutable QByteArray vert;
+    QVector<Uniform> user_uniforms[ShaderTypeCount];
 };
 
 class VideoMaterial;

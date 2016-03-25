@@ -73,6 +73,7 @@ public:
      * \param shaderProgram: 0 means create a shader program internally. if not linked, vertex/fragment shader will be added and linked
      */
     virtual void initialize(QOpenGLShaderProgram* shaderProgram = 0);
+    int uniformLocation(const char* name) const;
     /*!
      * \brief textureLocationCount
      * number of texture locations is
@@ -97,7 +98,15 @@ public:
      */
     bool update(VideoMaterial* material);
 
-    int uniformLocation(const char* name) const;
+protected:
+    /// rebuild shader program before next rendering. call this if shader code is updated
+    void rebuildLater();
+private:
+    /*!
+     * \brief programReady
+     * Called when program is linked
+     */
+    virtual void programReady() {}
 
     /// User configurable shader APIs BEGIN
     /*!
@@ -119,6 +128,7 @@ public:
      * Call program()->setUniformValue(...) here
      * You can upload a texture for blending in userPostProcess(),
      * or LUT texture used by userSample() or userPostProcess() etc.
+     * TODO: default implemention?
      */
     virtual void setUserUniformValues() {}
     /*!
@@ -141,19 +151,16 @@ public:
     virtual const char* userPostProcess() const {return 0;}
     /// User configurable shader APIs END
 
-protected:
     QByteArray shaderSourceFromFile(const QString& fileName) const;
-    void build(QOpenGLShaderProgram* shaderProgram);
-    /// rebuild shader program before next rendering. call this if shader code is updated
-    void rebuildLater();
-
-    VideoShader(VideoShaderPrivate &d);
-    DPTR_DECLARE(VideoShader)
-private:
+    bool build(QOpenGLShaderProgram* shaderProgram);
     void setVideoFormat(const VideoFormat& format);
     void setTextureTarget(int type);
     void setMaterialType(qint32 value);
+
     friend class VideoMaterial;
+protected:
+    VideoShader(VideoShaderPrivate &d);
+    DPTR_DECLARE(VideoShader)
 };
 
 class VideoMaterialPrivate;
@@ -289,7 +296,5 @@ private:
     int nb_tex;
     QVector<Point> v;
 };
-
 } //namespace QtAV
-
 #endif // QTAV_VIDEOSHADER_H
