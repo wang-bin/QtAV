@@ -52,6 +52,7 @@ public:
      */
     QSize outputSize() const;
     void setOutputSize(const QSize& value);
+    void setOutputSize(int width, int height);
 Q_SIGNALS:
     void outputSizeChanged(const QSize& size);
 protected:

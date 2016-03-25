@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
@@ -25,7 +25,7 @@
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/factory.h"
-#include "utils/OpenGLHelper.h"
+#include "opengl/OpenGLHelper.h"
 #include <assert.h>
 #ifdef __cplusplus
 extern "C" {

@@ -24,7 +24,7 @@
 #include "QtAV/OpenGLVideo.h"
 #include "QtAV/FilterContext.h"
 #include <QResizeEvent>
-#include "utils/OpenGLHelper.h"
+#include "opengl/OpenGLHelper.h"
 #include "utils/Logger.h"
 
 namespace QtAV {

@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -23,7 +23,7 @@
 #define QTAV_SURFACEINTEROPDXVA_H
 #include <d3d9.h>
 #include "QtAV/SurfaceInterop.h"
-#include "utils/OpenGLHelper.h"
+#include "opengl/OpenGLHelper.h"
 // no need to check qt4 because no ANGLE there
 #if QTAV_HAVE(EGL_CAPI) // always use dynamic load
 #if defined(QT_OPENGL_DYNAMIC) || defined(QT_OPENGL_ES_2) || defined(QT_OPENGL_ES_2_ANGLE)

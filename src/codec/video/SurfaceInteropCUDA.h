@@ -25,7 +25,7 @@
 #include "cuda_api.h"
 #include <QtCore/QWeakPointer>
 #include "QtAV/SurfaceInterop.h"
-#include "utils/OpenGLHelper.h"
+#include "opengl/OpenGLHelper.h"
 #ifndef QT_NO_OPENGL
 #ifdef Q_OS_WIN
 // no need to check qt4 because no ANGLE there

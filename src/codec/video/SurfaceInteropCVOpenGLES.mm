@@ -24,7 +24,7 @@
 #include <CoreVideo/CVOpenGLESTexture.h>
 #import <OpenGLES/EAGL.h>
 #include "QtAV/VideoFrame.h"
-#include "utils/OpenGLHelper.h"
+#include "opengl/OpenGLHelper.h"
 
 namespace QtAV {
 namespace cv {

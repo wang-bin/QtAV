@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -128,6 +128,7 @@ void* SurfaceInteropDXVA::mapToHost(const VideoFormat &format, void *handle, int
     const bool swap_uv = desc.Format ==  MAKEFOURCC('I','M','C','3');
     // try to use SSE. fallback to normal copy if SSE is not supported
     VideoFrame frame(VideoFrame::fromGPU(fmt, frame_width, frame_height, desc.Height, src, pitch, true, swap_uv));
+    // TODO: check rgb32 because d3d can use hw to convert
     if (format != fmt)
         frame = frame.to(format);
     VideoFrame *f = reinterpret_cast<VideoFrame*>(handle);
@@ -190,6 +191,7 @@ void EGLInteropResource::releaseEGL() {
 bool EGLInteropResource::ensureSurface(int w, int h) {
     if (dx_surface && width == w && height == h)
         return true;
+    //TODO: use eglChooseConfig
 #if QTAV_HAVE(GUI_PRIVATE)
     QPlatformNativeInterface *nativeInterface = QGuiApplication::platformNativeInterface();
     egl->dpy = static_cast<EGLDisplay>(nativeInterface->nativeResourceForContext("eglDisplay", QOpenGLContext::currentContext()));

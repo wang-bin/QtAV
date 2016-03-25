@@ -33,7 +33,7 @@
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/VideoShader.h"
 #include "ShaderManager.h"
-#include "utils/OpenGLHelper.h"
+#include "opengl/OpenGLHelper.h"
 #include "utils/Logger.h"
 
 namespace QtAV {

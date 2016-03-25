@@ -21,7 +21,7 @@
 
 #include "SurfaceInteropCV.h"
 #include "QtAV/VideoFrame.h"
-#include "utils/OpenGLHelper.h"
+#include "opengl/OpenGLHelper.h"
 
 namespace QtAV {
 typedef struct {

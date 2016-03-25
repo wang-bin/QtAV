@@ -22,7 +22,7 @@
 #include "QtAV/GLSLFilter.h"
 #include "QtAV/private/Filter_p.h"
 #include "QtAV/VideoFrame.h"
-#include "utils/OpenGLHelper.h"
+#include "opengl/OpenGLHelper.h"
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLFramebufferObject>
 #else
@@ -70,6 +70,11 @@ void GLSLFilter::setOutputSize(const QSize &value)
         return;
     d.size = value;
     Q_EMIT outputSizeChanged(value);
+}
+
+void GLSLFilter::setOutputSize(int width, int height)
+{
+    setOutputSize(QSize(width, height));
 }
 
 void GLSLFilter::process(Statistics *statistics, VideoFrame *frame)
