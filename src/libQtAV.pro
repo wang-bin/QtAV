@@ -313,6 +313,7 @@ config_gl|config_opengl {
   SDK_HEADERS *= \
     QtAV/GLSLFilter.h \
     QtAV/OpenGLRendererBase.h \
+    QtAV/OpenGLTypes.h \
     QtAV/OpenGLVideo.h \
     QtAV/ConvolutionShader.h \
     QtAV/VideoShader.h
@@ -324,6 +325,7 @@ config_gl|config_opengl {
   SOURCES *= \
     filter/GLSLFilter.cpp \
     output/video/OpenGLRendererBase.cpp \
+    opengl/OpenGLTypes.cpp \
     opengl/OpenGLVideo.cpp \
     opengl/VideoShader.cpp \
     opengl/ShaderManager.cpp \

@@ -133,7 +133,7 @@ class QMatrix4x4;
 QT_END_NAMESPACE
 namespace QtAV {
 namespace OpenGLHelper {
-
+QString removeComments(const QString& code);
 QByteArray compatibleShaderHeader(QOpenGLShader::ShaderType type);
 int GLSLVersion();
 bool isEGL();

@@ -95,9 +95,10 @@ const char* ConvolutionShader::userSample() const
     return kernelSample().constData();
 }
 
-void ConvolutionShader::setUserUniformValues()
+bool ConvolutionShader::setUserUniformValues()
 {
     setKernelUniformValue();
+    return true;
 }
 
 const QByteArray& ConvolutionShader::kernelUniformHeader() const

@@ -43,17 +43,17 @@ public:
     /// TODO: update shader program if radius is changed. mark dirty program
     void setKernelRadius(int value);
     int kernelSize() const;
-
-    /// default implementions
-    const char* userShaderHeader(QOpenGLShader::ShaderType t) const Q_DECL_OVERRIDE;
-    const char* userSample() const Q_DECL_OVERRIDE;
-    void setUserUniformValues() Q_DECL_OVERRIDE;
-
 protected:
     virtual const float* kernel() const = 0;
     const QByteArray& kernelUniformHeader() const; //can be used in your userFragmentShaderHeader();
     const QByteArray& kernelSample() const; //can be  in your userSample();
     void setKernelUniformValue(); // can be used in your setUserUniformValues()
+private:
+    /// default implementions
+    const char* userShaderHeader(QOpenGLShader::ShaderType t) const Q_DECL_OVERRIDE;
+    const char* userSample() const Q_DECL_OVERRIDE;
+    bool setUserUniformValues() Q_DECL_OVERRIDE;
+protected:
     ConvolutionShader(ConvolutionShaderPrivate &d);
 };
 } //namespace QtAV

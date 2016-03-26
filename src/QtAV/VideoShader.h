@@ -22,6 +22,7 @@
 #ifndef QTAV_VIDEOSHADER_H
 #define QTAV_VIDEOSHADER_H
 
+#include <QtAV/OpenGLTypes.h>
 #include <QtAV/VideoFrame.h>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLShaderProgram>
@@ -37,7 +38,6 @@ QT_BEGIN_NAMESPACE
 class QOpenGLShaderProgram;
 QT_END_NAMESPACE
 namespace QtAV {
-
 class VideoMaterial;
 class VideoShaderPrivate;
 /*!
@@ -104,7 +104,7 @@ protected:
 private:
     /*!
      * \brief programReady
-     * Called when program is linked
+     * Called when program is linked and all uniforms are resolved
      */
     virtual void programReady() {}
 
@@ -128,9 +128,14 @@ private:
      * Call program()->setUniformValue(...) here
      * You can upload a texture for blending in userPostProcess(),
      * or LUT texture used by userSample() or userPostProcess() etc.
-     * TODO: default implemention?
+     * \return false if use use setUserUniformValue(Uniform& u), true if call program()->setUniformValue() here
      */
-    virtual void setUserUniformValues() {}
+    virtual bool setUserUniformValues() {return false;}
+    /*!
+     * \brief setUserUniformValue
+     * Update value of uniform u. Call Uniform.set(const T& value, int count); VideoShader will call Uniform.setGL() later if value is changed
+     */
+    virtual void setUserUniformValue(Uniform&) {}
     /*!
      * \brief userSample
      * Fragment shader only. The custom sampling function to replace texture2D()/texture() (replace %1 in shader).
@@ -156,7 +161,6 @@ private:
     void setVideoFormat(const VideoFormat& format);
     void setTextureTarget(int type);
     void setMaterialType(qint32 value);
-
     friend class VideoMaterial;
 protected:
     VideoShader(VideoShaderPrivate &d);
@@ -246,55 +250,6 @@ protected:
     void bindPlane(int p, bool updateTexture = true);
     VideoMaterial(VideoMaterialPrivate &d);
     DPTR_DECLARE(VideoMaterial)
-};
-
-class Q_AV_EXPORT TexturedGeometry {
-public:
-    typedef struct {
-        float x, y;
-        float tx, ty;
-    } Point;
-    enum Triangle { Strip, Fan };
-    TexturedGeometry(int texCount = 1, int count = 4, Triangle t = Strip);
-    /*!
-     * \brief setTextureCount
-     * sometimes we needs more than 1 texture coordinates, for example we have to set rectangle texture
-     * coordinates for each plane.
-     */
-    void setTextureCount(int value);
-    int textureCount() const;
-    /*!
-     * \brief size
-     * totoal data size in bytes
-     */
-    int size() const;
-    /*!
-     * \brief textureSize
-     * data size of 1 texture. equals textureVertexCount()*stride()
-     */
-    int textureSize() const;
-    Triangle triangle() const { return tri;}
-    int mode() const;
-    int tupleSize() const { return 2;}
-    int stride() const { return sizeof(Point); }
-    /// vertex count per texture
-    int textureVertexCount() const { return points_per_tex;}
-    /// totoal vertex count
-    int vertexCount() const { return v.size(); }
-    void setPoint(int index, const QPointF& p, const QPointF& tp, int texIndex = 0);
-    void setGeometryPoint(int index, const QPointF& p, int texIndex = 0);
-    void setTexturePoint(int index, const QPointF& tp, int texIndex = 0);
-    void setRect(const QRectF& r, const QRectF& tr, int texIndex = 0);
-    void setGeometryRect(const QRectF& r, int texIndex = 0);
-    void setTextureRect(const QRectF& tr, int texIndex = 0);
-    void* data(int idx = 0, int texIndex = 0) { return (char*)v.data() + texIndex*textureSize() + idx*2*sizeof(float); } //convert to char* float*?
-    const void* data(int idx = 0, int texIndex = 0) const { return (char*)v.constData() + texIndex*textureSize() + idx*2*sizeof(float); }
-    const void* constData(int idx = 0, int texIndex = 0) const { return (char*)v.constData() + texIndex*textureSize() + idx*2*sizeof(float); }
-private:
-    Triangle tri;
-    int points_per_tex;
-    int nb_tex;
-    QVector<Point> v;
 };
 } //namespace QtAV
 #endif // QTAV_VIDEOSHADER_H

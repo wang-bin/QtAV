@@ -104,6 +104,13 @@ bool useDeprecatedFormats()
     return v;
 }
 
+QString removeComments(const QString &code)
+{
+    QString c(code);
+    c.remove(QRegExp(QStringLiteral("(/\\*([^*]|(\\*+[^*/]))*\\*+/)|(//[^\r^\n]*)")));
+    return c;
+}
+
 /// current shader works fine for gles 2~3 only with commonShaderHeader(). It's mainly for desktop core profile
 
 static QByteArray commonShaderHeader(QOpenGLShader::ShaderType type)

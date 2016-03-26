@@ -18,6 +18,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 #include <QtAV>
+#include <QtAV/ConvolutionShader.h>
 #include <QtCore/qmath.h>
 #include <QApplication>
 #include <QtCore/QScopedPointer>
@@ -25,6 +26,20 @@
 using namespace QtAV;
 
 #define GLSL(x) #x "\n"
+class MediumBlurShader : public ConvolutionShader
+{
+public:
+    MediumBlurShader() {setKernelRadius(2);}
+protected:
+    virtual const float* kernel() const {
+        const float v = 1.0/(float)kernelSize(); //radius 1
+        static QVector<float> k;
+        k.resize(kernelSize());
+        k.fill(v);
+        return k.constData();
+    }
+};
+
 class WaveShader : public QObject, public VideoShader {
 public:
     WaveShader(QObject *parent = 0) : QObject(parent)
@@ -34,11 +49,15 @@ public:
     {
         startTimer(20);
     }
+protected:
+    void timerEvent(QTimerEvent*) {
+        t+=2.0*M_PI/50.0;
+    }
+private:
     const char* userShaderHeader(QOpenGLShader::ShaderType type) const {
         if (type == QOpenGLShader::Vertex)
             return 0;
         return GLSL(
-        uniform float u_kernel[9];
         uniform float u_omega;
         uniform float u_A;
         uniform float u_t;
@@ -53,14 +72,22 @@ public:
                         return texture(tex, coord);
                     });
     }
-    void setUserUniformValues() {
+    bool setUserUniformValues() {
+        // return false; // enable this line to call setUserUniformValue(Uniform&)
         program()->setUniformValue("u_A", A);
         program()->setUniformValue("u_omega", omega);
         program()->setUniformValue("u_t", t);
+        return true;
     }
-protected:
-    void timerEvent(QTimerEvent*) {
-        t+=2.0*M_PI/50.0;
+    // setUserUniformValues() must return false to call setUserUniformValue(Uniform&)
+    void setUserUniformValue(Uniform &u) {
+        if (u.name == "u_A") {
+            u.set(A);
+        } else if (u.name == "u_omega") {
+            u.set(omega);
+        } else if (u.name == "u_t") {
+            u.set(t);
+        }
     }
 private:
     float t;
@@ -75,23 +102,38 @@ int main(int argc, char *argv[])
         qDebug("./shader file");
         return 0;
     }
-    VideoOutput vo0, vo;
+    VideoOutput vo, vo0, vo1;
     AVPlayer player;
     player.addVideoRenderer(&vo);
     player.addVideoRenderer(&vo0);
-    vo0.widget()->setWindowTitle("No shader");
-    vo.widget()->setWindowTitle("Wave effect shader");
-    vo0.widget()->show();
+    player.addVideoRenderer(&vo1);
+    vo.widget()->setWindowTitle("No shader");
+    vo0.widget()->setWindowTitle("Wave effect shader");
+    vo1.widget()->setWindowTitle("Blur shader");
     vo.widget()->show();
-    vo0.widget()->move(0, 0);
-    vo.widget()->move(vo0.widget()->width(), vo0.widget()->y());
+    vo.widget()->resize(500, 300);
+    vo0.widget()->show();
+    vo0.widget()->resize(500, 300);
+    vo1.widget()->show();
+    vo1.widget()->resize(500, 300);
+    vo.widget()->move(0, 0);
+    vo0.widget()->move(vo.widget()->x() + vo.widget()->width(), vo.widget()->y());
+    vo1.widget()->move(vo.widget()->x(), vo.widget()->y() + vo.widget()->height());
 
     player.play(a.arguments().at(1));
-
-    QScopedPointer<VideoShader> shader;
-    if (!vo.opengl())
+    //player.setStartPosition(1000);
+    //player.setStopPosition(1000);
+    //player.setRepeat(-1);
+    QScopedPointer<VideoShader> shader0;
+    if (!vo0.opengl())
         qFatal("No opengl in the renderer");
-    shader.reset(new WaveShader());
-    vo.opengl()->setUserShader(shader.data());
+    shader0.reset(new WaveShader());
+    vo0.opengl()->setUserShader(shader0.data());
+    QScopedPointer<VideoShader> shader1;
+    if (!vo1.opengl())
+        qFatal("No opengl in the renderer");
+    shader1.reset(new MediumBlurShader());
+    vo1.opengl()->setUserShader(shader1.data());
+
     return a.exec();
 }

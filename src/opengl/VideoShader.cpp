@@ -35,151 +35,7 @@
 //#define QTAV_DEBUG_GLSL
 
 namespace QtAV {
-
-TexturedGeometry::TexturedGeometry(int texCount, int count, Triangle t)
-    : tri(t)
-    , points_per_tex(count)
-    , nb_tex(texCount)
-{
-    if (texCount < 1)
-        texCount = 1;
-    v.resize(nb_tex*points_per_tex);
-}
-
-void TexturedGeometry::setTextureCount(int value)
-{
-    if (value < 1)
-        value = 1;
-    if (value == nb_tex)
-        return;
-    nb_tex = value;
-    v.resize(nb_tex*points_per_tex);
-}
-
-int TexturedGeometry::textureCount() const
-{
-    return nb_tex;
-}
-
-int TexturedGeometry::size() const
-{
-    return nb_tex * textureSize();
-}
-
-int TexturedGeometry::textureSize() const
-{
-    return textureVertexCount() * stride();
-}
-
-int TexturedGeometry::mode() const
-{
-    if (tri == Strip)
-        return GL_TRIANGLE_STRIP;
-    return GL_TRIANGLE_FAN;
-}
-
-void TexturedGeometry::setPoint(int index, const QPointF &p, const QPointF &tp, int texIndex)
-{
-    setGeometryPoint(index, p, texIndex);
-    setTexturePoint(index, tp, texIndex);
-}
-
-void TexturedGeometry::setGeometryPoint(int index, const QPointF &p, int texIndex)
-{
-    v[texIndex*points_per_tex + index].x = p.x();
-    v[texIndex*points_per_tex + index].y = p.y();
-}
-
-void TexturedGeometry::setTexturePoint(int index, const QPointF &tp, int texIndex)
-{
-    v[texIndex*points_per_tex + index].tx = tp.x();
-    v[texIndex*points_per_tex + index].ty = tp.y();
-}
-
-void TexturedGeometry::setRect(const QRectF &r, const QRectF &tr, int texIndex)
-{
-    setPoint(0, r.topLeft(), tr.topLeft(), texIndex);
-    setPoint(1, r.bottomLeft(), tr.bottomLeft(), texIndex);
-    if (tri == Strip) {
-        setPoint(2, r.topRight(), tr.topRight(), texIndex);
-        setPoint(3, r.bottomRight(), tr.bottomRight(), texIndex);
-    } else {
-        setPoint(3, r.topRight(), tr.topRight(), texIndex);
-        setPoint(2, r.bottomRight(), tr.bottomRight(), texIndex);
-    }
-}
-
-void TexturedGeometry::setGeometryRect(const QRectF &r, int texIndex)
-{
-    setGeometryPoint(0, r.topLeft(), texIndex);
-    setGeometryPoint(1, r.bottomLeft(), texIndex);
-    if (tri == Strip) {
-        setGeometryPoint(2, r.topRight(), texIndex);
-        setGeometryPoint(3, r.bottomRight(), texIndex);
-    } else {
-        setGeometryPoint(3, r.topRight(), texIndex);
-        setGeometryPoint(2, r.bottomRight(), texIndex);
-    }
-}
-
-void TexturedGeometry::setTextureRect(const QRectF &tr, int texIndex)
-{
-    setTexturePoint(0, tr.topLeft(), texIndex);
-    setTexturePoint(1, tr.bottomLeft(), texIndex);
-    if (tri == Strip) {
-        setTexturePoint(2, tr.topRight(), texIndex);
-        setTexturePoint(3, tr.bottomRight(), texIndex);
-    } else {
-        setTexturePoint(3, tr.topRight(), texIndex);
-        setTexturePoint(2, tr.bottomRight(), texIndex);
-    }
-}
-
-QVector<Uniform> ParseUniforms(const QByteArray &text)
-{
-    QVector<Uniform> uniforms;
-    const QString code = QString(text).remove(QRegExp(QStringLiteral("(/\\*([^*]|(\\*+[^*/]))*\\*+/)")));
-    const QStringList lines = code.split(';');
-    const QString exp(QStringLiteral("\\s*uniform\\s+([\\w\\d]+)\\s+([\\w\\d]+)\\s*"));
-    const QString exp_array = exp + QStringLiteral("\\[(\\d+)\\]\\s*");
-    foreach (QString line, lines) {
-        line = line.trimmed();
-        if (!line.startsWith(QStringLiteral("uniform ")))
-            continue;
-        QRegExp rx(exp_array);
-        if (rx.indexIn(line) < 0) {
-            rx = QRegExp(exp);
-            if (rx.indexIn(line) < 0)
-                continue;
-        }
-        Uniform u;
-        const QStringList x = rx.capturedTexts();
-        //qDebug() << x;
-        u.name = x.at(2).toUtf8();
-        if (x.size() > 3)
-            u.value.resize(x[3].toInt());
-        const QString t(x[1]);
-        if (t == "bool") {
-            u.value.fill(QVariant(false));
-        } else if (t == "int") {
-            u.value.fill(QVariant(int(0)));
-        } else if (t == "float") {
-            u.value.fill(QVariant(float(0)));
-        } else if (t == "vec2") {
-            u.value.fill(QVariant(QVector2D()));
-        } else if (t == "vec3") {
-            u.value.fill(QVariant(QVector3D()));
-        } else if (t == "vec4") {
-            u.value.fill(QVariant(QVector4D()));
-        } else if (t == "mat4") {
-            u.value.fill(QVariant(QMatrix4x4()));
-        } else if (t == "sample2D") {
-            u.type = Uniform::Sampler;
-        }
-        uniforms.append(u);
-    }
-    return uniforms;
-}
+extern QVector<Uniform> ParseUniforms(const QByteArray& text, GLuint programId = 0);
 
 VideoShader::VideoShader(VideoShaderPrivate &d):
     DPTR_INIT(&d)
@@ -261,7 +117,7 @@ const char* VideoShader::vertexShader() const
 
 #ifdef QTAV_DEBUG_GLSL
     QString s(vert);
-    s.remove(QRegExp(QStringLiteral("(/\\*([^*]|(\\*+[^*/]))*\\*+/)")));
+    s = OpenGLHelper::removeComments(s);
     qDebug() << s.toUtf8().constData();
 #endif //QTAV_DEBUG_GLSL
     return vert.constData();
@@ -339,7 +195,7 @@ const char* VideoShader::fragmentShader() const
     frag.replace("%planes%", QByteArray::number(nb_planes));
 #ifdef QTAV_DEBUG_GLSL
     QString s(frag);
-    s.remove(QRegExp(QStringLiteral("(/\\*([^*]|(\\*+[^*/]))*\\*+/)")));
+    s = OpenGLHelper::removeComments(s);
     qDebug() << s.toUtf8().constData();
 #endif //QTAV_DEBUG_GLSL
     return frag.constData();
@@ -382,29 +238,19 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     if (d.u_texelSize >= 0)
         qDebug("u_texelSize: %d", d.u_texelSize);
 
-    // TODO: vertex shader
     d.user_uniforms[VertexShader].clear();
     d.user_uniforms[FragmentShader].clear();
     if (userShaderHeader(QOpenGLShader::Vertex)) {
         qDebug("user uniform locations in vertex shader:");
-        d.user_uniforms[VertexShader] = ParseUniforms(QByteArray(userShaderHeader(QOpenGLShader::Vertex)));
-        for (int i = 0; i < d.user_uniforms[VertexShader].size(); ++i) {
-            Uniform& u = d.user_uniforms[VertexShader][i];
-            u.loc = shaderProgram->uniformLocation(u.name);
-            qDebug("%s: %d", u.name.constData(), u.loc);
-        }
+        d.user_uniforms[VertexShader] = ParseUniforms(QByteArray(userShaderHeader(QOpenGLShader::Vertex)), shaderProgram->programId());
     }
     if (userShaderHeader(QOpenGLShader::Fragment)) {
         qDebug("user uniform locations in fragment shader:");
-        d.user_uniforms[FragmentShader] = ParseUniforms(QByteArray(userShaderHeader(QOpenGLShader::Fragment)));
-        for (int i = 0; i < d.user_uniforms[FragmentShader].size(); ++i) {
-            Uniform& u = d.user_uniforms[FragmentShader][i];
-            u.loc = shaderProgram->uniformLocation(u.name);
-            qDebug("%s: %d", u.name.constData(), u.loc);
-        }
+        d.user_uniforms[FragmentShader] = ParseUniforms(QByteArray(userShaderHeader(QOpenGLShader::Fragment)), shaderProgram->programId());
     }
     d.rebuild_program = false;
     d.update_builtin_uniforms = true;
+    programReady(); // program and uniforms are ready
 }
 
 int VideoShader::textureLocationCount() const
@@ -512,7 +358,24 @@ bool VideoShader::update(VideoMaterial *material)
     setVideoFormat(fmt);
     // uniforms begin
     program()->bind(); //glUseProgram(id). for glUniform
-    setUserUniformValues();
+    if (!setUserUniformValues()) {
+        if (!d.user_uniforms[VertexShader].isEmpty()) {
+            for (int i = 0; i < d.user_uniforms[VertexShader].size(); ++i) {
+                Uniform& u = d.user_uniforms[VertexShader][i];
+                setUserUniformValue(u);
+                if (u.dirty)
+                    u.setGL();
+            }
+        }
+        if (!d.user_uniforms[FragmentShader].isEmpty()) {
+            for (int i = 0; i < d.user_uniforms[FragmentShader].size(); ++i) {
+                Uniform& u = d.user_uniforms[FragmentShader][i];
+                setUserUniformValue(u);
+                if (u.dirty)
+                    u.setGL();
+            }
+        }
+    }
     if (!d.update_builtin_uniforms)
         return true;
     d.update_builtin_uniforms = false;
@@ -587,7 +450,6 @@ bool VideoShader::build(QOpenGLShaderProgram *shaderProgram)
         qWarning() << shaderProgram->log();
         return false;
     }
-    programReady();
     return true;
 }
 
@@ -1235,5 +1097,4 @@ void VideoMaterialPrivate::setupQuality()
     DYGL(glTexParameteri(target, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     DYGL(glTexParameteri(target, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
 }
-
 } //namespace QtAV
