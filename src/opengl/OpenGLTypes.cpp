@@ -20,6 +20,8 @@
 ******************************************************************************/
 #include "QtAV/OpenGLTypes.h"
 #include "opengl/OpenGLHelper.h"
+#include <QtCore/QRegExp>
+#include <QtCore/QStringList>
 #include "utils/Logger.h"
 namespace QtAV {
 struct uniform_type_name {

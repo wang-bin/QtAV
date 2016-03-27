@@ -22,6 +22,7 @@
 #include "OpenGLHelper.h"
 #include <string.h> //strstr
 #include <QtCore/QCoreApplication>
+#include <QtCore/QRegExp>
 #include <QtGui/QMatrix4x4>
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)

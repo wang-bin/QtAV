@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -240,7 +240,11 @@ bool AudioOutputDSound::write(const QByteArray &data)
     if (bufferControl() & CountCallback) {
         sem.acquire();
     } else {
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0) || QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
         if (buffers_free <= buffer_count)
+#else
+        if (buffers_free.load() <= buffer_count)
+#endif
             buffers_free.ref();
     }
     LPVOID dst1= NULL, dst2 = NULL;

@@ -126,7 +126,7 @@ bool HostInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint
         CUdeviceptr devptr;
         unsigned int pitch;
         //qDebug("index: %d=>%d, plane: %d", host_mem.index, picIndex, plane);
-        CUDA_ENSURE(cuvidMapVideoFrame(dec, picIndex, &devptr, &pitch, const_cast<CUVIDPROCPARAMS*>(&param)), NULL);
+        CUDA_ENSURE(cuvidMapVideoFrame(dec, picIndex, &devptr, &pitch, const_cast<CUVIDPROCPARAMS*>(&param)), false);
         CUVIDAutoUnmapper unmapper(this, dec, devptr);
         Q_UNUSED(unmapper);
         if (!ensureResource(pitch, H)) //copy height is coded height
