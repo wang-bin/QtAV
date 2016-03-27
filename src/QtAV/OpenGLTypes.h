@@ -76,12 +76,15 @@ public:
      * \brief set
      * Set uniform value in host memory. This will mark dirty if value is changed
      * \param v the value
-     * \param count arrySize()*tupleSize()
+     * \param count number of element T to set. 0: depending on type and array size, the number is arrySize()*tupleSize();
      * TODO: Sampler
      */
-    void set(const float& v, int count = 1);
-    void set(const unsigned& v, int count = 1);
-    void set(const int& v, int count = 1);
+    void set(const float& v, int count = 0);
+    void set(const unsigned& v, int count = 0);
+    void set(const int& v, int count = 0);
+    void set(const float* v, int count = 0);
+    void set(const unsigned* v, int count = 0);
+    void set(const int* v, int count = 0);
     /*!
      * \brief setGL
      * Call glUniformXXX to update uniform values that set by set(const T&, int) and mark dirty false. Currently only use QOpenGLFunctions supported functions (OpenGL ES2), i.e. uint, double types are not supported.
@@ -114,13 +117,13 @@ public:
      * Return an array of given type. the type T must match type(), for example T is float for Float, VecN, MatN and array of them
      */
     template<typename T> QVector<T> value() const {
-        Q_ASSERT(sizeof(T)*tupleSize()*arraySize() == data.size()*sizeof(int) && "Bad type");
+        Q_ASSERT(sizeof(T)*tupleSize()*arraySize() <= data.size()*sizeof(int) && "Bad type or array size");
         QVector<T> v(tupleSize()*arraySize());
         memcpy((char*)v.data(), (const char*)data.constData(), v.size()*sizeof(T));
         return v;
     }
     template<typename T> const T* address() const {
-        Q_ASSERT(sizeof(T)*tupleSize()*arraySize() == data.size()*sizeof(int) && "Bad type");
+        Q_ASSERT(sizeof(T)*tupleSize()*arraySize() <= data.size()*sizeof(int) && "Bad type or array size");
         return reinterpret_cast<const T*>(data.constData());
     }
 private:

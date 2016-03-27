@@ -45,52 +45,6 @@ namespace QtAV {
 namespace OpenGLHelper {
 
 // glGetTexParameteriv is supported by es2 does not support GL_TEXTURE_INTERNAL_FORMAT.
-// glGetTexLevelParameteriv is supported by es3.1
-static void glGetTexLevelParameteriv(GLenum target, GLint level, GLenum pname, GLint *params)
-{
-#ifdef QT_OPENGL_DYNAMIC
-    QOpenGLContext *ctx = QOpenGLContext::currentContext();
-    if (!ctx)
-        return;
-    if (isOpenGLES()) {
-        typedef void (QOPENGLF_APIENTRYP glGetTexLevelParameteriv_t)(GLenum, GLint, GLenum, GLint*);
-        static glGetTexLevelParameteriv_t GetTexLevelParameteriv = 0;
-        if (!GetTexLevelParameteriv) {
-            GetTexLevelParameteriv = (glGetTexLevelParameteriv_t)ctx->getProcAddress("glGetTexLevelParameteriv");
-#ifdef Q_OS_WIN
-            if (!GetTexLevelParameteriv) {
-                qDebug("resolve glGetTexLevelParameteriv from dso");
-                GetTexLevelParameteriv = (glGetTexLevelParameteriv_t)GetProcAddress((HMODULE)QOpenGLContext::openGLModuleHandle(), "glGetTexLevelParameteriv");
-            }
-#endif
-            if (!GetTexLevelParameteriv) {
-                qWarning("can not resolve glGetTexLevelParameteriv");
-                return;
-            }
-        }
-        GetTexLevelParameteriv(target, level, pname, params);
-        return;
-    }
-    QOpenGLFunctions_1_0* f = 0;
-    f = ctx->versionFunctions<QOpenGLFunctions_1_0>();
-    if (!f)
-        return;
-    f->glGetTexLevelParameteriv(target, level, pname, params);
-#else
-#if defined(GL_ES_VERSION_3_1)
-    ::glGetTexLevelParameteriv(target, level, pname, params);
-#elif defined(GL_ES_VERSION_2_0) //also defined in es3.0
-    Q_UNUSED(target);
-    Q_UNUSED(level);
-    Q_UNUSED(pname);
-    Q_UNUSED(params);
-    qDebug("OpenGL ES2 and 3.0 does not support glGetTexLevelParameteriv");
-#elif !defined(QT_OPENGL_ES)
-    ::glGetTexLevelParameteriv(target, level, pname, params);
-#endif //GL_ES_VERSION_3_1
-#endif
-}
-
 /// 16bit (R16 e.g.) texture does not support >8bit a BE channel, fallback to 2 channel texture
 int depth16BitTexture()
 {
@@ -320,52 +274,6 @@ bool isPBOSupported() {
     return support;
 }
 
-// glActiveTexture in Qt4 on windows release mode crash for me
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-#ifndef QT_OPENGL_ES
-// APIENTRY may be not defined(why? linux es2). or use QOPENGLF_APIENTRY
-// use QGLF_APIENTRY for Qt4 crash, why? APIENTRY is defined in windows header
-#ifndef APIENTRY
-// QGLF_APIENTRY is in Qt4,8+
-#if defined(QGLF_APIENTRY)
-#define APIENTRY QGLF_APIENTRY
-#elif defined(GL_APIENTRY)
-#define APIENTRY GL_APIENTRY
-#endif //QGLF_APIENTRY
-#endif //APIENTRY
-typedef void (APIENTRY *type_glActiveTexture) (GLenum);
-static type_glActiveTexture qtav_glActiveTexture = 0;
-
-static void qtavResolveActiveTexture()
-{
-    const QGLContext *context = QGLContext::currentContext();
-    qtav_glActiveTexture = (type_glActiveTexture)context->getProcAddress(QLatin1String("glActiveTexture"));
-    if (!qtav_glActiveTexture) {
-        qDebug("resolve glActiveTextureARB");
-        qtav_glActiveTexture = (type_glActiveTexture)context->getProcAddress(QLatin1String("glActiveTextureARB"));
-    }
-    //Q_ASSERT(qtav_glActiveTexture);
-}
-#endif //QT_OPENGL_ES
-#endif //QT_VERSION
-
-void glActiveTexture(GLenum texture)
-{
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-#ifndef QT_OPENGL_ES
-    if (!qtav_glActiveTexture)
-        qtavResolveActiveTexture();
-    if (!qtav_glActiveTexture)
-        return;
-    qtav_glActiveTexture(texture);
-#else
-    ::glActiveTexture(texture);
-#endif //QT_OPENGL_ES
-#else
-    QOpenGLContext::currentContext()->functions()->glActiveTexture(texture);
-#endif
-}
-
 typedef struct {
     GLint internal_format;
     GLenum format;
@@ -431,6 +339,10 @@ bool test_gl_param(const gl_param_t& gp, bool* has_16 = 0)
         qWarning("%s: current context is null", __FUNCTION__);
         return false;
     }
+    if (!gl().GetTexLevelParameteriv) {
+        qDebug("Do not support glGetTexLevelParameteriv. test_gl_param returns false");
+        return false;
+    }
     GLuint tex;
     DYGL(glGenTextures(1, &tex));
     DYGL(glBindTexture(GL_TEXTURE_2D, tex));
@@ -440,10 +352,10 @@ bool test_gl_param(const gl_param_t& gp, bool* has_16 = 0)
 #ifndef GL_TEXTURE_INTERNAL_FORMAT //only in desktop
 #define GL_TEXTURE_INTERNAL_FORMAT 0x1003
 #endif
-    OpenGLHelper::glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &param);
+    gl().GetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &param);
     // TODO: check glGetError()?
     if (param != gp.internal_format) {
-        qDebug("Do not support texture internal format: %#x", gp.internal_format);
+        qDebug("Do not support texture internal format: %#x (result %#x)", gp.internal_format, param);
         DYGL(glDeleteTextures(1, &tex));
         return false;
     }
@@ -465,7 +377,7 @@ bool test_gl_param(const gl_param_t& gp, bool* has_16 = 0)
     }
     param = 0;
     if (pname)
-        OpenGLHelper::glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, pname, &param);
+        gl().GetTexLevelParameteriv(GL_TEXTURE_2D, 0, pname, &param);
     if (param) {
         qDebug("16 bit texture depth: %d.\n", (int)param);
         *has_16 = (int)param == 16;

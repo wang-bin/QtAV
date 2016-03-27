@@ -608,7 +608,7 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
 {
     DPTR_D(VideoMaterial);
     GLuint &tex = d.textures[p];
-    OpenGLHelper::glActiveTexture(GL_TEXTURE0 + p); //0 must active?
+    gl().ActiveTexture(GL_TEXTURE0 + p); //0 must active?
     if (!updateTexture) {
         DYGL(glBindTexture(d.target, tex));
         return;
@@ -651,6 +651,8 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
     //qDebug("bpl[%d]=%d width=%d", p, frame.bytesPerLine(p), frame.planeWidth(p));
     DYGL(glBindTexture(d.target, tex));
     //d.setupQuality();
+    //DYGL(glTexParameteri(d.target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+    //DYGL(glTexParameteri(d.target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
     // This is necessary for non-power-of-two textures
     DYGL(glTexSubImage2D(d.target, 0, 0, 0, d.texture_upload_size[p].width(), d.texture_upload_size[p].height(), d.data_format[p], d.data_type[p], d.try_pbo ? 0 : d.frame.constBits(p)));
     if (false) { //texture_upload_size[].width()*gl_bpp != bytesPerLine[]

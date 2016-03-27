@@ -21,9 +21,7 @@
 #include "QtAV/OpenGLTypes.h"
 #include "opengl/OpenGLHelper.h"
 #include "utils/Logger.h"
-
 namespace QtAV {
-
 struct uniform_type_name {
     QByteArray name;
     Uniform::Type type;
@@ -102,39 +100,66 @@ Uniform& Uniform::setType(Type tp, int count)
     return *this;
 }
 
-template<typename T> void set_uniform_value(QVector<int>& dst, const T& v, int count)
+template<typename T> bool set_uniform_value(QVector<int>& dst, const T* v, int count)
 {
     Q_ASSERT(sizeof(T)*count <= sizeof(int)*dst.size() && "set_uniform_value: Bad type or array size");
     // why not dst.constData()?
-    memcpy((char*)dst.data(), (const char*)&v, count*sizeof(T));
+    const QVector<int> old(dst);
+    memcpy((char*)dst.data(), (const char*)v, count*sizeof(T));
+    return old != dst;
 }
 
-template<> void set_uniform_value<bool>(QVector<int>& dst, const bool& v, int count)
+template<> bool set_uniform_value<bool>(QVector<int>& dst, const bool* v, int count)
 {
+    const QVector<int> old(dst);
     for (int i = 0; i < count; ++i) {
-        dst[i] = *(&v + i);
+        dst[i] = *(v + i);
     }
+    return old != dst;
 }
 
 void Uniform::set(const float &v, int count)
 {
-    const QVector<int> old(data);
-    set_uniform_value(data, v, count);
-    dirty = old != data;
+    if (count <= 0)
+        count = tupleSize()*arraySize();
+    dirty = set_uniform_value(data, &v, count);
 }
 
 void Uniform::set(const int &v, int count)
 {
-    const QVector<int> old(data);
-    set_uniform_value(data, v, count);
-    dirty = old != data;
+    if (count <= 0)
+        count = tupleSize()*arraySize();
+    dirty = set_uniform_value(data, &v, count);
+
 }
 
 void Uniform::set(const unsigned &v, int count)
 {
-    const QVector<int> old(data);
-    set_uniform_value(data, v, count);
-    dirty = old != data;
+    if (count <= 0)
+        count = tupleSize()*arraySize();
+    dirty = set_uniform_value(data, &v, count);
+}
+
+
+void Uniform::set(const float *v, int count)
+{
+    if (count <= 0)
+        count = tupleSize()*arraySize();
+    dirty = set_uniform_value(data, &v, count);
+}
+
+void Uniform::set(const int *v, int count)
+{
+    if (count <= 0)
+        count = tupleSize()*arraySize();
+    dirty = set_uniform_value(data, &v, count);
+}
+
+void Uniform::set(const unsigned *v, int count)
+{
+    if (count <= 0)
+        count = tupleSize()*arraySize();
+    dirty = set_uniform_value(data, &v, count);
 }
 
 bool Uniform::setGL()
@@ -145,37 +170,37 @@ bool Uniform::setGL()
     switch (type()) {
     case Uniform::Bool:
     case Uniform::Int:
-        DYGL(glUniform1iv(location, arraySize(), address<int>()));
+        gl().Uniform1iv(location, arraySize(), address<int>());
         break;
     case Uniform::Float:
-        DYGL(glUniform1fv(location, arraySize(), address<float>()));
+        gl().Uniform1fv(location, arraySize(), address<float>());
         break;
     case Uniform::Vec2:
-        DYGL(glUniform2fv(location, arraySize(), address<float>()));
+        gl().Uniform2fv(location, arraySize(), address<float>());
         break;
     case Uniform::Vec3:
-        DYGL(glUniform3fv(location, arraySize(), address<float>()));
+        gl().Uniform3fv(location, arraySize(), address<float>());
         break;
     case Uniform::Vec4:
-        DYGL(glUniform4fv(location, arraySize(), address<float>()));
+        gl().Uniform4fv(location, arraySize(), address<float>());
         break;
     case Uniform::Mat2:
-        DYGL(glUniformMatrix2fv(location, arraySize(), GL_FALSE, address<float>()));
+        gl().UniformMatrix2fv(location, arraySize(), GL_FALSE, address<float>());
         break;
     case Uniform::Mat3:
-        DYGL(glUniformMatrix2fv(location, arraySize(), GL_FALSE, address<float>()));
+        gl().UniformMatrix3fv(location, arraySize(), GL_FALSE, address<float>());
         break;
     case Uniform::Mat4:
-        DYGL(glUniformMatrix2fv(location, arraySize(), GL_FALSE, address<float>()));
+        gl().UniformMatrix4fv(location, arraySize(), GL_FALSE, address<float>());
         break;
     case Uniform::IVec2:
-        DYGL(glUniform2iv(location, arraySize(), address<int>()));
+        gl().Uniform2iv(location, arraySize(), address<int>());
         break;
     case Uniform::IVec3:
-        DYGL(glUniform3iv(location, arraySize(), address<int>()));
+        gl().Uniform3iv(location, arraySize(), address<int>());
         break;
     case Uniform::IVec4:
-        DYGL(glUniform4iv(location, arraySize(), address<int>()));
+        gl().Uniform4iv(location, arraySize(), address<int>());
         break;
     default:
         qDebug() << *this;
@@ -238,7 +263,7 @@ QVector<Uniform> ParseUniforms(const QByteArray &text, GLuint programId = 0)
         const QByteArray t(x[1].toLatin1());
         u.setType(UniformTypeFromName(t), array_size);
         if (programId > 0)
-            u.location = DYGL(glGetUniformLocation(programId, u.name.constData()));
+            u.location = gl().GetUniformLocation(programId, u.name.constData());
         uniforms.append(u);
     }
     qDebug() << uniforms;

@@ -22,94 +22,14 @@
 #ifndef QTAV_OPENGLHELPER_H
 #define QTAV_OPENGLHELPER_H
 
-#include "QtAV/VideoFormat.h"
-#include <qglobal.h>
 #ifndef QT_NO_OPENGL
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-#include <QtGui/QOpenGLBuffer>
-#include <QtGui/QOpenGLContext>
-#include <QtGui/QOpenGLFunctions>
-#include <QtGui/QOpenGLShaderProgram>
-#elif defined(QT_OPENGL_LIB)
-#if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
-#include <QtOpenGL/QGLFunctions>
-#endif //4.8
-#include <QtOpenGL/QGLBuffer>
-#include <QtOpenGL/QGLContext>
-#include <QtOpenGL/QGLShaderProgram>
-#define QOpenGLShaderProgram QGLShaderProgram
-typedef QGLBuffer QOpenGLBuffer;
-#define QOpenGLContext QGLContext
-#define QOpenGLShaderProgram QGLShaderProgram
-#define QOpenGLShader QGLShader
-#define QOpenGLFunctions QGLFunctions
-#define initializeOpenGLFunctions() initializeGLFunctions()
-#include <qgl.h>
-#else //used by vaapi even qtopengl module is disabled
-#if defined(QT_OPENGL_ES_2)
-# if defined(Q_OS_MAC) // iOS
-#  include <OpenGLES/ES2/gl.h>
-#  include <OpenGLES/ES2/glext.h>
-# else // "uncontrolled" ES2 platforms
-#  include <GLES2/gl2.h>
-# endif // Q_OS_MAC
-#else // non-ES2 platforms
-# if defined(Q_OS_MAC)
-#  include <OpenGL/gl.h>
-#  if MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_7
-#   include <OpenGL/gl3.h>
-#  endif
-#  include <OpenGL/glext.h>
-# else
-#  include <GL/gl.h>
-# endif // Q_OS_MAC
-#endif // QT_OPENGL_ES_2
-#endif
-//GL_BGRA is available in OpenGL >= 1.2
-#ifndef GL_BGRA
-#define GL_BGRA 0x80E1
-#endif
-#ifndef GL_BGR
-#define GL_BGR 0x80E0
-#endif
-#ifndef GL_RED
-#define GL_RED 0x1903
-#endif
-#ifndef GL_RG
-#define GL_RG 0x8227
-#endif
-#ifndef GL_R8
-#define GL_R8 0x8229
-#endif
-#ifndef GL_R16
-#define GL_R16 0x822A
-#endif
-#ifndef GL_RG8
-#define GL_RG8 0x822B
-#endif
-#ifndef GL_RG16
-#define GL_RG16 0x822C
-#endif
-#ifndef GL_RGB8
-#define GL_RGB8 0x8051
-#endif
-#ifndef GL_RGB16
-#define GL_RGB16 0x8054
-#endif
-#ifndef GL_RGBA8
-#define GL_RGBA8 0x8058
-#endif
-#ifndef GL_RGBA16
-#define GL_RGBA16 0x805B
-#endif
+#include "QtAV/VideoFormat.h"
+#include "opengl/gl_api.h"
 // for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
 #ifdef QT_OPENGL_DYNAMIC
 #define DYGL(glFunc) QOpenGLContext::currentContext()->functions()->glFunc
 #else
 #define DYGL(glFunc) glFunc
-#endif
-#ifndef GL_TEXTURE_RECTANGLE
-#define GL_TEXTURE_RECTANGLE 0x84F5
 #endif
 
 #define EGL_ENSURE(x, ...) \
@@ -159,7 +79,6 @@ bool useDeprecatedFormats();
  */
 bool hasExtension(const char* exts[]);
 bool isPBOSupported();
-void glActiveTexture(GLenum texture);
 /*!
  * \brief videoFormatToGL
  * \param fmt

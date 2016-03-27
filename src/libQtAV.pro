@@ -320,11 +320,13 @@ config_gl|config_opengl {
   SDK_PRIVATE_HEADERS = \
     QtAV/private/OpenGLRendererBase_p.h
   HEADERS *= \
+    opengl/gl_api.h \
     opengl/OpenGLHelper.h \
     opengl/ShaderManager.h
   SOURCES *= \
     filter/GLSLFilter.cpp \
     output/video/OpenGLRendererBase.cpp \
+    opengl/gl_api.cpp \
     opengl/OpenGLTypes.cpp \
     opengl/OpenGLVideo.cpp \
     opengl/VideoShader.cpp \
