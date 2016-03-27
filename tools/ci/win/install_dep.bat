@@ -1,11 +1,3 @@
-if "%QTDIR:~0,6%" == "C:\Qt\" goto getdep
-
-echo downloading qt "http://sourceforge.net/projects/buildqt/files/release/%qt%/Qt%qt%-%cc%%arch%%suffix%.7z/download"
-appveyor DownloadFile "http://sourceforge.net/projects/buildqt/files/release/%qt%/Qt%qt%-%cc%%arch%%suffix%.7z/download" -FileName qt.7z
-7z x qt.7z > NUL
-move Qt%qt%-* %QTDIR%
-
-:getdep
 echo downloading qtav dep "http://sourceforge.net/projects/qtav/files/depends/QtAV-depends-windows-x86+x64.7z/download"
 appveyor DownloadFile "http://sourceforge.net/projects/qtav/files/depends/QtAV-depends-windows-x86+x64.7z/download" -FileName av.7z
 7z x av.7z > NUL
