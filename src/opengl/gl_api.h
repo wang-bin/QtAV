@@ -115,6 +115,7 @@ typedef QGLBuffer QOpenGLBuffer;
 #endif
 
 namespace QtAV {
+typedef char GLchar; // for qt4 mingw
 struct api;
 api& gl();
 struct api {

@@ -147,21 +147,21 @@ void Uniform::set(const float *v, int count)
 {
     if (count <= 0)
         count = tupleSize()*arraySize();
-    dirty = set_uniform_value(data, &v, count);
+    dirty = set_uniform_value(data, v, count);
 }
 
 void Uniform::set(const int *v, int count)
 {
     if (count <= 0)
         count = tupleSize()*arraySize();
-    dirty = set_uniform_value(data, &v, count);
+    dirty = set_uniform_value(data, v, count);
 }
 
 void Uniform::set(const unsigned *v, int count)
 {
     if (count <= 0)
         count = tupleSize()*arraySize();
-    dirty = set_uniform_value(data, &v, count);
+    dirty = set_uniform_value(data, v, count);
 }
 
 bool Uniform::setGL()

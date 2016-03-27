@@ -1,0 +1,133 @@
+/******************************************************************************
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+
+*   This file is part of QtAV (from 2016)
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+******************************************************************************/
+#include "QtAV/VideoShaderObject.h"
+#include "QtAV/private/VideoShader_p.h"
+#include <QtCore/QEvent>
+#include <QtCore/QMetaProperty>
+#include <QtCore/QSignalMapper>
+
+namespace QtAV {
+
+class VideoShaderObjectPrivate : public VideoShaderPrivate
+{
+public:
+    ~VideoShaderObjectPrivate() {
+        qDeleteAll(sigMap[VertexShader]);
+        qDeleteAll(sigMap[FragmentShader]);
+        sigMap[VertexShader].clear();
+        sigMap[FragmentShader].clear();
+    }
+
+    QVector<QSignalMapper*> sigMap[ShaderTypeCount];
+};
+
+VideoShaderObject::VideoShaderObject(QObject *parent)
+    : QObject(parent)
+    , VideoShader(*new VideoShaderObjectPrivate())
+{}
+
+VideoShaderObject::VideoShaderObject(VideoShaderObjectPrivate &d, QObject *parent)
+    : QObject(parent)
+    , VideoShader(d)
+{}
+
+bool VideoShaderObject::event(QEvent *event)
+{
+    DPTR_D(VideoShaderObject);
+    if (event->type() != QEvent::DynamicPropertyChange)
+        return QObject::event(event);
+    QDynamicPropertyChangeEvent *e = static_cast<QDynamicPropertyChangeEvent*>(event);
+    for (int shaderType = VertexShader; shaderType < ShaderTypeCount; ++shaderType) {
+        QVector<Uniform> &uniforms = d.user_uniforms[shaderType];
+        for (int i = 0; i < uniforms.size(); ++i) {
+            if (uniforms.at(i).name == e->propertyName()) {
+                propertyChanged(i|(shaderType<<16));
+            }
+        }
+    }
+    return QObject::event(event);
+}
+
+void VideoShaderObject::propertyChanged(int id)
+{
+    DPTR_D(VideoShaderObject);
+    const int st = id>>16;
+    const int idx = id&0xffff;
+    Uniform &u = d.user_uniforms[st][idx];
+    const QVariant v = property(u.name.constData());
+    if (u.tupleSize() > 1 || u.arraySize() > 1) {
+        if (u.isFloat()) {
+            u.set(v.value<QVector<float> >().data());
+        } else if (u.isInt() || u.isBool()) {
+            u.set(v.value<QVector<int> >().data());
+        } else if (u.isUInt()) {
+            u.set(v.value<QVector<unsigned> >().data());
+        } else if (u.type() == Uniform::Sampler) {
+
+        }
+    } else {
+        if (u.isFloat()) {
+            u.set(v.toFloat());
+        } else if (u.isInt() || u.isBool()) {
+            u.set(v.toInt());
+        } else if (u.isUInt()) {
+            u.set(v.toUInt());
+        } else if (u.type() == Uniform::Sampler) {
+
+        }
+    }
+    //if (u.dirty) update();
+}
+
+void VideoShaderObject::programReady()
+{
+    DPTR_D(VideoShaderObject);
+    // find property name. if has property, bind to property
+    for (int st = VertexShader; st < ShaderTypeCount; ++st) {
+        qDeleteAll(d.sigMap[st]);
+        d.sigMap[st].clear();
+        const QVector<Uniform> &uniforms = d.user_uniforms[st];
+        for (int i = 0; i < uniforms.size(); ++i) {
+            const Uniform& u = uniforms[i];
+            const int idx = metaObject()->indexOfProperty(u.name.constData());
+            if (idx < 0) {
+                qDebug("VideoShaderObject has no property '%s'", u.name.constData());
+                continue;
+            }
+            QMetaProperty mp = metaObject()->property(idx);
+            if (!mp.hasNotifySignal()) {
+                qWarning("VideoShaderObject property '%s' has no signal", mp.name());
+                continue;
+            }
+            QMetaMethod mm = mp.notifySignal();
+            QSignalMapper *mapper = new QSignalMapper();
+            mapper->setMapping(this, i|(st<<16));
+#if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
+            connect(this, mm, mapper, mapper->metaObject()->method(mapper->metaObject()->indexOfSlot("map()")));
+#else
+
+#endif
+            connect(mapper, SIGNAL(mapped(int)), this, SLOT(propertyChanged(int)));
+            d.sigMap[st].append(mapper);
+        }
+    }
+}
+} //namespace QtAV

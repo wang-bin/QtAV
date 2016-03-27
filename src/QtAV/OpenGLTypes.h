@@ -87,8 +87,7 @@ public:
     void set(const int* v, int count = 0);
     /*!
      * \brief setGL
-     * Call glUniformXXX to update uniform values that set by set(const T&, int) and mark dirty false. Currently only use QOpenGLFunctions supported functions (OpenGL ES2), i.e. uint, double types are not supported.
-     * TODO: QOpenGLExtraFunctions
+     * Call glUniformXXX to update uniform values that set by set(const T&, int) and mark dirty false. Currently only use OpenGL ES2 supported functions, i.e. uint, double types are not supported.
      * \return false if location is invalid, or if uniform type is not supported by QOpenGLFunctions
      * TODO: Sampler
      */

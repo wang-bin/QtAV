@@ -316,6 +316,7 @@ config_gl|config_opengl {
     QtAV/OpenGLTypes.h \
     QtAV/OpenGLVideo.h \
     QtAV/ConvolutionShader.h \
+    QtAV/VideoShaderObject.h \
     QtAV/VideoShader.h
   SDK_PRIVATE_HEADERS = \
     QtAV/private/OpenGLRendererBase_p.h
@@ -329,6 +330,7 @@ config_gl|config_opengl {
     opengl/gl_api.cpp \
     opengl/OpenGLTypes.cpp \
     opengl/OpenGLVideo.cpp \
+    opengl/VideoShaderObject.cpp \
     opengl/VideoShader.cpp \
     opengl/ShaderManager.cpp \
     opengl/ConvolutionShader.cpp \
