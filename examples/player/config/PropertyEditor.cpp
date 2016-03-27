@@ -45,7 +45,7 @@ void PropertyEditor::getProperties(QObject *obj)
         return;
     const QMetaObject *mo = obj->metaObject();
     for (int i = 0; i < mo->propertyCount(); ++i) {
-        QMetaProperty mp = mo->property(i);
+        QMetaProperty mp = mo->property(mo->propertyOffset()+i);
         mMetaProperties.append(mp);
         QVariant v(mp.read(obj));
         if (mp.isEnumType()) {

@@ -38,6 +38,13 @@ VideoDecoderId VideoDecoderId_VideoToolbox = mkid::id32base36_5<'V', 'T', 'B', '
 
 static void VideoDecoder_RegisterAll()
 {
+    static bool called = false;
+    if (called)
+        return;
+    called = true;
+    // factory.h does not check whether an id is registered
+    if (VideoDecoder::name(VideoDecoderId_FFmpeg)) //registered on load
+        return;
     extern bool RegisterVideoDecoderFFmpeg_Man();
     RegisterVideoDecoderFFmpeg_Man();
 #if QTAV_HAVE(DXVA)

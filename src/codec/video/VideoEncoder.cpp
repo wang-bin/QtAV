@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -29,12 +29,20 @@ FACTORY_DEFINE(VideoEncoder)
 
 void VideoEncoder_RegisterAll()
 {
+    static bool called = false;
+    if (called)
+        return;
+    called = true;
+    // factory.h does not check whether an id is registered
+    if (!VideoEncoderFactory::Instance().registeredIds().empty()) //registered on load
+        return;
     extern bool RegisterVideoEncoderFFmpeg_Man();
     RegisterVideoEncoderFFmpeg_Man();
 }
 
 QStringList VideoEncoder::supportedCodecs()
 {
+    // should check every registered encoders
     static QStringList codecs;
     if (!codecs.isEmpty())
         return codecs;

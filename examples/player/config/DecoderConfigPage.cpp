@@ -181,6 +181,7 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
 
     sPriorityUi = idsFromNames(Config::instance().decoderPriorityNames());
     QStringList vds = Config::instance().decoderPriorityNames();
+    vds.removeDuplicates();
     QVector<VideoDecoderId> vids = idsFromNames(vds);
     QVector<QtAV::VideoDecoderId> vds_all = VideoDecoder::registered();
     QVector<QtAV::VideoDecoderId> all = vids;
