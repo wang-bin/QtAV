@@ -22,6 +22,7 @@
 #define QTAV_VIDEOSHADEROBJECT_H
 #include <QtAV/VideoShader.h>
 #include <QtCore/QObject>
+#include <QtCore/QVector>
 
 namespace QtAV {
 // check and auto update properties in shader
@@ -61,4 +62,12 @@ protected:
     DynamicShaderObject(DynamicShaderObjectPrivate &d, QObject* parent = 0);
 };
 } //namespace QtAV
+
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+QT_BEGIN_NAMESPACE
+Q_DECLARE_METATYPE(QVector<float>)
+Q_DECLARE_METATYPE(QVector<int>)
+Q_DECLARE_METATYPE(QVector<unsigned>)
+QT_END_NAMESPACE
+#endif
 #endif //QTAV_VIDEOSHADEROBJECT_H
