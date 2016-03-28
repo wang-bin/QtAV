@@ -24,6 +24,7 @@ if "%mode%" == "debug" (
   if exist %QTDIR%\plugins\platforms xcopy /syi %QTDIR%\plugins\platforms bin\plugins\platforms > NUL
   if exist %QTDIR%\plugins\imageformats xcopy /syi %QTDIR%\plugins\imageformats bin\plugins\imageformats > NUL
   if exist %QTDIR%\plugins\iconengines xcopy /syi %QTDIR%\plugins\iconengines bin\plugins\iconengines > NUL
+  if exist %QTDIR%\plugins\sqldrivers xcopy /syi %QTDIR%\plugins\sqldrivers bin\plugins\sqldrivers > NUL
   if exist %QTDIR%\qml\Qt xcopy /syi %QTDIR%\qml\Qt bin\qml\Qt > NUL
   if exist %QTDIR%\qml\QtQml xcopy /syi %QTDIR%\qml\QtQml bin\qml\QtQml > NUL
   if exist %QTDIR%\qml\QtQuick xcopy /syi %QTDIR%\qml\QtQuick bin\qml\QtQuick > NUL

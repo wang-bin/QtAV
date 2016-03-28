@@ -93,7 +93,7 @@ mkdir -p $TARGET/packages/com.qtav.product/data/
 ### runtime
 echo "coping runtime files..."
 RT_DIR=$TARGET/packages/com.qtav.product.runtime
-declare -a QTMODULES=(Core Gui OpenGL Widgets Qml Quick Network Svg) #TODO: use readelf, objdump or otool to get depends
+declare -a QTMODULES=(Core Gui OpenGL Widgets Qml Quick Network Svg Sql) #TODO: use readelf, objdump or otool to get depends
 host_is Linux && QTMODULES+=(DBus XcbQpa X11Extras)
 cp -af $BUILD/bin/* $RT_DIR/data/bin
 rm -rf $RT_DIR/data/bin/QtAV*d${QTAV_VER_MAJOR}.*
@@ -118,7 +118,7 @@ done
 
 QTPLUGIN=`qmake -query QT_INSTALL_PLUGINS`
 QTQML=`qmake -query QT_INSTALL_QML`
-for qplugin in imageformats platforms platforminputcontexts platformthemes xcbglintegrations iconengines egldeviceintegrations generic; do
+for qplugin in imageformats platforms platforminputcontexts platformthemes xcbglintegrations iconengines egldeviceintegrations generic sqldrivers; do
   test -d $QTPLUGIN/$qplugin && cp -af $QTPLUGIN/$qplugin $RT_DIR/data/bin/plugins
 done
 # find dir -name "*d.dll" -o -name "*.pdb" -delete fail, why?
