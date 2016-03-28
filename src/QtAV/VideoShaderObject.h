@@ -55,11 +55,29 @@ class DynamicShaderObjectPrivate;
  */
 class Q_AV_EXPORT DynamicShaderObject : public VideoShaderObject
 {
+    Q_OBJECT
     DPTR_DECLARE_PRIVATE(DynamicShaderObject)
+    Q_PROPERTY(QString header READ header WRITE setHeader NOTIFY headerChanged)
+    Q_PROPERTY(QString sample READ sample WRITE setSample NOTIFY sampleChanged)
+    Q_PROPERTY(QString postProcess READ postProcess WRITE setPostProcess NOTIFY postProcessChanged)
 public:
     DynamicShaderObject(QObject* parent = 0);
+    QString header() const;
+    void setHeader(const QString& text);
+    QString sample() const;
+    void setSample(const QString& text);
+    QString postProcess() const;
+    void setPostProcess(const QString& text);
+Q_SIGNALS:
+    void headerChanged();
+    void sampleChanged();
+    void postProcessChanged();
 protected:
     DynamicShaderObject(DynamicShaderObjectPrivate &d, QObject* parent = 0);
+private:
+    const char* userShaderHeader(QOpenGLShader::ShaderType st) const Q_DECL_OVERRIDE;
+    const char* userSample() const Q_DECL_OVERRIDE;
+    const char* userPostProcess() const Q_DECL_OVERRIDE;
 };
 } //namespace QtAV
 
