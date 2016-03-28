@@ -47,7 +47,13 @@
 
 #define EOF_ISSUE_SOLVED 0
 namespace QtAV {
-
+namespace {
+static const struct RegisterMetaTypes {
+    inline RegisterMetaTypes() {
+        qRegisterMetaType<QtAV::AVPlayer::State>(); // required by invoke() parameters
+    }
+} _registerMetaTypes;
+} //namespace
 static const qint64 kSeekMS = 10000;
 
 Q_GLOBAL_STATIC(QThreadPool, loaderThreadPool)
@@ -79,7 +85,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     d->read_thread = new AVDemuxThread(this);
     d->read_thread->setDemuxer(&d->demuxer);
     //direct connection can not sure slot order?
-    connect(d->read_thread, SIGNAL(finished()), this, SLOT(stopFromDemuxerThread()));
+    connect(d->read_thread, SIGNAL(finished()), this, SLOT(stopFromDemuxerThread()), Qt::DirectConnection);
     connect(d->read_thread, SIGNAL(requestClockPause(bool)), masterClock(), SLOT(pause(bool)), Qt::DirectConnection);
     connect(d->read_thread, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SLOT(updateMediaStatus(QtAV::MediaStatus)));
     connect(d->read_thread, SIGNAL(bufferProgressChanged(qreal)), this, SIGNAL(bufferProgressChanged(qreal)));
@@ -1197,6 +1203,7 @@ void AVPlayer::loadAndPlay()
 
 void AVPlayer::playInternal()
 {
+    {
     QMutexLocker lock(&d->load_mutex);
     Q_UNUSED(lock);
     if (!d->demuxer.isLoaded())
@@ -1294,7 +1301,8 @@ void AVPlayer::playInternal()
         setPosition(d->last_position); //just use d->demuxer.startTime()/duration()?
 
     d->state = PlayingState;
-    Q_EMIT stateChanged(d->state);
+    } //end lock scoped here to avoid dead lock if connect started() to a slot that call unload()/play()
+    Q_EMIT stateChanged(PlayingState);
     Q_EMIT started(); //we called stop(), so must emit started()
 }
 
@@ -1314,14 +1322,17 @@ void AVPlayer::stopFromDemuxerThread()
         d->repeat_current = d->repeat_max = 0;
         qDebug("avplayer emit stopped()");
         d->state = StoppedState;
-        Q_EMIT stateChanged(d->state);
-        Q_EMIT stopped();
-        Q_EMIT stoppedAt(stop_pts*1000.0);
+        QMetaObject::invokeMethod(this, "stateChanged", Q_ARG(QtAV::AVPlayer::State, d->state));
+        QMetaObject::invokeMethod(this, "stopped");
+        QMetaObject::invokeMethod(this, "stoppedAt", Q_ARG(qint64, qint64(stop_pts*1000.0)));
+        //Q_EMIT stateChanged(d->state);
+        //Q_EMIT stopped();
+        //Q_EMIT stoppedAt(stop_pts*1000.0);
     } else {
         qDebug("stopPosition() == mediaStopPosition() or !seekable. repeate: %d/%d", currentRepeat(), repeat());
         d->repeat_current++;
         d->last_position = startPosition(); // for seeking to startPosition() if seekable. already set in stop()
-        play();
+        QMetaObject::invokeMethod(this, "play"); //ensure play() is called from player thread
     }
 }
 
@@ -1461,8 +1472,7 @@ void AVPlayer::stop()
         // interrupt to quit av_read_frame quickly.
         d->demuxer.setInterruptStatus(-1);
     }
-    d->state = StoppedState;
-    qDebug("all audio/video threads  stopped...");
+    qDebug("all audio/video threads stopped... state: %d", d->state);
 }
 
 void AVPlayer::timerEvent(QTimerEvent *te)

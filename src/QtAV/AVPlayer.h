@@ -397,7 +397,7 @@ public slots:
     void play(); //replay
     /*!
      * \brief stop
-     * Stop playback. It blocks current thread until the playback is stopped.
+     * Stop playback. It blocks current thread until the playback is stopped. Will emit signal stopped(). startPosition(), stopPosition(), repeat() are reset
      */
     void stop();
     /*!
@@ -414,7 +414,7 @@ public slots:
     void setRelativeTimeMode(bool value);
     /*!
      * \brief setRepeat
-     *  repeat max times between startPosition() and endPosition()
+     *  Repeat max times between startPosition() and endPosition(). It's reset if playback is stopped.
      *  max==0: no repeat
      *  max<0: infinity. std::numeric_limits<int>::max();
      * \param max
@@ -432,6 +432,7 @@ public slots:
      *  pos == 0, means start at the beginning of media stream
      *  (may be not exactly equals 0, seek to demuxer.startPosition()/startTime())
      *  pos > media end position: no effect
+     *  pos > stopPosition(): no effect (if stopPosition() > 0)
      */
     void setStartPosition(qint64 pos);
     /*!
@@ -574,6 +575,6 @@ private:
     class Private;
     QScopedPointer<Private> d;
 };
-
 } //namespace QtAV
+Q_DECLARE_METATYPE(QtAV::AVPlayer::State)
 #endif // QTAV_AVPLAYER_H
