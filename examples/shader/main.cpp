@@ -19,13 +19,51 @@
 ******************************************************************************/
 #include <QtAV>
 #include <QtAV/ConvolutionShader.h>
+#include <QtAV/VideoShaderObject.h>
 #include <QtCore/qmath.h>
 #include <QApplication>
 #include <QtCore/QScopedPointer>
 #include <QWidget>
 using namespace QtAV;
 
-#define GLSL(x) #x "\n"
+#define GLSL(x) #x ""
+class MyShader : public VideoShaderObject
+{
+public:
+    MyShader() { startTimer(50);}
+protected:
+    void timerEvent(QTimerEvent*) {
+        static int t = 0;
+        const float b = float(50 - t%100)/50.0;
+        const float c = float(50 - 4*t%100)/50.0;
+        ++t;
+        setProperty("bs", QVariant::fromValue(QVector<float>() << b << c));
+    }
+private:
+    const char* userShaderHeader(QOpenGLShader::ShaderType type) const {
+        if (type == QOpenGLShader::Vertex)
+            return 0;
+        return GLSL(uniform vec2 bs;);
+    }
+    const char* userPostProcess() const {
+        return GLSL(
+                    float lr = 0.3086;
+                    float lg = 0.6094;
+                    float lb = 0.0820;
+                    float s = bs.g + 1.0;
+                    float is = 1.0-s;
+                    float ilr = is * lr;
+                    float ilg = is * lg;
+                    float ilb = is * lb;
+                    mat4 m = mat4(
+                        ilr+s, ilg  , ilb  , 0.0,
+                        ilr  , ilg+s, ilb  , 0.0,
+                        ilr  , ilg  , ilb+s, 0.0,
+                        0.0  , 0.0  , 0.0  , 1.0);
+                    gl_FragColor = m*gl_FragColor+bs.r;);
+    }
+};
+
 class MediumBlurShader : public ConvolutionShader
 {
 public:
@@ -102,38 +140,30 @@ int main(int argc, char *argv[])
         qDebug("./shader file");
         return 0;
     }
-    VideoOutput vo, vo0, vo1;
+    VideoOutput vo[4];
+    QScopedPointer<VideoShader> shaders[4];
     AVPlayer player;
-    player.addVideoRenderer(&vo);
-    player.addVideoRenderer(&vo0);
-    player.addVideoRenderer(&vo1);
-    vo.widget()->setWindowTitle("No shader");
-    vo0.widget()->setWindowTitle("Wave effect shader");
-    vo1.widget()->setWindowTitle("Blur shader");
-    vo.widget()->show();
-    vo.widget()->resize(500, 300);
-    vo0.widget()->show();
-    vo0.widget()->resize(500, 300);
-    vo1.widget()->show();
-    vo1.widget()->resize(500, 300);
-    vo.widget()->move(0, 0);
-    vo0.widget()->move(vo.widget()->x() + vo.widget()->width(), vo.widget()->y());
-    vo1.widget()->move(vo.widget()->x(), vo.widget()->y() + vo.widget()->height());
-
+    struct {
+        QByteArray title;
+        VideoShader *shader;
+    } shader_list[] = {
+    {"No shader", NULL},
+    {"Wave effect shader", new WaveShader()},
+    {"Blur shader", new MediumBlurShader()},
+    {"Brightness+Saturation. (VideoShaderObject dynamic properties)", new MyShader()}
+    };
+    vo[0].widget()->move(0, 0);
+    for (int i = 0; i < 4; ++i) {
+        if (!vo[i].opengl())
+            qFatal("No opengl in the renderer");
+        player.addVideoRenderer(&vo[i]);
+        vo[i].widget()->setWindowTitle(shader_list[i].title);
+        vo[i].widget()->show();
+        vo[i].widget()->resize(500, 300);
+        vo[i].widget()->move(vo[0].widget()->x() + (i%2)*vo[0].widget()->width(), vo[0].widget()->y() + (i/2)*vo[0].widget()->height());
+        vo[i].opengl()->setUserShader(shader_list[i].shader);
+        shaders[i].reset(shader_list[i].shader);
+    }
     player.play(a.arguments().at(1));
-    //player.setStartPosition(1000);
-    //player.setStopPosition(1000);
-    //player.setRepeat(-1);
-    QScopedPointer<VideoShader> shader0;
-    if (!vo0.opengl())
-        qFatal("No opengl in the renderer");
-    shader0.reset(new WaveShader());
-    vo0.opengl()->setUserShader(shader0.data());
-    QScopedPointer<VideoShader> shader1;
-    if (!vo1.opengl())
-        qFatal("No opengl in the renderer");
-    shader1.reset(new MediumBlurShader());
-    vo1.opengl()->setUserShader(shader1.data());
-
     return a.exec();
 }
