@@ -72,15 +72,11 @@ class VideoDecoderDXVA : public VideoDecoderD3D
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderDXVA)
-    Q_PROPERTY(int surfaces READ surfaces WRITE setSurfaces)
 public:
     VideoDecoderDXVA();
     VideoDecoderId id() const Q_DECL_OVERRIDE;
     QString description() const Q_DECL_OVERRIDE;
     VideoFrame frame() Q_DECL_OVERRIDE;
-    // properties
-    void setSurfaces(int num);
-    int surfaces() const;
 };
 
 extern VideoDecoderId VideoDecoderId_DXVA;
@@ -116,9 +112,6 @@ public:
         surface_order = 0;
         surface_width = surface_height = 0;
         available = loadDll();
-        // set by user. don't reset in when call destroy
-        surface_auto = true;
-        surface_count = 0;
     }
     virtual ~VideoDecoderDXVAPrivate()
     {
@@ -134,13 +127,12 @@ public:
     bool DxCreateVideoService();
     void DxDestroyVideoService();
     bool DxFindVideoServiceConversion(GUID *input, D3DFORMAT *output);
-    bool DxCreateVideoDecoder(int codec_id, int w, int h);
-    void DxDestroyVideoDecoder();
+    bool ensureResources(AVCodecID codec_id, int w, int h, int nb_surfaces) Q_DECL_OVERRIDE;
+    void releaseResources() Q_DECL_OVERRIDE;
+    void setupAVVAContext(AVCodecContext *avctx) Q_DECL_OVERRIDE;
     bool DxResetVideoDecoder();
-    bool isHEVCSupported() const;
 
     D3DFormat formatFor(const GUID *guid) const Q_DECL_OVERRIDE;
-    bool setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
     bool open() Q_DECL_OVERRIDE;
     void close() Q_DECL_OVERRIDE;
 
@@ -169,11 +161,7 @@ public:
     IDirectXVideoDecoder         *decoder;
 
     struct dxva_context hw_ctx;
-    bool surface_auto;
-    unsigned     surface_count;
     unsigned     surface_order;
-    int          surface_width;
-    int          surface_height;
     //AVPixelFormat surface_chroma;
 
     va_surface_t surfaces[VA_DXVA2_MAX_SURFACE_COUNT];
@@ -262,18 +250,6 @@ VideoFrame VideoDecoderDXVA::frame()
     return copyToFrame(fmt, d.surface_height, src, pitch, swap_uv);
 }
 
-void VideoDecoderDXVA::setSurfaces(int num)
-{
-    DPTR_D(VideoDecoderDXVA);
-    d.surface_count = num;
-    d.surface_auto = num <= 0;
-}
-
-int VideoDecoderDXVA::surfaces() const
-{
-    return d_func().surface_count;
-}
-
 /* FIXME it is nearly common with VAAPI */
 bool VideoDecoderDXVAPrivate::getBuffer(void **opaque, uint8_t **data)//vlc_va_t *external, AVFrame *ff)
 {
@@ -288,7 +264,7 @@ bool VideoDecoderDXVAPrivate::getBuffer(void **opaque, uint8_t **data)//vlc_va_t
     }
     /* Grab an unused surface, in case none are, try the oldest
      * XXX using the oldest is a workaround in case a problem happens with libavcodec */
-    unsigned i, old;
+    int i, old;
     for (i = 0, old = 0; i < surface_count; i++) {
         va_surface_t *surface = &surfaces[i];
         if (!surface->refcount)
@@ -459,44 +435,19 @@ D3DFormat VideoDecoderDXVAPrivate::formatFor(const GUID *guid) const
     return fmt;
 }
 
-bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
+bool VideoDecoderDXVAPrivate::ensureResources(AVCodecID codec_id, int w, int h, int nb_surfaces)
 {
     if (!vs || !d3ddev) {
         qWarning("d3d is not ready. IDirectXVideoService: %p, IDirect3DDevice9: %p", vs, d3ddev);
         return false;
     }
-    qDebug("DxCreateVideoDecoder id %d %dx%d, surfaces: %u", codec_id, w, h, surface_count);
-    /* Allocates all surfaces needed for the decoder */
-    surface_width = aligned(w);
-    surface_height = aligned(h);
-    if (surface_auto) {
-        switch (codec_id) {
-        case QTAV_CODEC_ID(HEVC):
-        case QTAV_CODEC_ID(H264):
-            surface_count = 16 + 4;
-            break;
-        case QTAV_CODEC_ID(MPEG1VIDEO):
-        case QTAV_CODEC_ID(MPEG2VIDEO):
-            surface_count = 2 + 4;
-        default:
-            surface_count = 2 + 4;
-            break;
-        }
-        if (codec_ctx->active_thread_type & FF_THREAD_FRAME)
-            surface_count += codec_ctx->thread_count;
-    }
-    qDebug(">>>>>>>>>>>>>>>>>>>>>surfaces: %d, active_thread_type: %d, threads: %d, refs: %d", surface_count, codec_ctx->active_thread_type, codec_ctx->thread_count, codec_ctx->refs);
-    if (surface_count == 0) {
-        qWarning("internal error: wrong surface count.  %u auto=%d", surface_count, surface_auto);
-        surface_count = 16 + 4;
-    }
-
+    qDebug("ensureResources id %d %dx%d, surfaces: %u", codec_id, w, h, nb_surfaces);
     IDirect3DSurface9* surface_list[VA_DXVA2_MAX_SURFACE_COUNT];
-    qDebug("%s @%d vs=%p surface_count=%d surface_width=%d surface_height=%d"
-           , __FUNCTION__, __LINE__, vs, surface_count, surface_width, surface_height);
-    DX_ENSURE_OK(vs->CreateSurface(surface_width,
-                                 surface_height,
-                                 surface_count - 1,
+    qDebug("%s @%d vs=%p nb_surfaces=%d surface_width=%d surface_height=%d"
+           , __FUNCTION__, __LINE__, vs, nb_surfaces, aligned(w), aligned(h));
+    DX_ENSURE_OK(vs->CreateSurface(aligned(w),
+                                 aligned(h),
+                                 nb_surfaces - 1,
                                  render,
                                  D3DPOOL_DEFAULT,
                                  0,
@@ -505,13 +456,13 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
                                  NULL)
             , false);
     memset(surfaces, 0, sizeof(surfaces));
-    for (unsigned i = 0; i < surface_count; i++) {
+    for (int i = 0; i < nb_surfaces; i++) {
         va_surface_t *surface = &this->surfaces[i];
         surface->d3d = surface_list[i];
         surface->refcount = 0;
         surface->order = 0;
     }
-    qDebug("IDirectXVideoAccelerationService_CreateSurface succeed with %d surfaces (%dx%d)", surface_count, w, h);
+    qDebug("IDirectXVideoAccelerationService_CreateSurface succeed with %d surfaces (%dx%d)", nb_surfaces, w, h);
 
     /* */
     DXVA2_VideoDesc dsc;
@@ -571,15 +522,16 @@ bool VideoDecoderDXVAPrivate::DxCreateVideoDecoder(int codec_id, int w, int h)
         return false;
     }
     /* Create the decoder */
-    DX_ENSURE_OK(vs->CreateVideoDecoder(input, &dsc, &cfg, surface_list, surface_count, &decoder), false);
+    DX_ENSURE_OK(vs->CreateVideoDecoder(input, &dsc, &cfg, surface_list, nb_surfaces, &decoder), false);
     qDebug("IDirectXVideoDecoderService_CreateVideoDecoder succeed. decoder=%p", decoder);
     return true;
 }
 
-void VideoDecoderDXVAPrivate::DxDestroyVideoDecoder()
+void VideoDecoderDXVAPrivate::releaseResources()
 {
+    codec_ctx->hwaccel_context = NULL;
     SafeRelease(&decoder);
-    for (unsigned i = 0; i < surface_count; i++) {
+    for (int i = 0; i < surface_count; i++) {
         SafeRelease(&surfaces[i].d3d);
     }
 }
@@ -590,41 +542,10 @@ bool VideoDecoderDXVAPrivate::DxResetVideoDecoder()
     return false;
 }
 
-static bool check_ffmpeg_hevc_dxva2()
-{
-    avcodec_register_all();
-    AVHWAccel *hwa = av_hwaccel_next(0);
-    while (hwa) {
-        if (strncmp("hevc_dxva2", hwa->name, 10) == 0)
-            return true;
-        hwa = av_hwaccel_next(hwa);
-    }
-    return false;
-}
-
-bool VideoDecoderDXVAPrivate::isHEVCSupported() const
-{
-    static const bool support_hevc = check_ffmpeg_hevc_dxva2();
-    return support_hevc;
-}
 
 // hwaccel_context
-bool VideoDecoderDXVAPrivate::setup(AVCodecContext *avctx)
+void VideoDecoderDXVAPrivate::setupAVVAContext(AVCodecContext* avctx)
 {
-    const int w = codedWidth(avctx);
-    const int h = codedHeight(avctx);
-    if (decoder && surface_width == aligned(w) && surface_height == aligned(h)) {
-        avctx->hwaccel_context = &hw_ctx;
-        return true;
-    }
-    width = avctx->width; // not necessary. set in decode()
-    height = avctx->height;
-    releaseUSWC();
-    DxDestroyVideoDecoder();
-    avctx->hwaccel_context = NULL;
-    /* FIXME transmit a video_format_t by VaSetup directly */
-    if (!DxCreateVideoDecoder(avctx->codec_id, w, h))
-        return false;
     avctx->hwaccel_context = &hw_ctx;
     // TODO: FF_DXVA2_WORKAROUND_SCALING_LIST_ZIGZAG
     if (isIntelClearVideo(&input)) {
@@ -641,10 +562,8 @@ bool VideoDecoderDXVAPrivate::setup(AVCodecContext *avctx)
     hw_ctx.surface_count = surface_count;
     hw_ctx.surface = hw_surfaces;
     memset(hw_surfaces, 0, sizeof(hw_surfaces));
-    for (unsigned i = 0; i < surface_count; i++)
+    for (int i = 0; i < surface_count; i++)
         hw_ctx.surface[i] = surfaces[i].d3d;
-    initUSWC(surface_width);
-    return true;
 }
 
 bool VideoDecoderDXVAPrivate::open()
@@ -703,9 +622,10 @@ error:
 
 void VideoDecoderDXVAPrivate::close()
 {
+    codec_ctx->hwaccel_context = NULL;
     restore();
     releaseUSWC();
-    DxDestroyVideoDecoder();
+    releaseResources();
     DxDestroyVideoService();
     D3dDestroyDeviceManager();
     D3dDestroyDevice();

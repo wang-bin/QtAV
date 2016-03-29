@@ -28,8 +28,10 @@
 #include "VideoDecoderFFmpegHW_p.h"
 
 namespace QtAV {
-struct dxva2_mode_t;
 
+bool isHEVCSupported();
+
+struct dxva2_mode_t;
 typedef int D3DFormat;
 struct d3d_format_t {
     const char    *name;
@@ -47,8 +49,14 @@ class VideoDecoderD3DPrivate;
 class VideoDecoderD3D : public VideoDecoderFFmpegHW
 {
     DPTR_DECLARE_PRIVATE(VideoDecoderD3D)
+    Q_OBJECT
+    Q_PROPERTY(int surfaces READ surfaces WRITE setSurfaces NOTIFY surfacesChanged)
 public:
-
+    // properties
+    void setSurfaces(int num);
+    int surfaces() const;
+Q_SIGNALS:
+    void surfacesChanged();
 protected:
     VideoDecoderD3D(VideoDecoderD3DPrivate& d);
 };
@@ -56,10 +64,25 @@ protected:
 class VideoDecoderD3DPrivate : public VideoDecoderFFmpegHWPrivate
 {
 public:
+    VideoDecoderD3DPrivate();
+
+    bool setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
 
     int aligned(int x);
+    virtual void setupAVVAContext(AVCodecContext* avctx) = 0;
+    /// width and height are coded value, maybe not aligned for d3d surface
+    virtual bool ensureResources(AVCodecID codec, int width, int height, int nb_surfaces) = 0;
+    virtual void releaseResources() = 0;
     virtual D3DFormat formatFor(const GUID *guid) const = 0;
     const d3d_format_t *getFormat(const GUID *supported_guids, UINT nb_guids, GUID *selected) const;
+
+
+    // set by user. don't reset in when call destroy
+    bool surface_auto;
+    int surface_count;
+
+    int surface_width;
+    int surface_height;
 };
 
 } //namespace QtAV

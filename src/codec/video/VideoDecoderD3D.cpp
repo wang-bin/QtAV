@@ -20,7 +20,6 @@
 ******************************************************************************/
 
 #include "VideoDecoderD3D.h"
-
 #include <initguid.h> /* must be last included to not redefine existing GUIDs */
 
 #if (FF_PROFILE_HEVC_MAIN == -1) //libav does not define it
@@ -32,6 +31,26 @@
 #endif
 
 namespace QtAV {
+
+static bool check_ffmpeg_hevc_dxva2()
+{
+    avcodec_register_all();
+    AVHWAccel *hwa = av_hwaccel_next(0);
+    while (hwa) {
+        if (strncmp("hevc_dxva2", hwa->name, 10) == 0)
+            return true;
+        if (strncmp("hevc_d3d11va", hwa->name, 12) == 0)
+            return true;
+        hwa = av_hwaccel_next(hwa);
+    }
+    return false;
+}
+
+bool isHEVCSupported()
+{
+    static const bool support_hevc = check_ffmpeg_hevc_dxva2();
+    return support_hevc;
+}
 
 // some MS_GUID are defined in mingw but some are not. move to namespace and define all is ok
 #define MS_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
@@ -291,6 +310,74 @@ D3DFormat select_d3d_format(D3DFormat *formats, UINT nb_formats)
 VideoDecoderD3D::VideoDecoderD3D(VideoDecoderD3DPrivate &d)
     : VideoDecoderFFmpegHW(d)
 {}
+
+
+void VideoDecoderD3D::setSurfaces(int num)
+{
+    DPTR_D(VideoDecoderD3D);
+    if (d.surface_count == num)
+        return;
+    d.surface_count = num;
+    d.surface_auto = num <= 0;
+    Q_EMIT surfacesChanged();
+}
+
+int VideoDecoderD3D::surfaces() const
+{
+    return d_func().surface_count;
+}
+
+VideoDecoderD3DPrivate::VideoDecoderD3DPrivate()
+    : VideoDecoderFFmpegHWPrivate()
+    , surface_auto(true)
+    , surface_count(0)
+{
+}
+
+bool VideoDecoderD3DPrivate::setup(AVCodecContext *avctx)
+{
+
+    const int w = codedWidth(avctx);
+    const int h = codedHeight(avctx);
+    if (avctx->hwaccel_context && surface_width == aligned(w) && surface_height == aligned(h))
+        return true;
+    width = avctx->width; // not necessary. set in decode()
+    height = avctx->height;
+    releaseUSWC();
+    releaseResources();
+    avctx->hwaccel_context = NULL;
+
+    /* Allocates all surfaces needed for the decoder */
+    if (surface_auto) {
+        switch (codec_ctx->codec_id) {
+        case QTAV_CODEC_ID(HEVC):
+        case QTAV_CODEC_ID(H264):
+            surface_count = 16 + 4;
+            break;
+        case QTAV_CODEC_ID(MPEG1VIDEO):
+        case QTAV_CODEC_ID(MPEG2VIDEO):
+            surface_count = 2 + 4;
+        default:
+            surface_count = 2 + 4;
+            break;
+        }
+        if (avctx->active_thread_type & FF_THREAD_FRAME)
+            surface_count += avctx->thread_count;
+    }
+    qDebug(">>>>>>>>>>>>>>>>>>>>>surfaces: %d, active_thread_type: %d, threads: %d, refs: %d", surface_count, avctx->active_thread_type, avctx->thread_count, avctx->refs);
+    if (surface_count == 0) {
+        qWarning("internal error: wrong surface count.  %u auto=%d", surface_count, surface_auto);
+        surface_count = 16 + 4;
+    }
+
+    if (!ensureResources(codec_ctx->codec_id, w, h, surface_count))
+        return false;
+    surface_width = aligned(w);
+    surface_height = aligned(h);
+    setupAVVAContext(avctx); //can not use codec_ctx for threaded mode!
+    initUSWC(surface_width);
+    return true;
+}
 
 int VideoDecoderD3DPrivate::aligned(int x)
 {
