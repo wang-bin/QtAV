@@ -25,7 +25,7 @@
 #include "utils/DirectXHelper.h"
 
 namespace QtAV {
-extern VideoFormat::PixelFormat pixelFormatFromD3D(D3DFORMAT format);
+extern VideoFormat::PixelFormat pixelFormatFromD3D(int format);
 
 namespace dxva {
 
