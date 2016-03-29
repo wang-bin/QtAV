@@ -60,6 +60,7 @@ win32 {
   !no-xaudio2: OptionalDepends *= xaudio2
   !no-direct2d:!no-widgets: OptionalDepends *= direct2d
   !no-dxva: OptionalDepends *= dxva
+  !no-d3d11va: OptionalDepends *= d3d11va
   !no-dsound: OptionalDepends *= dsound
   !no-gdiplus:!no-widgets: OptionalDepends *= gdiplus
 }
