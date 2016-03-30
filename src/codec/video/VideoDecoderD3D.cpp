@@ -229,7 +229,7 @@ static const dxva2_mode_t dxva2_modes[] = {
     { NULL, NULL, 0, NULL }
 };
 
-const dxva2_mode_t *Dxva2FindMode(const GUID *guid)
+static const dxva2_mode_t *Dxva2FindMode(const GUID *guid)
 {
     for (unsigned i = 0; dxva2_modes[i].name; i++) {
         if (IsEqualGUID(*dxva2_modes[i].guid, *guid))
@@ -262,18 +262,18 @@ bool checkProfile(const dxva2_mode_t *mode, int profile)
 /* XXX Prefered format must come first */
 //16-bit: https://msdn.microsoft.com/en-us/library/windows/desktop/bb970578(v=vs.85).aspx
 static const d3d_format_t d3d_formats[] = {
-    { "YV12",   MAKEFOURCC('Y','V','1','2'),    VideoFormat::Format_YUV420P },
     { "NV12",   MAKEFOURCC('N','V','1','2'),    VideoFormat::Format_NV12 },
+    { "YV12",   MAKEFOURCC('Y','V','1','2'),    VideoFormat::Format_YUV420P },
     { "IMC3",   MAKEFOURCC('I','M','C','3'),    VideoFormat::Format_YUV420P },
     { "P010",   MAKEFOURCC('P','0','1','0'),    VideoFormat::Format_YUV420P10LE },
     { "P016",   MAKEFOURCC('P','0','1','6'),    VideoFormat::Format_YUV420P16LE }, //FIXME:
     { NULL, 0, VideoFormat::Format_Invalid }
 };
 
-static const d3d_format_t *D3dFindFormat(D3DFormat format)
+static const d3d_format_t *D3dFindFormat(int fourcc)
 {
     for (unsigned i = 0; d3d_formats[i].name; i++) {
-        if (d3d_formats[i].format == format)
+        if (d3d_formats[i].fourcc == fourcc)
             return &d3d_formats[i];
     }
     return NULL;
@@ -287,9 +287,9 @@ VideoFormat::PixelFormat pixelFormatFromFourcc(int format)
     return VideoFormat::Format_Invalid;
 }
 
-D3DFormat select_d3d_format(D3DFormat *formats, UINT nb_formats)
+int getSupportedFourcc(int *formats, UINT nb_formats)
 {
-    for (const D3DFormat *f = formats; f < &formats[nb_formats]; ++f) {
+    for (const int *f = formats; f < &formats[nb_formats]; ++f) {
         const d3d_format_t *format = D3dFindFormat(*f);
         if (format) {
             qDebug("%s is supported for output", format->name);
@@ -300,8 +300,8 @@ D3DFormat select_d3d_format(D3DFormat *formats, UINT nb_formats)
     for (const d3d_format_t *format = d3d_formats; format->name; ++format) {
         bool is_supported = false;
         for (unsigned k = 0; !is_supported && k < nb_formats; k++) {
-            if (format->format == formats[k])
-                return format->format;
+            if (format->fourcc == formats[k])
+                return format->fourcc;
         }
     }
     return 0;
@@ -340,12 +340,42 @@ VideoDecoderD3DPrivate::VideoDecoderD3DPrivate()
 {
 }
 
-VideoDecoderD3DPrivate::~VideoDecoderD3DPrivate()
+bool VideoDecoderD3DPrivate::open()
 {
-    // call in close() too
+    if (!prepare())
+        return false;
+    if (codec_ctx->codec_id == QTAV_CODEC_ID(HEVC)) {
+        // runtime hevc check
+        if (isHEVCSupported()) {
+            qWarning("HEVC DXVA2 is supported by current FFmpeg runtime.");
+        } else {
+            qWarning("HEVC DXVA2 is not supported by current FFmpeg runtime.");
+            return false;
+        }
+    }
+    if (!createDevice())
+        return false;
+    format_fcc = 0;
+    QVector<GUID> codecs = getSupportedCodecs();
+    const d3d_format_t *fmt = getFormat(codec_ctx, codecs, &codec_guid);
+    if (!fmt)
+        return false;
+    format_fcc = fmt->fourcc;
+    if (!setupSurfaceInterop())
+        return false;
+    return true;
+}
+
+void VideoDecoderD3DPrivate::close()
+{
+    if (codec_ctx)
+        codec_ctx->hwaccel_context = NULL;
     qDeleteAll(surfaces);
     surfaces.clear();
+    restore();
     releaseUSWC();
+    destroyDecoder();
+    destroyDevice();
 }
 
 bool VideoDecoderD3DPrivate::setup(AVCodecContext *avctx)
@@ -356,8 +386,9 @@ bool VideoDecoderD3DPrivate::setup(AVCodecContext *avctx)
         return true;
     width = avctx->width; // not necessary. set in decode()
     height = avctx->height;
+    codec_ctx->hwaccel_context = NULL;
     releaseUSWC();
-    releaseResources();
+    destroyDecoder();
     avctx->hwaccel_context = NULL;
 
     /* Allocates all surfaces needed for the decoder */
@@ -386,7 +417,7 @@ bool VideoDecoderD3DPrivate::setup(AVCodecContext *avctx)
     surfaces.clear();
     hw_surfaces.clear();
     surfaces.resize(surface_count);
-    if (!ensureResources(codec_ctx->codec_id, w, h, surfaces))
+    if (!createDecoder(codec_ctx->codec_id, w, h, surfaces))
         return false;
     hw_surfaces.resize(surface_count);
     for (int i = 0; i < surfaces.size(); ++i) {
@@ -444,10 +475,9 @@ int VideoDecoderD3DPrivate::aligned(int x)
     return FFALIGN(x, align);
 }
 
-const d3d_format_t* VideoDecoderD3DPrivate::getFormat(const GUID *supported_guids, UINT nb_guids, GUID* selected) const
+const d3d_format_t* VideoDecoderD3DPrivate::getFormat(const AVCodecContext *avctx, const QVector<GUID> &guids, GUID* selected) const
 {
-    for (unsigned i = 0; i < nb_guids; i++) {
-        const GUID &g = supported_guids[i];
+    foreach (const GUID& g, guids) {
         const dxva2_mode_t *mode = Dxva2FindMode(&g);
         if (mode) {
             qDebug("- '%s' is supported by hardware", mode->name);
@@ -461,18 +491,22 @@ const d3d_format_t* VideoDecoderD3DPrivate::getFormat(const GUID *supported_guid
     /* Try all supported mode by our priority */
     const dxva2_mode_t *mode = dxva2_modes;
     for (; mode->name; ++mode) {
-        if (!mode->codec || mode->codec != codec_ctx->codec_id) {
-            qDebug("codec does not match to %s: %s", avcodec_get_name(codec_ctx->codec_id), avcodec_get_name((AVCodecID)mode->codec));
+        if (!mode->codec || mode->codec != avctx->codec_id) {
+            qDebug("codec does not match to %s: %s", avcodec_get_name(avctx->codec_id), avcodec_get_name((AVCodecID)mode->codec));
             continue;
         }
         qDebug("D3D found codec: %s. Check runtime support for the codec.", mode->name);
         bool is_supported = false;
-        for (const GUID *g = &supported_guids[0]; !is_supported && g < &supported_guids[nb_guids]; g++) {
-            is_supported = IsEqualGUID(*mode->guid, *g);
+        //TODO: find_if
+        foreach (const GUID& g, guids) {
+            if (IsEqualGUID(*mode->guid, g)) {
+                is_supported = true;
+                break;
+            }
         }
         if (is_supported) {
-            qDebug("Check profile support: %s", AVDecoderPrivate::getProfileName(codec_ctx));
-            is_supported = checkProfile(mode, codec_ctx->profile);
+            qDebug("Check profile support: %s", AVDecoderPrivate::getProfileName(avctx));
+            is_supported = checkProfile(mode, avctx->profile);
         }
         if (!is_supported)
             continue;

@@ -30,7 +30,7 @@
 namespace QtAV {
 
 #ifndef DX_LOG_COMPONENT
-#define DX_LOG_COMPONENT "D3D"
+#define DX_LOG_COMPONENT "DirectX"
 #endif //DX_LOG_COMPONENT
 #define DX_ENSURE(f, ...) DX_CHECK(f, return __VA_ARGS__;)
 #define DX_WARN(f) DX_CHECK(f)

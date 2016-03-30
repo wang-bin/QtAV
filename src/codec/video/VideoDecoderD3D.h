@@ -29,20 +29,14 @@
 
 namespace QtAV {
 
-bool isHEVCSupported();
-
-struct dxva2_mode_t;
-typedef int D3DFormat;
 struct d3d_format_t {
     const char *name;
-    int format; //fourcc
+    int fourcc;
     VideoFormat::PixelFormat pixfmt;
 };
-bool checkProfile(const dxva2_mode_t* mode, int profile);
-const dxva2_mode_t *Dxva2FindMode(const GUID *guid);
 bool isIntelClearVideo(const GUID *guid);
 bool isNoEncrypt(const GUID* guid);
-D3DFormat select_d3d_format(D3DFormat *formats, UINT nb_formats);
+int getSupportedFourcc(int *formats, UINT nb_formats);
 VideoFormat::PixelFormat pixelFormatFromFourcc(int format);
 
 class VideoDecoderD3DPrivate;
@@ -76,25 +70,34 @@ class VideoDecoderD3DPrivate : public VideoDecoderFFmpegHWPrivate
 {
 public:
     VideoDecoderD3DPrivate();
-    ~VideoDecoderD3DPrivate();
 
+    bool open() Q_DECL_OVERRIDE;
+    void close() Q_DECL_OVERRIDE;
+    virtual bool setupSurfaceInterop() {return true;}
     bool setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
     bool getBuffer(void **opaque, uint8_t **data) Q_DECL_OVERRIDE;
     void releaseBuffer(void *opaque, uint8_t *data) Q_DECL_OVERRIDE;
 
     int aligned(int x);
+    virtual bool createDevice() = 0; //d3d device, video context etc.
+    virtual void destroyDevice() = 0;
     virtual bool checkDevice() {return true;}
+    virtual QVector<GUID> getSupportedCodecs() const = 0;
+
     virtual void setupAVVAContext(AVCodecContext* avctx) = 0;
-    /// width and height are coded value, maybe not aligned for d3d surface
-    virtual bool ensureResources(AVCodecID codec, int width, int height, QVector<va_surface_t*>& surf) = 0;
-    virtual void releaseResources() = 0;
+    /// create surfaces and decoder. width and height are coded value, maybe not aligned for d3d surface
+    /// surfaces count is given, but not allocated
+    virtual bool createDecoder(AVCodecID codec, int width, int height, QVector<va_surface_t*>& surf) = 0;
+    virtual void destroyDecoder() = 0;
     virtual int fourccFor(const GUID *guid) const = 0;
-    const d3d_format_t *getFormat(const GUID *supported_guids, UINT nb_guids, GUID *selected) const;
+    const d3d_format_t *getFormat(const AVCodecContext* avctx, const QVector<GUID>& guids, GUID *selected) const;
 
     // set by user. don't reset in when call destroy
     bool surface_auto;
     int surface_count;
     QVector<IUnknown*> hw_surfaces;
+    int format_fcc;
+    GUID codec_guid;
 private:
     int surface_width;
     int surface_height;
