@@ -40,7 +40,6 @@
 extern "C" {
 #include <libavcodec/dxva2.h> //will include d3d9.h, dxva2api.h
 }
-#define VA_DXVA2_MAX_SURFACE_COUNT (64)
 
 #include <d3d9.h>
 #include <dxva2api.h>
@@ -82,11 +81,16 @@ public:
 extern VideoDecoderId VideoDecoderId_DXVA;
 FACTORY_REGISTER(VideoDecoder, DXVA, "DXVA")
 
-typedef struct {
+struct d3d9_surface_t : public va_surface_t {
+    d3d9_surface_t() : va_surface_t(), d3d(0) {}
+    ~d3d9_surface_t() { SafeRelease(&d3d);}
+    void setSurface(IUnknown* s) Q_DECL_OVERRIDE {
+        d3d = (IDirect3DSurface9*)s;
+    }
+    IUnknown* getSurface() const {return d3d;}
+private:
     IDirect3DSurface9 *d3d;
-    int refcount;
-    unsigned int order;
-} va_surface_t;
+};
 /* */
 
 class VideoDecoderDXVAPrivate Q_DECL_FINAL: public VideoDecoderD3DPrivate
@@ -109,7 +113,6 @@ public:
         vs = 0;
         render = D3DFMT_UNKNOWN;
         decoder = 0;
-        surface_order = 0;
         surface_width = surface_height = 0;
         available = loadDll();
     }
@@ -127,17 +130,16 @@ public:
     bool DxCreateVideoService();
     void DxDestroyVideoService();
     bool DxFindVideoServiceConversion(GUID *input, D3DFORMAT *output);
-    bool ensureResources(AVCodecID codec_id, int w, int h, int nb_surfaces) Q_DECL_OVERRIDE;
+    bool checkDevice();
+    bool ensureResources(AVCodecID codec_id, int w, int h, QVector<va_surface_t*>& surf) Q_DECL_OVERRIDE;
     void releaseResources() Q_DECL_OVERRIDE;
     void setupAVVAContext(AVCodecContext *avctx) Q_DECL_OVERRIDE;
     bool DxResetVideoDecoder();
 
-    D3DFormat formatFor(const GUID *guid) const Q_DECL_OVERRIDE;
+    int fourccFor(const GUID *guid) const Q_DECL_OVERRIDE;
     bool open() Q_DECL_OVERRIDE;
     void close() Q_DECL_OVERRIDE;
 
-    bool getBuffer(void **opaque, uint8_t **data) Q_DECL_OVERRIDE;
-    void releaseBuffer(void *opaque, uint8_t *data) Q_DECL_OVERRIDE;
     AVPixelFormat vaPixelFormat() const Q_DECL_OVERRIDE { return QTAV_PIX_FMT_C(DXVA2_VLD);}
     /* DLL */
     HINSTANCE hd3d9_dll;
@@ -161,11 +163,7 @@ public:
     IDirectXVideoDecoder         *decoder;
 
     struct dxva_context hw_ctx;
-    unsigned     surface_order;
     //AVPixelFormat surface_chroma;
-
-    va_surface_t surfaces[VA_DXVA2_MAX_SURFACE_COUNT];
-    IDirect3DSurface9* hw_surfaces[VA_DXVA2_MAX_SURFACE_COUNT];
 
     QString vendor;
     dxva::InteropResourcePtr interop_res; //may be still used in video frames when decoder is destroyed
@@ -174,9 +172,6 @@ public:
 VideoDecoderDXVA::VideoDecoderDXVA()
     : VideoDecoderD3D(*new VideoDecoderDXVAPrivate())
 {
-    // dynamic properties about static property details. used by UI
-    // format: detail_property
-    setProperty("detail_surfaces", tr("Decoding surfaces") + QStringLiteral(" ") + tr("0: auto"));
 }
 
 VideoDecoderId VideoDecoderDXVA::id() const
@@ -235,7 +230,7 @@ VideoFrame VideoDecoderDXVA::frame()
     //picth >= desc.Width
     D3DSURFACE_DESC desc;
     d3d->GetDesc(&desc);
-    const VideoFormat fmt = VideoFormat(pixelFormatFromD3D(desc.Format));
+    const VideoFormat fmt = VideoFormat(pixelFormatFromFourcc(desc.Format));
     if (!fmt.isValid()) {
         qWarning("unsupported dxva pixel format: %#x", desc.Format);
         return VideoFrame();
@@ -248,46 +243,6 @@ VideoFrame VideoDecoderDXVA::frame()
     uint8_t *src[] = { (uint8_t*)lock.pBits, 0, 0}; //compute chroma later
     const bool swap_uv = desc.Format ==  MAKEFOURCC('I','M','C','3');
     return copyToFrame(fmt, d.surface_height, src, pitch, swap_uv);
-}
-
-/* FIXME it is nearly common with VAAPI */
-bool VideoDecoderDXVAPrivate::getBuffer(void **opaque, uint8_t **data)//vlc_va_t *external, AVFrame *ff)
-{
-    // check pix fmt DXVA2_VLD and h264 profile?
-    HRESULT hr = devmng->TestDevice(device);
-    if (hr == DXVA2_E_NEW_VIDEO_DEVICE) {
-        if (!DxResetVideoDecoder())
-            return false;
-    } else if (FAILED(hr)) {
-        qWarning() << "IDirect3DDeviceManager9.TestDevice (" << hr << "): " << qt_error_string(hr);
-        return false;
-    }
-    /* Grab an unused surface, in case none are, try the oldest
-     * XXX using the oldest is a workaround in case a problem happens with libavcodec */
-    int i, old;
-    for (i = 0, old = 0; i < surface_count; i++) {
-        va_surface_t *surface = &surfaces[i];
-        if (!surface->refcount)
-            break;
-        if (surface->order < surfaces[old].order)
-            old = i;
-    }
-    if (i >= surface_count)
-        i = old;
-    va_surface_t *surface = &surfaces[i];
-    surface->refcount = 1;
-    surface->order = surface_order++;
-    *data = (uint8_t*)surface->d3d;/* Yummie */
-    *opaque = surface;
-    return true;
-}
-
-//(void *opaque, uint8_t *data)
-void VideoDecoderDXVAPrivate::releaseBuffer(void *opaque, uint8_t *data)
-{
-    Q_UNUSED(data);
-    va_surface_t *surface = (va_surface_t*)opaque;
-    surface->refcount--;
 }
 
 bool VideoDecoderDXVAPrivate::loadDll() {
@@ -313,29 +268,6 @@ bool VideoDecoderDXVAPrivate::unloadDll() {
     return true;
 }
 
-static const char* getVendorName(D3DADAPTER_IDENTIFIER9 *id) //vlc_va_dxva2_t *va
-{
-    static const struct {
-        unsigned id;
-        char     name[32];
-    } vendors [] = {
-        { 0x1002, "ATI" },
-        { 0x10DE, "NVIDIA" },
-        { 0x1106, "VIA" },
-        { 0x8086, "Intel" },
-        { 0x5333, "S3 Graphics" },
-        { 0, "" }
-    };
-    const char *vendor = "Unknown";
-    for (int i = 0; vendors[i].id != 0; i++) {
-        if (vendors[i].id == id->VendorId) {
-            vendor = vendors[i].name;
-            break;
-        }
-    }
-    return vendor;
-}
-
 bool VideoDecoderDXVAPrivate::D3dCreateDevice()
 {
     D3DADAPTER_IDENTIFIER9 d3dai;
@@ -347,7 +279,7 @@ bool VideoDecoderDXVAPrivate::D3dCreateDevice()
     }
     if (!d3ddev)
         return false;
-    vendor = QString::fromLatin1(getVendorName(&d3dai));
+    vendor = QString::fromLatin1(DXHelper::vendorName(d3dai.VendorId));
     description = QString().sprintf("DXVA2 (%.*s, vendor %lu(%s), device %lu, revision %lu)",
                                     sizeof(d3dai.Description), d3dai.Description,
                                     d3dai.VendorId, qPrintable(vendor), d3dai.DeviceId, d3dai.Revision);
@@ -421,7 +353,7 @@ bool VideoDecoderDXVAPrivate::DxFindVideoServiceConversion(GUID *input, D3DFORMA
     return true;
 }
 
-D3DFormat VideoDecoderDXVAPrivate::formatFor(const GUID *guid) const
+int VideoDecoderDXVAPrivate::fourccFor(const GUID *guid) const
 {
     UINT output_count = 0;
     D3DFORMAT *output_list = NULL;
@@ -435,14 +367,30 @@ D3DFormat VideoDecoderDXVAPrivate::formatFor(const GUID *guid) const
     return fmt;
 }
 
-bool VideoDecoderDXVAPrivate::ensureResources(AVCodecID codec_id, int w, int h, int nb_surfaces)
+bool VideoDecoderDXVAPrivate::checkDevice()
+{
+    // check pix fmt DXVA2_VLD and h264 profile?
+    HRESULT hr = devmng->TestDevice(device);
+    if (hr == DXVA2_E_NEW_VIDEO_DEVICE) {
+        if (!DxResetVideoDecoder())
+            return false;
+    } else if (FAILED(hr)) {
+        qWarning() << "IDirect3DDeviceManager9.TestDevice (" << hr << "): " << qt_error_string(hr);
+        return false;
+    }
+    return true;
+}
+
+bool VideoDecoderDXVAPrivate::ensureResources(AVCodecID codec_id, int w, int h, QVector<va_surface_t*>& surf)
 {
     if (!vs || !d3ddev) {
         qWarning("d3d is not ready. IDirectXVideoService: %p, IDirect3DDevice9: %p", vs, d3ddev);
         return false;
     }
+    const int nb_surfaces = surf.size();
     qDebug("ensureResources id %d %dx%d, surfaces: %u", codec_id, w, h, nb_surfaces);
-    IDirect3DSurface9* surface_list[VA_DXVA2_MAX_SURFACE_COUNT];
+    static const int kMaxSurfaceCount = 64;
+    IDirect3DSurface9* surface_list[kMaxSurfaceCount];
     qDebug("%s @%d vs=%p nb_surfaces=%d surface_width=%d surface_height=%d"
            , __FUNCTION__, __LINE__, vs, nb_surfaces, aligned(w), aligned(h));
     DX_ENSURE_OK(vs->CreateSurface(aligned(w),
@@ -455,12 +403,11 @@ bool VideoDecoderDXVAPrivate::ensureResources(AVCodecID codec_id, int w, int h, 
                                  surface_list,
                                  NULL)
             , false);
-    memset(surfaces, 0, sizeof(surfaces));
+
     for (int i = 0; i < nb_surfaces; i++) {
-        va_surface_t *surface = &this->surfaces[i];
-        surface->d3d = surface_list[i];
-        surface->refcount = 0;
-        surface->order = 0;
+        d3d9_surface_t* s = new d3d9_surface_t();
+        s->setSurface(surface_list[i]);
+        surf[i] = s;
     }
     qDebug("IDirectXVideoAccelerationService_CreateSurface succeed with %d surfaces (%dx%d)", nb_surfaces, w, h);
 
@@ -531,9 +478,6 @@ void VideoDecoderDXVAPrivate::releaseResources()
 {
     codec_ctx->hwaccel_context = NULL;
     SafeRelease(&decoder);
-    for (int i = 0; i < surface_count; i++) {
-        SafeRelease(&surfaces[i].d3d);
-    }
 }
 
 bool VideoDecoderDXVAPrivate::DxResetVideoDecoder()
@@ -556,14 +500,10 @@ void VideoDecoderDXVAPrivate::setupAVVAContext(AVCodecContext* avctx)
     } else {
         hw_ctx.workaround = 0;
     }
-
     hw_ctx.decoder = decoder;
     hw_ctx.cfg = &cfg;
-    hw_ctx.surface_count = surface_count;
-    hw_ctx.surface = hw_surfaces;
-    memset(hw_surfaces, 0, sizeof(hw_surfaces));
-    for (int i = 0; i < surface_count; i++)
-        hw_ctx.surface[i] = surfaces[i].d3d;
+    hw_ctx.surface_count = hw_surfaces.size();
+    hw_ctx.surface = (LPDIRECT3DSURFACE9*)hw_surfaces.constData();
 }
 
 bool VideoDecoderDXVAPrivate::open()

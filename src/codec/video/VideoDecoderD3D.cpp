@@ -266,7 +266,7 @@ static const d3d_format_t d3d_formats[] = {
     { "NV12",   MAKEFOURCC('N','V','1','2'),    VideoFormat::Format_NV12 },
     { "IMC3",   MAKEFOURCC('I','M','C','3'),    VideoFormat::Format_YUV420P },
     { "P010",   MAKEFOURCC('P','0','1','0'),    VideoFormat::Format_YUV420P10LE },
-    { "P016",   MAKEFOURCC('P','0','1','6'),    VideoFormat::Format_YUV420P16LE },
+    { "P016",   MAKEFOURCC('P','0','1','6'),    VideoFormat::Format_YUV420P16LE }, //FIXME:
     { NULL, 0, VideoFormat::Format_Invalid }
 };
 
@@ -279,7 +279,7 @@ static const d3d_format_t *D3dFindFormat(D3DFormat format)
     return NULL;
 }
 
-VideoFormat::PixelFormat pixelFormatFromD3D(int format)
+VideoFormat::PixelFormat pixelFormatFromFourcc(int format)
 {
     const d3d_format_t *fmt = D3dFindFormat(format);
     if (fmt)
@@ -309,8 +309,11 @@ D3DFormat select_d3d_format(D3DFormat *formats, UINT nb_formats)
 
 VideoDecoderD3D::VideoDecoderD3D(VideoDecoderD3DPrivate &d)
     : VideoDecoderFFmpegHW(d)
-{}
-
+{
+    // dynamic properties about static property details. used by UI
+    // format: detail_property
+    setProperty("detail_surfaces", tr("Decoding surfaces") + QStringLiteral(" ") + tr("0: auto"));
+}
 
 void VideoDecoderD3D::setSurfaces(int num)
 {
@@ -331,7 +334,16 @@ VideoDecoderD3DPrivate::VideoDecoderD3DPrivate()
     : VideoDecoderFFmpegHWPrivate()
     , surface_auto(true)
     , surface_count(0)
+    , surface_order(0)
 {
+}
+
+VideoDecoderD3DPrivate::~VideoDecoderD3DPrivate()
+{
+    // call in close() too
+    qDeleteAll(surfaces);
+    surfaces.clear();
+    releaseUSWC();
 }
 
 bool VideoDecoderD3DPrivate::setup(AVCodecContext *avctx)
@@ -369,14 +381,54 @@ bool VideoDecoderD3DPrivate::setup(AVCodecContext *avctx)
         qWarning("internal error: wrong surface count.  %u auto=%d", surface_count, surface_auto);
         surface_count = 16 + 4;
     }
-
-    if (!ensureResources(codec_ctx->codec_id, w, h, surface_count))
+    qDeleteAll(surfaces);
+    surfaces.clear();
+    hw_surfaces.clear();
+    surfaces.resize(surface_count);
+    if (!ensureResources(codec_ctx->codec_id, w, h, surfaces))
         return false;
+    hw_surfaces.resize(surface_count);
+    for (int i = 0; i < surfaces.size(); ++i) {
+        hw_surfaces[i] = surfaces[i]->getSurface();
+    }
+    surface_order = 0;
     surface_width = aligned(w);
     surface_height = aligned(h);
     setupAVVAContext(avctx); //can not use codec_ctx for threaded mode!
     initUSWC(surface_width);
     return true;
+}
+
+/* FIXME it is nearly common with VAAPI */
+bool VideoDecoderD3DPrivate::getBuffer(void **opaque, uint8_t **data)//vlc_va_t *external, AVFrame *ff)
+{
+    if (!checkDevice())
+        return false;
+    /* Grab an unused surface, in case none are, try the oldest
+     * XXX using the oldest is a workaround in case a problem happens with libavcodec */
+    int i, old;
+    for (i = 0, old = 0; i < surfaces.size(); i++) {
+        const va_surface_t *s = surfaces[i];
+        if (!s->ref)
+            break;
+        if (s->order < surfaces[old]->order)
+            old = i;
+    }
+    if (i >= surfaces.size())
+        i = old;
+    va_surface_t *s = surfaces[i];
+    s->ref = 1;
+    s->order = surface_order++;
+    *data = (uint8_t*)s->getSurface();/* Yummie */
+    *opaque = s;
+    return true;
+}
+
+void VideoDecoderD3DPrivate::releaseBuffer(void *opaque, uint8_t *data)
+{
+    Q_UNUSED(data);
+    va_surface_t *surface = (va_surface_t*)opaque;
+    surface->ref--;
 }
 
 int VideoDecoderD3DPrivate::aligned(int x)
@@ -423,7 +475,7 @@ const d3d_format_t* VideoDecoderD3DPrivate::getFormat(const GUID *supported_guid
         }
         if (!is_supported)
             continue;
-        D3DFormat dxfmt = formatFor(mode->guid);
+        int dxfmt = fourccFor(mode->guid);
         if (!dxfmt)
             continue;
         if (selected)

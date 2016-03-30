@@ -34,8 +34,8 @@ bool isHEVCSupported();
 struct dxva2_mode_t;
 typedef int D3DFormat;
 struct d3d_format_t {
-    const char    *name;
-    D3DFormat     format;
+    const char *name;
+    int format; //fourcc
     VideoFormat::PixelFormat pixfmt;
 };
 bool checkProfile(const dxva2_mode_t* mode, int profile);
@@ -43,7 +43,7 @@ const dxva2_mode_t *Dxva2FindMode(const GUID *guid);
 bool isIntelClearVideo(const GUID *guid);
 bool isNoEncrypt(const GUID* guid);
 D3DFormat select_d3d_format(D3DFormat *formats, UINT nb_formats);
-VideoFormat::PixelFormat pixelFormatFromD3D(int format);
+VideoFormat::PixelFormat pixelFormatFromFourcc(int format);
 
 class VideoDecoderD3DPrivate;
 class VideoDecoderD3D : public VideoDecoderFFmpegHW
@@ -61,21 +61,35 @@ protected:
     VideoDecoderD3D(VideoDecoderD3DPrivate& d);
 };
 
+
+struct va_surface_t {
+    va_surface_t() : ref(0), order(0) {}
+    virtual ~va_surface_t() {}
+    virtual void setSurface(IUnknown* s) = 0;
+    virtual IUnknown* getSurface() const = 0;
+
+    int ref;
+    int order;
+};
+
 class VideoDecoderD3DPrivate : public VideoDecoderFFmpegHWPrivate
 {
 public:
     VideoDecoderD3DPrivate();
+    ~VideoDecoderD3DPrivate();
 
     bool setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
+    bool getBuffer(void **opaque, uint8_t **data) Q_DECL_OVERRIDE;
+    void releaseBuffer(void *opaque, uint8_t *data) Q_DECL_OVERRIDE;
 
     int aligned(int x);
+    virtual bool checkDevice() {return true;}
     virtual void setupAVVAContext(AVCodecContext* avctx) = 0;
     /// width and height are coded value, maybe not aligned for d3d surface
-    virtual bool ensureResources(AVCodecID codec, int width, int height, int nb_surfaces) = 0;
+    virtual bool ensureResources(AVCodecID codec, int width, int height, QVector<va_surface_t*>& surf) = 0;
     virtual void releaseResources() = 0;
-    virtual D3DFormat formatFor(const GUID *guid) const = 0;
+    virtual int fourccFor(const GUID *guid) const = 0;
     const d3d_format_t *getFormat(const GUID *supported_guids, UINT nb_guids, GUID *selected) const;
-
 
     // set by user. don't reset in when call destroy
     bool surface_auto;
@@ -83,6 +97,12 @@ public:
 
     int surface_width;
     int surface_height;
+
+    QVector<IUnknown*> hw_surfaces;
+private:
+
+    unsigned surface_order;
+    QVector<va_surface_t*> surfaces; //TODO: delete on close()
 };
 
 } //namespace QtAV

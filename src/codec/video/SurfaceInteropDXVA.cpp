@@ -25,7 +25,7 @@
 #include "utils/DirectXHelper.h"
 
 namespace QtAV {
-extern VideoFormat::PixelFormat pixelFormatFromD3D(int format);
+extern VideoFormat::PixelFormat pixelFormatFromFourcc(int format);
 
 namespace dxva {
 
@@ -113,7 +113,7 @@ void* SurfaceInteropDXVA::mapToHost(const VideoFormat &format, void *handle, int
     //picth >= desc.Width
     D3DSURFACE_DESC desc;
     m_surface->GetDesc(&desc);
-    const VideoFormat fmt = VideoFormat(pixelFormatFromD3D(desc.Format));
+    const VideoFormat fmt = VideoFormat(pixelFormatFromFourcc(desc.Format));
     if (!fmt.isValid()) {
         qWarning("unsupported dxva pixel format: %#x", desc.Format);
         return NULL;

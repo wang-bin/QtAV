@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,30 @@
 namespace QtAV {
 namespace DXHelper {
 
+const char* vendorName(unsigned id)
+{
+    static const struct {
+        unsigned id;
+        char     name[32];
+    } vendors [] = {
+        { 0x1002, "ATI" },
+        { 0x10DE, "NVIDIA" },
+        { 0x1106, "VIA" },
+        { 0x8086, "Intel" },
+        { 0x5333, "S3 Graphics" },
+        { 0x4D4F4351, "Qualcomm" },
+        { 0, "" }
+    };
+    const char *vendor = "Unknown";
+    for (int i = 0; vendors[i].id != 0; i++) {
+        if (vendors[i].id == id) {
+            vendor = vendors[i].name;
+            break;
+        }
+    }
+    return vendor;
+}
+
 #ifndef Q_OS_WINRT
 static void InitParameters(D3DPRESENT_PARAMETERS* d3dpp)
 {
@@ -45,7 +69,7 @@ static void InitParameters(D3DPRESENT_PARAMETERS* d3dpp)
 
 IDirect3DDevice9* CreateDevice9Ex(HINSTANCE dll, IDirect3D9Ex** d3d9ex, D3DADAPTER_IDENTIFIER9 *d3dai)
 {
-    qDebug("creating d3d9 device ex...");
+    qDebug("creating d3d9 device ex... dll: %p", dll);
     //http://msdn.microsoft.com/en-us/library/windows/desktop/bb219676(v=vs.85).aspx
     typedef HRESULT (WINAPI *Create9ExFunc)(UINT SDKVersion, IDirect3D9Ex **ppD3D); //IDirect3D9Ex: void is ok
     Create9ExFunc Create9Ex = (Create9ExFunc)GetProcAddress(dll, "Direct3DCreate9Ex");
