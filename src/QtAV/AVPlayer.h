@@ -441,6 +441,13 @@ public slots:
      *  pos < 0: duration() + pos
      */
     void setStopPosition(qint64 pos);
+    /*!
+     * \brief setTimeRange
+     * Set startPosition and stopPosition. Make sure start <= stop.
+     * Calling setStartPosition() with a value lager than current stopPosition() will fail. setTimeRange() can avoid this.
+     */
+    void setTimeRange(qint64 start, qint64 stop);
+
     bool isSeekable() const;
     /*!
      * \brief setPosition equals to seek(qreal)

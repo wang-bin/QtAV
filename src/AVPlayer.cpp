@@ -881,6 +881,16 @@ void AVPlayer::setStopPosition(qint64 pos)
     Q_EMIT stopPositionChanged(d->stop_position);
 }
 
+void AVPlayer::setTimeRange(qint64 start, qint64 stop)
+{
+    if (start > stop) {
+        qWarning("Invalid time range");
+        return;
+    }
+    setStopPosition(stop);
+    setStartPosition(start);
+}
+
 bool AVPlayer::isSeekable() const
 {
     return d->demuxer.isSeekable();
