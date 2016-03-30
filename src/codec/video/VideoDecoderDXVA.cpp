@@ -113,7 +113,6 @@ public:
         vs = 0;
         render = D3DFMT_UNKNOWN;
         decoder = 0;
-        surface_width = surface_height = 0;
         available = loadDll();
     }
     virtual ~VideoDecoderDXVAPrivate()
@@ -163,7 +162,6 @@ public:
     IDirectXVideoDecoder         *decoder;
 
     struct dxva_context hw_ctx;
-    //AVPixelFormat surface_chroma;
 
     QString vendor;
     dxva::InteropResourcePtr interop_res; //may be still used in video frames when decoder is destroyed
@@ -242,7 +240,7 @@ VideoFrame VideoDecoderDXVA::frame()
     int pitch[3] = { lock.Pitch, 0, 0}; //compute chroma later
     uint8_t *src[] = { (uint8_t*)lock.pBits, 0, 0}; //compute chroma later
     const bool swap_uv = desc.Format ==  MAKEFOURCC('I','M','C','3');
-    return copyToFrame(fmt, d.surface_height, src, pitch, swap_uv);
+    return copyToFrame(fmt, desc.Height, src, pitch, swap_uv);
 }
 
 bool VideoDecoderDXVAPrivate::loadDll() {
@@ -391,7 +389,7 @@ bool VideoDecoderDXVAPrivate::ensureResources(AVCodecID codec_id, int w, int h, 
     qDebug("ensureResources id %d %dx%d, surfaces: %u", codec_id, w, h, nb_surfaces);
     static const int kMaxSurfaceCount = 64;
     IDirect3DSurface9* surface_list[kMaxSurfaceCount];
-    qDebug("%s @%d vs=%p nb_surfaces=%d surface_width=%d surface_height=%d"
+    qDebug("%s @%d vs=%p nb_surfaces=%d surface %dx%d"
            , __FUNCTION__, __LINE__, vs, nb_surfaces, aligned(w), aligned(h));
     DX_ENSURE_OK(vs->CreateSurface(aligned(w),
                                  aligned(h),
@@ -442,35 +440,13 @@ bool VideoDecoderDXVAPrivate::ensureResources(AVCodecID codec_id, int w, int h, 
                                             &cfg_count,
                                             &cfg_list)
                  , false);
-    qDebug("we got %d decoder configurations", cfg_count);
-    /* Select the best decoder configuration */
-    int cfg_score = 0;
-    for (unsigned i = 0; i < cfg_count; i++) {
-        const DXVA2_ConfigPictureDecode *cfg = &cfg_list[i];
-        qDebug("configuration[%d] ConfigBitstreamRaw %d", i, cfg->ConfigBitstreamRaw);
-        int score;
-        if (cfg->ConfigBitstreamRaw == 1)
-            score = 1;
-        else if (codec_id ==  QTAV_CODEC_ID(H264) && cfg->ConfigBitstreamRaw == 2)
-            score = 2;
-        else
-            continue;
-        if (isNoEncrypt(&cfg->guidConfigBitstreamEncryption))
-            score += 16;
-
-        if (cfg_score < score) {
-            this->cfg = *cfg;
-            cfg_score = score;
-        }
-    }
+    const int score = SelectConfig(codec_id, cfg_list, cfg_count, &cfg);
     CoTaskMemFree(cfg_list);
-    if (cfg_score <= 0) {
-        qWarning("Failed to find a supported decoder configuration");
+    if (score <= 0)
         return false;
-    }
     /* Create the decoder */
     DX_ENSURE_OK(vs->CreateVideoDecoder(input, &dsc, &cfg, surface_list, nb_surfaces, &decoder), false);
-    qDebug("IDirectXVideoDecoderService_CreateVideoDecoder succeed. decoder=%p", decoder);
+    qDebug("IDirectXVideoDecoderService.CreateVideoDecoder succeed. decoder=%p", decoder);
     return true;
 }
 

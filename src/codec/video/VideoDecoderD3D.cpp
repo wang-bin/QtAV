@@ -334,6 +334,8 @@ VideoDecoderD3DPrivate::VideoDecoderD3DPrivate()
     : VideoDecoderFFmpegHWPrivate()
     , surface_auto(true)
     , surface_count(0)
+    , surface_width(0)
+    , surface_height(0)
     , surface_order(0)
 {
 }
@@ -348,7 +350,6 @@ VideoDecoderD3DPrivate::~VideoDecoderD3DPrivate()
 
 bool VideoDecoderD3DPrivate::setup(AVCodecContext *avctx)
 {
-
     const int w = codedWidth(avctx);
     const int h = codedHeight(avctx);
     if (avctx->hwaccel_context && surface_width == aligned(w) && surface_height == aligned(h))

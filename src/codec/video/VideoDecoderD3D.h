@@ -94,16 +94,40 @@ public:
     // set by user. don't reset in when call destroy
     bool surface_auto;
     int surface_count;
-
-    int surface_width;
-    int surface_height;
-
     QVector<IUnknown*> hw_surfaces;
 private:
-
+    int surface_width;
+    int surface_height;
     unsigned surface_order;
     QVector<va_surface_t*> surfaces; //TODO: delete on close()
 };
 
+template<typename T> int SelectConfig(AVCodecID codec_id, const T* cfgs, int nb_cfgs, T* cfg)
+{
+    qDebug("Decoder configurations: %d", nb_cfgs);
+    /* Select the best decoder configuration */
+    int cfg_score = 0;
+    for (int i = 0; i < nb_cfgs; i++) {
+        const T &c = cfgs[i];
+        qDebug("configuration[%d] ConfigBitstreamRaw %d", i, c.ConfigBitstreamRaw);
+        /* */
+        int score = 0;
+        if (c.ConfigBitstreamRaw == 1)
+            score = 1;
+        else if (codec_id == QTAV_CODEC_ID(H264) && c.ConfigBitstreamRaw == 2)
+            score = 2;
+        else
+            continue;
+        if (isNoEncrypt(&c.guidConfigBitstreamEncryption))
+            score += 16;
+        if (cfg_score < score) {
+            *cfg = c;
+            cfg_score = score;
+        }
+    }
+    if (cfg_score <= 0)
+        qWarning("Failed to find a supported decoder configuration");
+    return cfg_score;
+}
 } //namespace QtAV
 #endif //QTAV_VIDEODECODERD3D_H
