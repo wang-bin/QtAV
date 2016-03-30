@@ -749,6 +749,8 @@ void AVPlayer::loadInternal()
 
 void AVPlayer::unload()
 {
+    if (!isLoaded())
+        return;
     QMutexLocker lock(&d->load_mutex);
     Q_UNUSED(lock);
     d->loaded = false;
@@ -1328,6 +1330,11 @@ void AVPlayer::stopFromDemuxerThread()
         //Q_EMIT stateChanged(d->state);
         //Q_EMIT stopped();
         //Q_EMIT stoppedAt(stop_pts*1000.0);
+
+        /*
+         * currently preload is not supported. so always unload. Then some properties will be reset, e.g. duration()
+         */
+        unload(); //TODO: invoke?
     } else {
         qDebug("stopPosition() == mediaStopPosition() or !seekable. repeate: %d/%d", currentRepeat(), repeat());
         d->repeat_current++;
@@ -1460,7 +1467,6 @@ void AVPlayer::stop()
         qDebug("Not playing~");
         if (mediaStatus() == LoadingMedia || mediaStatus() == LoadedMedia) {
             qDebug("loading media: %d", mediaStatus() == LoadingMedia);
-            //unload();
             d->demuxer.setInterruptStatus(-1);
         }
         return;
