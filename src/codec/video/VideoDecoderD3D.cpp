@@ -346,10 +346,8 @@ bool VideoDecoderD3DPrivate::open()
         return false;
     if (codec_ctx->codec_id == QTAV_CODEC_ID(HEVC)) {
         // runtime hevc check
-        if (isHEVCSupported()) {
-            qWarning("HEVC DXVA2 is supported by current FFmpeg runtime.");
-        } else {
-            qWarning("HEVC DXVA2 is not supported by current FFmpeg runtime.");
+        if (!isHEVCSupported()) {
+            qWarning("HEVC DXVA2/D3D11VA is not supported by current FFmpeg runtime.");
             return false;
         }
     }
@@ -451,7 +449,7 @@ bool VideoDecoderD3DPrivate::getBuffer(void **opaque, uint8_t **data)//vlc_va_t 
     va_surface_t *s = surfaces[i];
     s->ref = 1;
     s->order = surface_order++;
-    *data = (uint8_t*)s->getSurface();/* Yummie */
+    *data = (uint8_t*)s->getSurface();
     *opaque = s;
     return true;
 }

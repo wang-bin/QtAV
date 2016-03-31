@@ -73,12 +73,13 @@ public:
 
     bool open() Q_DECL_OVERRIDE;
     void close() Q_DECL_OVERRIDE;
-    virtual bool setupSurfaceInterop() {return true;}
     bool setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
     bool getBuffer(void **opaque, uint8_t **data) Q_DECL_OVERRIDE;
     void releaseBuffer(void *opaque, uint8_t *data) Q_DECL_OVERRIDE;
 
     int aligned(int x);
+private:
+    virtual bool setupSurfaceInterop() {return true;}
     virtual bool createDevice() = 0; //d3d device, video context etc.
     virtual void destroyDevice() = 0;
     virtual bool checkDevice() {return true;}
@@ -91,7 +92,7 @@ public:
     virtual void destroyDecoder() = 0;
     virtual int fourccFor(const GUID *guid) const = 0;
     const d3d_format_t *getFormat(const AVCodecContext* avctx, const QVector<GUID>& guids, GUID *selected) const;
-
+public:
     // set by user. don't reset in when call destroy
     bool surface_auto;
     int surface_count;

@@ -118,7 +118,8 @@ public:
     {
         unloadDll();
     }
-
+    AVPixelFormat vaPixelFormat() const Q_DECL_OVERRIDE { return QTAV_PIX_FMT_C(DXVA2_VLD);}
+private:
     bool loadDll();
     bool unloadDll();
     bool createDevice() Q_DECL_OVERRIDE;
@@ -129,32 +130,26 @@ public:
     void destroyDecoder() Q_DECL_OVERRIDE;
     bool setupSurfaceInterop() Q_DECL_OVERRIDE;
     void setupAVVAContext(AVCodecContext *avctx) Q_DECL_OVERRIDE;
-
     int fourccFor(const GUID *guid) const Q_DECL_OVERRIDE;
 
-    AVPixelFormat vaPixelFormat() const Q_DECL_OVERRIDE { return QTAV_PIX_FMT_C(DXVA2_VLD);}
     /* DLL */
     HINSTANCE hd3d9_dll;
     HINSTANCE hdxva2_dll;
-
-    /* Direct3D */
     IDirect3D9 *d3dobj;
     IDirect3DDevice9 *d3ddev; // can be Ex
     /* Device manager */
-    UINT                     token;
-    IDirect3DDeviceManager9  *devmng;
-    HANDLE                   device;
-
+    UINT token;
+    IDirect3DDeviceManager9 *devmng;
+    HANDLE device;
     /* Video service */
-    IDirectXVideoDecoderService  *vs;
-
+    IDirectXVideoDecoderService *vs;
     /* Video decoder */
-    DXVA2_ConfigPictureDecode    cfg;
-    IDirectXVideoDecoder         *decoder;
+    DXVA2_ConfigPictureDecode cfg;
+    IDirectXVideoDecoder *decoder;
 
     struct dxva_context hw_ctx;
-
     QString vendor;
+public:
     dxva::InteropResourcePtr interop_res; //may be still used in video frames when decoder is destroyed
 };
 

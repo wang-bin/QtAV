@@ -31,8 +31,6 @@ extern "C" {
 #include <d3d11.h>
 #include <wrl/client.h>
 using namespace Microsoft::WRL; //ComPtr
-#define VA_MAX_SURFACE_COUNT (64)
-
 #include <initguid.h> /* must be last included to not redefine existing GUIDs */
 
 #include "utils/Logger.h"
@@ -63,8 +61,8 @@ class VideoDecoderD3D11 : public VideoDecoderD3D
 public:
     VideoDecoderD3D11();
     VideoDecoderId id() const Q_DECL_OVERRIDE;
-    QString description() const Q_DECL_OVERRIDE {return QString();}
-    VideoFrame frame() Q_DECL_OVERRIDE {return VideoFrame();}
+    QString description() const Q_DECL_OVERRIDE;
+    VideoFrame frame() Q_DECL_OVERRIDE;
 };
 
 VideoDecoderId VideoDecoderId_D3D11 = mkid::id32base36_5<'D','3','D','1','1'>::value;
@@ -75,55 +73,109 @@ VideoDecoderId VideoDecoderD3D11::id() const
     return VideoDecoderId_D3D11;
 }
 
+QString VideoDecoderD3D11::description() const
+{
+    return QStringLiteral("D3D11 Video Acceleration");
+}
+
 struct d3d11_surface_t : public va_surface_t {
-    d3d11_surface_t(): va_surface_t(), view(0), texture(0) {}
-    ~d3d11_surface_t() {
-        SafeRelease(&texture);
-    }
+    d3d11_surface_t(): va_surface_t(), view(0) {}
     void setSurface(IUnknown* s) {
-        SafeRelease(&texture);
         view = (ID3D11VideoDecoderOutputView*)s;
-        view->GetResource((ID3D11Resource**)&texture);
     }
     IUnknown* getSurface() const { return view;}
+
 private:
     ID3D11VideoDecoderOutputView *view;
-    ID3D11Texture2D *texture;
 };
-/* */
 
 class VideoDecoderD3D11Private Q_DECL_FINAL : public VideoDecoderD3DPrivate
 {
 public:
-    VideoDecoderD3D11Private() {
-        dll = LoadLibrary(TEXT("d3d11.dll")); //TODO: link for winrt
+    VideoDecoderD3D11Private()
+        : dll(0)
+    , d3ddev(NULL)
+    , d3dviddev(NULL)
+    , d3ddec(NULL)
+    , d3dvidctx(NULL)
+    , texture_cpu(NULL) {
+        //GetModuleHandle()
+        dll = LoadLibrary(TEXT("d3d11.dll")); //TODO: link for winrt, use GetModuleHandle
         available = !!dll;
     }
+    ~VideoDecoderD3D11Private() {
+        if (dll) {
+            FreeLibrary(dll);
+        }
+    }
 
+    AVPixelFormat vaPixelFormat() const Q_DECL_OVERRIDE { return QTAV_PIX_FMT_C(D3D11VA_VLD);}
+private:
     bool createDevice() Q_DECL_OVERRIDE;
     void destroyDevice() Q_DECL_OVERRIDE; //d3d device and it's resources
-
     bool createDecoder(AVCodecID codec_id, int w, int h, QVector<va_surface_t*>& surf) Q_DECL_OVERRIDE;
     void destroyDecoder() Q_DECL_OVERRIDE;
     bool setupSurfaceInterop() Q_DECL_OVERRIDE;
     void setupAVVAContext(AVCodecContext *avctx) Q_DECL_OVERRIDE;
     QVector<GUID> getSupportedCodecs() const Q_DECL_OVERRIDE;
     int fourccFor(const GUID *guid) const Q_DECL_OVERRIDE;
-    //void close() Q_DECL_OVERRIDE;
-    AVPixelFormat vaPixelFormat() const Q_DECL_OVERRIDE { return QTAV_PIX_FMT_C(D3D11VA_VLD);}
 
     HMODULE dll;
-    ID3D11VideoDecoder *d3ddec;
     ID3D11Device *d3ddev;
     ID3D11VideoDevice *d3dviddev;
+    ID3D11VideoDecoder *d3ddec;
     /* Video service */
     ID3D11VideoContext *d3dvidctx;
-    ID3D11DeviceContext *d3dctx;
     /* Video decoder */
     D3D11_VIDEO_DECODER_CONFIG cfg;
     /* avcodec internals */
     struct AVD3D11VAContext hw;
+public:
+    ID3D11DeviceContext *d3dctx;
+    ID3D11Texture2D *texture_cpu; // used by copy mode. d3d11 texture can not be accessed by gpu and cpu both
 };
+
+VideoFrame VideoDecoderD3D11::frame()
+{
+    DPTR_D(VideoDecoderD3D11);
+    //qDebug("frame size: %dx%d", d.frame->width, d.frame->height);
+    if (!d.frame->opaque || !d.frame->data[0])
+        return VideoFrame();
+    if (d.frame->width <= 0 || d.frame->height <= 0 || !d.codec_ctx)
+        return VideoFrame();
+
+    ID3D11VideoDecoderOutputView *surface = (ID3D11VideoDecoderOutputView*)(uintptr_t)d.frame->data[3];
+    ID3D11Texture2D *texture;// = ((d3d11_surface_t*)(uintptr_t)d.frame->opaque)->texture;
+    surface->GetResource((ID3D11Resource**)&texture);
+    if (!surface || !texture) {
+        qWarning("Get D3D11 surface and texture error");
+        return VideoFrame();
+    }
+    D3D11_TEXTURE2D_DESC tex_desc;
+    texture->GetDesc(&tex_desc);
+
+    D3D11_VIDEO_DECODER_OUTPUT_VIEW_DESC view_desc;
+    surface->GetDesc(&view_desc);
+    d.d3dctx->CopySubresourceRegion(d.texture_cpu, 0, 0, 0, 0,
+                                    texture, view_desc.Texture2D.ArraySlice, NULL);
+    struct ScopedMap {
+        ScopedMap(ID3D11DeviceContext *ctx, ID3D11Resource* res, D3D11_MAPPED_SUBRESOURCE *mapped): c(ctx), r(res) {
+            c->Map(r, 0, D3D11_MAP_READ, 0, mapped); //TODO: check error
+        }
+        ~ScopedMap() { c->Unmap(r, 0);}
+        ID3D11DeviceContext *c;
+        ID3D11Resource *r;
+    };
+
+    D3D11_MAPPED_SUBRESOURCE mapped;
+    ScopedMap sm(d.d3dctx, d.texture_cpu, &mapped);
+    Q_UNUSED(sm);
+    int pitch[3] = { (int)mapped.RowPitch, 0, 0}; //compute chroma later
+    uint8_t *src[] = { (uint8_t*)mapped.pData, 0, 0}; //compute chroma later
+    const VideoFormat format = pixelFormatFromFourcc(d.format_fcc); //tex_desc
+    VideoFrame f(d.width, d.height, format);
+    return copyToFrame(format, tex_desc.Height, src, pitch, false);
+}
 
 VideoDecoderD3D11::VideoDecoderD3D11()
     : VideoDecoderD3D(*new VideoDecoderD3D11Private())
@@ -205,6 +257,17 @@ bool VideoDecoderD3D11Private::createDecoder(AVCodecID codec_id, int w, int h, Q
 
     ComPtr<ID3D11Texture2D> tex;
     DX_ENSURE(d3ddev->CreateTexture2D(&texDesc, NULL, tex.GetAddressOf()), false);
+
+    if (true) { //copy
+        tex->GetDesc(&texDesc);
+        texDesc.MipLevels = 1;
+        texDesc.MiscFlags = 0;
+        texDesc.ArraySize = 1;
+        texDesc.Usage = D3D11_USAGE_STAGING;
+        texDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+        texDesc.BindFlags = 0; //?
+        DX_ENSURE(d3ddev->CreateTexture2D(&texDesc, NULL, &texture_cpu), false);
+    }
     D3D11_VIDEO_DECODER_OUTPUT_VIEW_DESC viewDesc;
     ZeroMemory(&viewDesc, sizeof(viewDesc));
     viewDesc.DecodeProfile = codec_guid;
