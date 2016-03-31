@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2013)
@@ -120,12 +120,8 @@ static const  codec_profile_t va_profiles[] = {
     { QTAV_CODEC_ID(WMV3), FF_PROFILE_VC1_MAIN, VAProfileVC1Main },
     { QTAV_CODEC_ID(WMV3), FF_PROFILE_VC1_SIMPLE, VAProfileVC1Simple },
 #if VA_CHECK_VERSION(0, 38, 0)
-#ifdef FF_PROFILE_HEVC_MAIN
     { QTAV_CODEC_ID(HEVC), FF_PROFILE_HEVC_MAIN, VAProfileHEVCMain},
-#endif
-#ifdef FF_PROFILE_HEVC_MAIN_10
     { QTAV_CODEC_ID(HEVC), FF_PROFILE_HEVC_MAIN_10, VAProfileHEVCMain10},
-#endif
 #if FFMPEG_MODULE_CHECK(LIBAVCODEC, 54, 92, 100) || LIBAV_MODULE_CHECK(LIBAVCODEC, 55, 34, 1) //ffmpeg1.2 libav10
     { QTAV_CODEC_ID(VP9), FF_PROFILE_UNKNOWN, VAProfileVP9Profile0},
 #endif
@@ -150,7 +146,7 @@ const codec_profile_t* findProfileEntry(AVCodecID codec, int profile, const code
     if (p0 && p0->codec == QTAV_CODEC_ID(NONE)) //search from the end
         return 0;
     const codec_profile_t* pe0 = p0 ? ++p0 : va_profiles;
-    for (const codec_profile_t* p = pe0 ; p->codec != QTAV_CODEC_ID(NONE); ++p) {
+    for (const codec_profile_t* p = pe0; p < va_profiles+sizeof(va_profiles)/sizeof(va_profiles[0]); ++p) {
         if (codec != p->codec || profile != p->profile)
             continue;
         // return the first profile entry if given profile is unknow
