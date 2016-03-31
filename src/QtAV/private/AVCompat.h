@@ -420,6 +420,13 @@ int avfilter_copy_buf_props(AVFrame *dst, const AVFilterBufferRef *src);
 /* helper functions */
 const char *get_codec_long_name(AVCodecID id);
 
+// AV_CODEC_ID_H265 is a macro defined as AV_CODEC_ID_HEVC in ffmpeg but not in libav. so we can use FF_PROFILE_HEVC_MAIN to avoid libavcodec version check. (from ffmpeg 2.1)
+#ifndef FF_PROFILE_HEVC_MAIN //libav does not define it
+#define AV_CODEC_ID_HEVC QTAV_CODEC_ID(NONE) //mkid::fourcc<'H','E','V','C'>::value
+#define FF_PROFILE_HEVC_MAIN -1
+#define FF_PROFILE_HEVC_MAIN_10 -1
+#endif
+
 #define AV_RUN_CHECK(FUNC, RETURN, ...) do { \
     int ret = FUNC; \
     if (ret < 0) { \

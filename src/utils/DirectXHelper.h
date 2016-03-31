@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -53,6 +53,8 @@ template <class T> void SafeRelease(T **ppT) {
 }
 
 namespace DXHelper {
+const char* vendorName(unsigned id);
+
 #ifndef Q_OS_WINRT
 IDirect3DDevice9* CreateDevice9Ex(HINSTANCE dll, IDirect3D9Ex **d3d9ex, D3DADAPTER_IDENTIFIER9* d3dai = NULL);
 IDirect3DDevice9* CreateDevice9(HINSTANCE dll, IDirect3D9 **d3d9, D3DADAPTER_IDENTIFIER9* d3dai = NULL);
