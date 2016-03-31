@@ -83,7 +83,7 @@ public:
             return "Unknow";
         return av_get_profile_name(c, profile);
     }
-    static const char* getProfileName(AVCodecContext* ctx) {
+    static const char* getProfileName(const AVCodecContext* ctx) {
         if (ctx->codec)
             return av_get_profile_name(ctx->codec, ctx->profile);
         return getProfileName(ctx->codec_id, ctx->profile);

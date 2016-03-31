@@ -250,14 +250,24 @@ include(../depends/dllapi/src/libdllapi.pri)
     SOURCES += cuda/cuda_api.cpp
     HEADERS += cuda/cuda_api.h
 }
+config_d3d11va {
+  CONFIG *= d3dva
+  DEFINES *= QTAV_HAVE_D3D11VA=1
+  SOURCES += codec/video/VideoDecoderD3D11.cpp
+}
 config_dxva {
+  CONFIG *= d3dva
     DEFINES *= QTAV_HAVE_DXVA=1
     SOURCES += codec/video/VideoDecoderDXVA.cpp
   contains(QT_CONFIG, opengl) {
     HEADERS += codec/video/SurfaceInteropDXVA.h
     SOURCES += codec/video/SurfaceInteropDXVA.cpp
   }
-    LIBS += -lole32
+  LIBS += -lole32
+}
+d3dva {
+  HEADERS += codec/video/VideoDecoderD3D.h
+  SOURCES += codec/video/VideoDecoderD3D.cpp
 }
 config_vaapi* {
     DEFINES *= QTAV_HAVE_VAAPI=1

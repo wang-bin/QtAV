@@ -22,6 +22,7 @@
 extern "C" {
 #include <libavcodec/d3d11va.h> 
 }
+#include <wrl/client.h>
 
 
 int main()
