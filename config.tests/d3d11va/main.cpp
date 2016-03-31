@@ -18,11 +18,11 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
+#include <d3d11.h>
 extern "C" {
 #include <libavcodec/d3d11va.h> 
 }
-#include <wrl/client.h>
+#include <wrl/client.h> //ComPtr is used in QtAV
 
 
 int main()

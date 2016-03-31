@@ -18,18 +18,17 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
 #include "VideoDecoderD3D.h"
 #include "QtAV/private/factory.h"
 #include "QtAV/private/mkid.h"
 #define DX_LOG_COMPONENT "D3D11VA"
 #include "utils/DirectXHelper.h"
 #include <initguid.h> //IID_ID3D11VideoContext
+#include <d3d11.h> //include before <libavcodec/d3d11va.h> because d3d11va.h also includes d3d11.h but as a c header (for msvc)
+#include <wrl/client.h>
 extern "C" {
 #include <libavcodec/d3d11va.h>
 }
-#include <d3d11.h>
-#include <wrl/client.h>
 using namespace Microsoft::WRL; //ComPtr
 #include <initguid.h> /* must be last included to not redefine existing GUIDs */
 
