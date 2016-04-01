@@ -191,8 +191,9 @@ public:
     int compare(const VideoMaterial* other) const;
 
     bool hasAlpha() const;
+    bool isColorMatrixDirty() const;
+    void setColorMatrixDirty(bool value);
     const QMatrix4x4 &colorMatrix() const;
-    const QMatrix4x4& matrix() const;
     const QMatrix4x4& channelMap() const;
     int bitsPerComponent() const; //0 if the value of components are different
     QVector2D vectorTo8bit() const;

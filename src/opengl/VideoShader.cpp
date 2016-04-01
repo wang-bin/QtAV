@@ -376,6 +376,9 @@ bool VideoShader::update(VideoMaterial *material)
             }
         }
     }
+    if (material->isColorMatrixDirty())
+        program()->setUniformValue(colorMatrixLocation(), material->colorMatrix());
+    // opacity should be here if changed by user
     if (!d.update_builtin_uniforms)
         return true;
     d.update_builtin_uniforms = false;
@@ -392,12 +395,11 @@ bool VideoShader::update(VideoMaterial *material)
         }
     }
     program()->setUniformValue(opacityLocation(), (GLfloat)1.0);
-    program()->setUniformValue(colorMatrixLocation(), material->colorMatrix());
     if (d_func().u_to8 >= 0)
         program()->setUniformValue(d_func().u_to8, material->vectorTo8bit());
     if (channelMapLocation() >= 0)
         program()->setUniformValue(channelMapLocation(), material->channelMap());
-    //program()->setUniformValue(matrixLocation(), material->matrix()); //what about sgnode? state.combindMatrix()?
+    //program()->setUniformValue(matrixLocation(), ); //what about sgnode? state.combindMatrix()?
     if (texelSizeLocation() >= 0)
         program()->setUniformValueArray(texelSizeLocation(), material->texelSize().constData(), nb_planes);
     // uniform end. attribute begins
@@ -696,14 +698,19 @@ void VideoMaterial::unbind()
     }
 }
 
+bool VideoMaterial::isColorMatrixDirty() const
+{
+    return d_func().dirty_color_mat;
+}
+
+void VideoMaterial::setColorMatrixDirty(bool value)
+{
+    d_func().dirty_color_mat = value;
+}
+
 const QMatrix4x4& VideoMaterial::colorMatrix() const
 {
     return d_func().colorTransform.matrixRef();
-}
-
-const QMatrix4x4& VideoMaterial::matrix() const
-{
-    return d_func().matrix;
 }
 
 const QMatrix4x4 &VideoMaterial::channelMap() const
@@ -729,21 +736,25 @@ int VideoMaterial::planeCount() const
 void VideoMaterial::setBrightness(qreal value)
 {
     d_func().colorTransform.setBrightness(value);
+    d_func().dirty_color_mat = true;
 }
 
 void VideoMaterial::setContrast(qreal value)
 {
     d_func().colorTransform.setContrast(value);
+    d_func().dirty_color_mat = true;
 }
 
 void VideoMaterial::setHue(qreal value)
 {
     d_func().colorTransform.setHue(value);
+    d_func().dirty_color_mat = true;
 }
 
 void VideoMaterial::setSaturation(qreal value)
 {
     d_func().colorTransform.setSaturation(value);
+    d_func().dirty_color_mat = true;
 }
 
 qreal VideoMaterial::validTextureWidth() const
