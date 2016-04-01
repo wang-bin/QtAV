@@ -78,4 +78,6 @@ deploy:
     secure: 2mQg4oxdX8S7rMJz2TCGGg==
   folder: /home/frs/project/q/qt/qtav/ci # why always relative path even if starts with / ? I have to make a link home/frs/project/q/qt/qtav/ci => /home/frs/project/q/qt/qtav/ci
   active_mode: false
-  artifact: 'QtAV*VS20*release*.7z'
+  on:
+    mode: release
+    cc: VS2015
