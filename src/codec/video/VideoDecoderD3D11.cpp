@@ -35,6 +35,9 @@ using namespace Microsoft::WRL; //ComPtr
 #include "utils/Logger.h"
 
 namespace QtAV {
+
+static QString sD3D11Description;
+
 struct dxgi_fcc {
     int fourcc;
     DXGI_FORMAT dxgi;
@@ -74,6 +77,8 @@ VideoDecoderId VideoDecoderD3D11::id() const
 
 QString VideoDecoderD3D11::description() const
 {
+    if (!sD3D11Description.isEmpty())
+        return sD3D11Description;
     return QStringLiteral("D3D11 Video Acceleration");
 }
 
@@ -197,6 +202,7 @@ bool VideoDecoderD3D11Private::createDevice()
         qWarning("Can not resolve symbol D3D11CreateDevice");
     }
 #endif
+    // TODO: feature levels
     DX_ENSURE(fCreateDevice(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL,
                             D3D11_CREATE_DEVICE_VIDEO_SUPPORT, NULL, 0,
                             D3D11_SDK_VERSION, &d3ddev, NULL,
@@ -209,6 +215,21 @@ bool VideoDecoderD3D11Private::createDevice()
 
     DX_ENSURE(d3dctx->QueryInterface(IID_ID3D11VideoContext, (void**)&d3dvidctx), false);
     DX_ENSURE(d3ddev->QueryInterface(IID_ID3D11VideoDevice, (void**)&d3dviddev), false);
+
+    ComPtr<IDXGIDevice> dxgi_dev;
+    DX_ENSURE(d3ddev->QueryInterface(IID_IDXGIDevice, (void**)dxgi_dev.GetAddressOf()), false);
+    ComPtr<IDXGIAdapter> dxgi_adapter;
+    DX_ENSURE(dxgi_dev->GetAdapter(dxgi_adapter.GetAddressOf()), false);
+    DXGI_ADAPTER_DESC desc;
+    DX_ENSURE(dxgi_adapter->GetDesc(&desc), false);
+    sD3D11Description = QStringLiteral("D3D11 Video Acceleration (%1, vendor %2(%3), device %4, revision %5)")
+            .arg(QString::fromWCharArray(desc.Description))
+            .arg(desc.VendorId)
+            .arg(QString::fromUtf8(DXHelper::vendorName(desc.VendorId)))
+            .arg(desc.DeviceId)
+            .arg(desc.Revision)
+            ;
+    qDebug() << sD3D11Description;
     return true;
 }
 
