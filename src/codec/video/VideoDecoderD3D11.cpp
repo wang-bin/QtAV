@@ -99,13 +99,17 @@ public:
     , d3dvidctx(NULL)
     , texture_cpu(NULL) {
         //GetModuleHandle()
+#ifndef Q_OS_WINRT
         dll = LoadLibrary(TEXT("d3d11.dll")); //TODO: link for winrt, use GetModuleHandle
         available = !!dll;
+#endif
     }
     ~VideoDecoderD3D11Private() {
+#ifndef Q_OS_WINRT
         if (dll) {
             FreeLibrary(dll);
         }
+#endif
     }
 
     AVPixelFormat vaPixelFormat() const Q_DECL_OVERRIDE { return QTAV_PIX_FMT_C(D3D11VA_VLD);}

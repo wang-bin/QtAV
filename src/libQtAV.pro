@@ -254,6 +254,7 @@ config_d3d11va {
   CONFIG *= d3dva
   DEFINES *= QTAV_HAVE_D3D11VA=1
   SOURCES += codec/video/VideoDecoderD3D11.cpp
+  winrt: LIBS *= -ld3d11
 }
 config_dxva {
   CONFIG *= d3dva

@@ -133,5 +133,10 @@ template<typename T> int SelectConfig(AVCodecID codec_id, const T* cfgs, int nb_
         qWarning("Failed to find a supported decoder configuration");
     return cfg_score;
 }
+
+#ifndef MAKEFOURCC //winrt
+#define MAKEFOURCC(ch0, ch1, ch2, ch3) \
+  ((DWORD)(BYTE)(ch0)|((DWORD)(BYTE)(ch1)<<8)|((DWORD)(BYTE)(ch2)<<16)|((DWORD)(BYTE)(ch3)<<24))
+#endif //MAKEFOURCC
 } //namespace QtAV
 #endif //QTAV_VIDEODECODERD3D_H
