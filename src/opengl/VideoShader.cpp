@@ -376,7 +376,8 @@ bool VideoShader::update(VideoMaterial *material)
             }
         }
     }
-    if (material->isColorMatrixDirty())
+    // shader type changed, or eq mat changed
+    if (d.update_builtin_uniforms || material->isColorMatrixDirty())
         program()->setUniformValue(colorMatrixLocation(), material->colorMatrix());
     // opacity should be here if changed by user
     if (!d.update_builtin_uniforms)
