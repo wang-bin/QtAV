@@ -39,6 +39,9 @@ environment:
 matrix:
   fast_finish: false
 
+cache:
+  - AV
+
 init:
   - set vcarch=%arch%
   - if "%arch%" == "x64" set vcarch=amd64
