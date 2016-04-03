@@ -31,7 +31,6 @@
 #include "utils/Logger.h"
 
 #define YUVA_DONE 0
-#define glsl(x) #x "\n"
 //#define QTAV_DEBUG_GLSL
 
 namespace QtAV {
@@ -173,7 +172,7 @@ const char* VideoShader::fragmentShader() const
 
     QByteArray header("*/");
     if (userShaderHeader(QOpenGLShader::Fragment))
-        header.append(userShaderHeader(QOpenGLShader::Fragment));
+        header += QByteArray(userShaderHeader(QOpenGLShader::Fragment));
     header += "\n";
     header += "uniform vec2 u_texelSize[" + QByteArray::number(nb_planes) + "];\n";
     header += "/*";
@@ -181,14 +180,14 @@ const char* VideoShader::fragmentShader() const
 
     if (userSample()) {
         QByteArray sample_code("*/\n#define USER_SAMPLER\n");
-        sample_code.append(userSample());
+        sample_code += QByteArray(userSample());
         sample_code += "/*";
         frag.replace("%userSample%", sample_code);
     }
 
     if (userPostProcess()) {
         QByteArray pp_code("*/");
-        pp_code.append(userPostProcess());
+        pp_code += QByteArray(userPostProcess()); //why the content is wrong sometimes if no ctor?
         pp_code += "/*";
         frag.replace("%userPostProcess%", pp_code);
     }

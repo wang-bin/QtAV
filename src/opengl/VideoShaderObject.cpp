@@ -129,6 +129,7 @@ void VideoShaderObject::programReady()
             d.sigMap[st].append(mapper);
         }
     }
+    ready();
 }
 
 class DynamicShaderObjectPrivate : public VideoShaderObjectPrivate {
