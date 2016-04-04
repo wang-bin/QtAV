@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -345,6 +345,7 @@ const char *get_codec_long_name(enum AVCodecID id)
     return "unknown_codec";
 }
 
+#if QTAV_HAVE(AVFILTER)
 #if !AV_MODULE_CHECK(LIBAVFILTER, 2, 22, 0, 79, 100) //FF_API_AVFILTERPAD_PUBLIC
 const char *avfilter_pad_get_name(const AVFilterPad *pads, int pad_idx)
 {
@@ -356,3 +357,4 @@ enum AVMediaType avfilter_pad_get_type(const AVFilterPad *pads, int pad_idx)
     return pads[pad_idx].type;
 }
 #endif
+#endif //QTAV_HAVE(AVFILTER)

@@ -38,7 +38,7 @@
 #define AV_ENSURE(FUNC, ...) AV_RUN_CHECK(FUNC, return, __VA_ARGS__)
 #define AV_WARN(FUNC) AV_RUN_CHECK(FUNC, void)
 
-#include "QtAV_Global.h"
+#include "QtAV/QtAV_Global.h"
 #ifdef __cplusplus
 extern "C"
 {
@@ -395,12 +395,14 @@ void av_packet_free_side_data(AVPacket *pkt);
 void avcodec_free_context(AVCodecContext **avctx);
 #endif
 
+#if QTAV_HAVE(AVFILTER)
 // ffmpeg2.0 2013-07-03 - 838bd73 - lavfi 3.78.100 - avfilter.h
 #if QTAV_USE_LIBAV(LIBAVFILTER)
 #define avfilter_graph_parse_ptr(pGraph, pFilters, ppInputs, ppOutputs, pLog) avfilter_graph_parse(pGraph, pFilters, *ppInputs, *ppOutputs, pLog)
 #elif !FFMPEG_MODULE_CHECK(LIBAVFILTER, 3, 78, 100)
 #define avfilter_graph_parse_ptr(pGraph, pFilters, ppInputs, ppOutputs, pLog) avfilter_graph_parse(pGraph, pFilters, ppInputs, ppOutputs, pLog)
-#endif
+#endif //QTAV_USE_LIBAV(LIBAVFILTER)
+
 //ffmpeg1.0 2012-06-12 - c7b9eab / 84b9fbe - lavfi 2.79.100 / 2.22.0 - avfilter.h
 #if !AV_MODULE_CHECK(LIBAVFILTER, 2, 22, 0, 79, 100) //FF_API_AVFILTERPAD_PUBLIC
 const char *avfilter_pad_get_name(const AVFilterPad *pads, int pad_idx);
@@ -417,6 +419,8 @@ int avfilter_copy_buf_props(AVFrame *dst, const AVFilterBufferRef *src);
 }
 #endif /* __cplusplus */
 #endif
+#endif //QTAV_HAVE(AVFILTER)
+
 /* helper functions */
 const char *get_codec_long_name(AVCodecID id);
 
