@@ -4,12 +4,6 @@ TARGET = QtAV
 QT += core gui
 #CONFIG *= ltcg
 greaterThan(QT_MAJOR_VERSION, 4) {
-  lessThan(QT_MINOR_VERSION, 5):!no_gui_private {
-    contains(QT_CONFIG, opengles2)|contains(QT_CONFIG, dynamicgl) {
-      QT *= gui-private #dxva+egl
-      DEFINES *= QTAV_HAVE_GUI_PRIVATE=1
-    }
-  }
   contains(QT_CONFIG, opengl) {
       CONFIG *= config_opengl
       greaterThan(QT_MINOR_VERSION, 3) {

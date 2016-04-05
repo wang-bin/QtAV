@@ -224,10 +224,6 @@ void SurfaceInteropCUDA::unmap(void *handle)
 } //namespace QtAV
 
 #if QTAV_HAVE(CUDA_EGL)
-#if QTAV_HAVE(GUI_PRIVATE)
-#include <qpa/qplatformnativeinterface.h>
-#include <QtGui/QGuiApplication>
-#endif //QTAV_HAVE(GUI_PRIVATE)
 #ifdef QT_OPENGL_ES_2_ANGLE_STATIC
 #define CAPI_LINK_EGL
 #else
@@ -386,7 +382,7 @@ bool EGLInteropResource::ensureD3D9CUDA(int w, int h, int W, int H)
                                          , &texture9_nv12
                                          , NULL) // - Resources allocated as shared may not be registered with CUDA.
                   , false);
-        DX_ENSURE(device9->CreateOffscreenPlainSurface(W, H, (D3DFORMAT)MAKEFOURCC('N','V','1','2'), D3DPOOL_DEFAULT, &surface9_nv12, NULL), false);
+        DX_ENSURE(device9->CreateOffscreenPlainSurface(W, H, (D3DFORMAT)MAKEFOURCC('N','V','1','2'), D3DPOOL_DEFAULT, &surface9_nv12, NULL), false); //TODO: createrendertarget
     }
 
     // TODO: cudaD3D9.h says NV12 is not supported
@@ -397,45 +393,26 @@ bool EGLInteropResource::ensureD3D9CUDA(int w, int h, int W, int H)
 }
 
 bool EGLInteropResource::ensureD3D9EGL(int w, int h) {
-    if (surface9 && res[0].w == w && res[0].h == h)
+    if (egl->surface && res[0].w == w && res[0].h == h)
         return true;
-#if QTAV_HAVE(GUI_PRIVATE)
-    QPlatformNativeInterface *nativeInterface = QGuiApplication::platformNativeInterface();
-    egl->dpy = static_cast<EGLDisplay>(nativeInterface->nativeResourceForContext("eglDisplay", QOpenGLContext::currentContext()));
-    EGLConfig egl_cfg = static_cast<EGLConfig>(nativeInterface->nativeResourceForContext("eglConfig", QOpenGLContext::currentContext()));
-#else
-#ifdef Q_OS_WIN
-#if QT_VERSION < QT_VERSION_CHECK(5, 5, 0)
-#ifdef _MSC_VER
-#pragma message("ANGLE version in Qt<5.5 does not support eglQueryContext. You must upgrade your runtime ANGLE libraries")
-#else
-#warning "ANGLE version in Qt<5.5 does not support eglQueryContext. You must upgrade your runtime ANGLE libraries"
-#endif //_MSC_VER
-#endif
-#endif //Q_OS_WIN
-    // eglQueryContext() added (Feb 2015): https://github.com/google/angle/commit/8310797003c44005da4143774293ea69671b0e2a
+    releaseEGL();
     egl->dpy = eglGetCurrentDisplay();
     qDebug("EGL version: %s, client api: %s", eglQueryString(egl->dpy, EGL_VERSION), eglQueryString(egl->dpy, EGL_CLIENT_APIS));
-    // TODO: check runtime egl>=1.4 for eglGetCurrentContext()
-    EGLint cfg_id = 0;
-    EGL_ENSURE(eglQueryContext(egl->dpy, eglGetCurrentContext(), EGL_CONFIG_ID , &cfg_id) == EGL_TRUE, false);
-    qDebug("egl config id: %d", cfg_id);
-    EGLint nb_cfg = 0;
-    EGL_ENSURE(eglGetConfigs(egl->dpy, NULL, 0, &nb_cfg) == EGL_TRUE, false);
-    qDebug("eglGetConfigs number: %d", nb_cfg);
-    QVector<EGLConfig> cfgs(nb_cfg); //check > 0
-    EGL_ENSURE(eglGetConfigs(egl->dpy, cfgs.data(), cfgs.size(), &nb_cfg) == EGL_TRUE, false);
-    EGLConfig egl_cfg = NULL;
-    for (int i = 0; i < nb_cfg; ++i) {
-        EGLint id = 0;
-        eglGetConfigAttrib(egl->dpy, cfgs[i], EGL_CONFIG_ID, &id);
-        if (id == cfg_id) {
-            egl_cfg = cfgs[i];
-            break;
-        }
+    EGLint cfg_attribs[] = {
+        EGL_RED_SIZE, 8,
+        EGL_GREEN_SIZE, 8,
+        EGL_BLUE_SIZE, 8,
+        EGL_ALPHA_SIZE, 8, //
+        EGL_BIND_TO_TEXTURE_RGBA, EGL_TRUE, //remove?
+        EGL_SURFACE_TYPE, EGL_PBUFFER_BIT,
+        EGL_NONE
+    };
+    EGLint nb_cfgs;
+    EGLConfig egl_cfg;
+    if (!eglChooseConfig(egl->dpy, cfg_attribs, &egl_cfg, 1, &nb_cfgs)) {
+        qWarning("Failed to create EGL configuration");
+        return false;
     }
-#endif
-    qDebug("egl display:%p config: %p", egl->dpy, egl_cfg);
     // check extensions
     QList<QByteArray> extensions = QByteArray(eglQueryString(egl->dpy, EGL_EXTENSIONS)).split(' ');
     // ANGLE_d3d_share_handle_client_buffer will be used if possible
@@ -447,6 +424,7 @@ bool EGLInteropResource::ensureD3D9EGL(int w, int h) {
     }
     GLint has_alpha = 1; //QOpenGLContext::currentContext()->format().hasAlpha()
     eglGetConfigAttrib(egl->dpy, egl_cfg, EGL_BIND_TO_TEXTURE_RGBA, &has_alpha); //EGL_ALPHA_SIZE
+    qDebug("choose egl display:%p config: %p/%d, has alpha: %d", egl->dpy, egl_cfg, nb_cfgs, has_alpha);
     EGLint attribs[] = {
         EGL_WIDTH, w,
         EGL_HEIGHT, h,
