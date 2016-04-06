@@ -166,7 +166,8 @@ win32: {
   DEFINES *= QTAV_HAVE_XAUDIO2=1
   !config_xaudio2 { #winsdk has no xaudio2.h, use June 2010 DXSDK
 ## TODO: build xaudio2 code as a seperate static lib so wen can safely add contrib/dxsdk to INCLUDEPATH for that lib build
-    win32-icc|win32-g++|win32-msvc2010|win32-msvc2008|win32-msvc2005: \
+##cross_compile: build on linux or macOS
+    cross_compile|win32-icc|win32-g++|win32-msvc2010|win32-msvc2008|win32-msvc2005: \
         INCLUDEPATH *= $$PROJECTROOT/contrib/dxsdk
   }
   winrt {
@@ -245,9 +246,15 @@ include(../depends/dllapi/src/libdllapi.pri)
     HEADERS += cuda/cuda_api.h
 }
 config_d3d11va {
-  CONFIG *= d3dva
+  CONFIG *= d3dva c++11
   DEFINES *= QTAV_HAVE_D3D11VA=1
   SOURCES += codec/video/VideoDecoderD3D11.cpp
+  contains(QT_CONFIG, opengl) {
+    HEADERS += codec/video/SurfaceInteropD3D11.h
+    SOURCES += codec/video/SurfaceInteropD3D11.cpp
+  }
+  HEADERS += directx/D3D11VP.h
+  SOURCES += directx/D3D11VP.cpp
   winrt: LIBS *= -ld3d11
 }
 config_dxva {
