@@ -21,6 +21,7 @@
 
 #include "SurfaceInteropD3D11.h"
 #include "directx/D3D11VP.h"
+#define DX_LOG_COMPONENT "D3D11 Interop"
 #include "utils/DirectXHelper.h"
 #ifdef QT_OPENGL_ES_2_ANGLE_STATIC
 #define CAPI_LINK_EGL
@@ -72,6 +73,7 @@ void SurfaceInterop::unmap(void *handle)
 
 void* SurfaceInterop::mapToHost(const VideoFormat &format, void *handle, int plane)
 {
+    //TODO: share code
     return NULL;
 }
 
