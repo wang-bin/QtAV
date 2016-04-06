@@ -1,3 +1,24 @@
+/******************************************************************************
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+
+*   This file is part of QtAV (from 2016)
+
+    This library is free software; you can redistribute it and/or
+    modify it under the terms of the GNU Lesser General Public
+    License as published by the Free Software Foundation; either
+    version 2.1 of the License, or (at your option) any later version.
+
+    This library is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+    Lesser General Public License for more details.
+
+    You should have received a copy of the GNU Lesser General Public
+    License along with this library; if not, write to the Free Software
+    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+******************************************************************************/
+
 #include "SurfaceInteropD3D11.h"
 #include "directx/D3D11VP.h"
 #include "utils/DirectXHelper.h"
@@ -129,7 +150,7 @@ bool EGLInteropResource::ensureSurface(int w, int h) {
     // why crash if only set D3D11_BIND_RENDER_TARGET?
     desc.BindFlags |= D3D11_BIND_RENDER_TARGET; // also required by VideoProcessorOutputView https://msdn.microsoft.com/en-us/library/windows/desktop/hh447791(v=vs.85).aspx
     desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
-    DX_ENSURE(d3ddev->CreateTexture2D(&desc, NULL, d3dtex.ReleaseAndGetAddressOf()), false);
+    DX_ENSURE(d3ddev->CreateTexture2D(&desc, NULL, &d3dtex), false);
     ComPtr<IDXGIResource> resource;
     DX_ENSURE(d3dtex.As(&resource), false);
     HANDLE share_handle = NULL;
