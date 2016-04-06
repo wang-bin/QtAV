@@ -34,15 +34,16 @@ public:
     // brightness, contrast, hue, saturation, rotation, color space, range, source/dest rect
     D3D11VP(ComPtr<ID3D11Device> dev);
     void setOutput(ID3D11Texture2D* tex);
-
-    bool process(ID3D11Texture2D *texture);
+    void setSourceRect(const QRect& r);
+    bool process(ID3D11Texture2D *texture, int index);
 private:
     ComPtr<ID3D11Device> m_dev;
-    ID3D11Texture2D *m_out;
+    ComPtr<ID3D11Texture2D> m_out;
     ComPtr<ID3D11VideoDevice> m_viddev;
     ComPtr<ID3D11VideoProcessorEnumerator> m_enum;
     ComPtr<ID3D11VideoProcessor> m_vp;
     ComPtr<ID3D11VideoProcessorOutputView> m_outview;
+    QRect m_srcRect;
 };
 } //namespace dx
 } //namespace QtAV

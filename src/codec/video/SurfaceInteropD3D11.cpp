@@ -14,12 +14,14 @@ namespace d3d11 {
 
 InteropResource::InteropResource(ComPtr<ID3D11Device> dev)
     : d3ddev(dev)
-{}
+{
+}
 
 
-void SurfaceInterop::setSurface(ComPtr<ID3D11Texture2D> surface, int frame_w, int frame_h)
+void SurfaceInterop::setSurface(ComPtr<ID3D11Texture2D> surface, int index, int frame_w, int frame_h)
 {
     m_surface = surface;
+    m_index = index;
     frame_width = frame_w;
     frame_height = frame_h;
 }
@@ -34,7 +36,7 @@ void* SurfaceInterop::map(SurfaceType type, const VideoFormat &fmt, void *handle
     if (type == GLTextureSurface) {
         if (!fmt.isRGB())
             return NULL;
-        if (m_resource->map(m_surface, *((GLuint*)handle), frame_width, frame_height, plane))
+        if (m_resource->map(m_surface, m_index, *((GLuint*)handle), frame_width, frame_height, plane))
             return handle;
     } else if (type == HostMemorySurface) {
         return mapToHost(fmt, handle, plane);
@@ -63,7 +65,8 @@ EGLInteropResource::EGLInteropResource(ComPtr<ID3D11Device> dev)
     : InteropResource(dev)
     , egl(new EGL())
     , vp(new dx::D3D11VP(dev))
-{}
+{
+}
 
 EGLInteropResource::~EGLInteropResource()
 {
@@ -150,20 +153,19 @@ bool EGLInteropResource::ensureSurface(int w, int h) {
     return true;
 }
 
-bool EGLInteropResource::map(ComPtr<ID3D11Texture2D> surface, GLuint tex, int w, int h, int)
+bool EGLInteropResource::map(ComPtr<ID3D11Texture2D> surface, int index, GLuint tex, int w, int h, int)
 {
     if (!ensureSurface(w, h)) {
         releaseEGL();
         return false;
     }
-    if (!vp->process(surface.Get()))
+    vp->setSourceRect(QRect(0, 0, w, h));
+    if (!vp->process(surface.Get(), index))
         return false;
-    static int i = 0;
-    //qDebug("convert d3d11 surface to rgb %d, %p", ++i, surface.Get());
     DYGL(glBindTexture(GL_TEXTURE_2D, tex));
     eglBindTexImage(egl->dpy, egl->surface, EGL_BACK_BUFFER);
     DYGL(glBindTexture(GL_TEXTURE_2D, 0));
     return true;
 }
-}
-}
+} //namespace d3d11
+} //namespace QtAV

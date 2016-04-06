@@ -48,13 +48,14 @@ public:
     /*!
      * \brief map
      * \param surface dxva decoded surface
+     * \param index ID3D11Texture2D array  index
      * \param tex opengl texture
      * \param w frame width(visual width) without alignment, <= dxva surface width
      * \param h frame height(visual height)
      * \param plane useless now
      * \return true if success
      */
-    virtual bool map(ComPtr<ID3D11Texture2D> surface, GLuint tex, int w, int h, int plane) = 0;
+    virtual bool map(ComPtr<ID3D11Texture2D> surface, int index, GLuint tex, int w, int h, int plane) = 0;
     virtual bool unmap(GLuint tex) { Q_UNUSED(tex); return true;}
 protected:
     void releaseDX();
@@ -70,14 +71,15 @@ typedef QSharedPointer<InteropResource> InteropResourcePtr;
 class SurfaceInterop Q_DECL_FINAL: public VideoSurfaceInterop
 {
 public:
-    SurfaceInterop(const InteropResourcePtr& res) : m_surface(0), m_resource(res), frame_width(0), frame_height(0) {}
+    SurfaceInterop(const InteropResourcePtr& res) : m_resource(res), frame_width(0), frame_height(0) {}
     /*!
      * \brief setSurface
      * \param surface d3d11 decoded surface
+     * \param index ID3D11Texture2D array  index
      * \param frame_w frame width(visual width) without alignment, <= d3d11 surface width
      * \param frame_h frame height(visual height)
      */
-    void setSurface(ComPtr<ID3D11Texture2D> surface, int frame_w, int frame_h);
+    void setSurface(ComPtr<ID3D11Texture2D> surface, int index, int frame_w, int frame_h);
     /// GLTextureSurface only supports rgb32
     void* map(SurfaceType type, const VideoFormat& fmt, void* handle, int plane) Q_DECL_OVERRIDE;
     void unmap(void *handle) Q_DECL_OVERRIDE;
@@ -86,6 +88,7 @@ protected:
     void* mapToHost(const VideoFormat &format, void *handle, int plane);
 private:
     ComPtr<ID3D11Texture2D> m_surface;
+    int m_index;
     InteropResourcePtr m_resource;
     int frame_width, frame_height;
 };
@@ -96,7 +99,7 @@ class EGLInteropResource Q_DECL_FINAL: public InteropResource
 public:
     EGLInteropResource(ComPtr<ID3D11Device> dev);
     ~EGLInteropResource();
-    bool map(ComPtr<ID3D11Texture2D> surface, GLuint tex, int w, int h, int) Q_DECL_OVERRIDE;
+    bool map(ComPtr<ID3D11Texture2D> surface, int index, GLuint tex, int w, int h, int) Q_DECL_OVERRIDE;
 
 private:
     void releaseEGL();
