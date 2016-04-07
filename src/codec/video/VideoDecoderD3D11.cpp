@@ -176,16 +176,16 @@ VideoFrame VideoDecoderD3D11::frame()
                                     , view_desc.Texture2D.ArraySlice
                                     , NULL);
     struct ScopedMap {
-        ScopedMap(ComPtr<ID3D11DeviceContext> ctx, ComPtr<ID3D11Resource> res, D3D11_MAPPED_SUBRESOURCE *mapped): c(ctx), r(res) {
+        ScopedMap(ComPtr<ID3D11DeviceContext> ctx, ComPtr<ID3D11Texture2D> res, D3D11_MAPPED_SUBRESOURCE *mapped): c(ctx), r(res) {
             DX_ENSURE(c->Map(r.Get(), 0, D3D11_MAP_READ, 0, mapped)); //TODO: check error
         }
         ~ScopedMap() { c->Unmap(r.Get(), 0);}
         ComPtr<ID3D11DeviceContext> c;
-        ComPtr<ID3D11Resource> r;
+        ComPtr<ID3D11Texture2D> r;
     };
 
     D3D11_MAPPED_SUBRESOURCE mapped;
-    ScopedMap sm(d.d3dctx, d.texture_cpu, &mapped);
+    ScopedMap sm(d.d3dctx, d.texture_cpu, &mapped); //mingw error if ComPtr<T> constructs from ComPtr<U> [T=ID3D11Resource, U=ID3D11Texture2D]
     Q_UNUSED(sm);
     int pitch[3] = { (int)mapped.RowPitch, 0, 0}; //compute chroma later
     uint8_t *src[] = { (uint8_t*)mapped.pData, 0, 0}; //compute chroma later
