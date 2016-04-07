@@ -92,6 +92,17 @@ win32-msvc2010|win32-msvc2008: QMAKE_LFLAGS *= /DEBUG #workaround for CoInitiali
     QMAKE_LFLAGS *= /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib #for msbuild vs2013
     INCLUDEPATH *= compat/msvc
 }
+capi {
+contains(QT_CONFIG, egl)|contains(QT_CONFIG, dynamicgl)|contains(QT_CONFIG, opengles2) {
+  CONFIG *= enable_egl
+  !ios {
+    greaterThan(QT_MAJOR_VERSION, 4):qtHaveModule(x11extras): QT *= x11extras
+    DEFINES += QTAV_HAVE_EGL_CAPI=1
+    HEADERS *= capi/egl_api.h
+    SOURCES *= capi/egl_api.cpp
+  }
+}
+}
 #UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
 DEFINES += __STDC_CONSTANT_MACROS
 android {
@@ -248,13 +259,15 @@ include(../depends/dllapi/src/libdllapi.pri)
 config_d3d11va {
   CONFIG *= d3dva c++11
   DEFINES *= QTAV_HAVE_D3D11VA=1
-  SOURCES += codec/video/VideoDecoderD3D11.cpp
-  contains(QT_CONFIG, opengl) {
-    HEADERS += codec/video/SurfaceInteropD3D11.h
-    SOURCES += codec/video/SurfaceInteropD3D11.cpp
-  }
+  HEADERS += codec/video/SurfaceInteropD3D11.h
+  SOURCES += codec/video/VideoDecoderD3D11.cpp \
+             codec/video/SurfaceInteropD3D11.cpp
   HEADERS += directx/D3D11VP.h
   SOURCES += directx/D3D11VP.cpp
+  enable_egl {
+    SOURCES += codec/video/SurfaceInteropD3D11EGL.cpp
+  } else:contains(QT_CONFIG, opengl) {
+  }
   winrt: LIBS *= -ld3d11
 }
 config_dxva {
@@ -362,14 +375,6 @@ config_libass {
   HEADERS *= capi/ass_api.h
   SOURCES *= capi/ass_api.cpp
   SOURCES *= subtitle/SubtitleProcessorLibASS.cpp
-}
-capi {
-contains(QT_CONFIG, egl)|contains(QT_CONFIG, dynamicgl)|contains(QT_CONFIG, opengles2):!ios {
-  greaterThan(QT_MAJOR_VERSION, 4):qtHaveModule(x11extras): QT *= x11extras
-  DEFINES += QTAV_HAVE_EGL_CAPI=1
-  HEADERS *= capi/egl_api.h
-  SOURCES *= capi/egl_api.cpp
-}
 }
 # mac is -FQTDIR we need -LQTDIR
 LIBS *= -L$$[QT_INSTALL_LIBS] -lavcodec -lavformat -lswscale -lavutil

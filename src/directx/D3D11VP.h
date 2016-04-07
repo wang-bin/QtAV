@@ -23,7 +23,6 @@
 #define QTAV_D3D11VP_H
 #include <d3d11.h>
 #include <wrl/client.h>
-#include <QtAV/VideoFormat.h>
 using namespace Microsoft::WRL;
 namespace QtAV {
 namespace dx {

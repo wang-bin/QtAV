@@ -24,27 +24,29 @@
 #include <d3d11.h>
 #include <wrl/client.h>
 #include "QtAV/SurfaceInterop.h"
-#include "opengl/OpenGLHelper.h"
-// no need to check qt4 because no ANGLE there
-#if QTAV_HAVE(EGL_CAPI) // always use dynamic load
-#if defined(QT_OPENGL_DYNAMIC) || defined(QT_OPENGL_ES_2) || defined(QT_OPENGL_ES_2_ANGLE)
-#define QTAV_HAVE_D3D11_EGL 1
-#endif
-#endif //QTAV_HAVE(EGL_CAPI)
-#if defined(QT_OPENGL_DYNAMIC) || !defined(QT_OPENGL_ES_2)
-#define QTAV_HAVE_D3D11_GL 1
-#endif
 
 using namespace Microsoft::WRL;
 namespace QtAV {
-namespace dx {
-class D3D11VP;
-}
+
 namespace d3d11 {
+enum InteropType {
+    InteropAuto,
+    InteropEGL,
+    InteropGL //NOT IMPLEMENTED
+};
+
 class InteropResource
 {
 public:
-    InteropResource(ComPtr<ID3D11Device> dev);
+    typedef unsigned int GLuint;
+    static InteropResource* create(InteropType type = InteropAuto);
+    /*!
+     * \brief isSupported
+     * \return true if support 0-copy interop. Currently only d3d11+egl, i.e. check egl build environment and runtime egl support.
+     */
+    static bool isSupported();
+
+    void setDevice(ComPtr<ID3D11Device> dev);
     virtual ~InteropResource() {}
     /*!
      * \brief map
@@ -59,8 +61,6 @@ public:
     virtual bool map(ComPtr<ID3D11Texture2D> surface, int index, GLuint tex, int w, int h, int plane) = 0;
     virtual bool unmap(GLuint tex) { Q_UNUSED(tex); return true;}
 protected:
-    void releaseDX();
-
     ComPtr<ID3D11Device> d3ddev;
     ComPtr<ID3D11Texture2D> d3dtex;
     int width, height; // video frame width and dx_surface width without alignment, not dxva decoded surface width
@@ -92,22 +92,6 @@ private:
     int m_index;
     InteropResourcePtr m_resource;
     int frame_width, frame_height;
-};
-
-class EGL;
-class EGLInteropResource Q_DECL_FINAL: public InteropResource
-{
-public:
-    EGLInteropResource(ComPtr<ID3D11Device> dev);
-    ~EGLInteropResource();
-    bool map(ComPtr<ID3D11Texture2D> surface, int index, GLuint tex, int w, int h, int) Q_DECL_OVERRIDE;
-
-private:
-    void releaseEGL();
-    bool ensureSurface(int w, int h);
-
-    EGL* egl;
-    dx::D3D11VP *vp;
 };
 } //namespace d3d11
 } //namespace QtAV

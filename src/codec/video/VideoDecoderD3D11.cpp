@@ -21,7 +21,6 @@
 #include "VideoDecoderD3D.h"
 #include "QtAV/private/factory.h"
 #include "QtAV/private/mkid.h"
-#include "SurfaceInteropD3D11.h"
 #define DX_LOG_COMPONENT "D3D11VA"
 #include "utils/DirectXHelper.h"
 #include <initguid.h> //IID_ID3D11VideoContext
@@ -31,14 +30,10 @@ extern "C" {
 #include <libavcodec/d3d11va.h>
 }
 using namespace Microsoft::WRL; //ComPtr
-#include <initguid.h> /* must be last included to not redefine existing GUIDs */
-
+#include "SurfaceInteropD3D11.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
-namespace OpenGLHelper {
-bool isOpenGLES();
-}
 static QString sD3D11Description;
 
 struct dxgi_fcc {
@@ -107,9 +102,8 @@ public:
         dll = LoadLibrary(TEXT("d3d11.dll"));
         available = !!dll;
 #endif
-#if QTAV_HAVE(D3D11_EGL)
-        copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
-#endif
+        if (d3d11::InteropResource::isSupported())
+            copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
     }
     ~VideoDecoderD3D11Private() {
 #ifndef Q_OS_WINRT
@@ -208,7 +202,6 @@ VideoDecoderD3D11::VideoDecoderD3D11()
 bool VideoDecoderD3D11Private::createDevice()
 {
     // if (d3dviddev) return true;
-    // TODO: if linked, call D3D11CreateDevice()
     PFN_D3D11_CREATE_DEVICE fCreateDevice = NULL;
 #if defined(Q_OS_WINRT)
     fCreateDevice = ::D3D11CreateDevice;
@@ -303,7 +296,7 @@ bool VideoDecoderD3D11Private::createDecoder(AVCodecID codec_id, int w, int h, Q
         texDesc.Usage = D3D11_USAGE_STAGING;
         texDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
         texDesc.BindFlags = 0; //?
-        DX_ENSURE(d3ddev->CreateTexture2D(&texDesc, NULL, texture_cpu.ReleaseAndGetAddressOf()), false);
+        DX_ENSURE(d3ddev->CreateTexture2D(&texDesc, NULL, &texture_cpu), false);
     }
     D3D11_VIDEO_DECODER_OUTPUT_VIEW_DESC viewDesc;
     ZeroMemory(&viewDesc, sizeof(viewDesc));
@@ -313,7 +306,7 @@ bool VideoDecoderD3D11Private::createDecoder(AVCodecID codec_id, int w, int h, Q
     for (int i = 0; i < nb_surfaces; ++i) {
         viewDesc.Texture2D.ArraySlice = i;
         ComPtr<ID3D11VideoDecoderOutputView> view;
-        DX_ENSURE(d3dviddev->CreateVideoDecoderOutputView(tex.Get(), &viewDesc, view.ReleaseAndGetAddressOf()), false);
+        DX_ENSURE(d3dviddev->CreateVideoDecoderOutputView(tex.Get(), &viewDesc, &view), false);
         d3d11_surface_t *s = new d3d11_surface_t();
         s->setSurface(view.Get());
         surf[i] = s;
@@ -338,7 +331,7 @@ bool VideoDecoderD3D11Private::createDecoder(AVCodecID codec_id, int w, int h, Q
     if (SelectConfig(codec_id, cfg_list.constData(), cfg_count, &cfg) <= 0)
         return false;
     // not associated with surfaces, so surfaces can be dynamicall added?
-    DX_ENSURE(d3dviddev->CreateVideoDecoder(&decoderDesc, &cfg, &d3ddec), false); //TODO: dx_sys->decoder
+    DX_ENSURE(d3dviddev->CreateVideoDecoder(&decoderDesc, &cfg, &d3ddec), false);
     return true;
 }
 
@@ -350,12 +343,9 @@ void VideoDecoderD3D11Private::destroyDecoder()
 
 bool VideoDecoderD3D11Private::setupSurfaceInterop()
 {
-    // runtime check gles for dynamic gl
-#if QTAV_HAVE(D3D11_EGL)
-    if (OpenGLHelper::isOpenGLES()) {
-        interop_res = d3d11::InteropResourcePtr(new d3d11::EGLInteropResource(d3ddev));
-    }
-#endif
+    interop_res = d3d11::InteropResourcePtr(d3d11::InteropResource::create());
+    if (interop_res)
+        interop_res->setDevice(d3ddev);
     return true;
 }
 
