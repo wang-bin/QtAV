@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -114,6 +114,7 @@ bool VideoDecoderFFmpegHWPrivate::prepare()
 {
     //// From vlc begin
     codec_ctx->thread_safe_callbacks = true; //?
+    codec_ctx->thread_count = threads;
 #ifdef _MSC_VER
 #pragma warning(disable:4065) //vc: switch has default but no case
 #endif //_MSC_VER
@@ -225,8 +226,9 @@ VideoDecoderFFmpegHW::VideoDecoderFFmpegHW(VideoDecoderFFmpegHWPrivate &d):
                 .arg(tr("Not implemented for all codecs"))
                 .arg(tr("OptimizedCopy: copy from USWC memory optimized by SSE4.1"))
                 .arg(tr("GenericCopy: slowest. Generic cpu copy")));
-    setProperty("detail_threads", QString("%1\n%2\n%3")
+    setProperty("detail_threads", QString("%1\n%2\n%3\n%4")
                 .arg(tr("Number of decoding threads. Set before open. Maybe no effect for some decoders"))
+                .arg(tr("Multithread decoding may crash"))
                 .arg(tr("0: auto"))
                 .arg(tr("1: single thread decoding")));
     Q_UNUSED(QObject::tr("ZeroCopy"));

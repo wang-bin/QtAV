@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -83,7 +83,7 @@ public:
     int (*get_buffer2)(struct AVCodecContext *s, AVFrame *frame, int flags);
 
     QString description;
-    int threads;
+    int threads; // multithread decoding may crash for some decoders (dxva, videotoolbox)
     // false for not intel gpu. my test result is intel gpu is supper fast and lower cpu usage if use optimized uswc copy. but nv is worse.
     // TODO: flag enable, disable, auto
     VideoDecoderFFmpegHW::CopyMode copy_mode;
