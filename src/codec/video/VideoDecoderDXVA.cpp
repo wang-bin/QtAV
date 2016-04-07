@@ -68,7 +68,6 @@ MS_GUID(IID_IDirectXVideoAccelerationService, 0xfc51a550, 0xd5e7, 0x11d9, 0xaf,0
 class VideoDecoderDXVAPrivate;
 class VideoDecoderDXVA : public VideoDecoderD3D
 {
-    Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderDXVA)
 public:
     VideoDecoderDXVA();
@@ -449,4 +448,3 @@ bool VideoDecoderDXVAPrivate::setupSurfaceInterop()
     return true;
 }
 } //namespace QtAV
-#include "VideoDecoderDXVA.moc"
