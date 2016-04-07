@@ -30,12 +30,10 @@ extern "C" {
 #include <libavcodec/d3d11va.h>
 }
 using namespace Microsoft::WRL; //ComPtr
-#include <initguid.h> /* must be last included to not redefine existing GUIDs */
-
+#include "SurfaceInteropD3D11.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
-
 static QString sD3D11Description;
 
 struct dxgi_fcc {
@@ -104,6 +102,8 @@ public:
         dll = LoadLibrary(TEXT("d3d11.dll"));
         available = !!dll;
 #endif
+        if (d3d11::InteropResource::isSupported())
+            copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
     }
     ~VideoDecoderD3D11Private() {
 #ifndef Q_OS_WINRT
@@ -133,7 +133,8 @@ private:
     struct AVD3D11VAContext hw;
 public:
     ComPtr<ID3D11DeviceContext> d3dctx;
-    ComPtr<ID3D11Texture2D> texture_cpu; // used by copy mode. d3d11 texture can not be accessed by gpu and cpu both
+    ComPtr<ID3D11Texture2D> texture_cpu; // used by copy mode. d3d11 texture can not be accessed by both gpu and cpu
+    d3d11::InteropResourcePtr interop_res; //may be still used in video frames when decoder is destroyed
 };
 
 VideoFrame VideoDecoderD3D11::frame()
@@ -156,16 +157,27 @@ VideoFrame VideoDecoderD3D11::frame()
         qWarning("Get D3D11 texture error");
         return VideoFrame();
     }
-    D3D11_TEXTURE2D_DESC tex_desc;
-    texture->GetDesc(&tex_desc);
-
     D3D11_VIDEO_DECODER_OUTPUT_VIEW_DESC view_desc;
     surface->GetDesc(&view_desc);
+
+    if (copyMode() == VideoDecoderFFmpegHW::ZeroCopy && d.interop_res) {
+        d3d11::SurfaceInterop *interop = new d3d11::SurfaceInterop(d.interop_res);
+        interop->setSurface(texture, view_desc.Texture2D.ArraySlice, d.width, d.height);
+        VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32);
+        f.setBytesPerLine(d.width * 4); //used by gl to compute texture size
+        f.setMetaData(QStringLiteral("surface_interop"), QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
+        f.setTimestamp(d.frame->pkt_pts/1000.0);
+        f.setDisplayAspectRatio(d.getDAR(d.frame));
+        return f;
+    }
+//    qDebug("process for view: %p, texture: %p", surface, texture.Get());
     d.d3dctx->CopySubresourceRegion(d.texture_cpu.Get(), 0, 0, 0, 0,
-                                    texture.Get(), view_desc.Texture2D.ArraySlice, NULL);
+                                    texture.Get()
+                                    , view_desc.Texture2D.ArraySlice
+                                    , NULL);
     struct ScopedMap {
         ScopedMap(ComPtr<ID3D11DeviceContext> ctx, ComPtr<ID3D11Resource> res, D3D11_MAPPED_SUBRESOURCE *mapped): c(ctx), r(res) {
-            c->Map(r.Get(), 0, D3D11_MAP_READ, 0, mapped); //TODO: check error
+            DX_ENSURE(c->Map(r.Get(), 0, D3D11_MAP_READ, 0, mapped)); //TODO: check error
         }
         ~ScopedMap() { c->Unmap(r.Get(), 0);}
         ComPtr<ID3D11DeviceContext> c;
@@ -177,8 +189,9 @@ VideoFrame VideoDecoderD3D11::frame()
     Q_UNUSED(sm);
     int pitch[3] = { (int)mapped.RowPitch, 0, 0}; //compute chroma later
     uint8_t *src[] = { (uint8_t*)mapped.pData, 0, 0}; //compute chroma later
+    D3D11_TEXTURE2D_DESC tex_desc;
+    texture->GetDesc(&tex_desc);
     const VideoFormat format = pixelFormatFromFourcc(d.format_fcc); //tex_desc
-    VideoFrame f(d.width, d.height, format);
     return copyToFrame(format, tex_desc.Height, src, pitch, false);
 }
 
@@ -189,7 +202,6 @@ VideoDecoderD3D11::VideoDecoderD3D11()
 bool VideoDecoderD3D11Private::createDevice()
 {
     // if (d3dviddev) return true;
-    // TODO: if linked, call D3D11CreateDevice()
     PFN_D3D11_CREATE_DEVICE fCreateDevice = NULL;
 #if defined(Q_OS_WINRT)
     fCreateDevice = ::D3D11CreateDevice;
@@ -273,11 +285,10 @@ bool VideoDecoderD3D11Private::createDecoder(AVCodecID codec_id, int w, int h, Q
     texDesc.Usage = D3D11_USAGE_DEFAULT;
     texDesc.BindFlags = D3D11_BIND_DECODER;
     texDesc.CPUAccessFlags = 0;
-
     ComPtr<ID3D11Texture2D> tex;
     DX_ENSURE(d3ddev->CreateTexture2D(&texDesc, NULL, tex.GetAddressOf()), false);
 
-    if (true) { //copy
+    if (copy_mode != VideoDecoderFFmpegHW::ZeroCopy || !interop_res) { //copy
         tex->GetDesc(&texDesc);
         texDesc.MipLevels = 1;
         texDesc.MiscFlags = 0;
@@ -285,7 +296,7 @@ bool VideoDecoderD3D11Private::createDecoder(AVCodecID codec_id, int w, int h, Q
         texDesc.Usage = D3D11_USAGE_STAGING;
         texDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
         texDesc.BindFlags = 0; //?
-        DX_ENSURE(d3ddev->CreateTexture2D(&texDesc, NULL, texture_cpu.ReleaseAndGetAddressOf()), false);
+        DX_ENSURE(d3ddev->CreateTexture2D(&texDesc, NULL, &texture_cpu), false);
     }
     D3D11_VIDEO_DECODER_OUTPUT_VIEW_DESC viewDesc;
     ZeroMemory(&viewDesc, sizeof(viewDesc));
@@ -295,7 +306,7 @@ bool VideoDecoderD3D11Private::createDecoder(AVCodecID codec_id, int w, int h, Q
     for (int i = 0; i < nb_surfaces; ++i) {
         viewDesc.Texture2D.ArraySlice = i;
         ComPtr<ID3D11VideoDecoderOutputView> view;
-        DX_ENSURE(d3dviddev->CreateVideoDecoderOutputView(tex.Get(), &viewDesc, view.ReleaseAndGetAddressOf()), false);
+        DX_ENSURE(d3dviddev->CreateVideoDecoderOutputView(tex.Get(), &viewDesc, &view), false);
         d3d11_surface_t *s = new d3d11_surface_t();
         s->setSurface(view.Get());
         surf[i] = s;
@@ -320,7 +331,7 @@ bool VideoDecoderD3D11Private::createDecoder(AVCodecID codec_id, int w, int h, Q
     if (SelectConfig(codec_id, cfg_list.constData(), cfg_count, &cfg) <= 0)
         return false;
     // not associated with surfaces, so surfaces can be dynamicall added?
-    DX_ENSURE(d3dviddev->CreateVideoDecoder(&decoderDesc, &cfg, &d3ddec), false); //TODO: dx_sys->decoder
+    DX_ENSURE(d3dviddev->CreateVideoDecoder(&decoderDesc, &cfg, &d3ddec), false);
     return true;
 }
 
@@ -332,6 +343,9 @@ void VideoDecoderD3D11Private::destroyDecoder()
 
 bool VideoDecoderD3D11Private::setupSurfaceInterop()
 {
+    interop_res = d3d11::InteropResourcePtr(d3d11::InteropResource::create());
+    if (interop_res)
+        interop_res->setDevice(d3ddev);
     return true;
 }
 
