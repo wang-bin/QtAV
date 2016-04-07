@@ -54,6 +54,15 @@ DXGI_FORMAT fourccToDXGI(int fourcc)
     return DXGI_FORMAT_UNKNOWN;
 }
 
+int fourccFromDXGI(DXGI_FORMAT fmt)
+{
+    for (const dxgi_fcc* f = dxgi_formats; f < dxgi_formats + sizeof(dxgi_formats)/sizeof(dxgi_formats[0]); ++f) {
+        if (f->dxgi == fmt)
+            return f->fourcc;
+    }
+    return 0;
+}
+
 class VideoDecoderD3D11Private;
 class VideoDecoderD3D11 : public VideoDecoderD3D
 {

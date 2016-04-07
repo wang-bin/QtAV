@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "SurfaceInteropD3D11.h"
+#include "QtAV/VideoFrame.h"
 #define DX_LOG_COMPONENT "D3D11 Interop"
 #include "utils/DirectXHelper.h"
 
@@ -35,6 +36,9 @@
 #endif
 
 namespace QtAV {
+
+int fourccFromDXGI(DXGI_FORMAT fmt); //FIXME: defined in d3d11 decoder
+VideoFormat::PixelFormat pixelFormatFromFourcc(int format);
 namespace d3d11 {
 
 bool InteropResource::isSupported(InteropType type)
@@ -110,8 +114,47 @@ void SurfaceInterop::unmap(void *handle)
 
 void* SurfaceInterop::mapToHost(const VideoFormat &format, void *handle, int plane)
 {
-    //TODO: share code
-    return NULL;
+    Q_UNUSED(plane);
+    ComPtr<ID3D11Device> dev;
+    m_surface->GetDevice(&dev);
+    D3D11_TEXTURE2D_DESC desc;
+    m_surface->GetDesc(&desc);
+    desc.MipLevels = 1;
+    desc.MiscFlags = 0;
+    desc.ArraySize = 1;
+    desc.Usage = D3D11_USAGE_STAGING;
+    desc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
+    desc.BindFlags = 0; //?
+    ComPtr<ID3D11Texture2D> tex;
+    DX_ENSURE(dev->CreateTexture2D(&desc, NULL, &tex), NULL);
+    ComPtr<ID3D11DeviceContext> ctx;
+    dev->GetImmediateContext(&ctx);
+    ctx->CopySubresourceRegion(tex.Get(), 0, 0, 0, 0
+                               , m_surface.Get()
+                               , m_index
+                               , NULL);
+    struct ScopedMap {
+        ScopedMap(ComPtr<ID3D11DeviceContext> ctx, ComPtr<ID3D11Texture2D> res, D3D11_MAPPED_SUBRESOURCE *mapped): c(ctx), r(res) {
+            DX_ENSURE(c->Map(r.Get(), 0, D3D11_MAP_READ, 0, mapped)); //TODO: check error
+        }
+        ~ScopedMap() { c->Unmap(r.Get(), 0);}
+        ComPtr<ID3D11DeviceContext> c;
+        ComPtr<ID3D11Texture2D> r;
+    };
+
+    D3D11_MAPPED_SUBRESOURCE mapped;
+    ScopedMap sm(ctx, tex, &mapped); //mingw error if ComPtr<T> constructs from ComPtr<U> [T=ID3D11Resource, U=ID3D11Texture2D]
+    Q_UNUSED(sm);
+    int pitch[3] = { (int)mapped.RowPitch, 0, 0}; //compute chroma later
+    uint8_t *src[] = { (uint8_t*)mapped.pData, 0, 0}; //compute chroma later
+    const VideoFormat fmt = pixelFormatFromFourcc(fourccFromDXGI(desc.Format));
+    VideoFrame frame = VideoFrame::fromGPU(fmt, frame_width, frame_height, desc.Height, src, pitch);
+    if (fmt != format)
+        frame = frame.to(format);
+    VideoFrame *f = reinterpret_cast<VideoFrame*>(handle);
+    frame.setTimestamp(f->timestamp());
+    *f = frame;
+    return f;
 }
 } //namespace d3d11
 } //namespace QtAV
