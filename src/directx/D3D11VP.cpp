@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "D3D11VP.h"
+#define DX_LOG_COMPONENT "D3D11VP"
 #include "utils/DirectXHelper.h"
 #include "utils/Logger.h"
 namespace QtAV {
@@ -27,6 +28,8 @@ namespace dx {
 
 D3D11VP::D3D11VP(ComPtr<ID3D11Device> dev)
     : m_dev(dev)
+    , m_w(0)
+    , m_h(0)
 {
     DX_ENSURE(m_dev.As(&m_viddev));
 }
@@ -34,6 +37,7 @@ D3D11VP::D3D11VP(ComPtr<ID3D11Device> dev)
 void D3D11VP::setOutput(ID3D11Texture2D *tex)
 {
     m_out = tex;
+    m_outview.Reset();
 }
 
 void D3D11VP::setSourceRect(const QRect &r)
@@ -47,45 +51,59 @@ bool D3D11VP::process(ID3D11Texture2D *texture, int index)
         return false;
     D3D11_TEXTURE2D_DESC desc;
     texture->GetDesc(&desc);
-    if (!m_enum) { // TODO: check input size change?
-        D3D11_VIDEO_PROCESSOR_CONTENT_DESC videoProcessorDesc = {
+    if (!ensureResource(desc.Width, desc.Height, desc.Format))
+        return false;
+
+    D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inviewDesc = {
+        0, D3D11_VPIV_DIMENSION_TEXTURE2D, { 0, (UINT)index }
+    };
+    ComPtr<ID3D11VideoProcessorInputView> inview;
+    DX_ENSURE(m_viddev->CreateVideoProcessorInputView(
+                texture, m_enum.Get(), &inviewDesc, &inview), false);
+    ComPtr<ID3D11DeviceContext> ctx;
+    ComPtr<ID3D11VideoContext> videoctx;
+    m_dev->GetImmediateContext(&ctx);
+    DX_ENSURE(ctx.As(&videoctx), false);
+    if (!m_srcRect.isEmpty()) {
+        const RECT r = {m_srcRect.x(), m_srcRect.y(), m_srcRect.width(), m_srcRect.height()};
+        videoctx->VideoProcessorSetStreamSourceRect(m_vp.Get(), 0, TRUE, &r);
+    }
+    D3D11_VIDEO_PROCESSOR_STREAM stream = { TRUE };
+    stream.pInputSurface = inview.Get();
+    DX_ENSURE(videoctx->VideoProcessorBlt(m_vp.Get(), m_outview.Get(), 0, 1, &stream), false);
+    return true;
+}
+
+bool D3D11VP::ensureResource(UINT width, UINT height, DXGI_FORMAT format)
+{
+    bool dirty = width != m_w || height != m_h;
+    if (dirty || !m_enum) {
+        D3D11_VIDEO_PROCESSOR_CONTENT_DESC vpdesc = {
             D3D11_VIDEO_FRAME_FORMAT_PROGRESSIVE,
-            { 0 }, desc.Width, desc.Height,
-            { 0 }, desc.Width, desc.Height,
+            { 0 }, width, height,
+            { 0 }, width, height,
             D3D11_VIDEO_USAGE_PLAYBACK_NORMAL //D3D11_VIDEO_USAGE_OPTIMAL_SPEED
         };
-        DX_ENSURE(m_viddev->CreateVideoProcessorEnumerator(&videoProcessorDesc, &m_enum), false);
-        UINT flags;
-        // TODO: check when format is changed, or record supported formats
-        DX_ENSURE(m_enum->CheckVideoProcessorFormat(desc.Format, &flags), false);
-        if (!(flags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT)) {
-            qWarning("unsupported input format for d3d11 video processor: %d", desc.Format);
-            return false;
-        }
+        DX_ENSURE(m_viddev->CreateVideoProcessorEnumerator(&vpdesc, &m_enum), false);
     }
-    if (!m_vp)
+
+    UINT flags;
+    // TODO: check when format is changed, or record supported formats
+    DX_ENSURE(m_enum->CheckVideoProcessorFormat(format, &flags), false);
+    if (!(flags & D3D11_VIDEO_PROCESSOR_FORMAT_SUPPORT_INPUT)) {
+        qWarning("unsupported input format for d3d11 video processor: %d", format);
+        return false;
+    }
+
+    if (dirty || !m_vp)
         DX_ENSURE(m_viddev->CreateVideoProcessor(m_enum.Get(), 0, &m_vp), false);
-    if (!m_outview) {
+    if (dirty || !m_outview) {
         D3D11_VIDEO_PROCESSOR_OUTPUT_VIEW_DESC outputDesc = { D3D11_VPOV_DIMENSION_TEXTURE2D };
         DX_ENSURE(m_viddev->CreateVideoProcessorOutputView(m_out.Get(), m_enum.Get(), &outputDesc, &m_outview), false);
     }
-    D3D11_VIDEO_PROCESSOR_INPUT_VIEW_DESC inputViewDesc = {
-        0, D3D11_VPIV_DIMENSION_TEXTURE2D, { 0, (UINT)index }
-    };
-    ComPtr<ID3D11VideoProcessorInputView> inputView;
-    DX_ENSURE(m_viddev->CreateVideoProcessorInputView(
-                texture, m_enum.Get(), &inputViewDesc, &inputView), false);
-    ComPtr<ID3D11DeviceContext> context;
-    ComPtr<ID3D11VideoContext> videoContext;
-    m_dev->GetImmediateContext(&context);
-    DX_ENSURE(context.As(&videoContext), false);
-    if (!m_srcRect.isEmpty()) {
-        const RECT r = {m_srcRect.x(), m_srcRect.y(), m_srcRect.width(), m_srcRect.height()};
-        videoContext->VideoProcessorSetStreamSourceRect(m_vp.Get(), 0, TRUE, &r);
-    }
-    D3D11_VIDEO_PROCESSOR_STREAM stream = { TRUE };
-    stream.pInputSurface = inputView.Get();
-    DX_ENSURE(videoContext->VideoProcessorBlt(m_vp.Get(), m_outview.Get(), 0, 1, &stream), false);
+
+    m_w = width;
+    m_h = height;
     return true;
 }
 } //namespace dx
