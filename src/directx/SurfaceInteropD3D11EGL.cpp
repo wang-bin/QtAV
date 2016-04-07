@@ -25,8 +25,10 @@
 #include "utils/DirectXHelper.h"
 
 #include "opengl/OpenGLHelper.h"
-#ifdef QT_OPENGL_ES_2_ANGLE_STATIC
+#if defined(QT_OPENGL_ES_2_ANGLE_STATIC) || defined(Q_OS_WINRT)
+#ifndef CAPI_LINK_EGL
 #define CAPI_LINK_EGL
+#endif //CAPI_LINK_EGL
 #else
 #define EGL_CAPI_NS
 #endif //QT_OPENGL_ES_2_ANGLE_STATIC

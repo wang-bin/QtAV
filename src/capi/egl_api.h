@@ -22,6 +22,8 @@
 #ifndef EGL_API_H
 #define EGL_API_H
 
+// winrt: must define CAPI_LINK_EGL
+
 // no need to include the C header if only functions declared there
 #ifndef CAPI_LINK_EGL
 namespace egl {

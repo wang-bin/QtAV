@@ -96,6 +96,7 @@ capi {
 contains(QT_CONFIG, egl)|contains(QT_CONFIG, dynamicgl)|contains(QT_CONFIG, opengles2) {
   CONFIG *= enable_egl
   !ios {
+    winrt: DEFINES += CAPI_LINK_EGL #required by capi_egl.*
     DEFINES += QTAV_HAVE_EGL_CAPI=1
     HEADERS *= capi/egl_api.h
     SOURCES *= capi/egl_api.cpp

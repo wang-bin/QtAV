@@ -27,7 +27,7 @@
 #include "capi.h"
 #endif //CAPI_LINK_EGL
 #include "egl_api.h" //include last to avoid covering types later
-
+// TODO: winrt resolver use GetModuleHandle first?
 namespace egl {
 #ifdef CAPI_LINK_EGL
 api::api(){dll=0;}
