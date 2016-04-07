@@ -28,7 +28,7 @@
 #include "QtAV/private/factory.h"
 //#include "QtAV/private/mkid.h"
 #include "utils/Logger.h"
-#include "SurfaceInteropDXVA.h"
+#include "directx/SurfaceInteropD3D9.h"
 #include <QtCore/QSysInfo>
 #define DX_LOG_COMPONENT "DXVA2"
 #include "utils/DirectXHelper.h"
@@ -64,7 +64,6 @@ extern "C" {
 namespace QtAV {
 MS_GUID(IID_IDirectXVideoDecoderService, 0xfc51a551, 0xd5e7, 0x11d9, 0xaf,0x55,0x00,0x05,0x4e,0x43,0xff,0x02);
 MS_GUID(IID_IDirectXVideoAccelerationService, 0xfc51a550, 0xd5e7, 0x11d9, 0xaf,0x55,0x00,0x05,0x4e,0x43,0xff,0x02);
-MS_GUID(IID_IDirect3DDevice9Ex, 0xb18b10ce, 0x2649, 0x405a, 0x87, 0xf, 0x95, 0xf7, 0x77, 0xd4, 0x31, 0x3a);
 
 class VideoDecoderDXVAPrivate;
 class VideoDecoderDXVA : public VideoDecoderD3D
@@ -99,10 +98,10 @@ public:
     VideoDecoderDXVAPrivate():
         VideoDecoderD3DPrivate()
     {
-#if QTAV_HAVE(DXVA_EGL)
-        if (OpenGLHelper::isOpenGLES() && QSysInfo::windowsVersion() >= QSysInfo::WV_VISTA)
+        // d3d9+gl interop may not work on optimus moble platforms, 0-copy is enabled only for egl interop
+        if (d3d9::InteropResource::isSupported(d3d9::InteropEGL) && QSysInfo::windowsVersion() >= QSysInfo::WV_VISTA)
             copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
-#endif
+
         hd3d9_dll = 0;
         hdxva2_dll = 0;
         d3dobj = 0;
@@ -150,7 +149,7 @@ private:
     struct dxva_context hw_ctx;
     QString vendor;
 public:
-    dxva::InteropResourcePtr interop_res; //may be still used in video frames when decoder is destroyed
+    d3d9::InteropResourcePtr interop_res; //may be still used in video frames when decoder is destroyed
 };
 
 static D3DFORMAT fourccToD3D(int fcc) {
@@ -186,7 +185,7 @@ VideoFrame VideoDecoderDXVA::frame()
 
     IDirect3DSurface9 *d3d = (IDirect3DSurface9*)(uintptr_t)d.frame->data[3];
     if (copyMode() == ZeroCopy && d.interop_res) {
-        dxva::SurfaceInteropDXVA *interop = new dxva::SurfaceInteropDXVA(d.interop_res);
+        d3d9::SurfaceInterop *interop = new d3d9::SurfaceInterop(d.interop_res);
         interop->setSurface(d3d, d.width, d.height);
         VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32);
         f.setBytesPerLine(d.width * 4); //used by gl to compute texture size
@@ -446,24 +445,7 @@ void VideoDecoderDXVAPrivate::setupAVVAContext(AVCodecContext* avctx)
 
 bool VideoDecoderDXVAPrivate::setupSurfaceInterop()
 {
-    IDirect3DDevice9Ex *devEx;
-    d3ddev->QueryInterface(IID_IDirect3DDevice9Ex, (void**)&devEx);
-    qDebug("using D3D9Ex: %d", !!devEx);
-    // runtime check gles for dynamic gl
-#if QTAV_HAVE(DXVA_EGL)
-    if (OpenGLHelper::isOpenGLES()) {
-        // d3d9ex is required to share d3d resource. It's available in vista and later. d3d9 can not CreateTexture with shared handle
-        if (devEx)
-            interop_res = dxva::InteropResourcePtr(new dxva::EGLInteropResource(d3ddev));
-        else
-            qDebug("D3D9Ex is not available. Disable 0-copy.");
-    }
-#endif
-    SafeRelease(&devEx);
-#if QTAV_HAVE(DXVA_GL)
-    if (!OpenGLHelper::isOpenGLES())
-        interop_res = dxva::InteropResourcePtr(new dxva::GLInteropResource(d3ddev));
-#endif
+    interop_res = d3d9::InteropResourcePtr(d3d9::InteropResource::create(d3ddev));
     return true;
 }
 } //namespace QtAV

@@ -11,7 +11,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
       }
   }
 } else {
-config_gl: QT += opengl
+  config_gl: QT += opengl
 }
 CONFIG *= qtav-buildlib
 staticlib: DEFINES += BUILD_QTAV_STATIC
@@ -96,12 +96,16 @@ capi {
 contains(QT_CONFIG, egl)|contains(QT_CONFIG, dynamicgl)|contains(QT_CONFIG, opengles2) {
   CONFIG *= enable_egl
   !ios {
-    greaterThan(QT_MAJOR_VERSION, 4):qtHaveModule(x11extras): QT *= x11extras
     DEFINES += QTAV_HAVE_EGL_CAPI=1
     HEADERS *= capi/egl_api.h
     SOURCES *= capi/egl_api.cpp
   }
 }
+}
+enable_egl:greaterThan(QT_MAJOR_VERSION,4):qtHaveModule(x11extras): QT *= x11extras
+
+config_gl|config_opengl {
+  contains(QT_CONFIG, opengl):!contains(QT_CONFIG, opengles2): CONFIG *= enable_desktopgl
 }
 #UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
 DEFINES += __STDC_CONSTANT_MACROS
@@ -266,18 +270,25 @@ config_d3d11va {
   SOURCES += directx/D3D11VP.cpp
   enable_egl {
     SOURCES += codec/video/SurfaceInteropD3D11EGL.cpp
-  } else:contains(QT_CONFIG, opengl) {
+  }
+  enable_desktopgl {
   }
   winrt: LIBS *= -ld3d11
 }
+win32:!winrt {
+  HEADERS += directx/SurfaceInteropD3D9.h
+  SOURCES += directx/SurfaceInteropD3D9.cpp
+  enable_egl {
+    SOURCES += directx/SurfaceInteropD3D9EGL.cpp
+  }
+  enable_desktopgl {
+    SOURCES += directx/SurfaceInteropD3D9GL.cpp
+  }
+}
 config_dxva {
   CONFIG *= d3dva
-    DEFINES *= QTAV_HAVE_DXVA=1
-    SOURCES += codec/video/VideoDecoderDXVA.cpp
-  contains(QT_CONFIG, opengl) {
-    HEADERS += codec/video/SurfaceInteropDXVA.h
-    SOURCES += codec/video/SurfaceInteropDXVA.cpp
-  }
+  DEFINES *= QTAV_HAVE_DXVA=1
+  SOURCES += codec/video/VideoDecoderDXVA.cpp
   LIBS += -lole32
 }
 d3dva {

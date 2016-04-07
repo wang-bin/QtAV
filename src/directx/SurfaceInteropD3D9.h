@@ -19,34 +19,33 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_SURFACEINTEROPDXVA_H
-#define QTAV_SURFACEINTEROPDXVA_H
+#ifndef QTAV_SURFACEINTEROPD3D9_H
+#define QTAV_SURFACEINTEROPD3D9_H
 #include <d3d9.h>
 #include "QtAV/SurfaceInterop.h"
-#include "opengl/OpenGLHelper.h"
-// no need to check qt4 because no ANGLE there
-#if QTAV_HAVE(EGL_CAPI) // always use dynamic load
-#if defined(QT_OPENGL_DYNAMIC) || defined(QT_OPENGL_ES_2) || defined(QT_OPENGL_ES_2_ANGLE)
-#define QTAV_HAVE_DXVA_EGL 1
-#endif
-#endif //QTAV_HAVE(EGL_CAPI)
-#if defined(QT_OPENGL_DYNAMIC) || !defined(QT_OPENGL_ES_2)
-#define QTAV_HAVE_DXVA_GL 1
-#endif
 
 namespace QtAV {
-namespace dxva {
+namespace d3d9 {
+
+enum InteropType {
+    InteropAuto,
+    InteropEGL,
+    InteropGL
+};
 
 class InteropResource
 {
 public:
+    static bool isSupported(InteropType type = InteropAuto);
+    static InteropResource* create(IDirect3DDevice9 * dev, InteropType type = InteropAuto);
+    typedef unsigned int GLuint;
     InteropResource(IDirect3DDevice9 * d3device);
     virtual ~InteropResource();
     /*!
      * \brief map
-     * \param surface dxva decoded surface
+     * \param surface d3d9 surface
      * \param tex opengl texture
-     * \param w frame width(visual width) without alignment, <= dxva surface width
+     * \param w frame width(visual width) without alignment, <= d3d9 surface width
      * \param h frame height(visual height)
      * \param plane useless now
      * \return true if success
@@ -63,15 +62,15 @@ protected:
 };
 typedef QSharedPointer<InteropResource> InteropResourcePtr;
 
-class SurfaceInteropDXVA Q_DECL_FINAL: public VideoSurfaceInterop
+class SurfaceInterop Q_DECL_FINAL: public VideoSurfaceInterop
 {
 public:
-    SurfaceInteropDXVA(const InteropResourcePtr& res) : m_surface(0), m_resource(res), frame_width(0), frame_height(0) {}
-    ~SurfaceInteropDXVA();
+    SurfaceInterop(const InteropResourcePtr& res) : m_surface(0), m_resource(res), frame_width(0), frame_height(0) {}
+    ~SurfaceInterop();
     /*!
      * \brief setSurface
-     * \param surface dxva decoded surface
-     * \param frame_w frame width(visual width) without alignment, <= dxva surface width
+     * \param surface d3d9 surface
+     * \param frame_w frame width(visual width) without alignment, <= d3d9 surface width
      * \param frame_h frame height(visual height)
      */
     void setSurface(IDirect3DSurface9* surface, int frame_w, int frame_h);
@@ -86,45 +85,6 @@ private:
     InteropResourcePtr m_resource;
     int frame_width, frame_height;
 };
-
-#if QTAV_HAVE(DXVA_EGL)
-class EGL;
-class EGLInteropResource Q_DECL_FINAL: public InteropResource
-{
-public:
-    EGLInteropResource(IDirect3DDevice9 * d3device);
-    ~EGLInteropResource();
-    bool map(IDirect3DSurface9 *surface, GLuint tex, int w, int h, int) Q_DECL_OVERRIDE;
-
-private:
-    void releaseEGL();
-    bool ensureSurface(int w, int h);
-
-    EGL* egl;
-    IDirect3DQuery9 *dx_query;
-};
-#endif //QTAV_HAVE(DXVA_EGL)
-
-#if QTAV_HAVE(DXVA_GL)
-struct WGL;
-class GLInteropResource Q_DECL_FINAL: public InteropResource
-{
-public:
-    GLInteropResource(IDirect3DDevice9 * d3device);
-    ~GLInteropResource();
-    bool map(IDirect3DSurface9 *surface, GLuint tex, int frame_w, int frame_h, int) Q_DECL_OVERRIDE;
-    bool unmap(GLuint tex) Q_DECL_OVERRIDE;
-private:
-    bool ensureWGL();
-    bool ensureResource(int w, int h, GLuint tex);
-
-    HANDLE interop_dev;
-    HANDLE interop_obj;
-    WGL *wgl;
-};
-#endif //QTAV_HAVE(DXVA_GL)
-} //namespace dxva
+} //namespace d3d9
 } //namespace QtAV
-
-
-#endif // QTAV_SURFACEINTEROPDXVA_H
+#endif // QTAV_SURFACEINTEROPD3D9_H
