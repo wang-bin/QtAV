@@ -44,7 +44,7 @@ public:
      * \brief isSupported
      * \return true if support 0-copy interop. Currently only d3d11+egl, i.e. check egl build environment and runtime egl support.
      */
-    static bool isSupported();
+    static bool isSupported(InteropType type = InteropAuto);
 
     void setDevice(ComPtr<ID3D11Device> dev);
     virtual ~InteropResource() {}

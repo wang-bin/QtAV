@@ -30,7 +30,7 @@ extern "C" {
 #include <libavcodec/d3d11va.h>
 }
 using namespace Microsoft::WRL; //ComPtr
-#include "SurfaceInteropD3D11.h"
+#include "directx/SurfaceInteropD3D11.h"
 #include "utils/Logger.h"
 
 namespace QtAV {

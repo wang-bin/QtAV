@@ -263,13 +263,13 @@ include(../depends/dllapi/src/libdllapi.pri)
 config_d3d11va {
   CONFIG *= d3dva c++11
   DEFINES *= QTAV_HAVE_D3D11VA=1
-  HEADERS += codec/video/SurfaceInteropD3D11.h
-  SOURCES += codec/video/VideoDecoderD3D11.cpp \
-             codec/video/SurfaceInteropD3D11.cpp
+  SOURCES += codec/video/VideoDecoderD3D11.cpp
+  HEADERS += directx/SurfaceInteropD3D11.h
+  SOURCES += directx/SurfaceInteropD3D11.cpp
   HEADERS += directx/D3D11VP.h
   SOURCES += directx/D3D11VP.cpp
   enable_egl {
-    SOURCES += codec/video/SurfaceInteropD3D11EGL.cpp
+    SOURCES += directx/SurfaceInteropD3D11EGL.cpp
   }
   enable_desktopgl {
   }

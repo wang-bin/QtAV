@@ -37,36 +37,37 @@
 namespace QtAV {
 namespace d3d11 {
 
-bool InteropResource::isSupported()
+bool InteropResource::isSupported(InteropType type)
 {
-#if QTAV_HAVE(EGL_CAPI)
-    // runtime check gles for dynamic gl
-    if (OpenGLHelper::isOpenGLES()) {
-        return true;
-    }
+    if (type == InteropAuto || type == InteropEGL) {
+#if QTAV_HAVE(D3D11_EGL)
+        if (OpenGLHelper::isOpenGLES())
+            return true;
 #endif
+    }
+    if (type == InteropAuto || type == InteropGL) {
+#if QTAV_HAVE(D3D11_GL)
+        if (!OpenGLHelper::isOpenGLES())
+            return true;
+#endif
+    }
     return false;
 }
 
 extern InteropResource* CreateInteropEGL();
 InteropResource* InteropResource::create(InteropType type)
 {
-    if (type == InteropAuto) {
-#if QTAV_HAVE(EGL_CAPI)
-        // runtime check gles for dynamic gl
-        if (OpenGLHelper::isOpenGLES()) {
+    if (type == InteropAuto || type == InteropEGL) {
+#if QTAV_HAVE(D3D11_EGL)
+        if (OpenGLHelper::isOpenGLES())
             return CreateInteropEGL();
-        }
 #endif
     }
-#ifdef _MSC_VER
-#pragma warning(disable:4065) //vc: switch has default but no case
-#endif //_MSC_VER
-    switch (type) {
-#if QTAV_HAVE(EGL_CAPI)
-    case InteropEGL: return CreateInteropEGL();
+    if (type == InteropAuto || type == InteropGL) {
+#if QTAV_HAVE(D3D11_GL)
+        if (!OpenGLHelper::isOpenGLES())
+            return CreateInteropGL();
 #endif
-    default: return NULL;
     }
     return NULL;
 }
