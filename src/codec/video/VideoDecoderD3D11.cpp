@@ -111,7 +111,7 @@ public:
         dll = LoadLibrary(TEXT("d3d11.dll"));
         available = !!dll;
 #endif
-        if (d3d11::InteropResource::isSupported())
+        if (d3d11::InteropResource::isSupported(d3d11::InteropEGL))
             copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
     }
     ~VideoDecoderD3D11Private() {
@@ -168,12 +168,16 @@ VideoFrame VideoDecoderD3D11::frame()
     }
     D3D11_VIDEO_DECODER_OUTPUT_VIEW_DESC view_desc;
     surface->GetDesc(&view_desc);
-
+    D3D11_TEXTURE2D_DESC tex_desc;
+    texture->GetDesc(&tex_desc);
     if (copyMode() == VideoDecoderFFmpegHW::ZeroCopy && d.interop_res) {
         d3d11::SurfaceInterop *interop = new d3d11::SurfaceInterop(d.interop_res);
         interop->setSurface(texture, view_desc.Texture2D.ArraySlice, d.width, d.height);
-        VideoFrame f(d.width, d.height, VideoFormat::Format_RGB32);
-        f.setBytesPerLine(d.width * 4); //used by gl to compute texture size
+        VideoFormat fmt(d.interop_res->format(tex_desc.Format));
+        VideoFrame f(d.width, d.height, fmt);
+        for (int i = 0; i < fmt.planeCount(); ++i) {
+            f.setBytesPerLine(fmt.bytesPerLine(d.width, i), i); //used by gl to compute texture size
+        }
         f.setMetaData(QStringLiteral("surface_interop"), QVariant::fromValue(VideoSurfaceInteropPtr(interop)));
         f.setTimestamp(d.frame->pkt_pts/1000.0);
         f.setDisplayAspectRatio(d.getDAR(d.frame));
@@ -198,8 +202,6 @@ VideoFrame VideoDecoderD3D11::frame()
     Q_UNUSED(sm);
     int pitch[3] = { (int)mapped.RowPitch, 0, 0}; //compute chroma later
     uint8_t *src[] = { (uint8_t*)mapped.pData, 0, 0}; //compute chroma later
-    D3D11_TEXTURE2D_DESC tex_desc;
-    texture->GetDesc(&tex_desc);
     const VideoFormat format = pixelFormatFromFourcc(d.format_fcc); //tex_desc
     return copyToFrame(format, tex_desc.Height, src, pitch, false);
 }

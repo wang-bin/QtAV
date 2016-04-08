@@ -46,8 +46,9 @@ public:
      */
     static bool isSupported(InteropType type = InteropAuto);
 
-    void setDevice(ComPtr<ID3D11Device> dev);
     virtual ~InteropResource() {}
+    void setDevice(ComPtr<ID3D11Device> dev);
+    virtual VideoFormat::PixelFormat format(DXGI_FORMAT dxfmt) const = 0;
     /*!
      * \brief map
      * \param surface dxva decoded surface
@@ -62,9 +63,7 @@ public:
     virtual bool unmap(GLuint tex) { Q_UNUSED(tex); return true;}
 protected:
     ComPtr<ID3D11Device> d3ddev;
-    ComPtr<ID3D11Texture2D> d3dtex;
     int width, height; // video frame width and dx_surface width without alignment, not dxva decoded surface width
-private:
 };
 typedef QSharedPointer<InteropResource> InteropResourcePtr;
 

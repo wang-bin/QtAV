@@ -33,7 +33,7 @@
 #endif
 #endif //QTAV_HAVE(EGL_CAPI)
 #if defined(QT_OPENGL_DYNAMIC) || !defined(QT_OPENGL_ES_2)
-//#define QTAV_HAVE_D3D11_GL 1
+#define QTAV_HAVE_D3D11_GL 1
 #endif
 
 namespace QtAV {
@@ -60,6 +60,7 @@ bool InteropResource::isSupported(InteropType type)
 }
 
 extern InteropResource* CreateInteropEGL();
+extern InteropResource* CreateInteropGL();
 InteropResource* InteropResource::create(InteropType type)
 {
     if (type == InteropAuto || type == InteropEGL) {
@@ -94,12 +95,9 @@ void* SurfaceInterop::map(SurfaceType type, const VideoFormat &fmt, void *handle
 {
     if (!handle)
         return NULL;
-
     if (!m_surface)
         return 0;
     if (type == GLTextureSurface) {
-        if (!fmt.isRGB())
-            return NULL;
         if (m_resource->map(m_surface, m_index, *((GLuint*)handle), frame_width, frame_height, plane))
             return handle;
     } else if (type == HostMemorySurface) {

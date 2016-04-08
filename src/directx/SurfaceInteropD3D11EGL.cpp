@@ -53,6 +53,7 @@ public:
         , vp(0)
     {}
     ~EGLInteropResource();
+    VideoFormat::PixelFormat format(DXGI_FORMAT) const Q_DECL_OVERRIDE { return VideoFormat::Format_RGB32;}
     bool map(ComPtr<ID3D11Texture2D> surface, int index, GLuint tex, int w, int h, int) Q_DECL_OVERRIDE;
 
 private:
@@ -61,6 +62,7 @@ private:
 
     EGL* egl;
     dx::D3D11VP *vp;
+    ComPtr<ID3D11Texture2D> d3dtex;
 };
 
 InteropResource* CreateInteropEGL() { return new EGLInteropResource();}

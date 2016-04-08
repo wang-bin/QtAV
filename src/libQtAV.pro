@@ -273,6 +273,7 @@ config_d3d11va {
     SOURCES += directx/SurfaceInteropD3D11EGL.cpp
   }
   enable_desktopgl {
+    SOURCES += directx/SurfaceInteropD3D11GL.cpp
   }
   winrt: LIBS *= -ld3d11
 }
