@@ -19,6 +19,7 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 #include "gl_api.h"
+#include "OpenGLHelper.h"
 
 namespace QtAV {
 typedef void *(*GetProcAddress_t)(const char *);
@@ -82,6 +83,11 @@ void* GetProcAddress_Qt(const char *name)
 } while(0)
 #endif
 
+#define WGL_RESOLVE(name) do {\
+    void** fp = (void**)(&name); \
+    *fp = sGetProcAddress("wgl" # name); \
+} while(0)
+
 void api::resolve()
 {
     //memset(g, 0, sizeof(g));
@@ -107,6 +113,27 @@ void api::resolve()
     GL_RESOLVE(UniformMatrix4fv);
 
     GL_RESOLVE_ES_3_1(GetTexLevelParameteriv);
+
+#ifdef Q_OS_WIN32
+    if (!OpenGLHelper::isOpenGLES()) {
+        static const char* ext[] = {
+            "WGL_NV_DX_interop2",
+            "WGL_NV_DX_interop",
+            NULL,
+        };
+        if (OpenGLHelper::hasExtension(ext)) { // TODO: use wgl getprocaddress function (for qt4)
+            qDebug("resolving WGL_NV_DX_interop...");
+            WGL_RESOLVE(DXSetResourceShareHandleNV);
+            WGL_RESOLVE(DXOpenDeviceNV);
+            WGL_RESOLVE(DXCloseDeviceNV);
+            WGL_RESOLVE(DXRegisterObjectNV);
+            WGL_RESOLVE(DXUnregisterObjectNV);
+            WGL_RESOLVE(DXObjectAccessNV);
+            WGL_RESOLVE(DXLockObjectsNV);
+            WGL_RESOLVE(DXUnlockObjectsNV);
+        }
+    }
+#endif //Q_OS_WIN32
 }
 
 api& gl() {

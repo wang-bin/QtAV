@@ -143,6 +143,24 @@ struct api {
     // Before using the following members, check null ptr first because they are not valid everywhere
 // ES3.1
     void (GL_APIENTRY *GetTexLevelParameteriv)(GLenum, GLint, GLenum, GLint *);
+
+#if defined(Q_OS_WIN32)
+    //#include <GL/wglext.h> //not found in vs2013
+    //https://www.opengl.org/registry/specs/NV/DX_interop.txt
+#ifndef WGL_ACCESS_READ_ONLY_NV
+#define WGL_ACCESS_READ_ONLY_NV           0x00000000
+#define WGL_ACCESS_READ_WRITE_NV          0x00000001
+#define WGL_ACCESS_WRITE_DISCARD_NV       0x00000002
+#endif
+    BOOL (WINAPI* DXSetResourceShareHandleNV)(void *dxObject, HANDLE shareHandle);
+    HANDLE (WINAPI* DXOpenDeviceNV)(void *dxDevice);
+    BOOL (WINAPI* DXCloseDeviceNV)(HANDLE hDevice);
+    HANDLE (WINAPI* DXRegisterObjectNV)(HANDLE hDevice, void *dxObject, GLuint name, GLenum type, GLenum access);
+    BOOL (WINAPI* DXUnregisterObjectNV)(HANDLE hDevice, HANDLE hObject);
+    BOOL (WINAPI* DXObjectAccessNV)(HANDLE hObject, GLenum access);
+    BOOL (WINAPI* DXLockObjectsNV)(HANDLE hDevice, GLint count, HANDLE *hObjects);
+    BOOL (WINAPI* DXUnlockObjectsNV)(HANDLE hDevice, GLint count, HANDLE *hObjects);
+#endif
 };
 } //namespace QtAV
 #endif //QT_NO_OPENGL

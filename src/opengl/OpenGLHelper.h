@@ -48,6 +48,21 @@
         } \
     } while(0)
 
+
+#define WGL_ENSURE(x, ...) \
+    do { \
+        if (!(x)) { \
+            qWarning() << "WGL error " << __FILE__ << "@" << __LINE__ << " " << #x << ": " << qt_error_string(GetLastError()); \
+            return __VA_ARGS__; \
+        } \
+    } while(0)
+#define WGL_WARN(x, ...) \
+    do { \
+        if (!(x)) { \
+    qWarning() << "WGL error " << __FILE__ << "@" << __LINE__ << " " << #x << ": " << qt_error_string(GetLastError()); \
+        } \
+    } while(0)
+
 QT_BEGIN_NAMESPACE
 class QMatrix4x4;
 QT_END_NAMESPACE
