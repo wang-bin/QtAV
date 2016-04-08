@@ -23,6 +23,7 @@
 #define QTAV_VIDEODECODERD3D_H
 
 #include <windows.h>
+#include <unknwn.h>
 #include <inttypes.h>
 #include "VideoDecoderFFmpegHW.h"
 #include "VideoDecoderFFmpegHW_p.h"

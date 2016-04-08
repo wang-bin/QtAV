@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "SurfaceInteropD3D11.h"
+#include <stdint.h> // uint8_t for windows phone
 #include "QtAV/VideoFrame.h"
 #define DX_LOG_COMPONENT "D3D11 Interop"
 #include "utils/DirectXHelper.h"
