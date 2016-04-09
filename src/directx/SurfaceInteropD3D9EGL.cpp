@@ -177,11 +177,11 @@ bool EGLInteropResource::map(IDirect3DSurface9* surface, GLuint tex, int w, int 
         releaseDX();
         return false;
     }
-    const RECT src = { 0, 0, w, h};
+    const RECT src = { 0, 0, (~0-1)&w, (~0-1)&h};
     DX_ENSURE(d3ddev->StretchRect(surface, &src, dx_surface, NULL, D3DTEXF_NONE), false);
     if (dx_query) {
         // Flush the draw command now. Ideally, this should be done immediately before the draw call that uses the texture. Flush it once here though.
-        dx_query->Issue(D3DISSUE_END);
+        dx_query->Issue(D3DISSUE_END); //StretchRect does not supports odd values
         // ensure data is copied to egl surface. Solution and comment is from chromium
         // The DXVA decoder has its own device which it uses for decoding. ANGLE has its own device which we don't have access to.
         // The above code attempts to copy the decoded picture into a surface which is owned by ANGLE.

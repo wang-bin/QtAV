@@ -535,7 +535,7 @@ bool EGLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint 
 #if 0
     //IDirect3DSurface9 *raw_surface = NULL;
     //DX_ENSURE(texture9_nv12->GetSurfaceLevel(0, &raw_surface), false);
-    const RECT src = { 0, 0, w, h*3/2};
+    const RECT src = { 0, 0, (~0-1)&w, (~0-1)&(h*3/2)};
     DX_ENSURE(device9->StretchRect(raw_surface, &src, surface9_nv12, NULL, D3DTEXF_NONE), false);
 #endif
     if (!map(surface9_nv12, tex, w, h, H))
@@ -548,31 +548,27 @@ bool EGLInteropResource::map(IDirect3DSurface9* surface, GLuint tex, int w, int 
     Q_UNUSED(H);
     D3DSURFACE_DESC dxvaDesc;
     surface->GetDesc(&dxvaDesc);
-    DYGL(glBindTexture(GL_TEXTURE_2D, tex));
-    const RECT src = { 0, 0, w, h};
-    HRESULT ret = device9->StretchRect(surface, &src, surface9, NULL, D3DTEXF_NONE);
-    if (SUCCEEDED(ret)) {
-        if (query9) {
-            // Flush the draw command now. Ideally, this should be done immediately before the draw call that uses the texture. Flush it once here though.
-            query9->Issue(D3DISSUE_END);
-            // ensure data is copied to egl surface. Solution and comment is from chromium
-            // The DXVA decoder has its own device which it uses for decoding. ANGLE has its own device which we don't have access to.
-            // The above code attempts to copy the decoded picture into a surface which is owned by ANGLE.
-            // As there are multiple devices involved in this, the StretchRect call above is not synchronous.
-            // We attempt to flush the batched operations to ensure that the picture is copied to the surface owned by ANGLE.
-            // We need to do this in a loop and call flush multiple times.
-            // We have seen the GetData call for flushing the command buffer fail to return success occassionally on multi core machines, leading to an infinite loop.
-            // Workaround is to have an upper limit of 10 on the number of iterations to wait for the Flush to finish.
-            int k = 0;
-            // skip at decoder.close()
-            while (/*!skip_dx.load() && */(query9->GetData(NULL, 0, D3DGETDATA_FLUSH) == FALSE) && ++k < 10) {
-                Sleep(1);
-            }
+    const RECT src = { 0, 0, (~0-1)&w, (~0-1)&h}; //StretchRect does not supports odd values
+    DX_ENSURE(device9->StretchRect(surface, &src, surface9, NULL, D3DTEXF_NONE), false);
+    if (query9) {
+        // Flush the draw command now. Ideally, this should be done immediately before the draw call that uses the texture. Flush it once here though.
+        query9->Issue(D3DISSUE_END);
+        // ensure data is copied to egl surface. Solution and comment is from chromium
+        // The DXVA decoder has its own device which it uses for decoding. ANGLE has its own device which we don't have access to.
+        // The above code attempts to copy the decoded picture into a surface which is owned by ANGLE.
+        // As there are multiple devices involved in this, the StretchRect call above is not synchronous.
+        // We attempt to flush the batched operations to ensure that the picture is copied to the surface owned by ANGLE.
+        // We need to do this in a loop and call flush multiple times.
+        // We have seen the GetData call for flushing the command buffer fail to return success occassionally on multi core machines, leading to an infinite loop.
+        // Workaround is to have an upper limit of 10 on the number of iterations to wait for the Flush to finish.
+        int k = 0;
+        // skip at decoder.close()
+        while (/*!skip_dx.load() && */(query9->GetData(NULL, 0, D3DGETDATA_FLUSH) == FALSE) && ++k < 10) {
+            Sleep(1);
         }
-        eglBindTexImage(egl->dpy, egl->surface, EGL_BACK_BUFFER);
-    } else {
-        qWarning() << "map to egl error: " << ret << " - " << qt_error_string(ret);
     }
+    DYGL(glBindTexture(GL_TEXTURE_2D, tex));
+    eglBindTexImage(egl->dpy, egl->surface, EGL_BACK_BUFFER);
     DYGL(glBindTexture(GL_TEXTURE_2D, 0));
     return true;
 }

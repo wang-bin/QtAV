@@ -70,7 +70,7 @@ bool GLInteropResource::map(IDirect3DSurface9 *surface, GLuint tex, int w, int h
     // call in ensureResource or in map?
     WGL_ENSURE((interop_obj = gl().DXRegisterObjectNV(interop_dev, dx_surface, tex, GL_TEXTURE_2D, WGL_ACCESS_READ_ONLY_NV)) != NULL, false);
     // prepare dx resources for gl
-    const RECT src = { 0, 0, w, h};
+    const RECT src = { 0, 0, (~0-1)&w, (~0-1)&h}; //StretchRect does not supports odd values
     DX_ENSURE_OK(d3ddev->StretchRect(surface, &src, dx_surface, NULL, D3DTEXF_NONE), false);
     // lock dx resources
     WGL_ENSURE(gl().DXLockObjectsNV(interop_dev, 1, &interop_obj), false);
