@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
@@ -334,7 +334,7 @@ VideoDecoderCUDA::VideoDecoderCUDA():
     // format: detail_property
     setProperty("detail_surfaces", tr("Decoding surfaces"));
     setProperty("detail_flags", tr("Decoder flags"));
-    setProperty("detail_copyMode", QString("%1\n%2\n%3\%4")
+    setProperty("detail_copyMode", QString("%1\n%2\n%3\n%4")
                 .arg(tr("Performace: ZeroCopy > DirectCopy > GenericCopy"))
                 .arg(tr("ZeroCopy: no copy back from GPU to System memory. Directly render the decoded data on GPU"))
                 .arg(tr("DirectCopy: copy back to host memory but video frames and map to GL texture"))
