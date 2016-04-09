@@ -89,8 +89,10 @@ public:
     void setColorSpace(ColorSpace value);
     ColorRange colorRange() const;
     void setColorRange(ColorRange value);
-
-    // no padded bytes
+    /*!
+     * \brief effectiveBytesPerLine
+     * The plane bytes contains valid image data without padded data for alignment reason
+     */
     int effectiveBytesPerLine(int plane) const;
     /*!
      * \brief toImage

@@ -659,7 +659,7 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
     DYGL(glTexSubImage2D(d.target, 0, 0, 0, d.texture_upload_size[p].width(), d.texture_upload_size[p].height(), d.data_format[p], d.data_type[p], d.try_pbo ? 0 : d.frame.constBits(p)));
     if (false) { //texture_upload_size[].width()*gl_bpp != bytesPerLine[]
         for (int y = 0; y < d.plane0Size.height(); ++y)
-            DYGL(glTexSubImage2D(d.target, 0, 0, y, d.texture_upload_size[p].width()/3, 1, d.data_format[p], d.data_type[p], d.try_pbo ? 0 : d.frame.constBits(p)+y*d.plane0Size.width()));
+            DYGL(glTexSubImage2D(d.target, 0, 0, y, d.texture_upload_size[p].width(), 1, d.data_format[p], d.data_type[p], d.try_pbo ? 0 : d.frame.constBits(p)+y*d.plane0Size.width()));
     }
     //DYGL(glBindTexture(d.target, 0)); // no bind 0 because glActiveTexture was called
     if (d.try_pbo) {
@@ -1005,39 +1005,39 @@ bool VideoMaterialPrivate::ensureResources()
     const VideoFormat &fmt = video_format;
     if (!fmt.isValid())
         return false;
-
     // update textures if format, texture target, valid texture width(normalized), plane 0 size or plane 1 line size changed
     bool update_textures = init_textures_required;
     const int nb_planes = fmt.planeCount();
-    // will this take too much time?
-    const qreal wr = (qreal)frame.effectiveBytesPerLine(nb_planes-1)/(qreal)frame.bytesPerLine(nb_planes-1);
-    const int linsize0 = frame.bytesPerLine(0);
     // effective size may change even if plane size not changed
+    bool effective_tex_width_ratio_changed = true;
+    for (int i = 0; i < nb_planes; ++i) {
+        if ((qreal)frame.effectiveBytesPerLine(0)/(qreal)frame.bytesPerLine(0) == effective_tex_width_ratio) {
+            effective_tex_width_ratio_changed = false;
+            break;
+        }
+    }
+    const int linsize0 = frame.bytesPerLine(0);
     if (update_textures
-            || !qFuzzyCompare(wr, effective_tex_width_ratio)
+            || effective_tex_width_ratio_changed
             || linsize0 != plane0Size.width() || frame.height() != plane0Size.height()
             || (plane1_linesize > 0 && frame.bytesPerLine(1) != plane1_linesize)) { // no need to check height if plane 0 sizes are equal?
         update_textures = true;
-        //qDebug("---------------------update texture: %dx%d, %s", width, frame.height(), video_format.name().toUtf8().constData());
         v_texel_size.resize(nb_planes);
         texture_size.resize(nb_planes);
         texture_upload_size.resize(nb_planes);
         effective_tex_width.resize(nb_planes);
+        effective_tex_width_ratio = 1.0;
         for (int i = 0; i < nb_planes; ++i) {
-            qDebug("plane linesize %d: padded = %d, effective = %d", i, frame.bytesPerLine(i), frame.effectiveBytesPerLine(i));
-            qDebug("plane width %d: effective = %d", frame.planeWidth(i), frame.effectivePlaneWidth(i));
-            qDebug("planeHeight %d = %d", i, frame.planeHeight(i));
+            qDebug("plane linesize %d: padded = %d, effective = %d. theoretical plane size: %dx%d", i, frame.bytesPerLine(i), frame.effectiveBytesPerLine(i), frame.planeWidth(i), frame.planeHeight(i));
             // we have to consider size of opengl format. set bytesPerLine here and change to width later
             texture_size[i] = QSize(frame.bytesPerLine(i), frame.planeHeight(i));
             texture_upload_size[i] = texture_size[i];
             effective_tex_width[i] = frame.effectiveBytesPerLine(i); //store bytes here, modify as width later
-            //qDebug("bpl%d: %d/%d", i, frame.effectiveBytesPerLine(i), frame.bytesPerLine(i));
-            // TODO: ratio count the GL_UNPACK_ALIGN?
-            //effective_tex_width_ratio = qMin((qreal)1.0, (qreal)frame.effectiveBytesPerLine(i)/(qreal)frame.bytesPerLine(i));
+            // usually they are the same. If not, the difference is small. min value can avoid rendering the invalid data.
+            effective_tex_width_ratio = qMin(effective_tex_width_ratio, (qreal)frame.effectiveBytesPerLine(i)/(qreal)frame.bytesPerLine(i));
         }
         plane1_linesize = 0;
         if (nb_planes > 1) {
-            texture_size[0].setWidth(texture_size[1].width() * effective_tex_width[0]/effective_tex_width[1]);
             // height? how about odd?
             plane1_linesize = frame.bytesPerLine(1);
         }
@@ -1046,7 +1046,6 @@ bool VideoMaterialPrivate::ensureResources()
           e.g. original frame plane 0: 720/768; plane 1,2: 360/384,
           filtered frame plane 0: 720/736, ... (16 aligned?)
          */
-        effective_tex_width_ratio = (qreal)frame.effectiveBytesPerLine(nb_planes-1)/(qreal)frame.bytesPerLine(nb_planes-1);
         qDebug("effective_tex_width_ratio=%f", effective_tex_width_ratio);
         plane0Size.setWidth(linsize0);
         plane0Size.setHeight(frame.height());
@@ -1054,7 +1053,6 @@ bool VideoMaterialPrivate::ensureResources()
     if (update_textures) {
         updateTextureParameters(fmt);
         // check pbo support
-        // TODO: complete pbo extension set
         try_pbo = try_pbo && OpenGLHelper::isPBOSupported();
         // check PBO support with bind() is fine, no need to check extensions
         if (try_pbo) {
