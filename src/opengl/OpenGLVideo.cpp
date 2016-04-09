@@ -375,7 +375,7 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     if (!shader)
         shader = d.manager->prepareMaterial(d.material, mt); //TODO: print shader type name if changed. prepareMaterial(,sample_code, pp_code)
     shader->update(d.material);
-    d.material->setColorMatrixDirty(false); //
+    d.material->setDirty(false); //
     shader->program()->setUniformValue(shader->matrixLocation(), transform*d.matrix);
     // uniform end. attribute begin
     d.bindAttributes(shader, target, roi);

@@ -191,8 +191,16 @@ public:
     int compare(const VideoMaterial* other) const;
 
     bool hasAlpha() const;
-    bool isColorMatrixDirty() const;
-    void setColorMatrixDirty(bool value);
+    /*!
+     * \brief isDirty
+     * \return true if material type changed, or other properties changed, e.g. 8bit=>10bit (the same material type) and eq
+     */
+    bool isDirty() const;
+    /*!
+     * \brief setDirty
+     * Call it after frame is rendered, i.e. after VideoShader::update(VideoMaterial*)
+     */
+    void setDirty(bool value);
     const QMatrix4x4 &colorMatrix() const;
     const QMatrix4x4& channelMap() const;
     int bitsPerComponent() const; //0 if the value of components are different

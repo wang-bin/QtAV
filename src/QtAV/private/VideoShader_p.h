@@ -112,7 +112,7 @@ public:
         , plane1_linesize(0)
         , effective_tex_width_ratio(1.0)
         , target(GL_TEXTURE_2D)
-        , dirty_color_mat(true)
+        , dirty(true)
         , try_pbo(true)
     {
         v_texel_size.reserve(4);
@@ -176,7 +176,7 @@ public:
     QVector<GLenum> data_type;
 
     QVector<GLfloat> texture_coords;
-    bool dirty_color_mat;
+    bool dirty;
     ColorTransform colorTransform;
     bool try_pbo;
     QVector<QOpenGLBuffer> pbo;

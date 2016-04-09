@@ -375,11 +375,8 @@ bool VideoShader::update(VideoMaterial *material)
             }
         }
     }
-    // shader type changed, or eq mat changed
-    if (d.update_builtin_uniforms || material->isColorMatrixDirty())
-        program()->setUniformValue(colorMatrixLocation(), material->colorMatrix());
-    // opacity should be here if changed by user
-    if (!d.update_builtin_uniforms)
+    // shader type changed, eq mat changed, or other material properties changed (e.g. texture, 8bit=>10bit)
+    if (!d.update_builtin_uniforms && !material->isDirty())
         return true;
     d.update_builtin_uniforms = false;
     // all texture ids should be binded when renderering even for packed plane!
@@ -394,6 +391,7 @@ bool VideoShader::update(VideoMaterial *material)
             program()->setUniformValue(textureLocation(i), (GLint)(nb_planes - 1));
         }
     }
+    program()->setUniformValue(colorMatrixLocation(), material->colorMatrix());
     program()->setUniformValue(opacityLocation(), (GLfloat)1.0);
     if (d_func().u_to8 >= 0)
         program()->setUniformValue(d_func().u_to8, material->vectorTo8bit());
@@ -698,14 +696,14 @@ void VideoMaterial::unbind()
     }
 }
 
-bool VideoMaterial::isColorMatrixDirty() const
+bool VideoMaterial::isDirty() const
 {
-    return d_func().dirty_color_mat;
+    return d_func().dirty;
 }
 
-void VideoMaterial::setColorMatrixDirty(bool value)
+void VideoMaterial::setDirty(bool value)
 {
-    d_func().dirty_color_mat = value;
+    d_func().dirty = value;
 }
 
 const QMatrix4x4& VideoMaterial::colorMatrix() const
@@ -736,25 +734,25 @@ int VideoMaterial::planeCount() const
 void VideoMaterial::setBrightness(qreal value)
 {
     d_func().colorTransform.setBrightness(value);
-    d_func().dirty_color_mat = true;
+    d_func().dirty = true;
 }
 
 void VideoMaterial::setContrast(qreal value)
 {
     d_func().colorTransform.setContrast(value);
-    d_func().dirty_color_mat = true;
+    d_func().dirty = true;
 }
 
 void VideoMaterial::setHue(qreal value)
 {
     d_func().colorTransform.setHue(value);
-    d_func().dirty_color_mat = true;
+    d_func().dirty = true;
 }
 
 void VideoMaterial::setSaturation(qreal value)
 {
     d_func().colorTransform.setSaturation(value);
-    d_func().dirty_color_mat = true;
+    d_func().dirty = true;
 }
 
 qreal VideoMaterial::validTextureWidth() const
@@ -1022,6 +1020,7 @@ bool VideoMaterialPrivate::ensureResources()
             || linsize0 != plane0Size.width() || frame.height() != plane0Size.height()
             || (plane1_linesize > 0 && frame.bytesPerLine(1) != plane1_linesize)) { // no need to check height if plane 0 sizes are equal?
         update_textures = true;
+        dirty = true;
         v_texel_size.resize(nb_planes);
         texture_size.resize(nb_planes);
         texture_upload_size.resize(nb_planes);
