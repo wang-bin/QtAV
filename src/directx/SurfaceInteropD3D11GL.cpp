@@ -90,7 +90,8 @@ bool GLInteropResource::map(ComPtr<ID3D11Texture2D> surface, int index, GLuint t
     // call in ensureResource or in map?
     WGL_ENSURE((interop_obj[plane] = gl().DXRegisterObjectNV(interop_dev, d3dtex[plane].Get(), tex, GL_TEXTURE_2D, WGL_ACCESS_READ_ONLY_NV)) != NULL, false);
     // prepare dx resources for gl
-    D3D11_BOX box = {0};
+    D3D11_BOX box;
+    ZeroMemory(&box, sizeof(box));
     box.right = w;
     if (plane == 0) {
         box.bottom = h;
@@ -141,7 +142,7 @@ static const struct {
 
 static DXGI_FORMAT GetPlaneFormat(DXGI_FORMAT fmt, int plane)
 {
-    for (int i = 0; i < sizeof(plane_formats)/sizeof(plane_formats[0]); ++i) {
+    for (size_t i = 0; i < sizeof(plane_formats)/sizeof(plane_formats[0]); ++i) {
         if (plane_formats[i].fmt == fmt)
             return plane_formats[i].plane_fmt[plane];
     }

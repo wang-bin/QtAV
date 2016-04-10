@@ -21,9 +21,11 @@
 
 #ifndef QTAV_SURFACEINTEROPD3D11_H
 #define QTAV_SURFACEINTEROPD3D11_H
+
+#include "QtAV/SurfaceInterop.h"
+#include "directx/dxcompat.h"
 #include <d3d11.h>
 #include <wrl/client.h>
-#include "QtAV/SurfaceInterop.h"
 
 using namespace Microsoft::WRL;
 namespace QtAV {

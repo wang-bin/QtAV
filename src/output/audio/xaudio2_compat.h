@@ -22,23 +22,31 @@
 #ifndef QTAV_XAUDIO2_COMPAT_H
 #define QTAV_XAUDIO2_COMPAT_H
 
+#define PREFER_WINSDK 0 //1 if use xaudio2 from windows sdk, _WIN32_WINNT must >= win8
+
+#if PREFER_WINSDK
+#if _WIN32_WINNT < _WIN32_WINNT_WIN8
+#undef _WIN32_WINNT
+#define _WIN32_WINNT _WIN32_WINNT_WIN8
+#endif
+#endif //PREFER_WINSDK
 /*!
   IXAudio2 and IXAudio2MasteringVoice are different defined in DXSDK(2010 June) and WINSDK(>=win8).
   You MUST explicitly prefix with namespace DXSDK or WinSDK for IXAudio2MasteringVoice, IXAudio2,
 */
-
+#include <windows.h>
+#ifndef _WIN32_WINNT_WIN8
+#define _WIN32_WINNT_WIN8 0x0602
+#endif
+#include "directx/dxcompat.h"
 #ifdef __GNUC__
 // macros used by XAudio 2.7 (June 2010 SDK)
+#ifndef __in
 #define __in
-#define __in_ecount(size)
-#define __in_bcount(size)
+#endif
+#ifndef __out
 #define __out
-#define __out_ecount(size)
-#define __out_bcount(size)
-#define __inout
-#define __deref_out
-#define __in_opt
-#define __reserved
+#endif
 #endif
 //TODO: winrt test
 // do not add dxsdk xaudio2.h dir to INCLUDE for other file build with winsdk to avoid runtime crash
@@ -46,9 +54,6 @@
 // MinGW64 cross: XAudio2.h
 #include <XAudio2.h>
 
-#ifndef _WIN32_WINNT_WIN8
-#define _WIN32_WINNT_WIN8 0x0602
-#endif
 /* sdk check
  * winsdk: defines XAUDIO2_DLL
  * dxsdk: defines XAUDIO2_DEBUG_ENGINE

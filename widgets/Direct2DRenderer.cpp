@@ -27,17 +27,12 @@
 #include "QtAV/private/factory.h"
 
 //#define CINTERFACE //http://rxlib.ru/faqs/faqc_en/15596.html
-//#include <windows.h>
+#include <sal.h>
+#ifndef _Out_writes_bytes_opt_
+#define _Out_writes_bytes_opt_(s)
+#endif
+#include <initguid.h> //IID_ID2D1Factory
 #include <d2d1.h>
-
-//TODO: why we can link d2d app without it's lib?
-//TODO: only for mingw. why undef?
-//#include <initguid.h>
-//#undef GUID_EXT
-//#define GUID_EXT
-//vlc redefine this
-//DEFINE_GUID(IID_ID2D1Factory, 0x6152247, 0x6f50, 0x465a, 0x92, 0x45, 0x11, 0x8b, 0xfd, 0x3b, 0x60, 0x7);
-
 
 //steps: http://msdn.microsoft.com/zh-cn/library/dd317121(v=vs.85).aspx
 //performance: http://msdn.microsoft.com/en-us/library/windows/desktop/dd372260(v=vs.85).aspx
@@ -338,7 +333,7 @@ void Direct2DRenderer::drawBackground()
         return;
     DPTR_D(Direct2DRenderer);
     const QColor bc(backgroundColor());
-    D2D1_COLOR_F c = {bc.red(), bc.green(), bc.blue(), bc.alpha()};
+    D2D1_COLOR_F c = {(float)bc.red(), (float)bc.green(), (float)bc.blue(), (float)bc.alpha()};
     d.render_target->Clear(&c); //const D2D1_COlOR_F&?
 //http://msdn.microsoft.com/en-us/library/windows/desktop/dd535473(v=vs.85).aspx
     //ID2D1SolidColorBrush *brush;

@@ -18,12 +18,13 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
+#include <initguid.h> //IID_ID3D11VideoContext
 #include "VideoDecoderD3D.h"
 #include "QtAV/private/factory.h"
 #include "QtAV/private/mkid.h"
 #define DX_LOG_COMPONENT "D3D11VA"
 #include "utils/DirectXHelper.h"
-#include <initguid.h> //IID_ID3D11VideoContext
+#include "directx/dxcompat.h"
 #include <d3d11.h> //include before <libavcodec/d3d11va.h> because d3d11va.h also includes d3d11.h but as a c header (for msvc)
 #include <wrl/client.h>
 extern "C" {
@@ -32,6 +33,12 @@ extern "C" {
 using namespace Microsoft::WRL; //ComPtr
 #include "directx/SurfaceInteropD3D11.h"
 #include "utils/Logger.h"
+
+// define __mingw_uuidof
+#ifdef __CRT_UUID_DECL
+__CRT_UUID_DECL(ID3D11VideoContext,0x61F21C45,0x3C0E,0x4a74,0x9C,0xEA,0x67,0x10,0x0D,0x9A,0xD5,0xE4)
+__CRT_UUID_DECL(ID3D11VideoDevice,0x10EC4D5B,0x975A,0x4689,0xB9,0xE4,0xD0,0xAA,0xC3,0x0F,0xE3,0x33)
+#endif //__CRT_UUID_DECL
 
 namespace QtAV {
 static QString sD3D11Description;

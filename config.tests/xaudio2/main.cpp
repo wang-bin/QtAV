@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -18,11 +18,17 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-#include <xaudio2.h>
-
-#if(_WIN32_WINNT < _WIN32_WINNT_WIN8)
-#error "XAudio2 is not from Windows SDK. Use header from June 2010 DXSDK"
-#endif // (_WIN32_WINNT < _WIN32_WINNT_WIN8)
+#include "../dxcompat.h"
+#ifdef __GNUC__
+// macros used by XAudio 2.7 (June 2010 SDK)
+#ifndef __in
+#define __in
+#endif
+#ifndef __out
+#define __out
+#endif
+#endif
+#include <XAudio2.h>
 
 int main()
 {

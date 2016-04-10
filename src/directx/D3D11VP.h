@@ -21,10 +21,12 @@
 
 #ifndef QTAV_D3D11VP_H
 #define QTAV_D3D11VP_H
+#include <QtCore/QRect>
+#include "directx/dxcompat.h"
 #include <d3d11.h>
 #include <wrl/client.h>
-#include <QtCore/QRect>
 using namespace Microsoft::WRL;
+
 namespace QtAV {
 namespace dx {
 

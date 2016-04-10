@@ -57,6 +57,7 @@ contains(QT_CONFIG, opengl):!no-gl:!no-widgets {
 !no-uchardet: OptionalDepends *= uchardet
 win32:macx:!android:!winrt:!no-portaudio: OptionalDepends *= portaudio
 win32 {
+  OptionalDepends *= dx
   !no-xaudio2: OptionalDepends *= xaudio2
   !no-direct2d:!no-widgets: OptionalDepends *= direct2d
   !no-dxva: OptionalDepends *= dxva

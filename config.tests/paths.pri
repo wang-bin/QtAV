@@ -4,3 +4,5 @@ INCLUDEPATH += $$[QT_INSTALL_HEADERS]
 LIBS += -L$$[QT_INSTALL_LIBS]
 CONFIG -= qt app_bundle lib_bundle
 CONFIG += console
+*msvc*: INCLUDEPATH *= $$PWD/../src/compat/msvc
+!config_dx: INCLUDEPATH *= $$PWD/../contrib/dxsdk
