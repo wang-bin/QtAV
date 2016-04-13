@@ -391,6 +391,8 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     // d.shader->program()->release(); //glUseProgram(0)
     d.unbindAttributes(shader);
     d.material->unbind();
+
+    Q_EMIT afterRendering();
 }
 
 void OpenGLVideo::resetGL()
