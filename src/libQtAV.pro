@@ -20,6 +20,8 @@ INCLUDEPATH += $$[QT_INSTALL_HEADERS]
 icon.files = $$PWD/$${TARGET}.svg
 icon.path = /usr/share/icons/hicolor/64x64/apps
 !contains(QMAKE_HOST.os, Windows):INSTALLS += icon
+#UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
+DEFINES += __STDC_CONSTANT_MACROS
 
 #mac: simd.prf will load qt_build_config and the result is soname will prefixed with QT_INSTALL_LIBS and link flag will append soname after QMAKE_LFLAGS_SONAME
 config_libcedarv: CONFIG *= neon config_simd #need by qt4 addSimdCompiler(). neon or config_neon is required because tests/arch can not detect neon
@@ -112,8 +114,11 @@ enable_egl:greaterThan(QT_MAJOR_VERSION,4):qtHaveModule(x11extras): QT *= x11ext
 config_gl|config_opengl {
   contains(QT_CONFIG, opengl):!contains(QT_CONFIG, opengles2): CONFIG *= enable_desktopgl
 }
-#UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
-DEFINES += __STDC_CONSTANT_MACROS
+config_openmax {
+  INCLUDEPATH += openmax/include
+  HEADERS += openmax/OMXHelper.h
+  SOURCES += openmax/OMXHelper.cpp codec/video/VideoDecoderOMX.cpp
+}
 android {
   CONFIG *= config_opensl
   !no_gui_private:qtHaveModule(androidextras) { #qt5.2 has QAndroidJniObject
