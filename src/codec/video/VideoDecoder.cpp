@@ -31,6 +31,7 @@ FACTORY_DEFINE(VideoDecoder)
 VideoDecoderId VideoDecoderId_FFmpeg = mkid::id32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
 VideoDecoderId VideoDecoderId_CUDA = mkid::id32base36_4<'C', 'U', 'D', 'A'>::value;
 VideoDecoderId VideoDecoderId_DXVA = mkid::id32base36_4<'D', 'X', 'V', 'A'>::value;
+VideoDecoderId VideoDecoderId_D3D11 = mkid::id32base36_5<'D','3','D','1','1'>::value;
 VideoDecoderId VideoDecoderId_VAAPI = mkid::id32base36_5<'V', 'A', 'A', 'P', 'I'>::value;
 VideoDecoderId VideoDecoderId_Cedarv = mkid::id32base36_6<'C', 'e', 'd', 'a', 'r', 'V'>::value;
 VideoDecoderId VideoDecoderId_VDA = mkid::id32base36_3<'V', 'D', 'A'>::value;
@@ -50,6 +51,10 @@ static void VideoDecoder_RegisterAll()
 #if QTAV_HAVE(DXVA)
     extern bool RegisterVideoDecoderDXVA_Man();
     RegisterVideoDecoderDXVA_Man();
+#endif //QTAV_HAVE(DXVA)
+#if QTAV_HAVE(D3D11VA)
+    extern bool RegisterVideoDecoderD3D11_Man();
+    RegisterVideoDecoderD3D11_Man();
 #endif //QTAV_HAVE(DXVA)
 #if QTAV_HAVE(CUDA)
     extern bool RegisterVideoDecoderCUDA_Man();

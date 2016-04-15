@@ -81,8 +81,9 @@ public:
     VideoFrame frame() Q_DECL_OVERRIDE;
 };
 
-VideoDecoderId VideoDecoderId_D3D11 = mkid::id32base36_5<'D','3','D','1','1'>::value;
+extern VideoDecoderId VideoDecoderId_D3D11;
 FACTORY_REGISTER(VideoDecoder, D3D11, "D3D11")
+
 
 VideoDecoderId VideoDecoderD3D11::id() const
 {
@@ -215,7 +216,8 @@ VideoFrame VideoDecoderD3D11::frame()
 
 VideoDecoderD3D11::VideoDecoderD3D11()
     : VideoDecoderD3D(*new VideoDecoderD3D11Private())
-{}
+{
+}
 
 bool VideoDecoderD3D11Private::createDevice()
 {
@@ -255,6 +257,7 @@ bool VideoDecoderD3D11Private::createDevice()
             .arg(desc.Revision)
             ;
     qDebug() << sD3D11Description;
+    description = sD3D11Description;
     return true;
 }
 
@@ -361,7 +364,9 @@ void VideoDecoderD3D11Private::destroyDecoder()
 
 bool VideoDecoderD3D11Private::setupSurfaceInterop()
 {
+    qDebug("%s", __FUNCTION__);
     interop_res = d3d11::InteropResourcePtr(d3d11::InteropResource::create());
+    qDebug("interop res: %p", interop_res.data());
     if (interop_res)
         interop_res->setDevice(d3ddev);
     return true;
