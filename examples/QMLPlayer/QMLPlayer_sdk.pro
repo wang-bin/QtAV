@@ -45,7 +45,7 @@ isEmpty(PROJECTROOT): PROJECTROOT = $$PWD/../..
 
 fonts.files = fonts
 fonts.path = fonts
-#QMAKE_BUNDLE_DATA += fonts
+QMAKE_BUNDLE_DATA += fonts
 mac: RC_FILE = $$PROJECTROOT/src/QtAV.icns
 QMAKE_INFO_PLIST = $$COMMON/Info.plist
 ios: QMAKE_INFO_PLIST = ios/Info.plist
@@ -128,7 +128,7 @@ winrt|wince {
   exists($$[QT_INSTALL_BINS]/avresample-*.dll): depend_dll.files += $$[QT_INSTALL_BINS]/avresample-*.dll
   exists($$[QT_INSTALL_BINS]/ass.dll): depend_dll.files += $$[QT_INSTALL_BINS]/ass.dll
   #depend_dll.path = $$OUT_PWD
-  DEPLOYMENT = depend_dll #fonts #vs2015update1 error about multiple qt5core.dll(in both build dir and qtbin dir), we can remove them in `Deployment Files`
+  DEPLOYMENT = depend_dll fonts #vs2015update1 error about multiple qt5core.dll(in both build dir and qtbin dir), we can remove them in `Deployment Files`
 # WINRT_MANIFEST file: "=>\"
   VCLibsSuffix =
   winphone {

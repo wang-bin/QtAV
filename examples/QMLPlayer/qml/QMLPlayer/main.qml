@@ -436,6 +436,7 @@ Rectangle {
 
     PlayListPanel {
         id: playList
+        visible: Qt.platform.os !== "winrt"
         anchors {
             top: parent.top
             left: parent.left
@@ -448,7 +449,12 @@ Rectangle {
             onDurationChanged: {
                 if (player.duration <= 0)
                     return
-                playList.addHistory(player.source.toString(), player.duration)
+                var url = player.source.toString()
+                if (url.startsWith("winrt:@")) {
+                    url = url.substring(url.indexOf(":", 7) + 1);
+                }
+                console.log("duration changed: " + url)
+                playList.addHistory(url, player.duration)
             }
         }
         onPlay: {

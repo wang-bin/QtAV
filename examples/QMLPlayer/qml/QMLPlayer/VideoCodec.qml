@@ -76,7 +76,7 @@ Page {
                     if (name === "FFmpeg") {
                         copyMode.visible = false
                     } else {
-                        copyMode.visible = true
+                        copyMode.visible = zcopy
                         d.detail += "\n" + qsTr("Zero Copy support") + ":" + zcopy
                     }
                     PlayerConfig.decoderPriorityNames = [ name ]
@@ -96,12 +96,17 @@ Page {
     Component.onCompleted: {
         if (Qt.platform.os == "windows") {
             codecMode.append({ name: "DXVA", hardware: true, zcopy: true, description: "DirectX Video Acceleration (Windows)\nUse OpenGLES(ANGLE) + D3D to support 0-copy" })
+            codecMode.append({ name: "D3D11", hardware: true, zcopy: true, description: "D3D11 Video Acceleration\n0-copy is supported under OpenGLES(ANGLE)" })
             codecMode.append({ name: "CUDA", hardware: true, zcopy: true, description: "NVIDIA CUDA (Windows, Linux).\nH264 10bit support."})
+        } else if (Qt.platform.os == "winrt" || Qt.platform.os == "winphone") {
+            codecMode.append({ name: "D3D11", hardware: true, zcopy: true, description: "D3D11 Video Acceleration" })
         } else if (Qt.platform.os == "osx") {
             codecMode.append({ name: "VDA", hardware: true, zcopy: true, description: "VDA (OSX)" })
             codecMode.append({ name: "VideoToolbox", hardware: true, zcopy: true, description: "VideoToolbox (OSX)" })
         } else if (Qt.platform.os == "ios") {
             codecMode.append({ name: "VideoToolbox", hardware: true, zcopy: true, description: "VideoToolbox (iOS)" })
+        } else if(Qt.platform.os == "android") {
+            codecMode.append({ name: "MediaCodec", hardware: true, zcopy: false, description: "Android 5.0 MediaCodec (H.264)" })
         } else if (Qt.platform.os == "linux") {
             codecMode.append({ name: "VAAPI", hardware: true, zcopy: true, description: "VA-API (Linux) " })
             codecMode.append({ name: "CUDA", hardware: true, zcopy: true, description: "NVIDIA CUDA (Windows, Linux)"})

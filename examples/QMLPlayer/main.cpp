@@ -1,6 +1,6 @@
 /******************************************************************************
     Simple Player:  this file is part of QtAV examples
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -36,6 +36,7 @@
 
 int main(int argc, char *argv[])
 {
+    //call qtav api result in crash at startup
     QOptions options(get_common_options());
     options.add(QLatin1String("QMLPlayer options"))
             ("scale", 1.0, QLatin1String("scale of graphics context. 0: auto"))
@@ -48,9 +49,11 @@ int main(int argc, char *argv[])
     app.setApplicationName(QStringLiteral("QMLPlayer"));
     app.setApplicationDisplayName(QStringLiteral("QtAV QMLPlayer"));
     QDir::setCurrent(qApp->applicationDirPath());
-
+qDebug() <<  "event dispatcher:" << QCoreApplication::eventDispatcher();
+;
     do_common_options(options);
     qDebug() << "arguments======= " << app.arguments();
+    qDebug() << "current dir: " << QDir::currentPath();
     set_opengl_backend(options.option(QStringLiteral("gl")).value().toString(), app.arguments().first());
     load_qm(QStringList() << QStringLiteral("QMLPlayer"), options.value(QStringLiteral("language")).toString());
     QtQuick2ApplicationViewer viewer;
@@ -71,15 +74,22 @@ int main(int argc, char *argv[])
     // define a global var for js and qml
     engine->rootContext()->setContextProperty(QStringLiteral("screenPixelDensity"), sc->physicalDotsPerInch()*sc->devicePixelRatio());
     qreal r = sc->physicalDotsPerInch()/sc->logicalDotsPerInch();
-    if (std::isinf(r) || std::isnan(r))
+    const qreal kR =
 #if defined(Q_OS_ANDROID)
-        r = 2.0;
+            2.0;
+#elif defined(Q_OS_WINRT)
+            1.2;
 #else
-        r = 1.0;
+            1.0;
 #endif
+    if (std::isinf(r) || std::isnan(r))
+        r = kR;
     float sr = options.value(QStringLiteral("scale")).toFloat();
-#if defined(Q_OS_ANDROID)
+#if defined(Q_OS_ANDROID) || defined(Q_OS_WINRT)
     sr = r;
+#if defined(Q_OS_WINPHONE)
+    sr = kR;
+#endif
     if (sr > 2.0)
         sr = 2.0; //FIXME
 #endif
@@ -88,6 +98,9 @@ int main(int argc, char *argv[])
     engine->rootContext()->setContextProperty(QStringLiteral("scaleRatio"), sr);
     qDebug() << "touch devices: " << QTouchDevice::devices();
     engine->rootContext()->setContextProperty(QStringLiteral("isTouchScreen"), false);
+#ifdef Q_OS_WINPHONE
+    engine->rootContext()->setContextProperty(QStringLiteral("isTouchScreen"), true);
+#endif
     foreach (const QTouchDevice* dev, QTouchDevice::devices()) {
         if (dev->type() == QTouchDevice::TouchScreen) {
             engine->rootContext()->setContextProperty(QStringLiteral("isTouchScreen"), true);
@@ -115,7 +128,6 @@ int main(int argc, char *argv[])
         viewer.setY(op.value().toInt());
     if (options.value(QStringLiteral("fullscreen")).toBool())
         viewer.showFullScreen();
-
     viewer.setTitle(QStringLiteral("QMLPlayer based on QtAV. wbsecg1@gmail.com"));
     /*
      * find root item, then root.init(argv). so we can deal with argv in qml
@@ -127,10 +139,8 @@ int main(int argc, char *argv[])
     QMetaObject::invokeMethod(viewer.rootObject(), "init", Q_ARG(QVariant, json));
 //#else
     QObject *player = viewer.rootObject()->findChild<QObject*>(QStringLiteral("player"));
-    if (player) {
-        AppEventFilter *ae = new AppEventFilter(player, player);
-        qApp->installEventFilter(ae);
-    }
+    AppEventFilter *ae = new AppEventFilter(player, player);
+    qApp->installEventFilter(ae);
     QString file;
 #ifdef Q_OS_ANDROID
     file = QAndroidJniObject::callStaticObjectMethod("org.qtav.qmlplayer.QMLPlayerActivity"
@@ -150,7 +160,8 @@ int main(int argc, char *argv[])
         if (!file.startsWith(QLatin1String("file:")) && QFile(file).exists())
             file.prepend(QLatin1String("file:")); //qml use url and will add qrc: if no scheme
         file.replace(QLatin1String("\\"), QLatin1String("/")); //qurl
-        QMetaObject::invokeMethod(player, "play", Q_ARG(QUrl, QUrl(file)));
+        //QMetaObject::invokeMethod(player, "play", Q_ARG(QUrl, QUrl(file)));
+        player->setProperty("source", QUrl(file));
     }
 #endif
     QObject::connect(&Config::instance(), SIGNAL(changed()), &Config::instance(), SLOT(save()));
