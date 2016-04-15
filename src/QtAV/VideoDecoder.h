@@ -99,8 +99,8 @@ extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_DXVA;
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_D3D11;
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_VAAPI;
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_Cedarv;
-extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg_VDPAU;
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_VDA;
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_VideoToolbox;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_MediaCodec;
 } //namespace QtAV
 #endif // QTAV_VIDEODECODER_H

@@ -119,6 +119,7 @@ android {
   !no_gui_private:qtHaveModule(androidextras) { #qt5.2 has QAndroidJniObject
     QT *= androidextras gui-private #QPlatformNativeInterface get "QtActivity"
     SOURCES *= io/AndroidIO.cpp
+    SOURCES *= codec/video/VideoDecoderMediaCodec.cpp
   }
 }
 config_x11 {
