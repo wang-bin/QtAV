@@ -25,6 +25,14 @@
 #include <QtAV/QtAV_Global.h>
 #include <QtAV/Filter.h>
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+#undef QOpenGLFramebufferObject
+#define QOpenGLFramebufferObject QGLFramebufferObject
+#endif
+QT_BEGIN_NAMESPACE
+class QOpenGLFramebufferObject;
+QT_END_NAMESPACE
+
 namespace QtAV {
 class OpenGLVideo;
 class GLSLFilterPrivate;
@@ -44,7 +52,7 @@ public:
      * Currently you can only use it to set custom shader OpenGLVideo.setUserShader()
      */
     OpenGLVideo* opengl() const;
-    // TODO: set FBO format
+    QOpenGLFramebufferObject* fbo() const;
     /*!
      * \brief outputSize
      * Output frame size. FBO uses the same size to render. An empty size means using the input frame size

@@ -27,7 +27,6 @@
 #include <QtGui/QOpenGLFramebufferObject>
 #else
 #include <QtOpenGL/QGLFramebufferObject>
-#define QOpenGLFramebufferObject QGLFramebufferObject
 #endif
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/OpenGLVideo.h"
@@ -56,6 +55,11 @@ GLSLFilter::GLSLFilter(GLSLFilterPrivate &d, QObject *parent)
 OpenGLVideo* GLSLFilter::opengl() const
 {
     return const_cast<OpenGLVideo*>(&d_func().glv);
+}
+
+QOpenGLFramebufferObject* GLSLFilter::fbo() const
+{
+    return d_func().fbo;
 }
 
 QSize GLSLFilter::outputSize() const
@@ -114,7 +118,7 @@ void GLSLFilter::process(Statistics *statistics, VideoFrame *frame)
     QMatrix4x4 mat; // flip vertical
     mat.scale(1, -1);
     d.glv.render(QRectF(), QRectF(), mat);
-    d.fbo->bindDefault();
+    QOpenGLFramebufferObject::bindDefault();
 
     VideoFormat fmt(VideoFormat::Format_RGB32);
     VideoFrame f(d.fbo->width(), d.fbo->height(), fmt); //
