@@ -90,7 +90,7 @@ void registerRenderers()
     // factory.h does not check whether an id is registered
     if (VideoRenderer::name(VideoRendererId_Widget))
         return;
-#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
 #ifndef QT_NO_OPENGL
     VideoRenderer::Register<OpenGLWidgetRenderer>(VideoRendererId_OpenGLWidget, "OpenGLWidget");
 #endif //QT_NO_OPENGL
