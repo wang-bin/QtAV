@@ -389,7 +389,7 @@ void VideoThread::run()
                 }
             }
         } else {
-            if (nb_dec_slow > kNbSlowFrameDrop) {
+            if (nb_dec_slow >= kNbSlowFrameDrop) {
                 qDebug("decrease 1 slow frame: %d", nb_dec_slow);
                 nb_dec_slow = qMax(0, nb_dec_slow-1); // nb_dec_slow < kNbSlowFrameDrop will reset decoder frame drop flag
             }
