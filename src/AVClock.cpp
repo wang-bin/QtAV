@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -105,7 +105,8 @@ void AVClock::updateExternalClock(qint64 msecs)
         return;
     qDebug("External clock change: %f ==> %f", value(), double(msecs) * kThousandth);
     pts_ = double(msecs) * kThousandth; //can not use msec/1000.
-    timer.restart();
+    if (!isPaused())
+        timer.restart();
 
     last_pts = pts_;
     t = QDateTime::currentMSecsSinceEpoch();
@@ -119,7 +120,8 @@ void AVClock::updateExternalClock(const AVClock &clock)
         return;
     qDebug("External clock change: %f ==> %f", value(), clock.value());
     pts_ = clock.value();
-    timer.restart();
+    if (!isPaused())
+        timer.restart();
 
     last_pts = pts_;
     t = QDateTime::currentMSecsSinceEpoch();
