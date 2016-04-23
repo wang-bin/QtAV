@@ -23,7 +23,9 @@
 #define QTAV_QUICKFBORENDERER_H
 
 #include <QtAV/VideoRenderer.h>
+#include <QtQml/QQmlListProperty>
 #include <QtQuick/QQuickFramebufferObject>
+#include <QmlAV/QuickFilter.h>
 
 namespace QtAV {
 class QuickFBORendererPrivate;
@@ -43,6 +45,7 @@ class QuickFBORenderer : public QQuickFramebufferObject, public VideoRenderer
     Q_PROPERTY(QSize videoFrameSize READ videoFrameSize NOTIFY videoFrameSizeChanged)
     Q_PROPERTY(QSize frameSize READ videoFrameSize NOTIFY videoFrameSizeChanged)
     Q_PROPERTY(QColor backgroundColor READ backgroundColor WRITE setBackgroundColor NOTIFY backgroundColorChanged)
+    Q_PROPERTY(QQmlListProperty<QuickVideoFilter> filters READ filters)
     Q_ENUMS(FillMode)
 public:
     enum FillMode {
@@ -71,6 +74,8 @@ public:
     void setOpenGL(bool o);
     void fboSizeChanged(const QSize& size);
     void renderToFbo();
+
+    QQmlListProperty<QuickVideoFilter> filters();
 Q_SIGNALS:
     void sourceChanged();
     void fillModeChanged(QuickFBORenderer::FillMode);
@@ -91,6 +96,11 @@ private:
     void onSetOutAspectRatio(qreal ratio) Q_DECL_OVERRIDE;
     void onSetOutAspectRatioMode(OutAspectRatioMode mode) Q_DECL_OVERRIDE;
     void updateRenderRect();
+
+    static void vf_append(QQmlListProperty<QuickVideoFilter> *property, QuickVideoFilter *value);
+    static int vf_count(QQmlListProperty<QuickVideoFilter> *property);
+    static QuickVideoFilter *vf_at(QQmlListProperty<QuickVideoFilter> *property, int index);
+    static void vf_clear(QQmlListProperty<QuickVideoFilter> *property);
 };
 typedef QuickFBORenderer VideoRendererQuickFBO;
 } //namespace QtAV

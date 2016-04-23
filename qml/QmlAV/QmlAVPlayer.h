@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2013-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -25,7 +25,9 @@
 #include <QtCore/QObject>
 #include <QtCore/QStringList> //5.0
 #include <QtQml/QQmlParserStatus>
+#include <QtQml/QQmlListProperty>
 #include <QmlAV/MediaMetaData.h>
+#include <QmlAV/QuickFilter.h>
 #include <QtAV/AVError.h>
 #include <QtAV/VideoCapture.h>
 
@@ -78,6 +80,9 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(QVariantList internalSubtitleTracks READ internalSubtitleTracks NOTIFY internalSubtitleTracksChanged)
     // internal subtitle, e.g. mkv embedded subtitles
     Q_PROPERTY(int internalSubtitleTrack READ internalSubtitleTrack WRITE setInternalSubtitleTrack NOTIFY internalSubtitleTrackChanged)
+
+    Q_PROPERTY(QQmlListProperty<QuickAudioFilter> audioFilters READ audioFilters)
+    Q_PROPERTY(QQmlListProperty<QuickVideoFilter> videoFilters READ videoFilters)
 public:
     enum Loop { Infinite = -1 };
     enum PlaybackState {
@@ -205,6 +210,10 @@ public:
     int internalSubtitleTrack() const;
     void setInternalSubtitleTrack(int value);
     QVariantList internalSubtitleTracks() const;
+
+    QQmlListProperty<QuickAudioFilter> audioFilters();
+    QQmlListProperty<QuickVideoFilter> videoFilters();
+
 public Q_SLOTS:
     void play();
     void pause();
@@ -268,6 +277,15 @@ private Q_SLOTS:
     void applyChannelLayout();
 
 private:
+    static void af_append(QQmlListProperty<QuickAudioFilter> *property, QuickAudioFilter *value);
+    static int af_count(QQmlListProperty<QuickAudioFilter> *property);
+    static QuickAudioFilter *af_at(QQmlListProperty<QuickAudioFilter> *property, int index);
+    static void af_clear(QQmlListProperty<QuickAudioFilter> *property);
+    static void vf_append(QQmlListProperty<QuickVideoFilter> *property, QuickVideoFilter *value);
+    static int vf_count(QQmlListProperty<QuickVideoFilter> *property);
+    static QuickVideoFilter *vf_at(QQmlListProperty<QuickVideoFilter> *property, int index);
+    static void vf_clear(QQmlListProperty<QuickVideoFilter> *property);
+
     Q_DISABLE_COPY(QmlAVPlayer)
 
     bool mUseWallclockAsTimestamps;
@@ -296,6 +314,9 @@ private:
 
     QScopedPointer<MediaMetaData> m_metaData;
     QVariantMap vcodec_opt;
+
+    QList<QuickAudioFilter*> m_afilters;
+    QList<QuickVideoFilter*> m_vfilters;
 };
 
 #endif // QTAV_QML_AVPLAYER_H

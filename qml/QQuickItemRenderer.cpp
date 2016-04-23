@@ -1,9 +1,9 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2016 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
     theoribeiro <theo@fictix.com.br>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -75,6 +75,7 @@ public:
     QSGNode *node;
     QObject *source;
     QImage image;
+    QList<QuickVideoFilter*> filters;
 };
 
 QQuickItemRenderer::QQuickItemRenderer(QQuickItem *parent)
@@ -199,6 +200,39 @@ void QQuickItemRenderer::setOpenGL(bool o)
         return;
     d.opengl = o;
     emit openGLChanged();
+}
+
+QQmlListProperty<QuickVideoFilter> QQuickItemRenderer::filters()
+{
+    return QQmlListProperty<QuickVideoFilter>(this, NULL, vf_append, vf_count, vf_at, vf_clear);
+}
+
+void QQuickItemRenderer::vf_append(QQmlListProperty<QuickVideoFilter> *property, QuickVideoFilter *value)
+{
+    QQuickItemRenderer* self = static_cast<QQuickItemRenderer*>(property->object);
+    self->d_func().filters.append(value);
+    self->installFilter(value);
+}
+
+int QQuickItemRenderer::vf_count(QQmlListProperty<QuickVideoFilter> *property)
+{
+    QQuickItemRenderer* self = static_cast<QQuickItemRenderer*>(property->object);
+    return self->d_func().filters.size();
+}
+
+QuickVideoFilter* QQuickItemRenderer::vf_at(QQmlListProperty<QuickVideoFilter> *property, int index)
+{
+    QQuickItemRenderer* self = static_cast<QQuickItemRenderer*>(property->object);
+    return self->d_func().filters.at(index);
+}
+
+void QQuickItemRenderer::vf_clear(QQmlListProperty<QuickVideoFilter> *property)
+{
+    QQuickItemRenderer* self = static_cast<QQuickItemRenderer*>(property->object);
+    foreach (QuickVideoFilter *f, self->d_func().filters) {
+        self->uninstallFilter(f);
+    }
+    self->d_func().filters.clear();
 }
 
 void QQuickItemRenderer::drawFrame()

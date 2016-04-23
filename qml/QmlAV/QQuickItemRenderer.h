@@ -1,9 +1,9 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2016 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
     theoribeiro <theo@fictix.com.br>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2016)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,7 @@
 
 #include <QtAV/VideoRenderer.h>
 #include <QtQuick/QQuickItem>
+#include <QmlAV/QuickFilter.h>
 
 namespace QtAV {
 class QQuickItemRendererPrivate;
@@ -45,6 +46,7 @@ class QQuickItemRenderer : public QQuickItem, public VideoRenderer
     Q_PROPERTY(QSize videoFrameSize READ videoFrameSize NOTIFY videoFrameSizeChanged)
     Q_PROPERTY(QSize frameSize READ videoFrameSize NOTIFY videoFrameSizeChanged)
     Q_PROPERTY(QColor backgroundColor READ backgroundColor WRITE setBackgroundColor NOTIFY backgroundColorChanged)
+    Q_PROPERTY(QQmlListProperty<QuickVideoFilter> filters READ filters)
     Q_ENUMS(FillMode)
 public:
     enum FillMode {
@@ -69,6 +71,7 @@ public:
     bool isOpenGL() const;
     void setOpenGL(bool o);
 
+    QQmlListProperty<QuickVideoFilter> filters();
 Q_SIGNALS:
     void sourceChanged();
     void fillModeChanged(QQuickItemRenderer::FillMode);
@@ -93,6 +96,11 @@ private slots:
     void afterRendering();
 private:
     bool onSetOrientation(int value) Q_DECL_OVERRIDE;
+
+    static void vf_append(QQmlListProperty<QuickVideoFilter> *property, QuickVideoFilter *value);
+    static int vf_count(QQmlListProperty<QuickVideoFilter> *property);
+    static QuickVideoFilter *vf_at(QQmlListProperty<QuickVideoFilter> *property, int index);
+    static void vf_clear(QQmlListProperty<QuickVideoFilter> *property);
 };
 typedef QQuickItemRenderer VideoRendererQQuickItem;
 }

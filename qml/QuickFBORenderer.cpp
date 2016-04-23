@@ -91,6 +91,8 @@ public:
     QOpenGLContext *glctx;
     QMatrix4x4 matrix;
     OpenGLVideo glv;
+
+    QList<QuickVideoFilter*> filters;
 };
 
 QuickFBORenderer::QuickFBORenderer(QQuickItem *parent)
@@ -212,6 +214,39 @@ void QuickFBORenderer::fboSizeChanged(const QSize &size)
 void QuickFBORenderer::renderToFbo()
 {
     handlePaintEvent();
+}
+
+QQmlListProperty<QuickVideoFilter> QuickFBORenderer::filters()
+{
+    return QQmlListProperty<QuickVideoFilter>(this, NULL, vf_append, vf_count, vf_at, vf_clear);
+}
+
+void QuickFBORenderer::vf_append(QQmlListProperty<QuickVideoFilter> *property, QuickVideoFilter *value)
+{
+    QuickFBORenderer* self = static_cast<QuickFBORenderer*>(property->object);
+    self->d_func().filters.append(value);
+    self->installFilter(value);
+}
+
+int QuickFBORenderer::vf_count(QQmlListProperty<QuickVideoFilter> *property)
+{
+    QuickFBORenderer* self = static_cast<QuickFBORenderer*>(property->object);
+    return self->d_func().filters.size();
+}
+
+QuickVideoFilter* QuickFBORenderer::vf_at(QQmlListProperty<QuickVideoFilter> *property, int index)
+{
+    QuickFBORenderer* self = static_cast<QuickFBORenderer*>(property->object);
+    return self->d_func().filters.at(index);
+}
+
+void QuickFBORenderer::vf_clear(QQmlListProperty<QuickVideoFilter> *property)
+{
+    QuickFBORenderer* self = static_cast<QuickFBORenderer*>(property->object);
+    foreach (QuickVideoFilter *f, self->d_func().filters) {
+        self->uninstallFilter(f);
+    }
+    self->d_func().filters.clear();
 }
 
 void QuickFBORenderer::drawBackground()

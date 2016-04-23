@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2013)
@@ -402,6 +402,78 @@ void QmlAVPlayer::setInternalSubtitleTrack(int value)
 QVariantList QmlAVPlayer::internalSubtitleTracks() const
 {
     return mpPlayer ? mpPlayer->internalSubtitleTracks() : QVariantList();
+}
+
+QQmlListProperty<QuickAudioFilter> QmlAVPlayer::audioFilters()
+{
+    return QQmlListProperty<QuickAudioFilter>(this, NULL, af_append, af_count, af_at, af_clear);
+}
+
+QQmlListProperty<QuickVideoFilter> QmlAVPlayer::videoFilters()
+{
+    return QQmlListProperty<QuickVideoFilter>(this, NULL, vf_append, vf_count, vf_at, vf_clear);
+}
+
+void QmlAVPlayer::af_append(QQmlListProperty<QuickAudioFilter> *property, QuickAudioFilter *value)
+{
+    QmlAVPlayer* self = static_cast<QmlAVPlayer*>(property->object);
+    self->m_afilters.append(value);
+    if (self->mpPlayer)
+        self->mpPlayer->installFilter(value);
+}
+
+int QmlAVPlayer::af_count(QQmlListProperty<QuickAudioFilter> *property)
+{
+    QmlAVPlayer* self = static_cast<QmlAVPlayer*>(property->object);
+    return self->m_afilters.size();
+}
+
+QuickAudioFilter* QmlAVPlayer::af_at(QQmlListProperty<QuickAudioFilter> *property, int index)
+{
+    QmlAVPlayer* self = static_cast<QmlAVPlayer*>(property->object);
+    return self->m_afilters.at(index);
+}
+
+void QmlAVPlayer::af_clear(QQmlListProperty<QuickAudioFilter> *property)
+{
+    QmlAVPlayer* self = static_cast<QmlAVPlayer*>(property->object);
+    if (self->mpPlayer) {
+        foreach (QuickAudioFilter *f, self->m_afilters) {
+            self->mpPlayer->uninstallFilter(f);
+        }
+    }
+    self->m_afilters.clear();
+}
+
+void QmlAVPlayer::vf_append(QQmlListProperty<QuickVideoFilter> *property, QuickVideoFilter *value)
+{
+    QmlAVPlayer* self = static_cast<QmlAVPlayer*>(property->object);
+    self->m_vfilters.append(value);
+    if (self->mpPlayer)
+        self->mpPlayer->installFilter(value);
+}
+
+int QmlAVPlayer::vf_count(QQmlListProperty<QuickVideoFilter> *property)
+{
+    QmlAVPlayer* self = static_cast<QmlAVPlayer*>(property->object);
+    return self->m_vfilters.size();
+}
+
+QuickVideoFilter* QmlAVPlayer::vf_at(QQmlListProperty<QuickVideoFilter> *property, int index)
+{
+    QmlAVPlayer* self = static_cast<QmlAVPlayer*>(property->object);
+    return self->m_vfilters.at(index);
+}
+
+void QmlAVPlayer::vf_clear(QQmlListProperty<QuickVideoFilter> *property)
+{
+    QmlAVPlayer* self = static_cast<QmlAVPlayer*>(property->object);
+    if (self->mpPlayer) {
+        foreach (QuickVideoFilter *f, self->m_vfilters) {
+            self->mpPlayer->uninstallFilter(f);
+        }
+    }
+    self->m_vfilters.clear();
 }
 
 int QmlAVPlayer::loopCount() const
