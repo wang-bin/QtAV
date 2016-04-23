@@ -27,6 +27,7 @@
 #include "QtAV/private/mkid.h"
 #include "QtAV/private/factory.h"
 #include <QtCore/QCoreApplication>
+#include <QtGui/QOpenGLFunctions>
 #include <QtGui/QOpenGLFramebufferObject>
 #include <QtQuick/QQuickWindow>
 // for dynamicgl. qglfunctions before qt5.3 does not have portable gl functions
@@ -51,7 +52,7 @@ public:
     }
     void render() Q_DECL_OVERRIDE {
         Q_ASSERT(m_item);
-        m_item->renderToFbo();
+        m_item->renderToFbo(framebufferObject());
     }
     void synchronize(QQuickFramebufferObject *item) Q_DECL_OVERRIDE {
         m_item = static_cast<QuickFBORenderer*>(item);
@@ -92,6 +93,7 @@ public:
     QMatrix4x4 matrix;
     OpenGLVideo glv;
 
+    QOpenGLFramebufferObject *fbo;
     QList<QuickVideoFilter*> filters;
 };
 
@@ -211,8 +213,9 @@ void QuickFBORenderer::fboSizeChanged(const QSize &size)
     d.setupAspectRatio();
 }
 
-void QuickFBORenderer::renderToFbo()
+void QuickFBORenderer::renderToFbo(QOpenGLFramebufferObject *fbo)
 {
+    d_func().fbo = fbo;
     handlePaintEvent();
 }
 
@@ -253,12 +256,17 @@ void QuickFBORenderer::drawBackground()
 {
     if (backgroundRegion().isEmpty())
         return;
-    d_func().glv.fill(backgroundColor());
+    DPTR_D(QuickFBORenderer);
+    d.fbo->bind();
+    DYGL(glViewport(0, 0, d.fbo->width(), d.fbo->height()));
+    d.glv.fill(backgroundColor());
 }
 
 void QuickFBORenderer::drawFrame()
 {
     DPTR_D(QuickFBORenderer);
+    d.fbo->bind();
+    DYGL(glViewport(0, 0, d.fbo->width(), d.fbo->height()));
     if (!d.video_frame.isValid()) {
         d.glv.fill(QColor(0, 0, 0, 0));
         return;

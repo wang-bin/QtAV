@@ -73,7 +73,7 @@ public:
     bool isOpenGL() const;
     void setOpenGL(bool o);
     void fboSizeChanged(const QSize& size);
-    void renderToFbo();
+    void renderToFbo(QOpenGLFramebufferObject *fbo);
 
     QQmlListProperty<QuickVideoFilter> filters();
 Q_SIGNALS:
