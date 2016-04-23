@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -62,8 +62,7 @@ protected:
     bool pushAudioFrame(Frame* frame, bool changed);
     void* pullFrameHolder();
     static QStringList registeredFilters(int type); // filters whose input/output type matches
-private:
-    virtual void emitOptionsChanged() {}
+    virtual void optionsChanged() {}
     class Private;
     Private *priv;
 };
@@ -78,12 +77,10 @@ public:
     bool isSupported(VideoFilterContext::Type t) const Q_DECL_OVERRIDE { return t == VideoFilterContext::None;}
     QStringList filters() const; //the same as LibAVFilter::videoFilters
 Q_SIGNALS:
-    void optionsChanged();
+    void optionsChanged() Q_DECL_OVERRIDE;
 protected:
     void process(Statistics *statistics, VideoFrame *frame) Q_DECL_OVERRIDE;
     QString sourceArguments() const Q_DECL_OVERRIDE;
-private:
-    void emitOptionsChanged() Q_DECL_OVERRIDE;
 };
 
 class Q_AV_EXPORT LibAVFilterAudio : public AudioFilter, public LibAVFilter
@@ -95,12 +92,10 @@ public:
     LibAVFilterAudio(QObject *parent = 0);
     QStringList filters() const; //the same as LibAVFilter::audioFilters
 Q_SIGNALS:
-    void optionsChanged();
+    void optionsChanged() Q_DECL_OVERRIDE;
 protected:
     void process(Statistics *statistics, AudioFrame *frame) Q_DECL_OVERRIDE;
     QString sourceArguments() const Q_DECL_OVERRIDE;
-private:
-    void emitOptionsChanged() Q_DECL_OVERRIDE;
 };
 
 } //namespace QtAV

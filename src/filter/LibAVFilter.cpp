@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -35,6 +35,7 @@
  * ffmpeg<2.0: av_buffersink_get_buffer_ref and av_buffersink_read
  */
 // TODO: enabled = false if no libavfilter
+// TODO: filter_complex
 // NO COPY in push/pull
 #define QTAV_HAVE_av_buffersink_get_frame (LIBAV_MODULE_CHECK(LIBAVFILTER, 4, 2, 0) || FFMPEG_MODULE_CHECK(LIBAVFILTER, 3, 79, 100)) //3.79.101: ff2.0.4
 
@@ -160,6 +161,13 @@ public:
         AV_ENSURE_OK(avfilter_graph_config(filter_graph, NULL), false);
         avframe = av_frame_alloc();
         status = LibAVFilter::ConfigureOk;
+#if DBG_GRAPH
+        //not available in libav9
+        const char* g = avfilter_graph_dump(filter_graph, NULL);
+        if (g)
+            qDebug().nospace() << "filter graph:\n" << g; // use << to not print special chars in qt5.5
+        av_freep(&g);
+#endif //DBG_GRAPH
         return true;
 #endif //QTAV_HAVE(AVFILTER)
         return false;
@@ -219,7 +227,7 @@ void LibAVFilter::setOptions(const QString &options)
 {
     if (!priv->setOptions(options))
         return;
-    emitOptionsChanged();
+    Q_EMIT optionsChanged();
 }
 
 QString LibAVFilter::options() const
@@ -368,11 +376,6 @@ QString LibAVFilterVideo::sourceArguments() const
             ;
 }
 
-void LibAVFilterVideo::emitOptionsChanged()
-{
-    emit optionsChanged();
-}
-
 class LibAVFilterAudioPrivate : public AudioFilterPrivate
 {
 public:
@@ -459,11 +462,6 @@ void LibAVFilterAudio::process(Statistics *statistics, AudioFrame *frame)
 #endif //QTAV_HAVE(AVFILTER)
 }
 
-void LibAVFilterAudio::emitOptionsChanged()
-{
-    emit optionsChanged();
-}
-
 bool LibAVFilter::Private::pushVideoFrame(Frame *frame, bool changed, const QString &args)
 {
 #if QTAV_HAVE(AVFILTER)
@@ -486,6 +484,7 @@ bool LibAVFilter::Private::pushVideoFrame(Frame *frame, bool changed, const QStr
         avframe->data[i] = (uint8_t*)vf->constBits(i);
         avframe->linesize[i] = vf->bytesPerLine(i);
     }
+    //TODO: side data for vf_codecview etc
     //int ret = av_buffersrc_add_frame_flags(in_filter_ctx, avframe, AV_BUFFERSRC_FLAG_KEEP_REF);
     /*
      * av_buffersrc_write_frame equals to av_buffersrc_add_frame_flags with AV_BUFFERSRC_FLAG_KEEP_REF.
