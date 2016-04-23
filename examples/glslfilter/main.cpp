@@ -35,6 +35,9 @@ public:
     WaveShader(QObject *parent = 0) : DynamicShaderObject(parent)
       , t(0)
     {
+        setProperty("u_t", 0);
+        setProperty("u_A", 0.06);
+        setProperty("u_omega", 5);
         setHeader(QLatin1String(GLSL(
                       uniform float u_omega;
                       uniform float u_A;
@@ -53,12 +56,6 @@ protected:
     void timerEvent(QTimerEvent*) {
         t+=2.0*M_PI/25.0;
         setProperty("u_t", t);
-    }
-private:
-    virtual void ready() {
-        setProperty("u_t", 0);
-        setProperty("u_A", 0.06);
-        setProperty("u_omega", 5);
     }
 };
 

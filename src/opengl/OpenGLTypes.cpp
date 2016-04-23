@@ -164,6 +164,31 @@ void Uniform::set(const unsigned *v, int count)
     dirty = set_uniform_value(data, v, count);
 }
 
+void Uniform::set(const QVariant &v)
+{
+    if (tupleSize() > 1 || arraySize() > 1) {
+        if (isFloat()) {
+            set(v.value<QVector<float> >().data());
+        } else if (isInt() || isBool()) {
+            set(v.value<QVector<int> >().data());
+        } else if (isUInt()) {
+            set(v.value<QVector<unsigned> >().data());
+        } else if (type() == Uniform::Sampler) {
+
+        }
+    } else {
+        if (isFloat()) {
+            set(v.toFloat());
+        } else if (isInt() || isBool()) {
+            set(v.toInt());
+        } else if (isUInt()) {
+            set(v.toUInt());
+        } else if (type() == Uniform::Sampler) {
+
+        }
+    }
+}
+
 bool Uniform::setGL()
 {
     if (location < 0) {

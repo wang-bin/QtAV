@@ -73,27 +73,7 @@ void VideoShaderObject::propertyChanged(int id)
     const int idx = id&0xffff;
     Uniform &u = d.user_uniforms[st][idx];
     const QVariant v = property(u.name.constData());
-    if (u.tupleSize() > 1 || u.arraySize() > 1) {
-        if (u.isFloat()) {
-            u.set(v.value<QVector<float> >().data());
-        } else if (u.isInt() || u.isBool()) {
-            u.set(v.value<QVector<int> >().data());
-        } else if (u.isUInt()) {
-            u.set(v.value<QVector<unsigned> >().data());
-        } else if (u.type() == Uniform::Sampler) {
-
-        }
-    } else {
-        if (u.isFloat()) {
-            u.set(v.toFloat());
-        } else if (u.isInt() || u.isBool()) {
-            u.set(v.toInt());
-        } else if (u.isUInt()) {
-            u.set(v.toUInt());
-        } else if (u.type() == Uniform::Sampler) {
-
-        }
-    }
+    u.set(v);
     //if (u.dirty) update();
 }
 
@@ -109,7 +89,8 @@ void VideoShaderObject::programReady()
             const Uniform& u = uniforms[i];
             const int idx = metaObject()->indexOfProperty(u.name.constData());
             if (idx < 0) {
-                qDebug("VideoShaderObject has no property '%s'", u.name.constData());
+                qDebug("VideoShaderObject has no meta property '%s'. Setting initial value from dynamic property", u.name.constData());
+                const_cast<Uniform&>(u).set(property(u.name.constData()));
                 continue;
             }
             QMetaProperty mp = metaObject()->property(idx);
@@ -127,9 +108,11 @@ void VideoShaderObject::programReady()
 #endif
             connect(mapper, SIGNAL(mapped(int)), this, SLOT(propertyChanged(int)));
             d.sigMap[st].append(mapper);
+            qDebug() << "set uniform property: " << u.name << property(u.name.constData());
+            propertyChanged(i|(st<<16)); // set the initial value
         }
     }
-    ready();
+    //ready();
 }
 
 class DynamicShaderObjectPrivate : public VideoShaderObjectPrivate {

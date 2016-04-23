@@ -31,8 +31,6 @@ class VideoShaderObjectPrivate;
  * \brief The VideoShaderObject class
  * User defined uniform names are bound to class meta properties (property signals are required)
  * and object dynamic properties.
- * Property value won't be updated if event loop is not ready or shader program is not compiled when calling setProperty().
- * For example, calling setProperty() has no effect in constructor. The initial values can be set in ready().
  * Property value type T is limited to float, int, unsigned(ES3.0) and QVector<T>
  */
 class Q_AV_EXPORT VideoShaderObject : public QObject, public VideoShader
@@ -48,11 +46,6 @@ private Q_SLOTS:
     void propertyChanged(int id);
 private:
     void programReady() Q_DECL_OVERRIDE Q_DECL_FINAL;
-    /*!
-     * \brief ready
-     * Called when shader program is ready. You can call setProperty("uniformName", uniformValue) here to set default uniform values.
-     */
-    virtual void ready() {}
 };
 
 class DynamicShaderObjectPrivate;

@@ -86,6 +86,11 @@ public:
     void set(const unsigned* v, int count = 0);
     void set(const int* v, int count = 0);
     /*!
+     * \brief set
+     * \param v can be T and QVector<T>, T is the type supported by OpenGL
+     */
+    void set(const QVariant& v);
+    /*!
      * \brief setGL
      * Call glUniformXXX to update uniform values that set by set(const T&, int) and mark dirty false. Currently only use OpenGL ES2 supported functions, i.e. uint, double types are not supported.
      * \return false if location is invalid, or if uniform type is not supported by QOpenGLFunctions
