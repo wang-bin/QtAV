@@ -256,6 +256,15 @@ Module {
     }
     Component { name: "QtAV::AudioFilter"; prototype: "QtAV::Filter" }
     Component {
+        name: "QtAV::DynamicShaderObject"
+        prototype: "QtAV::VideoShaderObject"
+        exports: ["QtAV/Shader 1.11"]
+        exportMetaObjectRevisions: [0]
+        Property { name: "header"; type: "string" }
+        Property { name: "sample"; type: "string" }
+        Property { name: "postProcess"; type: "string" }
+    }
+    Component {
         name: "QtAV::Filter"
         prototype: "QObject"
         Property { name: "enabled"; type: "bool" }
@@ -380,6 +389,7 @@ Module {
         Method { name: "capture" }
     }
     Component { name: "QtAV::VideoFilter"; prototype: "QtAV::Filter" }
+    Component { name: "QtAV::VideoShaderObject"; prototype: "QObject" }
     Component {
         name: "QuickAudioFilter"
         prototype: "QtAV::AudioFilter"
@@ -451,9 +461,7 @@ Module {
         Property { name: "avfilter"; type: "string" }
         Property { name: "supportedAVFilters"; type: "QStringList"; isReadonly: true }
         Property { name: "userFilter"; type: "VideoFilter"; isPointer: true }
-        Property { name: "fragHeader"; type: "string" }
-        Property { name: "fragSample"; type: "string" }
-        Property { name: "fragPostProcess"; type: "string" }
+        Property { name: "shader"; type: "QtAV::DynamicShaderObject"; isPointer: true }
         Property { name: "type"; type: "FilterType" }
     }
 }

@@ -21,8 +21,9 @@
 #ifndef QTAV_QUICKFILTER_H
 #define QTAV_QUICKFILTER_H
 #include <QtAV/Filter.h>
-
+#include <QtAV/VideoShaderObject.h>
 //namespace QtAV { //FIXME: why has error 'Invalid property assignment: "videoFilters" is a read-only property' if use namespace?
+//http://wiki.qt.io/How_to_use_a_C_class_declared_in_a_namespace_with_Q_PROPERTY_and_QML
 using namespace QtAV;
 class QuickVideoFilterPrivate;
 class QuickVideoFilter : public VideoFilter
@@ -32,11 +33,9 @@ class QuickVideoFilter : public VideoFilter
     Q_PROPERTY(QString avfilter READ avfilter WRITE setAVFilter NOTIFY avfilterChanged)
     Q_PROPERTY(QStringList supportedAVFilters READ supportedAVFilters)
     Q_PROPERTY(VideoFilter* userFilter READ userFilter WRITE setUserFilter NOTIFY userFilterChanged)
-    Q_PROPERTY(QString fragHeader READ fragHeader WRITE setFragHeader NOTIFY fragHeaderChanged)
-    Q_PROPERTY(QString fragSample READ fragSample WRITE setFragSample NOTIFY fragSampleChanged)
-    Q_PROPERTY(QString fragPostProcess READ fragPostProcess WRITE setFragPostProcess NOTIFY fragPostProcessChanged)
-    Q_ENUMS(FilterType)
+    Q_PROPERTY(QtAV::DynamicShaderObject* shader READ shader WRITE setShader NOTIFY shaderChanged)
     Q_PROPERTY(FilterType type READ type WRITE setType NOTIFY typeChanged)
+    Q_ENUMS(FilterType)
 public:
     enum FilterType {
         AVFilter,
@@ -58,18 +57,12 @@ public:
     VideoFilter *userFilter() const;
     void setUserFilter(VideoFilter* f);
 
-    QString fragHeader() const;
-    void setFragHeader(const QString& c);
-    QString fragSample() const;
-    void setFragSample(const QString& c);
-    QString fragPostProcess() const;
-    void setFragPostProcess(const QString& c);
+    DynamicShaderObject* shader() const;
+    void setShader(DynamicShaderObject* value);
 Q_SIGNALS:
     void avfilterChanged();
     void userFilterChanged();
-    void fragHeaderChanged();
-    void fragSampleChanged();
-    void fragPostProcessChanged();
+    void shaderChanged();
     void typeChanged();
 protected:
     void process(Statistics* statistics, VideoFrame* frame = 0) Q_DECL_OVERRIDE;

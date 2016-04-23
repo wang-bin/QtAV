@@ -13,9 +13,7 @@ public:
     QuickVideoFilterPrivate() : type(QuickVideoFilter::AVFilter)
       , avfilter(new LibAVFilterVideo())
       , glslfilter(new GLSLFilter())
-      , shader(new DynamicShaderObject())
     {
-        glslfilter->opengl()->setUserShader(shader.data());
         filter = avfilter.data();
     }
 
@@ -24,16 +22,12 @@ public:
     QScopedPointer<VideoFilter> user_filter;
     QScopedPointer<LibAVFilterVideo> avfilter;
     QScopedPointer<GLSLFilter> glslfilter;
-    QScopedPointer<DynamicShaderObject> shader;
 };
 
 QuickVideoFilter::QuickVideoFilter(QObject *parent)
     : VideoFilter(*new QuickVideoFilterPrivate(), parent)
 {
     DPTR_D(QuickVideoFilter);
-    connect(d.shader.data(), SIGNAL(headerChanged()), this, SIGNAL(fragHeaderChanged()));
-    connect(d.shader.data(), SIGNAL(sampleChanged()), this, SIGNAL(fragSampleChanged()));
-    connect(d.shader.data(), SIGNAL(postProcessChanged()), this, SIGNAL(fragPostProcessChanged()));
     connect(d.avfilter.data(), SIGNAL(optionsChanged()), this, SIGNAL(avfilterChanged()));
 }
 
@@ -94,34 +88,18 @@ void QuickVideoFilter::setUserFilter(VideoFilter *f)
     Q_EMIT userFilterChanged();
 }
 
-QString QuickVideoFilter::fragHeader() const
+DynamicShaderObject* QuickVideoFilter::shader() const
 {
-    return d_func().shader->header();
+    return static_cast<DynamicShaderObject*>(d_func().glslfilter->opengl()->userShader());
 }
 
-void QuickVideoFilter::setFragHeader(const QString &c)
+void QuickVideoFilter::setShader(DynamicShaderObject *value)
 {
-    d_func().shader->setHeader(c);
-}
-
-QString QuickVideoFilter::fragSample() const
-{
-    return d_func().shader->sample();
-}
-
-void QuickVideoFilter::setFragSample(const QString& c)
-{
-    return d_func().shader->setSample(c);
-}
-
-QString QuickVideoFilter::fragPostProcess() const
-{
-    return d_func().shader->postProcess();
-}
-
-void QuickVideoFilter::setFragPostProcess(const QString& c)
-{
-    d_func().shader->setPostProcess(c);
+    DPTR_D(QuickVideoFilter);
+    if (shader() == value)
+        return;
+    d.glslfilter->opengl()->setUserShader(value);
+    Q_EMIT shaderChanged();
 }
 
 void QuickVideoFilter::process(Statistics *statistics, VideoFrame *frame)
