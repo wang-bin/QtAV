@@ -90,8 +90,9 @@ public:
     void setSaturation(qreal value);
 
     void setUserShader(VideoShader* shader);
-
+    VideoShader* userShader() const;
 Q_SIGNALS:
+    void beforeRendering();
     /*!
      * \brief afterRendering
      * Emitted when video frame is rendered.

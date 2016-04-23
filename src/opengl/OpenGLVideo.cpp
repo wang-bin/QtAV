@@ -355,6 +355,11 @@ void OpenGLVideo::setUserShader(VideoShader *shader)
     d_func().user_shader = shader;
 }
 
+VideoShader* OpenGLVideo::userShader() const
+{
+    return d_func().user_shader;
+}
+
 void OpenGLVideo::fill(const QColor &color)
 {
     DYGL(glClearColor(color.red(), color.green(), color.blue(), color.alpha()));
@@ -365,6 +370,7 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
 {
     DPTR_D(OpenGLVideo);
     Q_ASSERT(d.manager);
+    Q_EMIT beforeRendering();
     DYGL(glViewport(d.rect.x(), d.rect.y(), d.rect.width(), d.rect.height())); // viewport was used in gpu filters is wrong, qt quick fbo item's is right(so must ensure setProjectionMatrixToRect was called correctly)
     const qint64 mt = d.material->type();
     if (d.material_type != mt) {
