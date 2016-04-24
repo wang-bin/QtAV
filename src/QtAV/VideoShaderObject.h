@@ -80,12 +80,4 @@ private:
     const char* userPostProcess() const Q_DECL_OVERRIDE;
 };
 } //namespace QtAV
-
-#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
-QT_BEGIN_NAMESPACE
-Q_DECLARE_METATYPE(QVector<float>)
-Q_DECLARE_METATYPE(QVector<int>)
-Q_DECLARE_METATYPE(QVector<unsigned>)
-QT_END_NAMESPACE
-#endif
 #endif //QTAV_VIDEOSHADEROBJECT_H

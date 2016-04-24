@@ -167,7 +167,7 @@ void Uniform::set(const unsigned *v, int count)
 void Uniform::set(const QVariant &v)
 {
     if (tupleSize() > 1 || arraySize() > 1) {
-        if (isFloat()) {
+        if (isFloat()) { //TODO: what if QVector<qreal> but uniform is float?
             set(v.value<QVector<float> >().data());
         } else if (isInt() || isBool()) {
             set(v.value<QVector<int> >().data());

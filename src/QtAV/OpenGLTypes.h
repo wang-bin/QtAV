@@ -87,7 +87,8 @@ public:
     void set(const int* v, int count = 0);
     /*!
      * \brief set
-     * \param v can be T and QVector<T>, T is the type supported by OpenGL
+     * \param v the type T is limited to OpenGL basic types float, int, unsigned(ES3.0) and QVector<T>
+     * TODO: Qt types
      */
     void set(const QVariant& v);
     /*!
@@ -190,4 +191,13 @@ private:
     QVector<Point> v;
 };
 } //namespace QtAV
+
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+QT_BEGIN_NAMESPACE
+Q_DECLARE_METATYPE(QVector<double>)
+Q_DECLARE_METATYPE(QVector<float>)
+Q_DECLARE_METATYPE(QVector<int>)
+Q_DECLARE_METATYPE(QVector<unsigned>)
+QT_END_NAMESPACE
+#endif
 #endif
