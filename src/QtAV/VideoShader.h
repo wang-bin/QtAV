@@ -30,6 +30,8 @@
 #else
 #include <QtOpenGL/QGLShaderProgram>
 #include <QtOpenGL/QGLShader>
+#undef QOpenGLShaderProgram
+#undef QOpenGLShader
 #define QOpenGLShaderProgram QGLShaderProgram
 #define QOpenGLShader QGLShader
 #endif
@@ -87,6 +89,7 @@ public:
     int opacityLocation() const;
     int channelMapLocation() const;
     int texelSizeLocation() const;
+    int textureSizeLocation() const;
     VideoFormat videoFormat() const;
     // defalut is GL_TEXTURE_2D
     int textureTarget() const;
@@ -114,7 +117,7 @@ private:
      * %planes% => plane count
      * Uniforms can be used: (N: 0 ~ planes-1)
      * u_Matrix (vertex shader),
-     * u_TextureN, v_TexCoordsN, u_texelSize(array of vec2), u_opacity, u_c(channel map), u_colorMatrix, u_to8(vec2, computing 16bit value with 8bit components)
+     * u_TextureN, v_TexCoordsN, u_texelSize(array of vec2, normalized), u_textureSize(array of vec2), u_opacity, u_c(channel map), u_colorMatrix, u_to8(vec2, computing 16bit value with 8bit components)
      * Vertex shader in: a_Position, a_TexCoordsN (see attributeNames())
      * Vertex shader out: v_TexCoordsN
      */
@@ -142,7 +145,7 @@ private:
      * \code
      *     vec4 sample2d(sampler2D tex, vec2 pos, int plane) { .... }
      * \endcode
-     * The 3rd parameter can be used to get texel size of a given plane u_texelSize[plane];
+     * The 3rd parameter can be used to get texel/texture size of a given plane u_texelSize[plane]/textureSize[plane];
      * Convolution of result rgb and kernel has the same effect as convolution of input yuv and kernel, ensured by
      * Σ_i c_i* Σ_j k_j*x_j=Σ_i k_i* Σ_j c_j*x_j
      * Because because the input yuv is from a real rgb color, so no clamp() is required for the transformed color.
@@ -227,12 +230,21 @@ public:
      * \return (1.0/textureWidth, 1.0/textureHeight)
      */
     QSizeF texelSize(int plane) const; //vec2?
+    /*!
+     * \brief texelSize
+     * For GLSL. 1 for rectangle texture, 1/(width, height) for 2d texture
+     */
     QVector<QVector2D> texelSize() const;
     /*!
      * \brief textureSize
      * It can be used with a uniform to emulate GLSL textureSize() which exists in new versions.
      */
     QSize textureSize(int plane) const;
+    /*!
+     * \brief textureSize
+     * For GLSL. Not normalized
+     */
+    QVector<QVector2D> textureSize() const;
     /*!
      * \brief normalizedROI
      * \param roi logical roi of a video frame.

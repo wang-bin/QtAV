@@ -89,6 +89,7 @@ public:
     int u_opacity;
     int u_c;
     int u_texelSize;
+    int u_textureSize;
     qint32 material_type;
     QVector<int> u_Texture;
     GLenum texture_target;
@@ -183,6 +184,7 @@ public:
     QVector2D vec_to8; //TODO: vec3 to support both RG and LA (.rga, vec_to8)
     QMatrix4x4 channel_map;
     QVector<QVector2D> v_texel_size;
+    QVector<QVector2D> v_texture_size;
 };
 
 } //namespace QtAV

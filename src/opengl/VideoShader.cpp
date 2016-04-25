@@ -175,6 +175,7 @@ const char* VideoShader::fragmentShader() const
         header += QByteArray(userShaderHeader(QOpenGLShader::Fragment));
     header += "\n";
     header += "uniform vec2 u_texelSize[" + QByteArray::number(nb_planes) + "];\n";
+    header += "uniform vec2 u_textureSize[" + QByteArray::number(nb_planes) + "];\n";
     header += "/*";
     frag.replace("%userHeader%", header);
 
@@ -220,6 +221,7 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
     d.u_opacity = shaderProgram->uniformLocation("u_opacity");
     d.u_c = shaderProgram->uniformLocation("u_c");
     d.u_texelSize = shaderProgram->uniformLocation("u_texelSize");
+    d.u_textureSize = shaderProgram->uniformLocation("u_textureSize");
     d.u_Texture.resize(textureLocationCount());
     qDebug("uniform locations:");
     for (int i = 0; i < d.u_Texture.size(); ++i) {
@@ -236,6 +238,8 @@ void VideoShader::initialize(QOpenGLShaderProgram *shaderProgram)
         qDebug("u_to8: %d", d.u_to8);
     if (d.u_texelSize >= 0)
         qDebug("u_texelSize: %d", d.u_texelSize);
+    if (d.u_textureSize >= 0)
+        qDebug("u_textureSize: %d", d.u_textureSize);
 
     d.user_uniforms[VertexShader].clear();
     d.user_uniforms[FragmentShader].clear();
@@ -291,6 +295,11 @@ int VideoShader::channelMapLocation() const
 int VideoShader::texelSizeLocation() const
 {
     return d_func().u_texelSize;
+}
+
+int VideoShader::textureSizeLocation() const
+{
+    return d_func().u_textureSize;
 }
 
 int VideoShader::uniformLocation(const char *name) const
@@ -400,6 +409,8 @@ bool VideoShader::update(VideoMaterial *material)
     //program()->setUniformValue(matrixLocation(), ); //what about sgnode? state.combindMatrix()?
     if (texelSizeLocation() >= 0)
         program()->setUniformValueArray(texelSizeLocation(), material->texelSize().constData(), nb_planes);
+    if (textureSizeLocation() >= 0)
+        program()->setUniformValueArray(textureSizeLocation(), material->textureSize().constData(), nb_planes);
     // uniform end. attribute begins
     return true;
 }
@@ -654,6 +665,8 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
     //DYGL(glTexParameteri(d.target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
     //DYGL(glTexParameteri(d.target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
     // This is necessary for non-power-of-two textures
+    //glPixelStorei(GL_UNPACK_ALIGNMENT, get_alignment(stride)); 8, 4, 2, 1
+    // glPixelStorei(GL_UNPACK_ROW_LENGTH, stride/glbpp); // for stride%glbpp > 0?
     DYGL(glTexSubImage2D(d.target, 0, 0, 0, d.texture_upload_size[p].width(), d.texture_upload_size[p].height(), d.data_format[p], d.data_type[p], d.try_pbo ? 0 : d.frame.constBits(p)));
     if (false) { //texture_upload_size[].width()*gl_bpp != bytesPerLine[]
         for (int y = 0; y < d.plane0Size.height(); ++y)
@@ -779,6 +792,11 @@ QVector<QVector2D> VideoMaterial::texelSize() const
 QSize VideoMaterial::textureSize(int plane) const
 {
     return d_func().texture_size[plane];
+}
+
+QVector<QVector2D> VideoMaterial::textureSize() const
+{
+    return d_func().v_texture_size;
 }
 
 QRectF VideoMaterial::normalizedROI(const QRectF &roi) const
@@ -960,6 +978,7 @@ bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
         texture_size[i].setWidth(std::ceil((qreal)texture_size[i].width()/(qreal)bpp_gl));
         texture_upload_size[i].setWidth(std::ceil((qreal)texture_upload_size[i].width()/(qreal)bpp_gl));
         effective_tex_width[i] /= bpp_gl; //fmt.bytesPerPixel(i);
+        v_texture_size[i] = QVector2D(texture_size[i].width(), texture_size[i].height());
         //effective_tex_width_ratio =
         qDebug("texture width: %d - %d = pad: %d. bpp(gl): %d", texture_size[i].width(), effective_tex_width[i], pad, bpp_gl);
         if (target == GL_TEXTURE_RECTANGLE)
@@ -1022,6 +1041,7 @@ bool VideoMaterialPrivate::ensureResources()
         update_textures = true;
         dirty = true;
         v_texel_size.resize(nb_planes);
+        v_texture_size.resize(nb_planes);
         texture_size.resize(nb_planes);
         texture_upload_size.resize(nb_planes);
         effective_tex_width.resize(nb_planes);
