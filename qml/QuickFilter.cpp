@@ -114,11 +114,13 @@ class QuickAudioFilterPrivate : public AudioFilterPrivate
 {
 public:
     QuickAudioFilterPrivate() : AudioFilterPrivate()
+      , type(QuickAudioFilter::AVFilter)
       , avfilter(new LibAVFilterAudio())
     {
         filter = avfilter.data();
     }
 
+    QuickAudioFilter::FilterType type;
     AudioFilter *filter;
     QScopedPointer<AudioFilter> user_filter;
     QScopedPointer<LibAVFilterAudio> avfilter;
@@ -129,6 +131,24 @@ QuickAudioFilter::QuickAudioFilter(QObject *parent)
 {
     DPTR_D(QuickAudioFilter);
     connect(d.avfilter.data(), SIGNAL(optionsChanged()), this, SIGNAL(avfilterChanged()));
+}
+
+QuickAudioFilter::FilterType QuickAudioFilter::type() const
+{
+    return d_func().type;
+}
+
+void QuickAudioFilter::setType(FilterType value)
+{
+    DPTR_D(QuickAudioFilter);
+    if (d.type == value)
+        return;
+    d.type = value;
+    if (value == AVFilter)
+        d.filter = d.avfilter.data();
+    else
+        d.filter = d.user_filter.data();
+    Q_EMIT typeChanged();
 }
 
 QStringList QuickAudioFilter::supportedAVFilters() const

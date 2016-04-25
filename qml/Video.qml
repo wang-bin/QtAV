@@ -1,6 +1,6 @@
 
 import QtQuick 2.0
-import QtAV 1.5
+import QtAV 1.11
 
 /*!
     \qmltype Video
@@ -62,6 +62,9 @@ import QtAV 1.5
 Item {
     id: video
 
+    property alias videoFiltersGPU: videoOut.filters
+    property alias audioFilters: player.audioFilters
+    property alias videoFilters: player.videoFilters
     property alias backgroundColor: videoOut.backgroundColor
     property alias frameSize: videoOut.frameSize
     property alias sourceAspectRatio: videoOut.sourceAspectRatio

@@ -395,9 +395,17 @@ Module {
         prototype: "QtAV::AudioFilter"
         exports: ["QtAV/AudioFilter 1.11"]
         exportMetaObjectRevisions: [0]
+        Enum {
+            name: "FilterType"
+            values: {
+                "AVFilter": 0,
+                "UserFilter": 1
+            }
+        }
         Property { name: "avfilter"; type: "string" }
         Property { name: "supportedAVFilters"; type: "QStringList"; isReadonly: true }
         Property { name: "userFilter"; type: "AudioFilter"; isPointer: true }
+        Property { name: "type"; type: "FilterType" }
     }
     Component {
         name: "QuickSubtitle"

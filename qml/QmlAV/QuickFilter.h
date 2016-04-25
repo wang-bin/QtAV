@@ -76,8 +76,17 @@ class QuickAudioFilter : public AudioFilter
     Q_PROPERTY(QString avfilter READ avfilter WRITE setAVFilter NOTIFY avfilterChanged)
     Q_PROPERTY(QStringList supportedAVFilters READ supportedAVFilters)
     Q_PROPERTY(AudioFilter* userFilter READ userFilter WRITE setUserFilter NOTIFY userFilterChanged)
+    Q_PROPERTY(FilterType type READ type WRITE setType NOTIFY typeChanged)
+    Q_ENUMS(FilterType)
 public:
+    enum FilterType {
+        AVFilter,
+        UserFilter
+    };
     QuickAudioFilter(QObject* parent = 0);
+
+    FilterType type() const;
+    void setType(FilterType value);
 
     QStringList supportedAVFilters() const;
     QString avfilter() const;
@@ -88,6 +97,7 @@ public:
 Q_SIGNALS:
     void avfilterChanged();
     void userFilterChanged();
+    void typeChanged();
 protected:
     void process(Statistics* statistics, AudioFrame* frame = 0) Q_DECL_OVERRIDE;
 };
