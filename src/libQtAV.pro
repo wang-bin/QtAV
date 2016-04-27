@@ -114,6 +114,7 @@ enable_egl:greaterThan(QT_MAJOR_VERSION,4):qtHaveModule(x11extras): QT *= x11ext
 config_gl|config_opengl {
   contains(QT_CONFIG, opengl):!contains(QT_CONFIG, opengles2): CONFIG *= enable_desktopgl
 }
+exists(openmax/include/OMX_Core.h): CONFIG += config_openmax
 config_openmax {
   INCLUDEPATH += openmax/include
   HEADERS += openmax/OMXHelper.h
