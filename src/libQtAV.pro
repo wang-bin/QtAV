@@ -415,6 +415,7 @@ static_ffmpeg {
 SOURCES += \
     AVCompat.cpp \
     QtAV_Global.cpp \
+    subtitle/ASS.cpp \
     subtitle/CharsetDetector.cpp \
     subtitle/PlainText.cpp \
     subtitle/PlayerSubtitle.cpp \

@@ -39,6 +39,7 @@
 //#include <string>  //include after ass_api.h, stdio.h is included there in a different namespace
 
 namespace QtAV {
+void RenderASS(QImage *image, const ASSImage &img, int dstX, int dstY);
 
 class SubtitleProcessorLibASS Q_DECL_FINAL: public SubtitleProcessor, protected ass::api
 {
@@ -56,6 +57,7 @@ public:
     bool canRender() const Q_DECL_OVERRIDE { return true;}
     QString getText(qreal pts) const Q_DECL_OVERRIDE;
     QImage getImage(qreal pts, QRect *boundingRect = 0) Q_DECL_OVERRIDE;
+    QList<ASSImage> getASSImages(qreal pts, QRect *boundingRect) Q_DECL_OVERRIDE;
     bool processHeader(const QByteArray& codec, const QByteArray& data) Q_DECL_OVERRIDE;
     SubtitleFrame processLine(const QByteArray& data, qreal pts = -1, qreal duration = 0) Q_DECL_OVERRIDE;
     void setFontFile(const QString& file) Q_DECL_OVERRIDE;
@@ -66,9 +68,7 @@ protected:
 private:
     bool initRenderer();
     void updateFontCacheAsync();
-    // render 1 ass image into a 32bit QImage with alpha channel.
-    //use dstX, dstY instead of img->dst_x/y because image size is small then ass renderer size
-    void renderASS32(QImage *image, ASS_Image* img, int dstX, int dstY);
+    QList<ASSImage> getASSImages(qreal pts, QRect *boundingRect, QImage* qimg, bool copy);
     void processTrack(ASS_Track *track);
     bool m_update_cache;
     bool force_font_file; // works only iff font_file is set
@@ -81,6 +81,7 @@ private:
     QList<SubtitleFrame> m_frames;
     //cache the image for the last invocation. return this if image does not change
     QImage m_image;
+    QList<ASSImage> m_assimages;
     QRect m_bound;
     mutable QMutex m_mutex;
 };
@@ -301,24 +302,38 @@ QString SubtitleProcessorLibASS::getText(qreal pts) const
     return text.trimmed();
 }
 
+void renderASS32(QImage *image, ASS_Image *img, int dstX, int dstY);
 QImage SubtitleProcessorLibASS::getImage(qreal pts, QRect *boundingRect)
+{ // ass dll is loaded if ass library is available
+    getASSImages(pts, boundingRect, &m_image, false);
+    m_assimages.clear();
+    return m_image;
+}
+
+QList<ASSImage> SubtitleProcessorLibASS::getASSImages(qreal pts, QRect *boundingRect)
+{
+    m_assimages = getASSImages(pts, boundingRect, NULL, true);
+    return m_assimages;
+}
+
+QList<ASSImage> SubtitleProcessorLibASS::getASSImages(qreal pts, QRect *boundingRect, QImage *qimg, bool copy)
 { // ass dll is loaded if ass library is available
     {
     QMutexLocker lock(&m_mutex);
     Q_UNUSED(lock);
     if (!m_ass) {
         qWarning("ass library not available");
-        return QImage();
+        return QList<ASSImage>();
     }
     if (!m_track) {
         qWarning("ass track not available");
-        return QImage();
+        return QList<ASSImage>();
     }
     if (!m_renderer) {
         initRenderer();
         if (!m_renderer) {
             qWarning("ass renderer not available");
-            return QImage();
+            return QList<ASSImage>();
         }
     }
     }
@@ -328,17 +343,40 @@ QImage SubtitleProcessorLibASS::getImage(qreal pts, QRect *boundingRect)
     QMutexLocker lock(&m_mutex);
     Q_UNUSED(lock);
     if (!m_renderer) //reset in setFontXXX
-        return QImage();
+        return QList<ASSImage>();
     int detect_change = 0;
     ASS_Image *img = ass_render_frame(m_renderer, m_track, (long long)(pts * 1000.0), &detect_change);
-    if (!detect_change) {
+    if (!detect_change && !m_assimages.isEmpty()) {
         if (boundingRect)
             *boundingRect = m_bound;
-        return m_image;
+        return m_assimages;
     }
+    m_image = QImage();
+    m_assimages.clear();
     QRect rect(0, 0, 0, 0);
     ASS_Image *i = img;
     while (i) {
+        const quint8 a = 255 - (i->color&0xff);
+        //qDebug("ass %d rect %d: %d,%d-%dx%d", a, n, i->dst_x, i->dst_y, i->w, i->h);
+        if (i->w <= 0 || i->h <= 0 || a == 0) {
+            i = i->next;
+            continue;
+        }
+        ASSImage s;
+        s.color = i->color;
+        s.x = i->dst_x;
+        s.y = i->dst_y;
+        s.w = i->w;
+        s.h = i->h;
+        s.stride = i->stride;
+        if (copy) {
+            s.data.reserve(i->stride*i->h);
+            s.data.resize(i->stride*i->h);
+            memcpy(s.data.data(), i->bitmap, i->stride*(i->h-1) + i->w);
+        } else {
+            s.data = QByteArray::fromRawData((const char*)i->bitmap, i->stride*(i->h-1) + i->w);
+        }
+        m_assimages.append(s);
         rect |= QRect(i->dst_x, i->dst_y, i->w, i->h);
         i = i->next;
     }
@@ -346,19 +384,14 @@ QImage SubtitleProcessorLibASS::getImage(qreal pts, QRect *boundingRect)
     if (boundingRect) {
         *boundingRect = m_bound;
     }
-    QImage image(rect.size(), QImage::Format_ARGB32);
-    image.fill(Qt::transparent);
-    i = img;
-    while (i) {
-        if (i->w <= 0 || i->h <= 0) {
-            i = i->next;
-            continue;
-        }
-        renderASS32(&image, i, i->dst_x - rect.x(), i->dst_y - rect.y());
-        i = i->next;
+    if (!qimg)
+        return m_assimages;
+    *qimg = QImage(rect.size(), QImage::Format_ARGB32);
+    qimg->fill(Qt::transparent);
+    foreach (const ASSImage& i, m_assimages) {
+        RenderASS(qimg, i, i.x - rect.x(), i.y - rect.y());
     }
-    m_image = image;
-    return image;
+    return m_assimages;
 }
 
 void SubtitleProcessorLibASS::onFrameSizeChanged(int width, int height)
@@ -637,101 +670,4 @@ void SubtitleProcessorLibASS::processTrack(ASS_Track *track)
         m_frames.append(frame);
     }
 }
-
-#define _r(c)  ((c)>>24)
-#define _g(c)  (((c)>>16)&0xFF)
-#define _b(c)  (((c)>>8)&0xFF)
-#define _a(c)  ((c)&0xFF)
-
-#define qRgba2(r, g, b, a) ((a << 24) | (r << 16) | (g  << 8) | b)
-
-/*
- * ASS_Image: 1bit alpha per pixel + 1 rgb per image. less memory usage
- */
-//0xAARRGGBB
-#if (Q_BYTE_ORDER == Q_BIG_ENDIAN)
-#define ARGB32_SET(C, R, G, B, A) \
-    C[0] = (A); \
-    C[1] = (R); \
-    C[2] = (G); \
-    C[3] = (B);
-#define ARGB32_ADD(C, R, G, B, A) \
-    C[0] += (A); \
-    C[1] += (R); \
-    C[2] += (G); \
-    C[3] += (B);
-#define ARGB32_A(C) (C[0])
-#define ARGB32_R(C) (C[1])
-#define ARGB32_G(C) (C[2])
-#define ARGB32_B(C) (C[3])
-#else
-#define ARGB32_SET(C, R, G, B, A) \
-    C[0] = (B); \
-    C[1] = (G); \
-    C[2] = (R); \
-    C[3] = (A);
-#define ARGB32_ADD(C, R, G, B, A) \
-    C[0] += (B); \
-    C[1] += (G); \
-    C[2] += (R); \
-    C[3] += (A);
-#define ARGB32_A(C) (C[3])
-#define ARGB32_R(C) (C[2])
-#define ARGB32_G(C) (C[1])
-#define ARGB32_B(C) (C[0])
-#endif
-#define USE_QRGBA 0
-// C[i] = C'[i] = (k*c[i]+(255-k)*C[i])/255 = C[i] + k*(c[i]-C[i])/255, min(c[i],C[i]) <= C'[i] <= max(c[i],C[i])
-void SubtitleProcessorLibASS::renderASS32(QImage *image, ASS_Image *img, int dstX, int dstY)
-{
-    const quint8 a = 255 - _a(img->color);
-    if (a == 0)
-        return;
-    const quint8 r = _r(img->color);
-    const quint8 g = _g(img->color);
-    const quint8 b = _b(img->color);
-    quint8 *src = img->bitmap;
-    // use QRgb to avoid endian issue
-    QRgb *dst = (QRgb*)image->constBits() + dstY * image->width() + dstX;
-    for (int y = 0; y < img->h; ++y) {
-        for (int x = 0; x < img->w; ++x) {
-            const unsigned k = ((unsigned) src[x])*a/255;
-#if USE_QRGBA
-            const unsigned A = qAlpha(dst[x]);
-#else
-            quint8 *c = (quint8*)(&dst[x]);
-            const unsigned A = ARGB32_A(c);
-#endif
-            if (A == 0) { // dst color can be ignored
-#if USE_QRGBA
-                 dst[x] = qRgba(r, g, b, k);
-#else
-                 ARGB32_SET(c, r, g, b, k);
-#endif //USE_QRGBA
-            } else if (k == 0) { //no change
-                //dst[x] = qRgba(qRed(dst[x])), qGreen(dst[x]), qBlue(dst[x]), qAlpha(dst[x])) == dst[x];
-            } else if (k == 255) {
-#if USE_QRGBA
-                dst[x] = qRgba(r, g, b, k);
-#else
-                ARGB32_SET(c, r, g, b, k);
-#endif //USE_QRGBA
-            } else {
-                // c=k*dc/255=k*dc/256 * (1-1/256), -1<err(c) = k*dc/256^2<1, -1 is bad!
-#if USE_QRGBA
-                // no need to &0xff because always be 0~255
-                dst[x] += qRgba2(k*(r-qRed(dst[x]))/255, k*(g-qGreen(dst[x]))/255, k*(b-qBlue(dst[x]))/255, k*(a-A)/255);
-#else
-                const unsigned R = ARGB32_R(c);
-                const unsigned G = ARGB32_G(c);
-                const unsigned B = ARGB32_B(c);
-                ARGB32_ADD(c, r == R ? 0 : k*(r-R)/255, g == G ? 0 : k*(g-G)/255, b == B ? 0 : k*(b-B)/255, a == A ? 0 : k*(a-A)/255);
-#endif
-            }
-        }
-        src += img->stride;
-        dst += image->width();
-    }
-}
-
 } //namespace QtAV

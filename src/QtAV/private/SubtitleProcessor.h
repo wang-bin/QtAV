@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -75,6 +75,7 @@ public:
     virtual QString getText(qreal pts) const = 0;
     // default null image
     virtual QImage getImage(qreal pts, QRect* boundingRect = 0);
+    virtual QList<ASSImage> getASSImages(qreal pts, QRect* boundingRect = 0);
     void setFrameSize(int width, int height);
     QSize frameSize() const;
 
