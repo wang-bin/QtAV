@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and LibASS
-    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and LibASS
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -570,8 +570,8 @@ void SubtitleProcessorLibASS::updateFontCache()
             family = QByteArrayLiteral("Arial");
     }
     // prefer user settings
-    const QString kFont = font_file.isEmpty() ? sFont : font_file;
-    const QString kFontsDir = fonts_dir.isEmpty() ? sFontsDir : fonts_dir;
+    const QString kFont = font_file.isEmpty() ? sFont : Internal::Path::toLocal(font_file);
+    const QString kFontsDir = fonts_dir.isEmpty() ? sFontsDir : Internal::Path::toLocal(fonts_dir);
     qDebug() << "font file: " << kFont << "; fonts dir: " << kFontsDir;
     // setup libass
 #ifdef Q_OS_WINRT
@@ -579,7 +579,8 @@ void SubtitleProcessorLibASS::updateFontCache()
         qDebug("BUG: winrt libass set a valid fonts dir results in crash. skip fonts dir setup.");
 #else
     // will call strdup, so safe to use temp array .toUtf8().constData()
-    ass_set_fonts_dir(m_ass, kFontsDir.isEmpty() ? 0 : kFontsDir.toUtf8().constData()); // look up fonts in fonts dir can be slow. force font file to skip lookup
+    if (!force_font_file || (!font_file.isEmpty() && !QFile::exists(kFont)))
+        ass_set_fonts_dir(m_ass, kFontsDir.isEmpty() ? 0 : kFontsDir.toUtf8().constData()); // look up fonts in fonts dir can be slow. force font file to skip lookup
 #endif
     /* ass_set_fonts:
      * fc/dfp=false(auto font provider): Prefer font provider to find a font(FC needs fonts.conf) in font_dir, or provider's configuration. If failed, try the given font
