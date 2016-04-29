@@ -24,11 +24,10 @@
 #include <QtCore/QFileInfo>
 #include "QtAV/AVPlayer.h"
 #include "QtAV/Subtitle.h"
+#include "utils/internal.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
-
-extern QString getLocalPath(const QString& fullPath);
 
 // /xx/oo/a.01.mov => /xx/oo/a.01. native dir separator => /
 /*!
@@ -52,7 +51,7 @@ static QString getSubtitleBasePath(const QString fullPath)
     if (lastDot > 0)
         name = name.left(lastDot);
     if (path.startsWith(QLatin1String("file:"))) // can skip convertion here. Subtitle class also convert the path
-        path = getLocalPath(path);
+        path = Internal::Path::toLocal(path);
     path.append(name);
     return path;
 }

@@ -43,6 +43,7 @@
 #include "VideoThread.h"
 #include "AVDemuxThread.h"
 #include "QtAV/private/AVCompat.h"
+#include "utils/internal.h"
 #include "utils/Logger.h"
 
 #define EOF_ISSUE_SOLVED 0
@@ -469,14 +470,13 @@ MediaEndAction AVPlayer::mediaEndAction() const
  * For replaying, we can avoid load a seekable file again.
  * For playing a new file, load() is required.
  */
-extern QString getLocalPath(const QString& fullPath);
 void AVPlayer::setFile(const QString &path)
 {
     // file() is used somewhere else. ensure it is correct
     QString p(path);
     // QFile does not support "file:"
     if (p.startsWith(QLatin1String("file:")))
-        p = getLocalPath(p);
+        p = Internal::Path::toLocal(p);
     d->reset_state = d->current_source.type() != QVariant::String || d->current_source.toString() != p;
     d->current_source = p;
     // TODO: d->reset_state = d->demuxer2.setMedia(path);
@@ -974,7 +974,7 @@ bool AVPlayer::setAudioStream(const QString &file, int n)
     QString path(file);
     // QFile does not support "file:"
     if (path.startsWith(QLatin1String("file:")))
-        path = getLocalPath(path);
+        path = Internal::Path::toLocal(path);
     if (d->audio_track == n && d->external_audio == path)
         return true;
     const bool audio_changed = d->audio_demuxer.fileName() != path;

@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2015)
@@ -115,6 +115,12 @@ QString getLocalPath(const QString& fullPath)
 
 namespace Internal {
 namespace Path {
+
+QString toLocal(const QString &fullPath)
+{
+    return getLocalPath(fullPath);
+}
+
 QString appDataDir()
 {
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
@@ -152,6 +158,7 @@ QString fontsDir()
 
 QString options2StringHelper(void* obj, const char* unit)
 {
+    qDebug("obj: %p", obj);
     QString s;
     const AVOption* opt = NULL;
     while ((opt = av_opt_next(obj, opt))) {

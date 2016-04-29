@@ -35,7 +35,6 @@ typedef QTime QElapsedTimer;
 
 namespace QtAV {
 static const char kFileScheme[] = "file:";
-extern QString getLocalPath(const QString& fullPath);
 
 class AVDemuxer::InterruptHandler : public AVIOInterruptCB
 {
@@ -644,7 +643,7 @@ bool AVDemuxer::setMedia(const QString &fileName)
     if (d->file.startsWith(QLatin1String("mms:")))
         d->file.insert(3, QLatin1Char('h'));
     else if (d->file.startsWith(QLatin1String(kFileScheme)))
-        d->file = getLocalPath(d->file);
+        d->file = Internal::Path::toLocal(d->file);
     int colon = d->file.indexOf(QLatin1Char(':'));
     if (colon == 1) {
 #ifdef Q_OS_WINRT
@@ -830,10 +829,11 @@ bool AVDemuxer::load()
     if (was_seekable != d->seekable)
         Q_EMIT seekableChanged();
     qDebug("avfmtctx.flag: %d", d->format_ctx->flags);
-    qDebug("AVFMT_NOTIMESTAMPS: %d, AVFMT_TS_DISCONT: %d, AVFMT_NO_BYTE_SEEK:%d"
+    qDebug("AVFMT_NOTIMESTAMPS: %d, AVFMT_TS_DISCONT: %d, AVFMT_NO_BYTE_SEEK:%d, custom io: %d"
            , d->format_ctx->flags&AVFMT_NOTIMESTAMPS
            , d->format_ctx->flags&AVFMT_TS_DISCONT
            , d->format_ctx->flags&AVFMT_NO_BYTE_SEEK
+           , d->format_ctx->flags&AVFMT_FLAG_CUSTOM_IO
            );
     if (getInterruptStatus() < 0) {
         QString msg;
@@ -872,7 +872,7 @@ bool AVDemuxer::unload()
         // no delete. may be used in next load
         if (d->input)
             d->input->release();
-        emit unloaded();
+        Q_EMIT unloaded();
     }
     return true;
 }

@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -30,7 +30,6 @@
 namespace QtAV {
 static const char kFileScheme[] = "file:";
 #define CHAR_COUNT(s) (sizeof(s) - 1) // tail '\0'
-extern QString getLocalPath(const QString& fullPath);
 
 // Packet::asAVPacket() assumes time base is 0.001
 static const AVRational kTB = {1, 1000};
@@ -275,7 +274,7 @@ bool AVMuxer::setMedia(const QString &fileName)
     if (d->file.startsWith(QLatin1String("mms:")))
         d->file.insert(3, QLatin1Char('h'));
     else if (d->file.startsWith(QLatin1String(kFileScheme)))
-        d->file = getLocalPath(d->file);
+        d->file = Internal::Path::toLocal(d->file);
     int colon = d->file.indexOf(QLatin1Char(':'));
     if (colon == 1) {
 #ifdef Q_OS_WINRT
