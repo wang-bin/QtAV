@@ -24,7 +24,7 @@
 #include <QtAV/QtAV_Global.h>
 
 namespace QtAV {
-
+// TODO: namespace gl/gfx?
 class Q_AV_EXPORT Uniform {
 public:
     enum { V = 16, Vec = 1<<V, M = 20, Mat = 1<<M };
@@ -142,14 +142,56 @@ Q_AV_EXPORT QDebug operator<<(QDebug debug, const Uniform &u);
 Q_AV_EXPORT QDebug operator<<(QDebug debug, Uniform::Type ut);
 #endif
 
-class Q_AV_EXPORT TexturedGeometry {
+class Q_AV_EXPORT Attribute {
+    bool m_normalize;
+    int m_type;
+    int m_tupleSize, m_offset;
+    QByteArray m_name;
 public:
-    typedef struct {
-        float x, y;
-        float tx, ty;
-    } Point;
-    enum Triangle { Strip, Fan };
-    TexturedGeometry(int texCount = 1, int count = 4, Triangle t = Strip);
+    Attribute(int type = 0, int tupleSize = 0, int offset = 0, bool normalize = true);
+    Attribute(const QByteArray& name, int type, int tupleSize, int offset = 0, bool normalize = true);
+    QByteArray name() const {return m_name;}
+    int type() const {return m_type;}
+    int tupleSize() const {return m_tupleSize;}
+    int offset() const {return m_offset;}
+    bool normalize() const {return m_normalize;}
+};
+
+/*!
+ * \brief The Geometry class
+ * \code
+ * foreach (const Attribute& a, g->attributes()) {
+ *     program()->setAttributeBuffer(a.name(), a.type(), a.offset(), a.tupleSize(), g->stride());
+ * }
+ * \endcode
+ */
+class Q_AV_EXPORT Geometry {
+public:
+    /// Strip or Triangles is preferred by ANGLE. The values are equal to opengl
+    enum PrimitiveType {
+        Triangles = 0x0004,
+        TriangleStrip = 0x0005, //default
+        TriangleFan = 0x0006,
+    };
+    Geometry();
+    virtual ~Geometry() {}
+    PrimitiveType primitiveType() const {return m_primitive;}
+    void setPrimitiveType(PrimitiveType value) {  m_primitive = value;}
+    int vertexCount() const {return m_vcount;}
+    void setVertexCount(int value) {m_vcount = value;}
+    virtual int stride() const = 0;
+    virtual const QVector<Attribute>& attributes() const = 0;
+    virtual void* attributesData() const = 0;
+    virtual int attributeDataSize() const = 0;
+private:
+    PrimitiveType m_primitive;
+    int m_vcount;
+};
+
+// TODO: move to OpenGLVideo.cpp and no export
+class Q_AV_EXPORT TexturedGeometry : public Geometry {
+public:
+    TexturedGeometry(int texCount = 1);
     /*!
      * \brief setTextureCount
      * sometimes we needs more than 1 texture coordinates, for example we have to set rectangle texture
@@ -158,21 +200,12 @@ public:
     void setTextureCount(int value);
     int textureCount() const;
     /*!
-     * \brief size
-     * totoal data size in bytes
-     */
-    int size() const;
-    /*!
      * \brief textureSize
      * data size of 1 texture. equals textureVertexCount()*stride()
      */
     int textureSize() const;
-    Triangle triangle() const { return tri;}
-    int mode() const;
-    int tupleSize() const { return 2;}
-    int stride() const { return sizeof(Point); }
     /// vertex count per texture
-    int textureVertexCount() const { return points_per_tex;}
+    int textureVertexCount() const { return 4;}
     /// totoal vertex count
     int vertexCount() const { return v.size(); }
     void setPoint(int index, const QPointF& p, const QPointF& tp, int texIndex = 0);
@@ -181,14 +214,22 @@ public:
     void setRect(const QRectF& r, const QRectF& tr, int texIndex = 0);
     void setGeometryRect(const QRectF& r, int texIndex = 0);
     void setTextureRect(const QRectF& tr, int texIndex = 0);
-    void* data(int idx = 0, int texIndex = 0) { return (char*)v.data() + texIndex*textureSize() + idx*2*sizeof(float); } //convert to char* float*?
-    const void* data(int idx = 0, int texIndex = 0) const { return (char*)v.constData() + texIndex*textureSize() + idx*2*sizeof(float); }
-    const void* constData(int idx = 0, int texIndex = 0) const { return (char*)v.constData() + texIndex*textureSize() + idx*2*sizeof(float); }
+    int stride() const Q_DECL_OVERRIDE { return sizeof(Point); }
+    const QVector<Attribute>& attributes() const Q_DECL_OVERRIDE;
+    void* attributesData() const Q_DECL_OVERRIDE {
+        return (void*)v.data();
+    }
+    int attributeDataSize() const Q_DECL_OVERRIDE {
+        return nb_tex * textureSize();
+    }
 private:
-    Triangle tri;
-    int points_per_tex;
+    typedef struct {
+        float x, y;
+        float tx, ty;
+    } Point;
     int nb_tex;
     QVector<Point> v;
+    QVector<Attribute> a;
 };
 } //namespace QtAV
 

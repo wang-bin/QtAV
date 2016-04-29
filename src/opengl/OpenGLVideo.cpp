@@ -125,7 +125,6 @@ public:
 
 void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, const QRectF &r)
 {
-    const bool tex_rect = shader->textureTarget() == GL_TEXTURE_RECTANGLE;
     // also check size change for normalizedROI computation if roi is not normalized
     const bool roi_changed = valiad_tex_width != material->validTextureWidth() || roi != r || video_size != material->frameSize();
     const int tc = shader->textureLocationCount();
@@ -153,7 +152,7 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
         goto end;
     //qDebug("updating geometry...");
     geometry.setRect(target_rect, material->mapToTexture(0, roi));
-    if (tex_rect) {
+    if (shader->textureTarget() == GL_TEXTURE_RECTANGLE) {
         geometry.setTextureCount(tc);
         for (int i = 1; i < tc; ++i) {
             // tc can > planes, but that will compute chroma plane
@@ -166,7 +165,7 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
     { //VAO scope BEGIN
 #if QT_VAO
     if (try_vao) {
-        //qDebug("updating vao...");
+        qDebug("updating vao...");
         if (!vao.isCreated()) {
             if (!vao.create()) {
                 try_vao = false;
@@ -185,17 +184,14 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
             goto end;
         }
     }
-    //qDebug("updating vbo...");
+    qDebug("updating vbo...");
     vbo.bind(); //check here
-    vbo.allocate(geometry.data(), geometry.size());
+    vbo.allocate(geometry.attributesData(), geometry.attributeDataSize());
 #if QT_VAO
     if (try_vao) {
-        shader->program()->setAttributeBuffer(0, GL_FLOAT, 0, geometry.tupleSize(), geometry.stride());
-        shader->program()->setAttributeBuffer(1, GL_FLOAT, geometry.tupleSize()*sizeof(float), geometry.tupleSize(), geometry.stride());
-        if (tex_rect) {
-            for (int i = 1; i < tc; ++i) {
-                shader->program()->setAttributeBuffer(i + 1, GL_FLOAT, i*geometry.textureSize() + geometry.tupleSize()*sizeof(float), geometry.tupleSize(), geometry.stride());
-            }
+        for (int an = 0; an < geometry.attributes().size(); ++an) {
+            const Attribute& a = geometry.attributes().at(an);
+            shader->program()->setAttributeBuffer(an, a.type(), a.offset(), a.tupleSize(), geometry.stride());
         }
         char const *const *attr = shader->attributeNames();
         for (int i = 0; attr[i]; ++i) {
@@ -214,20 +210,15 @@ end:
 #endif
     if (try_vbo && vbo.isCreated()) {
         vbo.bind();
-        shader->program()->setAttributeBuffer(0, GL_FLOAT, 0, geometry.tupleSize(), geometry.stride());
-        shader->program()->setAttributeBuffer(1, GL_FLOAT, geometry.tupleSize()*sizeof(float), geometry.tupleSize(), geometry.stride());
-        if (tex_rect) {
-            for (int i = 1; i < tc; ++i) {
-                shader->program()->setAttributeBuffer(i + 1, GL_FLOAT, i*geometry.textureSize() + geometry.tupleSize()*sizeof(float), geometry.tupleSize(), geometry.stride());
-            }
+        // normalized
+        for (int an = 0; an < geometry.attributes().size(); ++an) {
+            const Attribute& a = geometry.attributes().at(an);
+            shader->program()->setAttributeBuffer(an, a.type(), a.offset(), a.tupleSize(), geometry.stride());
         }
     } else {
-        shader->program()->setAttributeArray(0, GL_FLOAT, geometry.data(0), geometry.tupleSize(), geometry.stride());
-        shader->program()->setAttributeArray(1, GL_FLOAT, geometry.data(1), geometry.tupleSize(), geometry.stride());
-        if (tex_rect) {
-            for (int i = 1; i < tc; ++i) {
-                shader->program()->setAttributeArray(i + 1, GL_FLOAT, geometry.data(1), i*geometry.textureSize() + geometry.tupleSize(), geometry.stride());
-            }
+        for (int an = 0; an < geometry.attributes().size(); ++an) {
+            const Attribute& a = geometry.attributes().at(an);
+            shader->program()->setAttributeArray(an, a.type(), (char*)geometry.attributesData() + a.offset(), a.tupleSize(), geometry.stride());
         }
     }
     char const *const *attr = shader->attributeNames();
@@ -391,7 +382,7 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
         DYGL(glEnable(GL_BLEND));
         DYGL(glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA));
     }
-    DYGL(glDrawArrays(d.geometry.mode(), 0, d.geometry.textureVertexCount()));
+    DYGL(glDrawArrays(d.geometry.primitiveType(), 0, d.geometry.textureVertexCount()));
     if (blending)
         DYGL(glDisable(GL_BLEND));
     // d.shader->program()->release(); //glUseProgram(0)
