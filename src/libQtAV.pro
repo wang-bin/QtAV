@@ -360,12 +360,14 @@ config_gl|config_opengl {
   HEADERS *= \
     opengl/gl_api.h \
     opengl/OpenGLHelper.h \
+    opengl/Geometry.h \
     opengl/ShaderManager.h
   SOURCES *= \
     filter/GLSLFilter.cpp \
     output/video/OpenGLRendererBase.cpp \
     opengl/gl_api.cpp \
     opengl/OpenGLTypes.cpp \
+    opengl/Geometry.cpp \
     opengl/OpenGLVideo.cpp \
     opengl/VideoShaderObject.cpp \
     opengl/VideoShader.cpp \

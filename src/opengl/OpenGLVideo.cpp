@@ -33,6 +33,7 @@
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/VideoShader.h"
 #include "ShaderManager.h"
+#include "opengl/Geometry.h"
 #include "opengl/OpenGLHelper.h"
 #include "utils/Logger.h"
 
@@ -192,10 +193,7 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
         for (int an = 0; an < geometry.attributes().size(); ++an) {
             const Attribute& a = geometry.attributes().at(an);
             shader->program()->setAttributeBuffer(an, a.type(), a.offset(), a.tupleSize(), geometry.stride());
-        }
-        char const *const *attr = shader->attributeNames();
-        for (int i = 0; attr[i]; ++i) {
-            shader->program()->enableAttributeArray(i); //TODO: in setActiveShader
+            shader->program()->enableAttributeArray(an); //TODO: in setActiveShader
         }
     }
 #endif
@@ -214,16 +212,14 @@ end:
         for (int an = 0; an < geometry.attributes().size(); ++an) {
             const Attribute& a = geometry.attributes().at(an);
             shader->program()->setAttributeBuffer(an, a.type(), a.offset(), a.tupleSize(), geometry.stride());
+            shader->program()->enableAttributeArray(an); //TODO: in setActiveShader
         }
     } else {
         for (int an = 0; an < geometry.attributes().size(); ++an) {
             const Attribute& a = geometry.attributes().at(an);
             shader->program()->setAttributeArray(an, a.type(), (char*)geometry.attributesData() + a.offset(), a.tupleSize(), geometry.stride());
+            shader->program()->enableAttributeArray(an); //TODO: in setActiveShader
         }
-    }
-    char const *const *attr = shader->attributeNames();
-    for (int i = 0; attr[i]; ++i) {
-        shader->program()->enableAttributeArray(i); //TODO: in setActiveShader
     }
 }
 
@@ -382,7 +378,7 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
         DYGL(glEnable(GL_BLEND));
         DYGL(glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA));
     }
-    DYGL(glDrawArrays(d.geometry.primitiveType(), 0, d.geometry.textureVertexCount()));
+    DYGL(glDrawArrays(d.geometry.primitiveType(), 0, d.geometry.vertexCount()));
     if (blending)
         DYGL(glDisable(GL_BLEND));
     // d.shader->program()->release(); //glUseProgram(0)
