@@ -25,15 +25,11 @@
 #include <QtGui/QGuiApplication>
 #include <QtGui/QScreen>
 #include <QtGui/QSurface>
-#define QT_VAO (QT_VERSION >= QT_VERSION_CHECK(5, 1, 0))
-#if QT_VAO
-#include <QtGui/QOpenGLVertexArrayObject>
-#endif //QT_VAO
 #endif //5.0
 #include "QtAV/SurfaceInterop.h"
 #include "QtAV/VideoShader.h"
 #include "ShaderManager.h"
-#include "opengl/Geometry.h"
+#include "opengl/GeometryRenderer.h"
 #include "opengl/OpenGLHelper.h"
 #include "utils/Logger.h"
 
@@ -49,16 +45,10 @@ public:
         , material(new VideoMaterial())
         , material_type(0)
         , update_geo(true)
-        , try_vbo(true)
-        , try_vao(true)
         , tex_target(0)
         , valiad_tex_width(1.0)
         , user_shader(NULL)
     {
-        static bool disable_vbo = qgetenv("QTAV_NO_VBO").toInt() > 0;
-        try_vbo = !disable_vbo;
-        static bool disable_vao = qgetenv("QTAV_NO_VAO").toInt() > 0;
-        try_vao = !disable_vao;
     }
     ~OpenGLVideoPrivate() {
         if (material) {
@@ -69,10 +59,7 @@ public:
 
     void resetGL() {
         ctx = 0;
-        vbo.destroy();
-#if QT_VAO
-        vao.destroy();
-#endif
+        gr.updateBuffers(NULL);
         if (!manager)
             return;
         manager->setParent(0);
@@ -85,21 +72,8 @@ public:
     }
     // update geometry(vertex array) set attributes or bind VAO/VBO.
     void bindAttributes(VideoShader* shader, const QRectF& t, const QRectF& r);
-    void unbindAttributes(VideoShader* shader) {
-#if QT_VAO
-        if (try_vao && vao.isCreated()) {
-            vao.release();
-            return;
-        }
-#endif //QT_VAO
-        char const *const *attr = shader->attributeNames();
-        for (int i = 0; attr[i]; ++i) {
-            shader->program()->disableAttributeArray(i); //TODO: in setActiveShader
-        }
-        // release vbo. qpainter is affected if vbo is bound
-        if (try_vbo && vbo.isCreated()) {
-            vbo.release();
-        }
+    void unbindAttributes(VideoShader*) {
+        gr.unbindBuffers(&geometry);
     }
 public:
     QOpenGLContext *ctx;
@@ -107,18 +81,13 @@ public:
     VideoMaterial *material;
     qint64 material_type;
     bool update_geo;
-    bool try_vbo; // check environment var and opengl support
-    QOpenGLBuffer vbo; //VertexBuffer
-    bool try_vao;
-#if QT_VAO
-    QOpenGLVertexArrayObject vao;
-#endif //QT_VAO
     int tex_target;
     qreal valiad_tex_width;
     QSize video_size;
     QRectF target;
     QRectF roi; //including invalid padding width
     TexturedGeometry geometry;
+    GeometryRenderer gr;
     QRectF rect;
     QMatrix4x4 matrix;
     VideoShader *user_shader;
@@ -149,8 +118,10 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
             update_geo = true;
         }
     }
-    if (!update_geo)
-        goto end;
+    if (!update_geo) {
+        gr.bindBuffers(&geometry);
+        return;
+    }
     //qDebug("updating geometry...");
     geometry.setRect(target_rect, material->mapToTexture(0, roi));
     if (shader->textureTarget() == GL_TEXTURE_RECTANGLE) {
@@ -161,66 +132,8 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
         }
     }
     update_geo = false;
-    if (!try_vbo)
-        goto end;
-    { //VAO scope BEGIN
-#if QT_VAO
-    if (try_vao) {
-        qDebug("updating vao...");
-        if (!vao.isCreated()) {
-            if (!vao.create()) {
-                try_vao = false;
-                qDebug("VAO is not supported");
-            }
-        }
-    }
-    QOpenGLVertexArrayObject::Binder vao_bind(&vao);
-    Q_UNUSED(vao_bind);
-#endif
-    if (!vbo.isCreated()) {
-        if (!vbo.create()) {
-            try_vbo = false; // not supported by OpenGL
-            try_vao = false; // also disable VAO. destroy?
-            qWarning("VBO is not supported");
-            goto end;
-        }
-    }
-    qDebug("updating vbo...");
-    vbo.bind(); //check here
-    vbo.allocate(geometry.attributesData(), geometry.attributeDataSize());
-#if QT_VAO
-    if (try_vao) {
-        for (int an = 0; an < geometry.attributes().size(); ++an) {
-            const Attribute& a = geometry.attributes().at(an);
-            shader->program()->setAttributeBuffer(an, a.type(), a.offset(), a.tupleSize(), geometry.stride());
-            shader->program()->enableAttributeArray(an); //TODO: in setActiveShader
-        }
-    }
-#endif
-    vbo.release();
-    } //VAO scope END
-end:
-#if QT_VAO
-    if (try_vao && vao.isCreated()) {
-        vao.bind();
-        return;
-    }
-#endif
-    if (try_vbo && vbo.isCreated()) {
-        vbo.bind();
-        // normalized
-        for (int an = 0; an < geometry.attributes().size(); ++an) {
-            const Attribute& a = geometry.attributes().at(an);
-            shader->program()->setAttributeBuffer(an, a.type(), a.offset(), a.tupleSize(), geometry.stride());
-            shader->program()->enableAttributeArray(an); //TODO: in setActiveShader
-        }
-    } else {
-        for (int an = 0; an < geometry.attributes().size(); ++an) {
-            const Attribute& a = geometry.attributes().at(an);
-            shader->program()->setAttributeArray(an, a.type(), (char*)geometry.attributesData() + a.offset(), a.tupleSize(), geometry.stride());
-            shader->program()->enableAttributeArray(an); //TODO: in setActiveShader
-        }
-    }
+    gr.updateBuffers(&geometry);
+    gr.bindBuffers(&geometry);
 }
 
 OpenGLVideo::OpenGLVideo() {}
@@ -370,6 +283,7 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     shader->update(d.material);
     d.material->setDirty(false); //
     shader->program()->setUniformValue(shader->matrixLocation(), transform*d.matrix);
+    d.gr.setShaderProgram(shader->program());
     // uniform end. attribute begin
     d.bindAttributes(shader, target, roi);
     // normalize?
@@ -378,7 +292,7 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
         DYGL(glEnable(GL_BLEND));
         DYGL(glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA));
     }
-    DYGL(glDrawArrays(d.geometry.primitiveType(), 0, d.geometry.vertexCount()));
+    d.gr.render(&d.geometry);
     if (blending)
         DYGL(glDisable(GL_BLEND));
     // d.shader->program()->release(); //glUseProgram(0)
