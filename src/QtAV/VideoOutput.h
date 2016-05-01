@@ -108,6 +108,7 @@ private:
     virtual bool onSetContrast(qreal contrast) Q_DECL_OVERRIDE;
     virtual bool onSetHue(qreal hue) Q_DECL_OVERRIDE;
     virtual bool onSetSaturation(qreal saturation) Q_DECL_OVERRIDE;
+    virtual void onSetBackgroundColor(const QColor& color) Q_DECL_OVERRIDE;
     // from AVOutput
     virtual void setStatistics(Statistics* statistics) Q_DECL_OVERRIDE; //called by friend AVPlayer
     virtual bool onInstallFilter(Filter *filter, int index) Q_DECL_OVERRIDE;

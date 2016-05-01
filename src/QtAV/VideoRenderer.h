@@ -256,6 +256,7 @@ private: // mainly used by VideoOutput class
     virtual bool onSetContrast(qreal contrast);
     virtual bool onSetHue(qreal hue);
     virtual bool onSetSaturation(qreal saturation);
+    virtual void onSetBackgroundColor(const QColor& color);
 private:
     template<class C>
     static VideoRenderer* create() {

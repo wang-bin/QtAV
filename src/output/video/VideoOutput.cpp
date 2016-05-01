@@ -363,6 +363,13 @@ bool VideoOutput::onSetSaturation(qreal saturation)
     return true;
 }
 
+void VideoOutput::onSetBackgroundColor(const QColor &color)
+{
+    if (!isAvailable())
+        return;
+    d_func().impl->setBackgroundColor(color);
+}
+
 void VideoOutput::setStatistics(Statistics* statistics)
 {
     if (!isAvailable())

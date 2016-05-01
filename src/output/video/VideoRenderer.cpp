@@ -258,7 +258,7 @@ void VideoRenderer::resizeRenderer(int width, int height)
         Q_EMIT videoRectChanged();
         Q_EMIT contentRectChanged();
     }
-    onResizeRenderer(width, height);
+    onResizeRenderer(width, height); //TODO: resize widget
 }
 
 void VideoRenderer::onResizeRenderer(int width, int height)
@@ -633,11 +633,17 @@ QColor VideoRenderer::backgroundColor() const
     return d_func().bg_color;
 }
 
+void VideoRenderer::onSetBackgroundColor(const QColor &color)
+{
+    Q_UNUSED(color);
+}
+
 void VideoRenderer::setBackgroundColor(const QColor &c)
 {
     DPTR_D(VideoRenderer);
     if (d.bg_color == c)
         return;
+    onSetBackgroundColor(c);
     d.bg_color = c;
     Q_EMIT backgroundColorChanged();
     updateUi();
