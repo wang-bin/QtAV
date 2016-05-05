@@ -24,14 +24,14 @@
 
 namespace QtAV {
 
-Attribute::Attribute(int type, int tupleSize, int offset, bool normalize)
+Attribute::Attribute(DataType type, int tupleSize, int offset, bool normalize)
     : m_normalize(normalize)
     , m_type(type)
     , m_tupleSize(tupleSize)
     , m_offset(offset)
 {}
 
-Attribute::Attribute(const QByteArray& name, int type, int tupleSize, int offset, bool normalize)
+Attribute::Attribute(const QByteArray& name, DataType type, int tupleSize, int offset, bool normalize)
     : m_normalize(normalize)
     , m_type(type)
     , m_tupleSize(tupleSize)
@@ -39,21 +39,46 @@ Attribute::Attribute(const QByteArray& name, int type, int tupleSize, int offset
     , m_name(name)
 {}
 
-Geometry::Geometry()
+Geometry::Geometry(int vertexCount, int indexCount, DataType indexType)
     : m_primitive(TriangleStrip)
+    , m_itype(indexType)
+    , m_vcount(vertexCount)
+    , m_icount(indexCount)
 {}
 
-TexturedGeometry::TexturedGeometry(int texCount)
-    : nb_tex(texCount)
+void Geometry::allocate(int nbVertex, int nbIndex)
 {
-    setVertexCount(4);
-    if (texCount < 1)
-        texCount = 1;
-    v.resize(nb_tex*vertexCount());
+    m_icount = nbIndex;
+    m_vcount = nbVertex;
+    m_vdata.resize(nbVertex*stride());
+    if (nbIndex <= 0) {
+        m_idata.clear(); // required?
+        return;
+    }
+    switch (indexType()) {
+    case GL_UNSIGNED_BYTE:
+        m_idata.resize(nbIndex*sizeof(quint8));
+        break;
+    case GL_UNSIGNED_SHORT:
+        m_idata.resize(nbIndex*sizeof(quint16));
+        break;
+    case GL_UNSIGNED_INT:
+        m_idata.resize(nbIndex*sizeof(quint16));
+        break;
+    default:
+        break;
+    }
+}
+
+TexturedGeometry::TexturedGeometry()
+    : Geometry(4)
+    , nb_tex(0)
+{
     a = QVector<Attribute>()
-            << Attribute(GL_FLOAT, 2, 0)
-            << Attribute(GL_FLOAT, 2, 2*sizeof(float))
+            << Attribute(TypeFloat, 2, 0)
+            << Attribute(TypeFloat, 2, 2*sizeof(float))
                ;
+    setTextureCount(1);
 }
 
 void TexturedGeometry::setTextureCount(int value)
@@ -63,10 +88,10 @@ void TexturedGeometry::setTextureCount(int value)
     if (value == nb_tex)
         return;
     nb_tex = value;
-    v.resize(nb_tex*vertexCount());
+    allocate(vertexCount());
     if (a.size()-1 < value) { // the first is position
         for (int i = a.size()-1; i < value; ++i)
-            a << Attribute(GL_FLOAT, 2, i*vertexCount() * stride() + 2*sizeof(float));
+            a << Attribute(TypeFloat, 2, i*vertexCount() * sizeof(Point) + 2*sizeof(float));
     } else {
         a.resize(value + 1);
     }
@@ -85,12 +110,14 @@ void TexturedGeometry::setPoint(int index, const QPointF &p, const QPointF &tp, 
 
 void TexturedGeometry::setGeometryPoint(int index, const QPointF &p, int texIndex)
 {
+    Point* v = (Point*)m_vdata.data();
     v[texIndex*vertexCount() + index].x = p.x();
     v[texIndex*vertexCount() + index].y = p.y();
 }
 
 void TexturedGeometry::setTexturePoint(int index, const QPointF &tp, int texIndex)
 {
+    Point* v = (Point*)m_vdata.data();
     v[texIndex*vertexCount() + index].tx = tp.x();
     v[texIndex*vertexCount() + index].ty = tp.y();
 }

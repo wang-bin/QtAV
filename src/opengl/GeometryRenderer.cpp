@@ -72,7 +72,7 @@ bool GeometryRenderer::updateBuffers(Geometry *g)
     }
     qDebug("updating vbo...");
     vbo.bind(); //check here
-    vbo.allocate(g->attributesData(), g->attributeDataSize());
+    vbo.allocate(g->vertexData(), g->vertexCount()*g->stride());
 #if QT_VAO
     if (try_vao) {
         for (int an = 0; an < g->attributes().size(); ++an) {
@@ -106,7 +106,7 @@ void GeometryRenderer::bindBuffers(Geometry *g)
     } else {
         for (int an = 0; an < g->attributes().size(); ++an) {
             const Attribute& a = g->attributes().at(an);
-            program->setAttributeArray(an, a.type(), (char*)g->attributesData() + a.offset(), a.tupleSize(), g->stride());
+            program->setAttributeArray(an, a.type(), (const char*)g->vertexData() + a.offset(), a.tupleSize(), g->stride());
             program->enableAttributeArray(an); //TODO: in setActiveShader
         }
     }
@@ -131,7 +131,7 @@ void GeometryRenderer::unbindBuffers(Geometry *g)
 
 void GeometryRenderer::render(Geometry *g)
 {
-    if (g->indexData()) {
+    if (g->indexCount() > 0) {
         // IBO
 
     } else {

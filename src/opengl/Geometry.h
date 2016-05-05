@@ -21,18 +21,29 @@
 #include <QtCore/QVector>
 #include <QtAV/QtAV_Global.h>
 
+// TODO: generate vertex/fragment shader code from Geometry.attributes()
 namespace QtAV {
+
+enum DataType { //equals to GL_BYTE etc.
+    TypeByte = 0x1400,
+    TypeUnsignedByte = 0x1401,
+    TypeShort = 0x1402,
+    TypeUnsignedShort = 0x1403,
+    TypeInt = 0x1404,
+    TypeUnsignedInt = 0x1405,
+    TypeFloat = 0x1406
+};
 
 class Attribute {
     bool m_normalize;
-    int m_type;
+    DataType m_type;
     int m_tupleSize, m_offset;
     QByteArray m_name;
 public:
-    Attribute(int type = 0, int tupleSize = 0, int offset = 0, bool normalize = true);
-    Attribute(const QByteArray& name, int type, int tupleSize, int offset = 0, bool normalize = true);
+    Attribute(DataType type = TypeFloat, int tupleSize = 0, int offset = 0, bool normalize = true);
+    Attribute(const QByteArray& name, DataType type = TypeFloat, int tupleSize = 0, int offset = 0, bool normalize = true);
     QByteArray name() const {return m_name;}
-    int type() const {return m_type;}
+    DataType type() const {return m_type;}
     int tupleSize() const {return m_tupleSize;}
     int offset() const {return m_offset;}
     bool normalize() const {return m_normalize;}
@@ -52,28 +63,39 @@ public:
     enum PrimitiveType {
         Triangles = 0x0004,
         TriangleStrip = 0x0005, //default
-        TriangleFan = 0x0006,
+        TriangleFan = 0x0006, // Not recommended
     };
-    Geometry();
+    Geometry(int vertexCount = 0, int indexCount = 0, DataType indexType = TypeUnsignedShort);
     virtual ~Geometry() {}
     PrimitiveType primitiveType() const {return m_primitive;}
     void setPrimitiveType(PrimitiveType value) {  m_primitive = value;}
     int vertexCount() const {return m_vcount;}
     void setVertexCount(int value) {m_vcount = value;}
     virtual int stride() const = 0;
+    // TODO: add/set/remove attributes()
     virtual const QVector<Attribute>& attributes() const = 0;
-    virtual void* attributesData() const = 0;
-    virtual int attributeDataSize() const = 0;
-    virtual void* indexData() const {return 0;} //use index buffer if not null
-private:
+    void* vertexData() { return m_vdata.data();}
+    const void* vertexData() const { return m_vdata.constData();}
+    void* indexData() { return m_icount > 0 ? m_idata.data() : NULL;}
+    const void* indexData() const { return m_icount > 0 ? m_idata.constData() : NULL;}
+    int indexCount() const { return m_icount;}
+    // GL_UNSIGNED_BYTE/SHORT/INT
+    DataType indexType() const {return m_itype;}
+    void setIndexType(DataType value) { m_itype = value;}
+    // call when all parameters are set
+    void allocate(int nbVertex, int nbIndex = 0);
+protected:
     PrimitiveType m_primitive;
+    DataType m_itype;
     int m_vcount;
+    int m_icount;
+    QByteArray m_vdata;
+    QByteArray m_idata;
 };
 
-// TODO: move to OpenGLVideo.cpp and no export
 class TexturedGeometry : public Geometry {
 public:
-    TexturedGeometry(int texCount = 1);
+    TexturedGeometry();
     /*!
      * \brief setTextureCount
      * sometimes we needs more than 1 texture coordinates, for example we have to set rectangle texture
@@ -87,21 +109,14 @@ public:
     void setRect(const QRectF& r, const QRectF& tr, int texIndex = 0);
     void setGeometryRect(const QRectF& r, int texIndex = 0);
     void setTextureRect(const QRectF& tr, int texIndex = 0);
-    int stride() const Q_DECL_OVERRIDE { return sizeof(Point); }
+    int stride() const Q_DECL_OVERRIDE { return sizeof(Point)*textureCount(); }
     const QVector<Attribute>& attributes() const Q_DECL_OVERRIDE;
-    void* attributesData() const Q_DECL_OVERRIDE {
-        return (void*)v.data();
-    }
-    int attributeDataSize() const Q_DECL_OVERRIDE {
-        return nb_tex * vertexCount() * stride();
-    }
 private:
     typedef struct {
         float x, y;
         float tx, ty;
     } Point;
     int nb_tex;
-    QVector<Point> v;
     QVector<Attribute> a;
 };
 } //namespace QtAV
