@@ -123,9 +123,10 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
         return;
     }
     //qDebug("updating geometry...");
+    // setTextureCount may change the vertex data. Call it before setRect()
+    geometry.setTextureCount(shader->textureTarget() == GL_TEXTURE_RECTANGLE ? tc : 1);
     geometry.setRect(target_rect, material->mapToTexture(0, roi));
     if (shader->textureTarget() == GL_TEXTURE_RECTANGLE) {
-        geometry.setTextureCount(tc);
         for (int i = 1; i < tc; ++i) {
             // tc can > planes, but that will compute chroma plane
             geometry.setTextureRect(material->mapToTexture(i, roi), i);

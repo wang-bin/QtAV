@@ -39,6 +39,16 @@ Attribute::Attribute(const QByteArray& name, DataType type, int tupleSize, int o
     , m_name(name)
 {}
 
+#ifndef QT_NO_DEBUG_STREAM
+QDebug operator<<(QDebug dbg, const Attribute &a) {
+    dbg.nospace() << "attribute: " << a.name();
+    dbg.nospace() << ", offset " << a.offset();
+    dbg.nospace() << ", tupleSize " << a.tupleSize();
+    dbg.nospace() << ", dataType " << a.type();
+    return dbg.space();
+}
+#endif
+
 Geometry::Geometry(int vertexCount, int indexCount, DataType indexType)
     : m_primitive(TriangleStrip)
     , m_itype(indexType)
@@ -71,9 +81,10 @@ void Geometry::allocate(int nbVertex, int nbIndex)
 }
 
 TexturedGeometry::TexturedGeometry()
-    : Geometry(4)
+    : Geometry()
     , nb_tex(0)
 {
+    setVertexCount(4);
     a = QVector<Attribute>()
             << Attribute(TypeFloat, 2, 0)
             << Attribute(TypeFloat, 2, 2*sizeof(float))
@@ -91,7 +102,7 @@ void TexturedGeometry::setTextureCount(int value)
     allocate(vertexCount());
     if (a.size()-1 < value) { // the first is position
         for (int i = a.size()-1; i < value; ++i)
-            a << Attribute(TypeFloat, 2, i*vertexCount() * sizeof(Point) + 2*sizeof(float));
+            a << Attribute(TypeFloat, 2, (i+1)* 2*sizeof(float));
     } else {
         a.resize(value + 1);
     }
@@ -104,22 +115,22 @@ int TexturedGeometry::textureCount() const
 
 void TexturedGeometry::setPoint(int index, const QPointF &p, const QPointF &tp, int texIndex)
 {
-    setGeometryPoint(index, p, texIndex);
+    setGeometryPoint(index, p);
     setTexturePoint(index, tp, texIndex);
 }
 
-void TexturedGeometry::setGeometryPoint(int index, const QPointF &p, int texIndex)
+void TexturedGeometry::setGeometryPoint(int index, const QPointF &p)
 {
-    Point* v = (Point*)m_vdata.data();
-    v[texIndex*vertexCount() + index].x = p.x();
-    v[texIndex*vertexCount() + index].y = p.y();
+    float *v = (float*)(m_vdata.data() + index*stride());
+    *v = p.x();
+    *(v+1) = p.y();
 }
 
 void TexturedGeometry::setTexturePoint(int index, const QPointF &tp, int texIndex)
 {
-    Point* v = (Point*)m_vdata.data();
-    v[texIndex*vertexCount() + index].tx = tp.x();
-    v[texIndex*vertexCount() + index].ty = tp.y();
+    float *v = (float*)(m_vdata.data() + index*stride() + (texIndex+1)*2*sizeof(float));
+    *v = tp.x();
+    *(v+1) = tp.y();
 }
 
 void TexturedGeometry::setRect(const QRectF &r, const QRectF &tr, int texIndex)
@@ -142,18 +153,18 @@ void TexturedGeometry::setRect(const QRectF &r, const QRectF &tr, int texIndex)
     }
 }
 
-void TexturedGeometry::setGeometryRect(const QRectF &r, int texIndex)
+void TexturedGeometry::setGeometryRect(const QRectF &r)
 {
-    setGeometryPoint(0, r.topLeft(), texIndex);
-    setGeometryPoint(1, r.bottomLeft(), texIndex);
+    setGeometryPoint(0, r.topLeft());
+    setGeometryPoint(1, r.bottomLeft());
     switch (primitiveType()) {
     case TriangleStrip:
-        setGeometryPoint(2, r.topRight(), texIndex);
-        setGeometryPoint(3, r.bottomRight(), texIndex);
+        setGeometryPoint(2, r.topRight());
+        setGeometryPoint(3, r.bottomRight());
         break;
     case TriangleFan:
-        setGeometryPoint(3, r.topRight(), texIndex);
-        setGeometryPoint(2, r.bottomRight(), texIndex);
+        setGeometryPoint(3, r.topRight());
+        setGeometryPoint(2, r.bottomRight());
         break;
     case Triangles:
         break;

@@ -48,6 +48,9 @@ public:
     int offset() const {return m_offset;}
     bool normalize() const {return m_normalize;}
 };
+#ifndef QT_NO_DEBUG_STREAM
+Q_AV_EXPORT QDebug operator<<(QDebug debug, const Attribute &a);
+#endif
 
 /*!
  * \brief The Geometry class
@@ -82,7 +85,10 @@ public:
     // GL_UNSIGNED_BYTE/SHORT/INT
     DataType indexType() const {return m_itype;}
     void setIndexType(DataType value) { m_itype = value;}
-    // call when all parameters are set
+    /*!
+     * \brief allocate
+     * Call allocate() when all parameters are set. vertexData() may change
+     */
     void allocate(int nbVertex, int nbIndex = 0);
 protected:
     PrimitiveType m_primitive;
@@ -104,18 +110,14 @@ public:
     void setTextureCount(int value);
     int textureCount() const;
     void setPoint(int index, const QPointF& p, const QPointF& tp, int texIndex = 0);
-    void setGeometryPoint(int index, const QPointF& p, int texIndex = 0);
+    void setGeometryPoint(int index, const QPointF& p);
     void setTexturePoint(int index, const QPointF& tp, int texIndex = 0);
     void setRect(const QRectF& r, const QRectF& tr, int texIndex = 0);
-    void setGeometryRect(const QRectF& r, int texIndex = 0);
+    void setGeometryRect(const QRectF& r);
     void setTextureRect(const QRectF& tr, int texIndex = 0);
-    int stride() const Q_DECL_OVERRIDE { return sizeof(Point)*textureCount(); }
+    int stride() const Q_DECL_OVERRIDE { return 2*sizeof(float)*(textureCount()+1); }
     const QVector<Attribute>& attributes() const Q_DECL_OVERRIDE;
 private:
-    typedef struct {
-        float x, y;
-        float tx, ty;
-    } Point;
     int nb_tex;
     QVector<Attribute> a;
 };
