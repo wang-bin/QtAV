@@ -155,6 +155,16 @@ enum SurfaceType {
     SourceSurface,
     UserSurface = 0xffff
 };
+
+struct Q_AV_EXPORT SubImage {
+    enum Format { ASS, RGBA };
+    Format format;
+    int stride;
+    int w, h;
+    int x, y;
+    quint32 color; //ass only
+    QByteArray data; //size = stride*h
+};
 } //namespace QtAV
 
 Q_DECLARE_METATYPE(QtAV::MediaStatus)

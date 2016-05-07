@@ -112,7 +112,7 @@ public:
     SubtitleFrame frame;
     QString current_text;
     QImage current_image;
-    QList<ASSImage> current_ass;
+    QList<SubImage> current_ass;
     QLinkedList<SubtitleFrame>::iterator itf;
     /* number of subtitle frames at current time.
      * <0 means itf is the last. >0 means itf is the 1st
@@ -534,20 +534,20 @@ QImage Subtitle::getImage(int width, int height, QRect* boundingRect)
     return priv->current_image;
 }
 
-QList<ASSImage> Subtitle::getASSImages(int width, int height, QRect *boundingRect)
+QList<SubImage> Subtitle::getSubImages(int width, int height, QRect *boundingRect)
 {
     QMutexLocker lock(&priv->mutex);
     Q_UNUSED(lock);
     if (!isLoaded())
-        return QList<ASSImage>();
+        return QList<SubImage>();
     if (width == 0 || height == 0)
-        return QList<ASSImage>();
+        return QList<SubImage>();
     priv->update_image = false;
     if (!canRender())
-        return QList<ASSImage>();
+        return QList<SubImage>();
     priv->processor->setFrameSize(width, height);
     // TODO: store bounding rect here and not in processor
-    priv->current_ass = priv->processor->getASSImages(priv->t - priv->delay, boundingRect);
+    priv->current_ass = priv->processor->getSubImages(priv->t - priv->delay, boundingRect);
     return priv->current_ass;
 }
 

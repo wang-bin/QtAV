@@ -75,7 +75,7 @@ public:
     virtual QString getText(qreal pts) const = 0;
     // default null image
     virtual QImage getImage(qreal pts, QRect* boundingRect = 0);
-    virtual QList<ASSImage> getASSImages(qreal pts, QRect* boundingRect = 0);
+    virtual QList<SubImage> getSubImages(qreal pts, QRect* boundingRect = 0);
     void setFrameSize(int width, int height);
     QSize frameSize() const;
 

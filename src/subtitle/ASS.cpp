@@ -69,7 +69,7 @@ namespace QtAV {
 
 // render 1 ass image into a 32bit QImage with alpha channel.
 //use dstX, dstY instead of img->dst_x/y because image size is small then ass renderer size
-void RenderASS(QImage *image, const ASSImage& img, int dstX, int dstY)
+void RenderASS(QImage *image, const SubImage& img, int dstX, int dstY)
 {
     const quint8 a = 255 - _a(img.color);
     if (a == 0)

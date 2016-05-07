@@ -68,11 +68,11 @@ QImage SubtitleProcessor::getImage(qreal pts, QRect *boundingRect)
     return QImage();
 }
 
-QList<ASSImage> SubtitleProcessor::getASSImages(qreal pts, QRect *boundingRect)
+QList<SubImage> SubtitleProcessor::getSubImages(qreal pts, QRect *boundingRect)
 {
     Q_UNUSED(pts);
     Q_UNUSED(boundingRect);
-    return QList<ASSImage>();
+    return QList<SubImage>();
 }
 
 void SubtitleProcessor::setFrameSize(int width, int height)

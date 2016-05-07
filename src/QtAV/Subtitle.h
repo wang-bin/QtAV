@@ -32,15 +32,6 @@
  * to avoid read error, subtitle size > 10*1024*1024 will be ignored.
  */
 namespace QtAV {
-
-struct ASSImage {
-    QByteArray data; //size = stride*h
-    int stride;
-    int w, h;
-    int x, y;
-    quint32 color;
-};
-
 class Q_AV_EXPORT SubtitleFrame
 {
 public:
@@ -170,7 +161,7 @@ public:
       * \return empty image if no image, or subtitle processor does not support renderering
       */
     QImage getImage(int width, int height, QRect* boundingRect = 0);
-    QList<ASSImage> getASSImages(int width, int height, QRect* boundingRect = 0);
+    QList<SubImage> getSubImages(int width, int height, QRect* boundingRect = 0);
     // used for embedded subtitles.
     /*!
      * \brief processHeader
