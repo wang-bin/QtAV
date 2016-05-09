@@ -362,6 +362,7 @@ config_gl|config_opengl {
     opengl/OpenGLHelper.h \
     opengl/Geometry.h \
     opengl/GeometryRenderer.h \
+    opengl/SubImagesGeometry.h \
     opengl/ShaderManager.h
   SOURCES *= \
     filter/GLSLFilter.cpp \
@@ -370,6 +371,7 @@ config_gl|config_opengl {
     opengl/OpenGLTypes.cpp \
     opengl/Geometry.cpp \
     opengl/GeometryRenderer.cpp \
+    opengl/SubImagesGeometry.cpp \
     opengl/OpenGLVideo.cpp \
     opengl/VideoShaderObject.cpp \
     opengl/VideoShader.cpp \
