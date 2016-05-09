@@ -18,7 +18,8 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
+#ifndef QTAV_GEOMETRYRENDERER_H
+#define QTAV_GEOMETRYRENDERER_H
 #include "opengl/Geometry.h"
 #include "opengl/OpenGLHelper.h"
 #define QT_VAO (QT_VERSION >= QT_VERSION_CHECK(5, 1, 0))
@@ -54,3 +55,4 @@ private:
 };
 
 } //namespace QtAV
+#endif //QTAV_GEOMETRYRENDERER_H

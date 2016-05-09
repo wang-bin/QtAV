@@ -18,6 +18,9 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
+#ifndef QTAV_GEOMETRY_H
+#define QTAV_GEOMETRY_H
+#include <QtCore/QRectF>
 #include <QtCore/QVector>
 #include <QtAV/QtAV_Global.h>
 
@@ -73,7 +76,8 @@ public:
     PrimitiveType primitiveType() const {return m_primitive;}
     void setPrimitiveType(PrimitiveType value) {  m_primitive = value;}
     int vertexCount() const {return m_vcount;}
-    void setVertexCount(int value) {m_vcount = value;}
+    void setVertexCount(int value) {m_vcount = value;} // TODO: remove, or allocate data here
+    // TODO: setStride and no virtual
     virtual int stride() const = 0;
     // TODO: add/set/remove attributes()
     virtual const QVector<Attribute>& attributes() const = 0;
@@ -122,3 +126,4 @@ private:
     QVector<Attribute> a;
 };
 } //namespace QtAV
+#endif //QTAV_GEOMETRY_H
