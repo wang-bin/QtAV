@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -148,6 +148,7 @@ private:
         //TODO: call later when bpp need
         bpp = 0;
         bpp_pad = 0;
+        //libavutil55: depth, step, offset
         bpc = pixdesc->comp[0].depth_minus1+1;
         const int log2_pixels = pixdesc->log2_chroma_w + pixdesc->log2_chroma_h;
         int steps[4];
@@ -186,7 +187,7 @@ static const struct {
     { VideoFormat::Format_YUV444P, QTAV_PIX_FMT_C(YUV444P) },   ///< planar YUV 4:4:4, 24bpp, (1 Cr & Cb sample per 1x1 Y samples)
     { VideoFormat::Format_YUV410P, QTAV_PIX_FMT_C(YUV410P) },   ///< planar YUV 4:1:0,  9bpp, (1 Cr & Cb sample per 4x4 Y samples)
     { VideoFormat::Format_YUV411P, QTAV_PIX_FMT_C(YUV411P) },   ///< planar YUV 4:1:1, 12bpp, (1 Cr & Cb sample per 4x1 Y samples)
-    //QTAV_PIX_FMT_C(GRAY8),     ///<        Y        ,  8bpp
+    { VideoFormat::Format_Y8, QTAV_PIX_FMT_C(GRAY8) },     ///<        Y        ,  8bpp
     //QTAV_PIX_FMT_C(MONOWHITE), ///<        Y        ,  1bpp, 0 is white, 1 is black, in each byte pixels are ordered from the msb to the lsb
     //QTAV_PIX_FMT_C(MONOBLACK), ///<        Y        ,  1bpp, 0 is black, 1 is white, in each byte pixels are ordered from the msb to the lsb
     //QTAV_PIX_FMT_C(PAL8),      ///< 8 bit with PIX_FMT_RGB32 palette
@@ -210,7 +211,7 @@ static const struct {
     { VideoFormat::Format_ABGR32, QTAV_PIX_FMT_C(ABGR) },      ///< packed ABGR 8:8:8:8, 32bpp, ABGRABGR...
     { VideoFormat::Format_BGRA32, QTAV_PIX_FMT_C(BGRA) },      ///< packed BGRA 8:8:8:8, 32bpp, BGRABGRA...
     //QTAV_PIX_FMT_C(GRAY16BE),  ///<        Y        , 16bpp, big-endian
-    //QTAV_PIX_FMT_C(GRAY16LE),  ///<        Y        , 16bpp, little-endian
+    { VideoFormat::Format_Y16, QTAV_PIX_FMT_C(GRAY16LE) },  ///<        Y        , 16bpp, little-endian
     //QTAV_PIX_FMT_C(YUV440P),   ///< planar YUV 4:4:0 (1 Cr & Cb sample per 1x2 Y samples)
     //QTAV_PIX_FMT_C(YUVJ440P),  ///< planar YUV 4:4:0 full scale (JPEG), deprecated in favor of PIX_FMT_YUV440P and setting color_range
     //QTAV_PIX_FMT_C(YUVA420P),  ///< planar YUV 4:2:0, 20bpp, (1 Cr & Cb sample per 2x2 Y & A samples)
