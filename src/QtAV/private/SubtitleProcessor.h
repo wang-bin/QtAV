@@ -75,9 +75,11 @@ public:
     virtual QString getText(qreal pts) const = 0;
     // default null image
     virtual QImage getImage(qreal pts, QRect* boundingRect = 0);
-    virtual QList<SubImage> getSubImages(qreal pts, QRect* boundingRect = 0);
+    virtual SubImageSet getSubImages(qreal pts, QRect* boundingRect = 0);
     void setFrameSize(int width, int height);
     QSize frameSize() const;
+    int frameWidth() const;
+    int frameHeight() const;
 
     // font properties: libass only now
     virtual void setFontFile(const QString& file) {Q_UNUSED(file);}

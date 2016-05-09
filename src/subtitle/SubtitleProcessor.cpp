@@ -68,11 +68,11 @@ QImage SubtitleProcessor::getImage(qreal pts, QRect *boundingRect)
     return QImage();
 }
 
-QList<SubImage> SubtitleProcessor::getSubImages(qreal pts, QRect *boundingRect)
+SubImageSet SubtitleProcessor::getSubImages(qreal pts, QRect *boundingRect)
 {
     Q_UNUSED(pts);
     Q_UNUSED(boundingRect);
-    return QList<SubImage>();
+    return SubImageSet();
 }
 
 void SubtitleProcessor::setFrameSize(int width, int height)
@@ -87,6 +87,16 @@ void SubtitleProcessor::setFrameSize(int width, int height)
 QSize SubtitleProcessor::frameSize() const
 {
     return QSize(m_width, m_height);
+}
+
+int SubtitleProcessor::frameWidth() const
+{
+    return m_width;
+}
+
+int SubtitleProcessor::frameHeight() const
+{
+    return m_height;
 }
 
 void SubtitleProcessor::onFrameSizeChanged(int width, int height)

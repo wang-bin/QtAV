@@ -57,7 +57,7 @@ public:
     bool canRender() const Q_DECL_OVERRIDE { return true;}
     QString getText(qreal pts) const Q_DECL_OVERRIDE;
     QImage getImage(qreal pts, QRect *boundingRect = 0) Q_DECL_OVERRIDE;
-    QList<SubImage> getSubImages(qreal pts, QRect *boundingRect) Q_DECL_OVERRIDE;
+    SubImageSet getSubImages(qreal pts, QRect *boundingRect) Q_DECL_OVERRIDE;
     bool processHeader(const QByteArray& codec, const QByteArray& data) Q_DECL_OVERRIDE;
     SubtitleFrame processLine(const QByteArray& data, qreal pts = -1, qreal duration = 0) Q_DECL_OVERRIDE;
     void setFontFile(const QString& file) Q_DECL_OVERRIDE;
@@ -68,7 +68,7 @@ protected:
 private:
     bool initRenderer();
     void updateFontCacheAsync();
-    QList<SubImage> getSubImages(qreal pts, QRect *boundingRect, QImage* qimg, bool copy);
+    SubImageSet getSubImages(qreal pts, QRect *boundingRect, QImage* qimg, bool copy);
     void processTrack(ASS_Track *track);
     bool m_update_cache;
     bool force_font_file; // works only iff font_file is set
@@ -81,7 +81,7 @@ private:
     QList<SubtitleFrame> m_frames;
     //cache the image for the last invocation. return this if image does not change
     QImage m_image;
-    QList<SubImage> m_assimages;
+    SubImageSet m_assimages;
     QRect m_bound;
     mutable QMutex m_mutex;
 };
@@ -306,34 +306,34 @@ void renderASS32(QImage *image, ASS_Image *img, int dstX, int dstY);
 QImage SubtitleProcessorLibASS::getImage(qreal pts, QRect *boundingRect)
 { // ass dll is loaded if ass library is available
     getSubImages(pts, boundingRect, &m_image, false);
-    m_assimages.clear();
+    m_assimages.reset();
     return m_image;
 }
 
-QList<SubImage> SubtitleProcessorLibASS::getSubImages(qreal pts, QRect *boundingRect)
+SubImageSet SubtitleProcessorLibASS::getSubImages(qreal pts, QRect *boundingRect)
 {
     m_assimages = getSubImages(pts, boundingRect, NULL, true);
     return m_assimages;
 }
 
-QList<SubImage> SubtitleProcessorLibASS::getSubImages(qreal pts, QRect *boundingRect, QImage *qimg, bool copy)
+SubImageSet SubtitleProcessorLibASS::getSubImages(qreal pts, QRect *boundingRect, QImage *qimg, bool copy)
 { // ass dll is loaded if ass library is available
     {
     QMutexLocker lock(&m_mutex);
     Q_UNUSED(lock);
     if (!m_ass) {
         qWarning("ass library not available");
-        return QList<SubImage>();
+        return SubImageSet();
     }
     if (!m_track) {
         qWarning("ass track not available");
-        return QList<SubImage>();
+        return SubImageSet();
     }
     if (!m_renderer) {
         initRenderer();
         if (!m_renderer) {
             qWarning("ass renderer not available");
-            return QList<SubImage>();
+            return SubImageSet();
         }
     }
     }
@@ -343,16 +343,19 @@ QList<SubImage> SubtitleProcessorLibASS::getSubImages(qreal pts, QRect *bounding
     QMutexLocker lock(&m_mutex);
     Q_UNUSED(lock);
     if (!m_renderer) //reset in setFontXXX
-        return QList<SubImage>();
+        return SubImageSet();
     int detect_change = 0;
     ASS_Image *img = ass_render_frame(m_renderer, m_track, (long long)(pts * 1000.0), &detect_change);
-    if (!detect_change && !m_assimages.isEmpty()) {
+    if (!detect_change && !m_assimages.isValid()) {
         if (boundingRect)
             *boundingRect = m_bound;
         return m_assimages;
     }
     m_image = QImage();
-    m_assimages.clear();
+    m_assimages.reset();
+    m_assimages.w = frameWidth();
+    m_assimages.h = frameHeight();
+    m_assimages.format = SubImageSet::ASS;
     QRect rect(0, 0, 0, 0);
     ASS_Image *i = img;
     while (i) {
@@ -363,13 +366,13 @@ QList<SubImage> SubtitleProcessorLibASS::getSubImages(qreal pts, QRect *bounding
             continue;
         }
         SubImage s;
-        s.format = SubImage::ASS;
         s.color = i->color;
         s.x = i->dst_x;
         s.y = i->dst_y;
         s.w = i->w;
         s.h = i->h;
         s.stride = i->stride;
+        s.set = &m_assimages;
         if (copy) {
             s.data.reserve(i->stride*i->h);
             s.data.resize(i->stride*i->h);
@@ -377,7 +380,7 @@ QList<SubImage> SubtitleProcessorLibASS::getSubImages(qreal pts, QRect *bounding
         } else {
             s.data = QByteArray::fromRawData((const char*)i->bitmap, i->stride*(i->h-1) + i->w);
         }
-        m_assimages.append(s);
+        m_assimages.subimages.append(s);
         rect |= QRect(i->dst_x, i->dst_y, i->w, i->h);
         i = i->next;
     }
@@ -389,7 +392,7 @@ QList<SubImage> SubtitleProcessorLibASS::getSubImages(qreal pts, QRect *bounding
         return m_assimages;
     *qimg = QImage(rect.size(), QImage::Format_ARGB32);
     qimg->fill(Qt::transparent);
-    foreach (const SubImage& i, m_assimages) {
+    foreach (const SubImage& i, m_assimages.subimages) {
         RenderASS(qimg, i, i.x - rect.x(), i.y - rect.y());
     }
     return m_assimages;

@@ -161,7 +161,7 @@ public:
       * \return empty image if no image, or subtitle processor does not support renderering
       */
     QImage getImage(int width, int height, QRect* boundingRect = 0);
-    QList<SubImage> getSubImages(int width, int height, QRect* boundingRect = 0);
+    SubImageSet getSubImages(int width, int height, QRect* boundingRect = 0);
     // used for embedded subtitles.
     /*!
      * \brief processHeader
