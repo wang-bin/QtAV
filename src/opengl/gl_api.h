@@ -120,6 +120,7 @@ struct api;
 api& gl();
 struct api {
     void resolve();
+    // TODO: static, so gl::GetString
     const GLubyte *(GL_APIENTRY *GetString)(GLenum);
     GLenum (GL_APIENTRY *GetError)(void);
     void (GL_APIENTRY *ActiveTexture)(GLenum);
@@ -139,6 +140,7 @@ struct api {
     void (GL_APIENTRY *UniformMatrix2fv)(GLint, GLsizei, GLboolean, const GLfloat *);
     void (GL_APIENTRY *UniformMatrix3fv)(GLint, GLsizei, GLboolean, const GLfloat *);
     void (GL_APIENTRY *UniformMatrix4fv)(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value);
+    void (GL_APIENTRY *BlendFuncSeparate)(GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha);
 
     // Before using the following members, check null ptr first because they are not valid everywhere
 // ES3.1

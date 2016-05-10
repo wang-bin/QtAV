@@ -111,6 +111,7 @@ void api::resolve()
     GL_RESOLVE(UniformMatrix2fv);
     GL_RESOLVE(UniformMatrix3fv);
     GL_RESOLVE(UniformMatrix4fv);
+    GL_RESOLVE(BlendFuncSeparate);
 
     GL_RESOLVE_ES_3_1(GetTexLevelParameteriv);
 

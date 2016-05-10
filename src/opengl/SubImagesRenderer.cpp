@@ -77,9 +77,9 @@ void SubImagesRenderer::render(const SubImageSet &ass, const QRect &target, cons
     m_renderer->bindBuffers(m_geometry);
     DYGL(glEnable(GL_BLEND));
     if (m_geometry->images().format == SubImageSet::ASS)
-        DYGL(glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA));
+        gl().BlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     else
-        DYGL(glBlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA));
+        gl().BlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
     m_renderer->render(m_geometry);
 
@@ -115,7 +115,7 @@ void SubImagesRenderer::uploadTexture(SubImagesGeometry *g)
     for (int i = 0; i < g->uploadRects().size(); ++i) {
         const QRect& r = g->uploadRects().at(i);
         const SubImage& sub = g->images().subimages.at(i);
-        glTexSubImage2D(GL_TEXTURE_2D, 0, r.x(), r.y(), r.width(), r.height(), fmt, data_type, sub.data.constData());
+        DYGL(glTexSubImage2D(GL_TEXTURE_2D, 0, r.x(), r.y(), r.width(), r.height(), fmt, data_type, sub.data.constData()));
     }
     DYGL(glBindTexture(GL_TEXTURE_2D, 0));
 }
