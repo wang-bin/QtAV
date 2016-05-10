@@ -22,6 +22,7 @@
 #include "utils/Logger.h"
 
 namespace QtAV {
+#define U8COLOR 0
 static const int kMaxTexWidth = 4096; //FIXME: glGetIntegerv(GL_MAX_TEXTURE_SIZE, &max);
 // if texture1d, we can directly copy ASS_Image.bitmap without line by line copy, i.e. tiled, and upload only once
 
@@ -29,14 +30,19 @@ static const int kMaxTexWidth = 4096; //FIXME: glGetIntegerv(GL_MAX_TEXTURE_SIZE
 typedef struct {
     float x, y; // depends on target rect
     float tx, ty; // depends on texture size and rects layout
+#if U8COLOR
     union {
         quint8 r, g, b, a; //to be normalized
         quint32 rgba;
     };
+#else
+    float r, g, b, a;
+#endif
 } VertexData;
 
-static VertexData* SetUnnormalizedVertexData(VertexData* v, int tx, int ty, int tw, int th, qint32 color, bool useIndecies)
+static VertexData* SetUnnormalizedVertexData(VertexData* v, int tx, int ty, int tw, int th, quint32 color, bool useIndecies)
 {
+#if U8COLOR
     union {
         quint8 r, g, b, a;
         quint32 rgba;
@@ -45,19 +51,34 @@ static VertexData* SetUnnormalizedVertexData(VertexData* v, int tx, int ty, int 
     g = (color >> 16) & 0xff;
     b = (color >> 8) & 0xff;
     a = 255 - (color & 0xff);
+#else
+    float r, g, b, a;
+    r = (float)(color >> 24)/255.0;
+    g = (float)((color >> 16) & 0xff)/255.0;
+    b = (float)((color >> 8) & 0xff)/255.0;
+    a = (float)(255 - (color & 0xff))/255.0;
+#endif
     // normalize later
-    v[0].rgba = rgba;
     v[0].tx = tx;
     v[0].ty = ty;
-    v[1].rgba = rgba;
     v[1].tx = tx;
     v[1].ty = ty + th;
-    v[2].rgba = rgba;
     v[2].tx = tx + tw;
     v[2].ty = ty;
-    v[3].rgba = rgba;
     v[3].tx = tx + tw;
     v[3].ty = ty + th;
+#if U8COLOR
+    v[0].rgba = rgba;
+    v[1].rgba = rgba;
+    v[2].rgba = rgba;
+    v[3].rgba = rgba;
+#else
+#define SETC(x) x.r = r; x.g=g; x.b=b; x.a=a;
+    SETC(v[0]);
+    SETC(v[1]);
+    SETC(v[2]);
+    SETC(v[3]);
+#endif
     if (!useIndecies) {
         v[4] = v[1];
         v[5] = v[2];
@@ -84,7 +105,7 @@ static VertexData* SetVertexPositionAndNormalize(VertexData* v, float x, float y
     v[2].ty /= texH;
     v[3].tx /= texW;
     v[3].ty /= texH;
-    qDebug("%f,%f<=%f,%f; %d,%d,%d,%d", v[3].x, v[3].y, v[3].tx, v[3].ty, v[3].r, v[3].g, v[3].b, v[3].a);
+    //qDebug("%f,%f<=%f,%f; %u,%u,%u,%u", v[3].x, v[3].y, v[3].tx, v[3].ty, v[3].r, v[3].g, v[3].b, v[3].a);
     if (!useIndecies) {
         v[4] = v[1];
         v[5] = v[2];
@@ -102,7 +123,11 @@ SubImagesGeometry::SubImagesGeometry()
     setPrimitiveType(Geometry::Triangles);
     m_attributes << Attribute(TypeFloat, 2)
                  << Attribute(TypeFloat, 2, 2*sizeof(float))
+#if U8COLOR
                  << Attribute(TypeUnsignedByte, 4, 4*sizeof(float), true);
+#else
+                 << Attribute(TypeFloat, 4, 4*sizeof(float));
+#endif
 }
 
 bool SubImagesGeometry::setSubImages(const SubImageSet &images)
@@ -148,7 +173,7 @@ bool SubImagesGeometry::generateVertexData(const QRect &rect, bool useIndecies, 
     H += h + 1;
     m_w = W;
     m_h = H;
-    qDebug("sub texture %dx%d", m_w, m_h);
+    //qDebug("sub texture %dx%d", m_w, m_h);
 
     const float dx0 = rect.x();
     const float dy0 = rect.y();
@@ -156,8 +181,8 @@ bool SubImagesGeometry::generateVertexData(const QRect &rect, bool useIndecies, 
     const float sy = float(rect.height())/float(m_images.h);
     vd = (VertexData*)vertexData();
     foreach (const SubImage& i, m_images.subimages) {
-        qDebug() << rect;
-        qDebug("i: %d,%d", i.x, i.y);
+        //qDebug() << rect;
+        //qDebug("i: %d,%d", i.x, i.y);
         vd = SetVertexPositionAndNormalize(vd, dx0 + float(i.x)*sx, dy0 + float(i.y)*sy, i.w*sx, i.h*sy, m_w, m_h, useIndecies);
         m_normalized = true;
     }

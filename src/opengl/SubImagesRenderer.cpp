@@ -28,7 +28,6 @@ static const char kFrag[] = GLSL(
                 gl_FragColor.a = v_Color.a*texture2D(u_Texture, v_TexCoords).r;
             }
             );
-//                gl_FragColor.a = v_Color.a*texture2D(u_Texture, v_TexCoords).r;
 
 SubImagesRenderer::SubImagesRenderer()
     : m_geometry(new SubImagesGeometry())
@@ -102,21 +101,22 @@ void SubImagesRenderer::uploadTexture(SubImagesGeometry *g)
     GLenum data_type;
     GLenum fmt;
     if (g->images().format == SubImageSet::ASS)
-        OpenGLHelper::videoFormatToGL(VideoFormat(VideoFormat::Format_Y8), &internal_fmt, &data_type, &fmt);
+        OpenGLHelper::videoFormatToGL(VideoFormat(VideoFormat::Format_Y8), &internal_fmt, &fmt, &data_type);
     else //rgb32
-        OpenGLHelper::videoFormatToGL(VideoFormat(VideoFormat::Format_ARGB32), &internal_fmt, &data_type, &fmt);
+        OpenGLHelper::videoFormatToGL(VideoFormat(VideoFormat::Format_ARGB32), &internal_fmt, &fmt, &data_type);
     DYGL(glBindTexture(GL_TEXTURE_2D, m_tex));
-    DYGL(glTexImage2D(GL_TEXTURE_2D, 0, internal_fmt, g->width(), g->height(), 0, fmt, data_type, NULL));
     DYGL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     DYGL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
     DYGL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
     DYGL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
-
+    DYGL(glTexImage2D(GL_TEXTURE_2D, 0, internal_fmt, g->width(), g->height(), 0, fmt, data_type, NULL));
+    //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     for (int i = 0; i < g->uploadRects().size(); ++i) {
         const QRect& r = g->uploadRects().at(i);
         const SubImage& sub = g->images().subimages.at(i);
         DYGL(glTexSubImage2D(GL_TEXTURE_2D, 0, r.x(), r.y(), r.width(), r.height(), fmt, data_type, sub.data.constData()));
     }
+    //glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
     DYGL(glBindTexture(GL_TEXTURE_2D, 0));
 }
 
