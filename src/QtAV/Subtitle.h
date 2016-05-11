@@ -18,16 +18,13 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
 #ifndef QTAV_SUBTITLE_H
 #define QTAV_SUBTITLE_H
-
+#include <QtAV/SubImage.h>
 #include <QtCore/QObject>
 #include <QtCore/QStringList>
 #include <QtCore/QUrl>
 #include <QtGui/QImage>
-#include <QtAV/QtAV_Global.h>
-
 /*
  * to avoid read error, subtitle size > 10*1024*1024 will be ignored.
  */

@@ -26,7 +26,6 @@
 #include <stdarg.h>
 #include <QtCore/QMetaType>
 #include <QtCore/QByteArray> //QByteArrayLiteral check
-#include <QtCore/QList>
 #include <QtCore/qglobal.h>
 #include <QtAV/dptr.h>
 
@@ -155,37 +154,6 @@ enum SurfaceType {
     GLTextureSurface,
     SourceSurface,
     UserSurface = 0xffff
-};
-
-/*!
- * \brief The SubImage struct
- * (x, y, w, h) is relative to parent image (0, 0, W, H)
- */
-struct SubImageSet;
-struct Q_AV_EXPORT SubImage {
-    SubImageSet* set;
-    int stride;
-    int w, h;
-    int x, y;
-    quint32 color; //ass only
-    QByteArray data; //size = stride*h
-};
-
-struct Q_AV_EXPORT SubImageSet {
-    enum Format { ASS, RGBA, Unknown };
-    Format format;
-    int w, h;
-    int id;
-    QList<SubImage> subimages;
-
-    SubImageSet() : format(Unknown), w(0), h(0), id(0) {}
-    bool isValid() const {return !subimages.isEmpty() && w > 0 && h > 0 && format != Unknown;}
-    void reset() {
-        format = Unknown;
-        w = h = 0;
-        ++id;
-        subimages.clear();
-    }
 };
 } //namespace QtAV
 

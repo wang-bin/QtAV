@@ -352,10 +352,7 @@ SubImageSet SubtitleProcessorLibASS::getSubImages(qreal pts, QRect *boundingRect
         return m_assimages;
     }
     m_image = QImage();
-    m_assimages.reset();
-    m_assimages.w = frameWidth();
-    m_assimages.h = frameHeight();
-    m_assimages.format = SubImageSet::ASS;
+    m_assimages.reset(frameWidth(), frameHeight(), SubImageSet::ASS);
     QRect rect(0, 0, 0, 0);
     ASS_Image *i = img;
     while (i) {
@@ -365,14 +362,8 @@ SubImageSet SubtitleProcessorLibASS::getSubImages(qreal pts, QRect *boundingRect
             i = i->next;
             continue;
         }
-        SubImage s;
+        SubImage s(i->dst_x, i->dst_y, i->w, i->h, i->stride);
         s.color = i->color;
-        s.x = i->dst_x;
-        s.y = i->dst_y;
-        s.w = i->w;
-        s.h = i->h;
-        s.stride = i->stride;
-        s.set = &m_assimages;
         if (copy) {
             s.data.reserve(i->stride*i->h);
             s.data.resize(i->stride*i->h);
@@ -380,7 +371,7 @@ SubImageSet SubtitleProcessorLibASS::getSubImages(qreal pts, QRect *boundingRect
         } else {
             s.data = QByteArray::fromRawData((const char*)i->bitmap, i->stride*(i->h-1) + i->w);
         }
-        m_assimages.subimages.append(s);
+        m_assimages.images.append(s);
         rect |= QRect(i->dst_x, i->dst_y, i->w, i->h);
         i = i->next;
     }
@@ -392,7 +383,7 @@ SubImageSet SubtitleProcessorLibASS::getSubImages(qreal pts, QRect *boundingRect
         return m_assimages;
     *qimg = QImage(rect.size(), QImage::Format_ARGB32);
     qimg->fill(Qt::transparent);
-    foreach (const SubImage& i, m_assimages.subimages) {
+    foreach (const SubImage& i, m_assimages.images) {
         RenderASS(qimg, i, i.x - rect.x(), i.y - rect.y());
     }
     return m_assimages;

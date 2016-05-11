@@ -18,10 +18,26 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
-#include "QtAV/Subtitle.h"
+#include "QtAV/SubImage.h"
+#include <QtGui/QImage>
 
 namespace QtAV {
+
+SubImage::SubImage(int x, int y, int w, int h, int stride)
+    : x(x)
+    , y(y)
+    , w(w)
+    , h(h)
+    , stride(stride)
+{}
+
+SubImageSet::SubImageSet(int width, int height, Format format)
+    : fmt(format)
+    , w(width)
+    , h(height)
+    , id(0)
+{}
+
 
 #define _r(c)  ((c)>>24)
 #define _g(c)  (((c)>>16)&0xFF)

@@ -133,7 +133,7 @@ SubImagesGeometry::SubImagesGeometry()
 bool SubImagesGeometry::setSubImages(const SubImageSet &images)
 {
     // TODO: operator ==
-    if (m_images.id == images.id && m_images.w == images.w && m_images.h == images.h && m_images.format == images.format)
+    if (m_images == images)
         return false;
     m_images = images;
     return true;
@@ -142,10 +142,10 @@ bool SubImagesGeometry::setSubImages(const SubImageSet &images)
 bool SubImagesGeometry::generateVertexData(const QRect &rect, bool useIndecies, int maxWidth)
 {
     if (useIndecies)
-        allocate(4*m_images.subimages.size(), 6*m_images.subimages.size());
+        allocate(4*m_images.images.size(), 6*m_images.images.size());
     else
-        allocate(6*m_images.subimages.size());
-    qDebug("images: %d/%d, %dx%d", m_images.isValid(), m_images.subimages.size(), m_images.w, m_images.h);
+        allocate(6*m_images.images.size());
+    qDebug("images: %d/%d, %dx%d", m_images.isValid(), m_images.images.size(), m_images.width(), m_images.height());
     m_rects_upload.clear();
     m_w = m_h = 0;
     m_normalized = false;
@@ -155,32 +155,31 @@ bool SubImagesGeometry::generateVertexData(const QRect &rect, bool useIndecies, 
     int W = 0, H = 0;
     int x = 0, h = 0;
     VertexData* vd = (VertexData*)vertexData();
-    foreach (const SubImage& i, m_images.subimages) {
-        if (x + i.w >= maxWidth && maxWidth > 0) {
+    foreach (const SubImage& i, m_images.images) {
+        if (x + i.stride > maxWidth && maxWidth > 0) {
             W = qMax(W, x);
-            H += h + 1;
+            H += h;
             x = 0;
             h = 0;
         }
         // we use w instead of stride even if we must upload stride. when maping texture coordinates and view port coordinates, we can use the visual rects instead of stride, i.e. the geometry vertices are (x, y, w, h), not (x, y, stride, h)
         m_rects_upload.append(QRect(x, H, i.stride, i.h));
         vd = SetUnnormalizedVertexData(vd, x, H, i.w, i.h, i.color, useIndecies);
-        // if an edge is shared by 2 rects (normalized), wen can't know the attribute values on the edge
-        x += i.w + 1;
+        x += i.w;
         h = qMax(h, i.h);
     }
     W = qMax(W, x);
-    H += h + 1;
+    H += h;
     m_w = W;
     m_h = H;
     //qDebug("sub texture %dx%d", m_w, m_h);
 
     const float dx0 = rect.x();
     const float dy0 = rect.y();
-    const float sx = float(rect.width())/float(m_images.w);
-    const float sy = float(rect.height())/float(m_images.h);
+    const float sx = float(rect.width())/float(m_images.width());
+    const float sy = float(rect.height())/float(m_images.height());
     vd = (VertexData*)vertexData();
-    foreach (const SubImage& i, m_images.subimages) {
+    foreach (const SubImage& i, m_images.images) {
         //qDebug() << rect;
         //qDebug("i: %d,%d", i.x, i.y);
         vd = SetVertexPositionAndNormalize(vd, dx0 + float(i.x)*sx, dy0 + float(i.y)*sy, i.w*sx, i.h*sy, m_w, m_h, useIndecies);

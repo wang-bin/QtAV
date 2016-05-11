@@ -20,9 +20,8 @@
 ******************************************************************************/
 #ifndef QTAV_SUBIMAGESRENDERER_H
 #define QTAV_SUBIMAGESRENDERER_H
-
 #include <QtGui/QMatrix4x4>
-#include <QtAV/QtAV_Global.h>
+#include <QtAV/SubImage.h>
 #include <QtAV/OpenGLTypes.h>
 #include "opengl/OpenGLHelper.h"
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)

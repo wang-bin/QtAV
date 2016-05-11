@@ -75,7 +75,7 @@ void SubImagesRenderer::render(const SubImageSet &ass, const QRect &target, cons
     m_renderer->setShaderProgram(&m_program);
     m_renderer->bindBuffers(m_geometry);
     DYGL(glEnable(GL_BLEND));
-    if (m_geometry->images().format == SubImageSet::ASS)
+    if (m_geometry->images().format() == SubImageSet::ASS)
         gl().BlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     else
         gl().BlendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -100,7 +100,7 @@ void SubImagesRenderer::uploadTexture(SubImagesGeometry *g)
     GLint internal_fmt;
     GLenum data_type;
     GLenum fmt;
-    if (g->images().format == SubImageSet::ASS)
+    if (g->images().format() == SubImageSet::ASS)
         OpenGLHelper::videoFormatToGL(VideoFormat(VideoFormat::Format_Y8), &internal_fmt, &fmt, &data_type);
     else //rgb32
         OpenGLHelper::videoFormatToGL(VideoFormat(VideoFormat::Format_ARGB32), &internal_fmt, &fmt, &data_type);
@@ -113,7 +113,7 @@ void SubImagesRenderer::uploadTexture(SubImagesGeometry *g)
     //glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
     for (int i = 0; i < g->uploadRects().size(); ++i) {
         const QRect& r = g->uploadRects().at(i);
-        const SubImage& sub = g->images().subimages.at(i);
+        const SubImage& sub = g->images().images.at(i);
         DYGL(glTexSubImage2D(GL_TEXTURE_2D, 0, r.x(), r.y(), r.width(), r.height(), fmt, data_type, sub.data.constData()));
     }
     //glPixelStorei(GL_UNPACK_ALIGNMENT, 4);

@@ -423,7 +423,7 @@ static_ffmpeg {
 SOURCES += \
     AVCompat.cpp \
     QtAV_Global.cpp \
-    subtitle/ASS.cpp \
+    subtitle/SubImage.cpp \
     subtitle/CharsetDetector.cpp \
     subtitle/PlainText.cpp \
     subtitle/PlayerSubtitle.cpp \
@@ -526,6 +526,7 @@ SDK_HEADERS *= \
     QtAV/VideoFrameExtractor.h \
     QtAV/FactoryDefine.h \
     QtAV/Statistics.h \
+    QtAV/SubImage.h \
     QtAV/Subtitle.h \
     QtAV/SubtitleFilter.h \
     QtAV/SurfaceInterop.h \
