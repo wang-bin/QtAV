@@ -1,6 +1,6 @@
 
 import QtQuick 2.0
-import QtAV 1.11
+import QtAV 1.7
 
 /*!
     \qmltype Video

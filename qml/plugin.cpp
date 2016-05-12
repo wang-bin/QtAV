@@ -55,9 +55,10 @@ public:
         qmlRegisterType<MediaMetaData>();
 
         // FIXME: if version is 2.x, some qtav types will be undefined, why?
-        qmlRegisterType<QuickAudioFilter>(uri, 1, 11, "AudioFilter");
-        qmlRegisterType<QuickVideoFilter>(uri, 1, 11, "VideoFilter");
-        qmlRegisterType<QtAV::DynamicShaderObject>(uri, 1, 11, "Shader");
+        // 1.7
+        qmlRegisterType<QuickAudioFilter>(uri, 1, 7, "AudioFilter");
+        qmlRegisterType<QuickVideoFilter>(uri, 1, 7, "VideoFilter");
+        qmlRegisterType<QtAV::DynamicShaderObject>(uri, 1, 7, "Shader");
     }
 };
 } //namespace QtAV
