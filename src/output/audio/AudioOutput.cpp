@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -220,7 +220,7 @@ void AudioOutputPrivate::playInitialData()
             ? 0x80 : 0;
     for (quint32 i = 0; i < nb_buffers; ++i) {
         backend->write(QByteArray(buffer_samples*format.bytesPerSample(), c)); // fill silence byte, not always 0. AudioFormat.silenceByte
-        frame_infos.push_back(FrameInfo(0, buffer_samples*format.bytesPerSample()));
+        frame_infos.push_back(FrameInfo(0, 1*format.bytesPerSample())); // initial data can be small (1 instead of buffer_samples)
     }
     backend->play();
 }
@@ -278,6 +278,8 @@ QStringList AudioOutput::backendsAvailable()
     while ((i = AudioOutputBackend::next(i)) != NULL) {
         all.append(AudioOutputBackend::name(*i));
     }
+    all = AudioOutputBackend::defaultPriority() << all;
+    all.removeDuplicates();
     return all;
 }
 

@@ -227,6 +227,8 @@ Module {
         Property { name: "internalSubtitleTrack"; type: "int" }
         Property { name: "audioFilters"; type: "QuickAudioFilter"; isList: true; isReadonly: true }
         Property { name: "videoFilters"; type: "QuickVideoFilter"; isList: true; isReadonly: true }
+        Property { name: "audioBackends"; type: "QStringList" }
+        Property { name: "supportedAudioBackends"; type: "QStringList"; isReadonly: true }
         Signal { name: "loopCountChanged" }
         Signal { name: "videoOutChanged" }
         Signal { name: "paused" }

@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2015)
@@ -87,29 +87,29 @@ void AudioOutput_RegisterAll()
     extern bool RegisterAudioOutputBackendAudioToolbox_Man();
     RegisterAudioOutputBackendAudioToolbox_Man();
 #endif
-#if QTAV_HAVE(PORTAUDIO)
-    extern bool RegisterAudioOutputBackendPortAudio_Man();
-    RegisterAudioOutputBackendPortAudio_Man();
-#endif //QTAV_HAVE(PORTAUDIO)
-#if QTAV_HAVE(OPENAL)
-    extern bool RegisterAudioOutputBackendOpenAL_Man();
-    RegisterAudioOutputBackendOpenAL_Man();
-#endif //QTAV_HAVE(OPENAL)
 #if QTAV_HAVE(OPENSL)
     extern bool RegisterAudioOutputBackendOpenSL_Man();
     RegisterAudioOutputBackendOpenSL_Man();
 #endif //QTAV_HAVE(OPENSL)
-#if QTAV_HAVE(DSOUND)
-    extern bool RegisterAudioOutputBackendDSound_Man();
-    RegisterAudioOutputBackendDSound_Man();
-#endif
 #if QTAV_HAVE(XAUDIO2)
     extern bool RegisterAudioOutputBackendXAudio2_Man();
     RegisterAudioOutputBackendXAudio2_Man();
 #endif
+#if QTAV_HAVE(OPENAL)
+    extern bool RegisterAudioOutputBackendOpenAL_Man();
+    RegisterAudioOutputBackendOpenAL_Man();
+#endif //QTAV_HAVE(OPENAL)
 #if QTAV_HAVE(PULSEAUDIO)
     extern bool RegisterAudioOutputBackendPulse_Man();
     RegisterAudioOutputBackendPulse_Man();
+#endif
+#if QTAV_HAVE(PORTAUDIO)
+    extern bool RegisterAudioOutputBackendPortAudio_Man();
+    RegisterAudioOutputBackendPortAudio_Man();
+#endif //QTAV_HAVE(PORTAUDIO)
+#if QTAV_HAVE(DSOUND)
+    extern bool RegisterAudioOutputBackendDSound_Man();
+    RegisterAudioOutputBackendDSound_Man();
 #endif
 }
 

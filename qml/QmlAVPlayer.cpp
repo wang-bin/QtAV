@@ -62,6 +62,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , m_abort_timeout(true)
   , m_audio_track(0)
   , m_sub_track(0)
+  , m_ao(AudioOutput::backendsAvailable())
 {
     classBegin();
 }
@@ -474,6 +475,24 @@ void QmlAVPlayer::vf_clear(QQmlListProperty<QuickVideoFilter> *property)
         }
     }
     self->m_vfilters.clear();
+}
+
+QStringList QmlAVPlayer::audioBackends() const
+{
+    return m_ao;
+}
+
+void QmlAVPlayer::setAudioBackends(const QStringList &value)
+{
+    if (m_ao == value)
+        return;
+    m_ao = value;
+    Q_EMIT audioBackendsChanged();
+}
+
+QStringList QmlAVPlayer::supportedAudioBackends() const
+{
+    return AudioOutput::backendsAvailable();
 }
 
 int QmlAVPlayer::loopCount() const

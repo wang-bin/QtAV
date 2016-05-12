@@ -83,6 +83,9 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
 
     Q_PROPERTY(QQmlListProperty<QuickAudioFilter> audioFilters READ audioFilters)
     Q_PROPERTY(QQmlListProperty<QuickVideoFilter> videoFilters READ videoFilters)
+    // TODO: startPosition/stopPosition
+    Q_PROPERTY(QStringList audioBackends READ audioBackends WRITE setAudioBackends NOTIFY audioBackendsChanged)
+    Q_PROPERTY(QStringList supportedAudioBackends READ supportedAudioBackends)
 public:
     enum Loop { Infinite = -1 };
     enum PlaybackState {
@@ -214,6 +217,10 @@ public:
     QQmlListProperty<QuickAudioFilter> audioFilters();
     QQmlListProperty<QuickVideoFilter> videoFilters();
 
+    QStringList supportedAudioBackends() const;
+    QStringList audioBackends() const;
+    void setAudioBackends(const QStringList& value);
+
 public Q_SLOTS:
     void play();
     void pause();
@@ -263,7 +270,7 @@ Q_SIGNALS:
     void error(Error error, const QString &errorString);
     void statusChanged();
     void mediaObjectChanged();
-
+    void audioBackendsChanged();
 private Q_SLOTS:
     // connect to signals from player
     void _q_error(const QtAV::AVError& e);
@@ -317,6 +324,7 @@ private:
 
     QList<QuickAudioFilter*> m_afilters;
     QList<QuickVideoFilter*> m_vfilters;
+    QStringList m_ao;
 };
 
 #endif // QTAV_QML_AVPLAYER_H
