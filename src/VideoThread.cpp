@@ -236,6 +236,8 @@ bool VideoThread::deliverVideoFrame(VideoFrame &frame)
 void VideoThread::run()
 {
     DPTR_D(VideoThread);
+    AutoSem as(&d.sem);
+    Q_UNUSED(as);
     if (!d.dec || !d.dec->isAvailable() || !d.outputSet)
         return;
     resetState();

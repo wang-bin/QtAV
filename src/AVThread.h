@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -67,7 +67,7 @@ public:
 
     bool isPaused() const;
 
-    void waitForReady();
+    bool waitForStarted(int msec = -1);
 
     bool installFilter(Filter *filter, int index = 0x7FFFFFFF, bool lock = true);
     bool uninstallFilter(Filter *filter, bool lock = true);

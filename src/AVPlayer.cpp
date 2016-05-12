@@ -1286,12 +1286,10 @@ void AVPlayer::playInternal()
     if (d->demuxer.audioCodecContext() && d->athread) {
         qDebug("Starting audio thread...");
         d->athread->start();
-        d->athread->waitForReady();
     }
     if (d->demuxer.videoCodecContext() && d->vthread) {
         qDebug("Starting video thread...");
         d->vthread->start();
-        d->vthread->waitForReady();
     }
     if (startPosition() > 0 && startPosition() < mediaStopPosition() && d->last_position <= 0) {
         if (relativeTimeMode())
@@ -1302,6 +1300,10 @@ void AVPlayer::playInternal()
     d->read_thread->setMediaEndAction(mediaEndAction());
     d->read_thread->start();
 
+    if (d->demuxer.audioCodecContext() && d->athread)
+        d->athread->waitForStarted();
+    if (d->demuxer.videoCodecContext() && d->vthread)
+        d->vthread->waitForStarted();
     /// demux thread not started, seek tasks will be cleared
     d->read_thread->waitForStarted();
     if (d->timer_id < 0) {

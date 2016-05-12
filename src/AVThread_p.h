@@ -24,6 +24,7 @@
 
 #include <QtCore/QMutex>
 #include <QtCore/QMutexLocker>
+#include <QtCore/QSemaphore>
 #include <QtCore/QVariant>
 #include <QtCore/QWaitCondition>
 #include "PacketBuffer.h"
@@ -36,6 +37,15 @@ namespace QtAV {
 
 const double kSyncThreshold = 0.2; // 200 ms
 
+class AutoSem {
+    QSemaphore *s;
+public:
+    AutoSem(QSemaphore* sem) : s(sem) { s->release();}
+    ~AutoSem() {
+        if (s->available() > 0)
+            s->release(s->available());
+    }
+};
 class AVDecoder;
 class AVOutput;
 class AVClock;
@@ -54,7 +64,6 @@ public:
       , outputSet(0)
       , delay(0)
       , statistics(0)
-      , ready(false)
       , seek_requested(false)
       , render_pts0(-1)
       , drop_frame_seek(true)
@@ -82,9 +91,7 @@ public:
     QList<Filter*> filters;
     Statistics *statistics; //not obj. Statistics is unique for the player, which is in AVPlayer
     BlockingQueue<QRunnable*> tasks;
-    QWaitCondition ready_cond;
-    QMutex ready_mutex;
-    bool ready;
+    QSemaphore sem;
     bool seek_requested;
     //only decode video without display or skip decode audio until pts reaches
     qreal render_pts0;

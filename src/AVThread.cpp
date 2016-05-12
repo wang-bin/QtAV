@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "AVThread.h"
+#include <limits>
 #include "AVThread_p.h"
 #include "QtAV/AVClock.h"
 #include "QtAV/AVDecoder.h"
@@ -41,7 +42,6 @@ AVThreadPrivate::~AVThreadPrivate() {
         next_pause = false;
         cond.wakeAll();
     }
-    ready_cond.wakeAll();
     packets.setBlocking(true); //???
     packets.clear();
     QList<Filter*>::iterator it = filters.begin();
@@ -197,8 +197,6 @@ void AVThread::stop()
     d.packets.setBlocking(false); //stop blocking take()
     d.packets.clear();
     pause(false);
-    QMutexLocker lock(&d.ready_mutex);
-    d.ready = false;
     //terminate();
 }
 
@@ -305,9 +303,6 @@ void AVThread::resetState()
     d.stop = false;
     d.packets.setBlocking(true);
     d.packets.clear();
-    QMutexLocker lock(&d.ready_mutex);
-    d.ready = true;
-    d.ready_cond.wakeOne();
 }
 
 bool AVThread::tryPause(unsigned long timeout)
@@ -341,12 +336,9 @@ void AVThread::setStatistics(Statistics *statistics)
     d.statistics = statistics;
 }
 
-void AVThread::waitForReady()
+bool AVThread::waitForStarted(int msec)
 {
-    QMutexLocker lock(&d_func().ready_mutex);
-    while (!d_func().ready) {
-        d_func().ready_cond.wait(&d_func().ready_mutex);
-    }
+    return d_func().sem.tryAcquire(1, msec > 0 ? msec : std::numeric_limits<int>::max());
 }
 
 void AVThread::waitAndCheck(ulong value, qreal pts)

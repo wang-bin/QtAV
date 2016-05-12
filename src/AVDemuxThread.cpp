@@ -32,6 +32,16 @@
 
 namespace QtAV {
 
+class AutoSem {
+    QSemaphore *s;
+public:
+    AutoSem(QSemaphore* sem) : s(sem) { s->release();}
+    ~AutoSem() {
+        if (s->available() > 0)
+            s->release(s->available());
+    }
+};
+
 class QueueEmptyCall : public PacketBuffer::StateChangeCallback
 {
 public:
@@ -524,7 +534,9 @@ void AVDemuxThread::run()
     }
     qreal last_apts = 0;
     qreal last_vpts = 0;
-    sem.release();
+
+    AutoSem as(&sem);
+    Q_UNUSED(as);
     while (!end) {
         processNextSeekTask();
         //vthread maybe changed by AVPlayer.setPriority() from no dec case
