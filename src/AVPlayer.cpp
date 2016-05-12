@@ -1302,6 +1302,8 @@ void AVPlayer::playInternal()
     d->read_thread->setMediaEndAction(mediaEndAction());
     d->read_thread->start();
 
+    /// demux thread not started, seek tasks will be cleared
+    d->read_thread->waitForStarted();
     if (d->timer_id < 0) {
         //d->timer_id = startNotifyTimer(); //may fail if not in this thread
         QMetaObject::invokeMethod(this, "startNotifyTimer", Qt::AutoConnection);

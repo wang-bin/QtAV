@@ -484,6 +484,11 @@ void AVDemuxThread::onAVThreadQuit()
     end = true; //(!audio_thread || !audio_thread->isRunning()) &&
 }
 
+bool AVDemuxThread::waitForStarted(int msec)
+{
+    return sem.tryAcquire(1, msec > 0 ? msec : std::numeric_limits<int>::max());
+}
+
 void AVDemuxThread::run()
 {
     m_buffering = false;
@@ -519,6 +524,7 @@ void AVDemuxThread::run()
     }
     qreal last_apts = 0;
     qreal last_vpts = 0;
+    sem.release();
     while (!end) {
         processNextSeekTask();
         //vthread maybe changed by AVPlayer.setPriority() from no dec case
@@ -681,6 +687,8 @@ void AVDemuxThread::run()
     thread->disconnect(this, SIGNAL(seekFinished(qint64)));
     qDebug("Demux thread stops running....");
     Q_EMIT mediaStatusChanged(QtAV::EndOfMedia);
+    if (sem.available() > 0)
+        sem.acquire(sem.available());
 }
 
 bool AVDemuxThread::tryPause(unsigned long timeout)
@@ -692,5 +700,4 @@ bool AVDemuxThread::tryPause(unsigned long timeout)
     cond.wait(&buffer_mutex, timeout);
     return true;
 }
-
 } //namespace QtAV

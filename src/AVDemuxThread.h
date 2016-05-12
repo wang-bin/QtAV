@@ -23,6 +23,7 @@
 #define QAV_DEMUXTHREAD_H
 
 #include <QtCore/QMutex>
+#include <QtCore/QSemaphore>
 #include <QtCore/QThread>
 #include <QtCore/QRunnable>
 #include "PacketBuffer.h"
@@ -56,7 +57,7 @@ public:
 
     MediaEndAction mediaEndAction() const;
     void setMediaEndAction(MediaEndAction value);
-
+    bool waitForStarted(int msec = -1);
 Q_SIGNALS:
     void requestClockPause(bool value);
     void mediaStatusChanged(QtAV::MediaStatus);
@@ -99,6 +100,7 @@ private:
     QWaitCondition cond;
     BlockingQueue<QRunnable*> seek_tasks;
 
+    QSemaphore sem;
     QMutex next_frame_mutex;
     int clock_type; // change happens in different threads(direct connection)
     friend class SeekTask;
