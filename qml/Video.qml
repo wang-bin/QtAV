@@ -65,6 +65,8 @@ Item {
     property alias videoFiltersGPU: videoOut.filters
     property alias audioFilters: player.audioFilters
     property alias videoFilters: player.videoFilters
+    property alias audioBackends: player.audioBackends
+    property alias supportedAudioBackends: player.supportedAudioBackends
     property alias backgroundColor: videoOut.backgroundColor
     property alias frameSize: videoOut.frameSize
     property alias sourceAspectRatio: videoOut.sourceAspectRatio

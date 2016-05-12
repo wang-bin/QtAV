@@ -250,6 +250,10 @@ void QmlAVPlayer::setVideoCodecOptions(const QVariantMap &value)
         return;
     vcodec_opt = value;
     Q_EMIT videoCodecOptionsChanged();
+    if (!mpPlayer) {
+        qWarning("player not ready");
+        return;
+    }
     QVariantHash vcopt;
     for (QVariantMap::const_iterator cit = vcodec_opt.cbegin(); cit != vcodec_opt.cend(); ++cit) {
         vcopt[cit.key()] = cit.value();
@@ -629,6 +633,9 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
                     mpPlayer->setOptionsForVideoCodec(vcopt);
             }
             m_loading = true;
+            mpPlayer->stop();
+            // change backends is not thread safe now, so change when stopped
+            mpPlayer->audio()->setBackends(m_ao);
             mpPlayer->play();
         }
         break;
