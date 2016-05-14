@@ -431,6 +431,16 @@ const char *get_codec_long_name(AVCodecID id);
 #define FF_PROFILE_HEVC_MAIN -1
 #define FF_PROFILE_HEVC_MAIN_10 -1
 #endif
+#if FFMPEG_MODULE_CHECK(LIBAVCODEC, 54, 92, 100) || LIBAV_MODULE_CHECK(LIBAVCODEC, 55, 34, 1) //ffmpeg1.2 libav10
+#define AV_CODEC_ID_VP9 ((AVCodecID)0) //QTAV_CODEC_ID(NONE)
+#define CODEC_ID_VP9 ((AVCodecID)0) //QTAV_CODEC_ID(NONE)
+#endif
+#ifndef FF_PROFILE_VP9_0
+#define FF_PROFILE_VP9_0 0
+#define FF_PROFILE_VP9_1 1
+#define FF_PROFILE_VP9_2 2
+#define FF_PROFILE_VP9_3 3
+#endif
 
 #define AV_RUN_CHECK(FUNC, RETURN, ...) do { \
     int ret = FUNC; \

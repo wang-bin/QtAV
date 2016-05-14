@@ -117,18 +117,18 @@ static struct {
     { QTAV_CODEC_ID(H264),       cudaVideoCodec_H264  },
     { QTAV_CODEC_ID(H264),       cudaVideoCodec_H264_SVC},
     { QTAV_CODEC_ID(H264),       cudaVideoCodec_H264_MVC},
-#if defined(FF_PROFILE_HEVC_MAIN) && (CUDA_VERSION >= 6050)
+#if CUDA_VERSION >= 6050
     { QTAV_CODEC_ID(HEVC),       cudaVideoCodec_HEVC },
 #endif //
+#if CUDA_VERSION >= 7050
     { QTAV_CODEC_ID(VP8),        cudaVideoCodec_VP8 },
-#if FFMPEG_MODULE_CHECK(LIBAVCODEC, 54, 92, 100) || LIBAV_MODULE_CHECK(LIBAVCODEC, 55, 34, 1) //ffmpeg1.2 libav10
     { QTAV_CODEC_ID(VP9),        cudaVideoCodec_VP9 },
 #endif
     { QTAV_CODEC_ID(NONE),       cudaVideoCodec_NumCodecs}
 };
+
 static cudaVideoCodec mapCodecFromFFmpeg(AVCodecID codec)
 {
-
     for (int i = 0; ff_cuda_codecs[i].ffCodec != QTAV_CODEC_ID(NONE); ++i) {
         if (ff_cuda_codecs[i].ffCodec == codec) {
             return ff_cuda_codecs[i].cudaCodec;
