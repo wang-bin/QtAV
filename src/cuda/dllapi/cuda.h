@@ -62,7 +62,7 @@
         #error "Unsupported value of CUDA_FORCE_API_VERSION"
     #endif
 #else
-    #define __CUDA_API_VERSION 7000
+    #define __CUDA_API_VERSION 7050
 #endif /* CUDA_FORCE_API_VERSION */
 
 #if defined(__CUDA_API_VERSION_INTERNAL) || defined(CUDA_API_PER_THREAD_DEFAULT_STREAM)
@@ -192,7 +192,7 @@
 /**
  * CUDA API version number
  */
-#define CUDA_VERSION 7000
+#define CUDA_VERSION 7050
 
 #ifdef __cplusplus
 extern "C" {
@@ -1323,8 +1323,10 @@ typedef size_t (CUDA_CB *CUoccupancyB2DSize)(int blockSize);
  * memory-mapped I/O space, e.g. belonging to a third-party PCIe device.
  * On Windows the flag is a no-op.
  * On Linux that memory is marked as non cache-coherent for the GPU and
- * is expected to be physically contiguous.
- * On all other platforms, it is not supported and CUDA_ERROR_INVALID_VALUE
+ * is expected to be physically contiguous. It may return
+ * CUDA_ERROR_NOT_PERMITTED if run as an unprivileged user,
+ * CUDA_ERROR_NOT_SUPPORTED on older Linux kernel versions.
+ * On all other platforms, it is not supported and CUDA_ERROR_NOT_SUPPORTED
  * is returned.
  * Flag for ::cuMemHostRegister()
  */
@@ -4553,6 +4555,9 @@ CUresult CUDAAPI cuIpcCloseMemHandle(CUdeviceptr dptr);
  *   ::cuMemHostGetDevicePointer(). This feature is available only on GPUs
  *   with compute capability greater than or equal to 1.1.
  *
+ * - ::CU_MEMHOSTREGISTER_IOMEMORY: The pointer is treated as pointing to some
+ *   I/O memory space, e.g. the PCI Express resource of a 3rd party device.
+ *
  * All of these flags are orthogonal to one another: a developer may page-lock
  * memory that is portable or mapped with no restrictions.
  *
@@ -4578,7 +4583,9 @@ CUresult CUDAAPI cuIpcCloseMemHandle(CUdeviceptr dptr);
  * ::CUDA_ERROR_INVALID_CONTEXT,
  * ::CUDA_ERROR_INVALID_VALUE,
  * ::CUDA_ERROR_OUT_OF_MEMORY,
- * ::CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED
+ * ::CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED,
+ * ::CUDA_ERROR_NOT_PERMITTED,
+ * ::CUDA_ERROR_NOT_SUPPORTED
  * \notefnerr
  *
  * \sa ::cuMemHostUnregister, ::cuMemHostGetFlags, ::cuMemHostGetDevicePointer
@@ -10161,6 +10168,8 @@ CUresult CUDAAPI cuDeviceCanAccessPeer(int *canAccessPeer, CUdevice dev, CUdevic
  * Note that access granted by this call is unidirectional and that in order to access
  * memory from the current context in \p peerContext, a separate symmetric call 
  * to ::cuCtxEnablePeerAccess() is required.
+ *
+ * There is a system-wide maximum of eight peer connections per device.
  *
  * Returns ::CUDA_ERROR_PEER_ACCESS_UNSUPPORTED if ::cuDeviceCanAccessPeer() indicates
  * that the ::CUdevice of the current context cannot directly access memory

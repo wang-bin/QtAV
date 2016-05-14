@@ -117,13 +117,9 @@ static struct {
     { QTAV_CODEC_ID(H264),       cudaVideoCodec_H264  },
     { QTAV_CODEC_ID(H264),       cudaVideoCodec_H264_SVC},
     { QTAV_CODEC_ID(H264),       cudaVideoCodec_H264_MVC},
-#if CUDA_VERSION >= 6050
     { QTAV_CODEC_ID(HEVC),       cudaVideoCodec_HEVC },
-#endif //
-#if CUDA_VERSION >= 7050
     { QTAV_CODEC_ID(VP8),        cudaVideoCodec_VP8 },
     { QTAV_CODEC_ID(VP9),        cudaVideoCodec_VP9 },
-#endif
     { QTAV_CODEC_ID(NONE),       cudaVideoCodec_NumCodecs}
 };
 

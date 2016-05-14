@@ -1,6 +1,6 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -38,6 +38,13 @@
 #define CUDA_ENSURE2(f, ...) CUDA_CHECK2(f, return __VA_ARGS__;)
 #define CUDA_WARN2(f) CUDA_CHECK2(f)
 
+#if CUDA_VERSION < 7050
+#if CUDA_VERSION < 6050
+#define cudaVideoCodec_HEVC cudaVideoCodec(cudaVideoCodec_H264_MVC + 1)
+#endif //6050
+#define cudaVideoCodec_VP8 cudaVideoCodec(cudaVideoCodec_HEVC+1)
+#define cudaVideoCodec_VP9 cudaVideoCodec(cudaVideoCodec_VP8+1)
+#endif //7050
 struct IDirect3DDevice9;
 struct IDirect3DResource9;
 // TODO: cuda_drvapi_dylink.c/h
