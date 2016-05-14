@@ -445,7 +445,7 @@ void VideoThread::run()
             wait_key_frame = false;
         }
         QVariantHash *dec_opt_old = dec_opt;
-        if (!seeking || pkt.pts - d.render_pts0 >= 0.0) { // MAYBE not seeking. We should not drop the frames after seek target
+        if (!seeking || pkt.pts - d.render_pts0 >= -0.05) { // MAYBE not seeking. We should not drop the frames near the seek target. FIXME: use packet pts distance instead of -0.05 (20fps)
             if (seeking)
                 qDebug("seeking... pkt.pts - d.render_pts0: %.3f", pkt.pts - d.render_pts0);
             if (nb_dec_slow < kNbSlowFrameDrop) {
