@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -27,14 +27,12 @@
 #include <QtAV/FilterContext.h>
 
 namespace QtAV {
-
 class AudioFormat;
 class AVOutput;
 class AVPlayer;
 class FilterPrivate;
 class Statistics;
 class Frame;
-// TODO: QObject?
 class Q_AV_EXPORT Filter : public QObject
 {
     Q_OBJECT
@@ -42,16 +40,11 @@ class Q_AV_EXPORT Filter : public QObject
     Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY enabledChanged)
 public:
     virtual ~Filter();
-    //isEnabled() then setContext
-    //TODO: parameter FrameContext
-    void setEnabled(bool enabled = true); //AVComponent.enabled
     bool isEnabled() const;
-
     /*!
      * \brief setOwnedByTarget
      * If a filter is owned by target, it's not safe to access the filter after it's installed to a target.
      * QtAV will delete the installed filter internally if filter is owned by target AND it's parent (QObject) is null.
-     * \param value
      */
     void setOwnedByTarget(bool value = true);
     // default is false
@@ -59,10 +52,16 @@ public:
     // setInput/Output: no need to call installTo
     // bool setInput(Filter*);
     // bool setOutput(Filter*);
-    // install to audio/video as an on frame filter. append to the filter chain
+    /*!
+     * \brief installTo
+     * Install filter to player can process every frame before rendering.
+     * Equals to player->installFilter(this)
+     */
     virtual bool installTo(AVPlayer *player) = 0;
     // called in destructor automatically
     bool uninstall();
+public Q_SLOTS:
+    void setEnabled(bool enabled = true);
 signals:
     void enabledChanged(bool);
 protected:
@@ -85,13 +84,13 @@ public:
     VideoFilterContext* context();
     virtual bool isSupported(VideoFilterContext::Type ct) const;
     bool installTo(AVPlayer *player);
-    /*
-     * filter.installTo(target,...) calls target.installFilter(filter)
-     * If filter is already registered in FilterManager, then return false
-     * Otherwise, call FilterManager.register(filter) and target.filters.push_back(filter), return true
-     * NOTE: the installed filter will be deleted by the target if filter is owned by target AND it's parent (QObject) is null.
+    /*!
+     * \brief installTo
+     * The process() function is in rendering thread. Used by
+     * 1. GPU filters
+     * 2. QPainter rendering on widget based renderers. Changing the frame has no effect
+     * \return false if already installed
      */
-    // install to an output and do not modify frames. e.g. OSD
     bool installTo(AVOutput *output); //only for video. move to video filter installToRenderer
     void apply(Statistics* statistics, VideoFrame *frame = 0);
 
@@ -117,5 +116,4 @@ protected:
 };
 
 } //namespace QtAV
-
 #endif // QTAV_FILTER_H

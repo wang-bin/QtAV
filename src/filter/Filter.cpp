@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -130,6 +130,12 @@ bool VideoFilter::installTo(AVPlayer *player)
 }
 
 /*TODO: move to AVOutput.cpp to reduce dependency?*/
+/*
+ * filter.installTo(target,...) calls target.installFilter(filter)
+ * If filter is already registered in FilterManager, then return false
+ * Otherwise, call FilterManager.register(filter) and target.filters.push_back(filter), return true
+ * NOTE: the installed filter will be deleted by the target if filter is owned by target AND it's parent (QObject) is null.
+ */
 bool VideoFilter::installTo(AVOutput *output)
 {
     return output->installFilter(this);
