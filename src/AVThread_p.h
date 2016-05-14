@@ -36,16 +36,6 @@ QT_END_NAMESPACE
 namespace QtAV {
 
 const double kSyncThreshold = 0.2; // 200 ms
-
-class AutoSem {
-    QSemaphore *s;
-public:
-    AutoSem(QSemaphore* sem) : s(sem) { s->release();}
-    ~AutoSem() {
-        if (s->available() > 0)
-            s->release(s->available());
-    }
-};
 class AVDecoder;
 class AVOutput;
 class AVClock;

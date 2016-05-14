@@ -95,6 +95,9 @@ Q_SIGNALS:
      */
     void seekFinished(qint64 timestamp);
     void eofDecoded();
+private Q_SLOTS:
+    void onStarted();
+    void onFinished();
 protected:
     AVThread(AVThreadPrivate& d, QObject *parent = 0);
     void resetState();
@@ -109,7 +112,6 @@ protected:
     void waitAndCheck(ulong value, qreal pts);
 
     DPTR_DECLARE(AVThread)
-
 private:
     void setStatistics(Statistics* statistics);
     friend class AVPlayer;

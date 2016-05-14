@@ -75,8 +75,6 @@ void AudioThread::applyFilters(AudioFrame &frame)
 void AudioThread::run()
 {
     DPTR_D(AudioThread);
-    AutoSem as(&d.sem);
-    Q_UNUSED(as);
     //No decoder or output. No audio output is ok, just display picture
     if (!d.dec || !d.dec->isAvailable() || !d.outputSet)
         return;

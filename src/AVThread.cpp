@@ -56,11 +56,15 @@ AVThreadPrivate::~AVThreadPrivate() {
 AVThread::AVThread(QObject *parent) :
     QThread(parent)
 {
+    connect(this, SIGNAL(started()), SLOT(onStarted()), Qt::DirectConnection);
+    connect(this, SIGNAL(finished()), SLOT(onFinished()), Qt::DirectConnection);
 }
 
 AVThread::AVThread(AVThreadPrivate &d, QObject *parent)
     :QThread(parent),DPTR_INIT(&d)
 {
+    connect(this, SIGNAL(started()), SLOT(onStarted()), Qt::DirectConnection);
+    connect(this, SIGNAL(finished()), SLOT(onFinished()), Qt::DirectConnection);
 }
 
 AVThread::~AVThread()
@@ -291,6 +295,17 @@ void AVThread::setOutputSet(OutputSet *set)
 OutputSet* AVThread::outputSet() const
 {
     return d_func().outputSet;
+}
+
+void AVThread::onStarted()
+{
+    d_func().sem.release();
+}
+
+void AVThread::onFinished()
+{
+    if (d_func().sem.available() > 0)
+        d_func().sem.release(d_func().sem.available());
 }
 
 void AVThread::resetState()
