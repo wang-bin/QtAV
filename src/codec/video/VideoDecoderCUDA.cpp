@@ -518,10 +518,12 @@ bool VideoDecoderCUDAPrivate::initCuda()
 
     // cuD3DCtxCreate > cuGLCtxCreate(deprecated) > cuCtxCreate (fallback if d3d and gl return status is failed)
     CUDA_ENSURE(cuCtxCreate(&cuctx, CU_CTX_SCHED_BLOCKING_SYNC, cudev), false); //CU_CTX_SCHED_AUTO: slower in my test
-    CUDA_ENSURE(cuCtxPopCurrent(&cuctx), false);
+#if 0 //FIXME: why mingw crash?
     unsigned api_ver = 0;
     CUDA_ENSURE(cuCtxGetApiVersion(cuctx, &api_ver), false);
     qDebug("cuCtxGetApiVersion: %u", api_ver);
+#endif
+    CUDA_ENSURE(cuCtxPopCurrent(&cuctx), false);
     CUDA_ENSURE(cuvidCtxLockCreate(&vid_ctx_lock, cuctx), 0);
     {
         AutoCtxLock lock(this, vid_ctx_lock);
