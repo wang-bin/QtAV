@@ -115,6 +115,8 @@ public:
         tcuGetErrorString* cuGetErrorString;
         typedef CUresult CUDAAPI tcuInit(unsigned int);
         tcuInit* cuInit;
+        typedef CUresult tcuCtxGetApiVersion(CUcontext ctx, unsigned int *version);
+        tcuCtxGetApiVersion *cuCtxGetApiVersion;
         typedef CUresult CUDAAPI tcuCtxCreate(CUcontext *, unsigned int, CUdevice);
         tcuCtxCreate* cuCtxCreate;
         typedef CUresult CUDAAPI tcuCtxDestroy(CUcontext);
@@ -274,6 +276,15 @@ CUresult cuda_api::cuInit(unsigned int Flags)
     return ctx->api.cuInit(Flags);
 }
 
+CUresult cuda_api::cuCtxGetApiVersion(CUcontext pctx, unsigned int *version)
+{
+    if (!ctx->api.cuCtxGetApiVersion) {
+        ctx->api.cuCtxGetApiVersion = (context::api_t::tcuCtxGetApiVersion*)ctx->cuda_dll.resolve("cuCtxGetApiVersion");
+        assert(ctx->api.cuCtxGetApiVersion);
+    }
+    return ctx->api.cuCtxGetApiVersion(pctx, version);
+}
+
 CUresult cuda_api::cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev)
 {
     if (!ctx->api.cuCtxCreate) {
@@ -292,7 +303,7 @@ CUresult cuda_api::cuD3D9CtxCreate(CUcontext *pCtx, CUdevice *pCudaDevice, unsig
 {
     if (!ctx->api.cuD3D9CtxCreate) {
 #if __CUDA_API_VERSION >= 3020
-        ctx->api.cuD3D9CtxCreate = (context::api_t::tcuD3D9CtxCreate*)ctx->cuda_dll.resolve("cuD3D9CtxCreate");
+        ctx->api.cuD3D9CtxCreate = (context::api_t::tcuD3D9CtxCreate*)ctx->cuda_dll.resolve("cuD3D9CtxCreate_v2");
         if (!ctx->api.cuD3D9CtxCreate)
 #endif
             ctx->api.cuD3D9CtxCreate = (context::api_t::tcuD3D9CtxCreate*)ctx->cuda_dll.resolve("cuD3D9CtxCreate");

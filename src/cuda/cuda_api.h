@@ -54,6 +54,7 @@ public:
     CUresult cuGetErrorName(CUresult error, const char **pStr); // since 6.0. fallback to _cudaGetErrorEnum defined in helper_cuda.h if symbol not found
     CUresult cuGetErrorString(CUresult error, const char **pStr); // since 6.0. fallback to a empty string if symbol not found
     CUresult cuInit(unsigned int Flags);
+    CUresult cuCtxGetApiVersion(CUcontext pctx, unsigned int *version);
     CUresult cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev);
     CUresult cuCtxDestroy(CUcontext cuctx);
     CUresult cuCtxPushCurrent(CUcontext cuctx);
