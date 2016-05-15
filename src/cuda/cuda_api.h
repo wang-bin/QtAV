@@ -19,18 +19,9 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-
 #ifndef CUDA_API_H
 #define CUDA_API_H
 
-#undef NV_CONFIG
-#define NV_CONFIG(FEATURE) (defined QTAV_HAVE_##FEATURE && QTAV_HAVE_##FEATURE)
-
-// high version will define cuXXX macro, so functions here will be not they look like
-// TODO: resolve correct symbol name for high version apis
-#if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
-#define CUDA_FORCE_API_VERSION 3010
-#endif
 #include "dllapi/nv_inc.h"
 
 #define CUDA_ENSURE(f, ...) CUDA_CHECK(f, return __VA_ARGS__;) //call cuda_api.cuGetErrorXXX
@@ -69,10 +60,10 @@ public:
     CUresult cuCtxPopCurrent( CUcontext *pctx);
     CUresult cuCtxGetCurrent(CUcontext *pctx);
     CUresult cuCtxSynchronize();
-    CUresult cuMemAllocHost(void **pp, unsigned int bytesize); //TODO: size_t in new version
+    CUresult cuMemAllocHost(void **pp, size_t bytesize);
     CUresult cuMemFreeHost(void *p);
-    CUresult cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount); //TODO: size_t in new version
-    CUresult cuMemcpyDtoHAsync(void *dstHost, CUdeviceptr srcDevice, unsigned int ByteCount, CUstream hStream); //TODO: size_t in new version
+    CUresult cuMemcpyDtoH(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount); //TODO: size_t in new version
+    CUresult cuMemcpyDtoHAsync(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount, CUstream hStream); //TODO: size_t in new version
     CUresult cuMemcpy2D(const CUDA_MEMCPY2D *pCopy);
     CUresult cuMemcpy2DAsync(const CUDA_MEMCPY2D *pCopy, CUstream hStream);
     CUresult cuStreamCreate(CUstream *phStream, unsigned int Flags); //TODO: size_t in new version
@@ -114,10 +105,11 @@ public:
     // Decode a single picture (field or frame)
     CUresult cuvidDecodePicture(CUvideodecoder hDecoder, CUVIDPICPARAMS *pPicParams);
 
-    // Post-process and map a video frame for use in cuda. TODO: unsigned long for x64
-    CUresult cuvidMapVideoFrame(CUvideodecoder hDecoder, int nPicIdx, unsigned int *pDevPtr, unsigned int *pPitch, CUVIDPROCPARAMS *pVPP);
+    // Post-process and map a video frame for use in cuda.
+    // unsigned long long* (CUdevicePtr 64) for x64+cuda3.2, otherwise unsigned int* (CUdevicePtr 32)
+    CUresult cuvidMapVideoFrame(CUvideodecoder hDecoder, int nPicIdx, CUdeviceptr *pDevPtr, unsigned int *pPitch, CUVIDPROCPARAMS *pVPP);
     // Unmap a previously mapped video frame
-    CUresult cuvidUnmapVideoFrame(CUvideodecoder hDecoder, unsigned int DevPtr);
+    CUresult cuvidUnmapVideoFrame(CUvideodecoder hDecoder, CUdeviceptr DevPtr);
 
 #endif // !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
     // This function returns the best Graphics GPU based on performance
