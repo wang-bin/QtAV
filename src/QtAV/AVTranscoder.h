@@ -65,7 +65,7 @@ public:
      * \param name registered encoder name, for example "FFmpeg"
      * \return false if failed
      */
-    bool createVideoEncoder(const QString& name = QStringLiteral("FFmpeg"));
+    bool createVideoEncoder(const QString& name = QLatin1String("FFmpeg"));
     /*!
      * \brief encoder
      * Use this to set encoder properties and options.
@@ -79,7 +79,7 @@ public:
      * \param name registered encoder name, for example "FFmpeg"
      * \return false if failed
      */
-    bool createAudioEncoder(const QString& name = QStringLiteral("FFmpeg"));
+    bool createAudioEncoder(const QString& name = QLatin1String("FFmpeg"));
     /*!
      * \brief encoder
      * Use this to set encoder properties and options
