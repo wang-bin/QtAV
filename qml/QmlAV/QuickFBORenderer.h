@@ -70,6 +70,15 @@ public:
     QRectF contentRect() const;
     QRectF sourceRect() const;
 
+    Q_INVOKABLE QPointF mapPointToItem(const QPointF &point) const;
+    Q_INVOKABLE QRectF mapRectToItem(const QRectF &rectangle) const;
+    Q_INVOKABLE QPointF mapNormalizedPointToItem(const QPointF &point) const;
+    Q_INVOKABLE QRectF mapNormalizedRectToItem(const QRectF &rectangle) const;
+    Q_INVOKABLE QPointF mapPointToSource(const QPointF &point) const;
+    Q_INVOKABLE QRectF mapRectToSource(const QRectF &rectangle) const;
+    Q_INVOKABLE QPointF mapPointToSourceNormalized(const QPointF &point) const;
+    Q_INVOKABLE QRectF mapRectToSourceNormalized(const QRectF &rectangle) const;
+
     bool isOpenGL() const;
     void setOpenGL(bool o);
     void fboSizeChanged(const QSize& size);

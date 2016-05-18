@@ -315,6 +315,46 @@ Module {
             name: "sourceAspectRatioChanged"
             Parameter { name: "value"; type: "double" }
         }
+        Method {
+            name: "mapPointToItem"
+            type: "QPointF"
+            Parameter { name: "point"; type: "QPointF" }
+        }
+        Method {
+            name: "mapRectToItem"
+            type: "QRectF"
+            Parameter { name: "rectangle"; type: "QRectF" }
+        }
+        Method {
+            name: "mapNormalizedPointToItem"
+            type: "QPointF"
+            Parameter { name: "point"; type: "QPointF" }
+        }
+        Method {
+            name: "mapNormalizedRectToItem"
+            type: "QRectF"
+            Parameter { name: "rectangle"; type: "QRectF" }
+        }
+        Method {
+            name: "mapPointToSource"
+            type: "QPointF"
+            Parameter { name: "point"; type: "QPointF" }
+        }
+        Method {
+            name: "mapRectToSource"
+            type: "QRectF"
+            Parameter { name: "rectangle"; type: "QRectF" }
+        }
+        Method {
+            name: "mapPointToSourceNormalized"
+            type: "QPointF"
+            Parameter { name: "point"; type: "QPointF" }
+        }
+        Method {
+            name: "mapRectToSourceNormalized"
+            type: "QRectF"
+            Parameter { name: "rectangle"; type: "QRectF" }
+        }
     }
     Component {
         name: "QtAV::QuickFBORenderer"
@@ -350,6 +390,46 @@ Module {
         Signal {
             name: "sourceAspectRatioChanged"
             Parameter { name: "value"; type: "double" }
+        }
+        Method {
+            name: "mapPointToItem"
+            type: "QPointF"
+            Parameter { name: "point"; type: "QPointF" }
+        }
+        Method {
+            name: "mapRectToItem"
+            type: "QRectF"
+            Parameter { name: "rectangle"; type: "QRectF" }
+        }
+        Method {
+            name: "mapNormalizedPointToItem"
+            type: "QPointF"
+            Parameter { name: "point"; type: "QPointF" }
+        }
+        Method {
+            name: "mapNormalizedRectToItem"
+            type: "QRectF"
+            Parameter { name: "rectangle"; type: "QRectF" }
+        }
+        Method {
+            name: "mapPointToSource"
+            type: "QPointF"
+            Parameter { name: "point"; type: "QPointF" }
+        }
+        Method {
+            name: "mapRectToSource"
+            type: "QRectF"
+            Parameter { name: "rectangle"; type: "QRectF" }
+        }
+        Method {
+            name: "mapPointToSourceNormalized"
+            type: "QPointF"
+            Parameter { name: "point"; type: "QPointF" }
+        }
+        Method {
+            name: "mapRectToSourceNormalized"
+            type: "QRectF"
+            Parameter { name: "rectangle"; type: "QRectF" }
         }
     }
     Component {
