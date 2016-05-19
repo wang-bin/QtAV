@@ -674,6 +674,18 @@ AVPlayer* QmlAVPlayer::player()
     return mpPlayer;
 }
 
+void QmlAVPlayer::setBufferValue(qint64 value){
+    mpPlayer->setBufferValue(value);
+ }
+
+void QmlAVPlayer::setNotifyInterval(int msec){
+    mpPlayer->setNotifyInterval(msec);
+}
+
+void QmlAVPlayer::setFrameRate(qreal value){
+    mpPlayer->setFrameRate(value);
+}
+
 void QmlAVPlayer::play(const QUrl &url)
 {
     if (mSource == url && (playbackState() != StoppedState || m_loading))

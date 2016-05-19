@@ -160,6 +160,9 @@ public:
     qreal playbackRate() const;
     void setPlaybackRate(qreal s);
     Q_INVOKABLE void play(const QUrl& url);
+    Q_INVOKABLE void setBufferValue(qint64 value);
+    Q_INVOKABLE void setNotifyInterval(int msec);
+    Q_INVOKABLE void setFrameRate(qreal value);
     AVPlayer *player();
 
     bool isAutoLoad() const;

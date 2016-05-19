@@ -255,6 +255,18 @@ Module {
             name: "play"
             Parameter { name: "url"; type: "QUrl" }
         }
+        Method {
+            name: "setBufferValue"
+            Parameter { name: "value"; type: "qint64" }
+        }
+        Method {
+            name: "setNotifyInterval"
+            Parameter { name: "msec"; type: "int" }
+        }
+        Method {
+            name: "setFrameRate"
+            Parameter { name: "value"; type: "qreal" }
+        }
     }
     Component { name: "QtAV::AudioFilter"; prototype: "QtAV::Filter" }
     Component {
