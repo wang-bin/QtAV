@@ -52,6 +52,7 @@ Rectangle {
         anchors.fill: parent
         source: player
         orientation: 0
+        property real zoom: 1
         SubtitleItem {
             id: subtitleItem
             fillMode: videoOut.fillMode
@@ -70,7 +71,7 @@ Rectangle {
             color: PlayerConfig.subtitleColor
             anchors.fill: parent
             anchors.bottomMargin: PlayerConfig.subtitleBottomMargin
-        }    
+        }
     }
 
     MediaPlayer {
@@ -215,6 +216,31 @@ Rectangle {
         MouseArea {
             anchors.fill: parent
             hoverEnabled: true
+            onWheel: {
+                var deg = wheel.angleDelta.y/8
+                var dp = wheel.pixelDelta
+                var p = Qt.point(mouseX, mouseY) //root.mapToItem(videoOut, Qt.point(mouseX, mouseY))
+                var fp = videoOut.mapPointToSource(p)
+                if (fp.x < 0)
+                    fp.x = 0;
+                if (fp.y < 0)
+                    fp.y = 0;
+                if (fp.x > videoOut.videoFrameSize.width)
+                    fp.x = videoOut.videoFrameSize.width
+                if (fp.y > videoOut.videoFrameSize.height)
+                    fp.y = videoOut.videoFrameSize.height
+                videoOut.zoom *= (1.0 + deg*3.14/180.0);
+                if (videoOut.zoom < 1.0)
+                    videoOut.zoom = 1.0
+                var x0 = fp.x - fp.x/videoOut.zoom;
+                var y0 = fp.y - fp.y/videoOut.zoom;
+                // in fact, it must insected with video frame rect. opengl save us
+                videoOut.regionOfInterest.x = x0
+                videoOut.regionOfInterest.y = y0
+                videoOut.regionOfInterest.width = videoOut.videoFrameSize.width/videoOut.zoom
+                videoOut.regionOfInterest.height = videoOut.videoFrameSize.height/videoOut.zoom
+            }
+
             onDoubleClicked: {
                 control.toggleVisible()
             }
@@ -583,7 +609,7 @@ Rectangle {
             if (PlayerConfig.zeroCopy) {
                 opt["copyMode"] = "ZeroCopy"
             } else {
-                opt["copyMode"] = "OptimizedCopy"
+                opt["copyMode"] = "OptimizedCopy" //FIXME: CUDA
             }
             player.videoCodecOptions = opt
         }
