@@ -179,6 +179,7 @@ void VideoRenderer::setOutAspectRatio(qreal ratio)
         onSetOutAspectRatio(ratio);
         Q_EMIT outAspectRatioChanged();
     }
+    updateUi();
 }
 
 void VideoRenderer::onSetOutAspectRatio(qreal ratio)
@@ -200,6 +201,8 @@ void VideoRenderer::setQuality(Quality q)
     d.quality = q;
     if (!onSetQuality(q)) {
         d.quality = old;
+    } else {
+        updateUi();
     }
 }
 
@@ -303,6 +306,7 @@ void VideoRenderer::setOrientation(int value)
             Q_EMIT contentRectChanged();
         }
         onSetOutAspectRatio(outAspectRatio());
+        updateUi();
     }
 }
 
@@ -350,6 +354,7 @@ void VideoRenderer::setRegionOfInterest(const QRectF &roi)
         d.roi = old;
     } else {
         Q_EMIT regionOfInterestChanged();
+        updateUi();
     }
     // TODO: how to fill video? what's out_rect now?
 }
