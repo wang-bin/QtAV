@@ -162,7 +162,7 @@ bool AVTranscoder::createAudioEncoder(const QString &name)
 {
     if (!d->afilter) {
         d->afilter = new AudioEncodeFilter();
-        connect(d->afilter, SIGNAL(readyToEncode()), SLOT(prepareMuxer()), Qt::DirectConnection);
+        connect(d->afilter, SIGNAL(readyTouEncode()), SLOT(prepareMuxer()), Qt::DirectConnection);
         // direct: can ensure delayed frames (when stop()) are written at last
         connect(d->afilter, SIGNAL(frameEncoded(QtAV::Packet)), SLOT(writeAudio(QtAV::Packet)), Qt::DirectConnection);
     }

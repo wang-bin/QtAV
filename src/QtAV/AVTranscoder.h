@@ -37,7 +37,7 @@ public:
     ~AVTranscoder();
 
     // TODO: other source (more operations needed, e.g. seek)?
-    void setMediaSource(AVPlayer* player);
+    Q_SLOT void setMediaSource(AVPlayer* player);
     AVPlayer* sourcePlayer() const;
 
     QString outputFile() const;
