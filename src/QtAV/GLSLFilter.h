@@ -65,6 +65,13 @@ Q_SIGNALS:
     void outputSizeChanged(const QSize& size);
 protected:
     GLSLFilter(GLSLFilterPrivate& d, QObject *parent = 0);
+    /*!
+     * \brief process
+     * Draw video frame into fbo and apply the user shader from opengl()->userShader();
+     * \param frame input frame can be a frame holding host memory data, or any other GPU frame can interop with OpenGL texture (including frames from HW decoders in QtAV).
+     * Output frame holds an RGB texture, which can be processed in the next GPU filter, or rendered by OpenGL renderers.
+     * When process() is done, FBO before before process() is bounded.
+     */
     void process(Statistics* statistics, VideoFrame* frame = 0) Q_DECL_OVERRIDE;
 };
 } //namespace QtAV

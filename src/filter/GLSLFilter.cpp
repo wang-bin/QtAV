@@ -91,6 +91,8 @@ void GLSLFilter::process(Statistics *statistics, VideoFrame *frame)
     DPTR_D(GLSLFilter);
     if (!frame || !*frame)
         return;
+    GLint currentFbo = 0;
+    DYGL(glGetIntegerv(GL_FRAMEBUFFER_BINDING, &currentFbo));
     // now use the frame size
     if (d.fbo) {
         if (d.size.isEmpty()) {
@@ -118,8 +120,7 @@ void GLSLFilter::process(Statistics *statistics, VideoFrame *frame)
     QMatrix4x4 mat; // flip vertical
     mat.scale(1, -1);
     d.glv.render(QRectF(), QRectF(), mat);
-    QOpenGLFramebufferObject::bindDefault();
-
+    DYGL(glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)currentFbo));
     VideoFormat fmt(VideoFormat::Format_RGB32);
     VideoFrame f(d.fbo->width(), d.fbo->height(), fmt); //
     f.setBytesPerLine(d.fbo->width()*fmt.bytesPerPixel(), 0);
