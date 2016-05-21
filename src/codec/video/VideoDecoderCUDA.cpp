@@ -751,11 +751,12 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
             };
             frame = VideoFrame(codec_ctx->width, codec_ctx->height, VideoFormat::Format_NV12);
             frame.setBits(planes);
-            frame.setColorRange(yuv_range);
         }
         int pitches[] = { (int)pitch, (int)pitch };
-        if (!frame.format().isRGB())
+        if (!frame.format().isRGB()) {
             frame.setBytesPerLine(pitches);
+            frame.setColorRange(yuv_range);
+        }
         frame.setTimestamp((double)cuviddisp->timestamp/1000.0);
         if (codec_ctx && codec_ctx->sample_aspect_ratio.num > 1) //skip 1/1 because is the default value
             frame.setDisplayAspectRatio(frame.displayAspectRatio()*av_q2d(codec_ctx->sample_aspect_ratio));
