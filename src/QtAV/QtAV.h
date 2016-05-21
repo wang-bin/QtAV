@@ -43,11 +43,13 @@
 
 #include <QtAV/Filter.h>
 #include <QtAV/FilterContext.h>
+#include <QtAV/GLSLFilter.h>
 #include <QtAV/LibAVFilter.h>
 
 #include <QtAV/VideoShader.h>
 #include <QtAV/OpenGLVideo.h>
 #include <QtAV/ConvolutionShader.h>
+#include <QtAV/VideoShaderObject.h>
 
 #include <QtAV/VideoCapture.h>
 #include <QtAV/VideoEncoder.h>
