@@ -37,6 +37,8 @@ D3D11VP::D3D11VP(ComPtr<ID3D11Device> dev)
     : m_dev(dev)
     , m_w(0)
     , m_h(0)
+    , m_cs(ColorSpace_BT709)
+    , m_range(ColorRange_Limited)
 {
     DX_ENSURE(m_dev.As(&m_viddev));
 }
@@ -50,6 +52,16 @@ void D3D11VP::setOutput(ID3D11Texture2D *tex)
 void D3D11VP::setSourceRect(const QRect &r)
 {
     m_srcRect = r;
+}
+
+void D3D11VP::setColorSpace(ColorSpace value)
+{
+    m_cs = value;
+}
+
+void D3D11VP::setColorRange(ColorRange value)
+{
+    m_range = value;
 }
 
 bool D3D11VP::process(ID3D11Texture2D *texture, int index)
@@ -75,8 +87,18 @@ bool D3D11VP::process(ID3D11Texture2D *texture, int index)
         const RECT r = {m_srcRect.x(), m_srcRect.y(), m_srcRect.width(), m_srcRect.height()};
         videoctx->VideoProcessorSetStreamSourceRect(m_vp.Get(), 0, TRUE, &r);
     }
-    // disable additional processing. this can fix the output frame is too dark
+    // disable additional processing. this can fix the output frame is too dark, also make in/out color space parameters work
     videoctx->VideoProcessorSetStreamAutoProcessingMode(m_vp.Get(), 0, FALSE);
+    D3D11_VIDEO_PROCESSOR_COLOR_SPACE cs;
+    ZeroMemory(&cs, sizeof(cs));
+    cs.YCbCr_Matrix = m_cs == ColorSpace_BT601 ? 0 : 1; //0: bt601, 1: bt709
+    // D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_xxx is desktop only?
+    cs.Nominal_Range = m_range == ColorRange_Full ? D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_0_255 : D3D11_VIDEO_PROCESSOR_NOMINAL_RANGE_16_235;
+    videoctx->VideoProcessorSetStreamColorSpace(m_vp.Get(), 0, &cs);
+#if 0
+    cs.RGB_Range = 1; // 0: full, 1: limited
+    videoctx->VideoProcessorSetOutputColorSpace(m_vp.Get(), &cs);
+#endif
     D3D11_VIDEO_PROCESSOR_STREAM stream;
     ZeroMemory(&stream, sizeof(stream));
     stream.Enable = TRUE;

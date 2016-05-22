@@ -25,6 +25,7 @@
 #include "directx/dxcompat.h"
 #include <d3d11.h>
 #include <wrl/client.h>
+#include <QtAV/QtAV_Global.h>
 using namespace Microsoft::WRL;
 
 namespace QtAV {
@@ -33,10 +34,13 @@ namespace dx {
 class D3D11VP
 {
 public:
-    // brightness, contrast, hue, saturation, rotation, color space, range, source/dest rect
+    // brightness, contrast, hue, saturation, rotation, source/dest rect
     D3D11VP(ComPtr<ID3D11Device> dev);
     void setOutput(ID3D11Texture2D* tex);
     void setSourceRect(const QRect& r);
+    // input color space and range
+    void setColorSpace(ColorSpace value);
+    void setColorRange(ColorRange value);
     bool process(ID3D11Texture2D *texture, int index);
 private:
     bool ensureResource(UINT width, UINT height, DXGI_FORMAT format);
@@ -48,6 +52,8 @@ private:
     ComPtr<ID3D11VideoProcessor> m_vp;
     ComPtr<ID3D11VideoProcessorOutputView> m_outview;
     UINT m_w, m_h; //enumerator
+    ColorSpace m_cs;
+    ColorRange m_range;
     QRect m_srcRect;
 };
 } //namespace dx
