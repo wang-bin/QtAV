@@ -124,6 +124,7 @@ struct api {
     const GLubyte *(GL_APIENTRY *GetString)(GLenum);
     GLenum (GL_APIENTRY *GetError)(void);
     void (GL_APIENTRY *ActiveTexture)(GLenum);
+    void (GL_APIENTRY *BindFramebuffer)(GLenum target, GLuint framebuffer);
     GLint (GL_APIENTRY *GetUniformLocation)(GLuint, const GLchar *);
     void (GL_APIENTRY *Uniform1f)(GLint, GLfloat);
     void (GL_APIENTRY *Uniform2f)(GLint, GLfloat, GLfloat);

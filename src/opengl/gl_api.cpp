@@ -95,6 +95,7 @@ void api::resolve()
     GL_RESOLVE(GetString);
     GL_RESOLVE(GetError);
     GL_RESOLVE(ActiveTexture);
+    GL_RESOLVE(BindFramebuffer);
     GL_RESOLVE(GetUniformLocation);
     GL_RESOLVE(Uniform1f);
     GL_RESOLVE(Uniform2f);

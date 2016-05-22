@@ -120,7 +120,7 @@ void GLSLFilter::process(Statistics *statistics, VideoFrame *frame)
     QMatrix4x4 mat; // flip vertical
     mat.scale(1, -1);
     d.glv.render(QRectF(), QRectF(), mat);
-    DYGL(glBindFramebuffer(GL_FRAMEBUFFER, (GLuint)currentFbo));
+    gl().BindFramebuffer(GL_FRAMEBUFFER, (GLuint)currentFbo);
     VideoFormat fmt(VideoFormat::Format_RGB32);
     VideoFrame f(d.fbo->width(), d.fbo->height(), fmt); //
     f.setBytesPerLine(d.fbo->width()*fmt.bytesPerPixel(), 0);
