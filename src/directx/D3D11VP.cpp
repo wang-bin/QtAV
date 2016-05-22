@@ -75,6 +75,8 @@ bool D3D11VP::process(ID3D11Texture2D *texture, int index)
         const RECT r = {m_srcRect.x(), m_srcRect.y(), m_srcRect.width(), m_srcRect.height()};
         videoctx->VideoProcessorSetStreamSourceRect(m_vp.Get(), 0, TRUE, &r);
     }
+    // disable additional processing. this can fix the output frame is too dark
+    videoctx->VideoProcessorSetStreamAutoProcessingMode(m_vp.Get(), 0, FALSE);
     D3D11_VIDEO_PROCESSOR_STREAM stream;
     ZeroMemory(&stream, sizeof(stream));
     stream.Enable = TRUE;
