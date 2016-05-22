@@ -1,6 +1,6 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -37,6 +37,8 @@ public:
         , w_out(0),h_out(0)
         , fmt_in(QTAV_PIX_FMT_C(YUV420P))
         , fmt_out(QTAV_PIX_FMT_C(RGB32))
+        , range_in(ColorRange_Unknown)
+        , range_out(ColorRange_Unknown)
         , brightness(0)
         , contrast(0)
         , saturation(0)
@@ -52,6 +54,7 @@ public:
 
     int w_in, h_in, w_out, h_out;
     AVPixelFormat fmt_in, fmt_out;
+    ColorRange range_in, range_out;
     int brightness, contrast, saturation;
     bool update_data;
     QByteArray data_out;

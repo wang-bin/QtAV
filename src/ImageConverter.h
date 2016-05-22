@@ -1,6 +1,6 @@
 /******************************************************************************
     ImageConverter: Base class for image resizing & color model convertion
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -50,6 +50,12 @@ public:
     void setOutFormat(const VideoFormat& format);
     void setOutFormat(VideoFormat::PixelFormat format);
     void setOutFormat(int formate);
+    // default is full range.
+    void setInRange(ColorRange range);
+    ColorRange inRange() const;
+    // default is full range
+    void setOutRange(ColorRange range);
+    ColorRange outRange() const;
     /*!
      * brightness, contrast, saturation: -100~100
      * If value changes, setup sws

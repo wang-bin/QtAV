@@ -1,6 +1,6 @@
 /******************************************************************************
     ImageConverterFF: Image resizing & color model convertion using FFmpeg swscale
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -115,10 +115,9 @@ bool ImageConverterFFPrivate::setupColorspaceDetails(bool force)
     if (!update_eq) {
         return true;
     }
-    // FIXME: how to fill the ranges?
-    const int srcRange = 1;
-    const int dstRange = 0;
-    // TODO: SWS_CS_DEFAULT?
+    const int srcRange = range_in == ColorRange_Limited ? 0 : 1;
+    int dstRange = dstRange = range_out == ColorRange_Limited ? 0 : 1;
+    // TODO: color space
     bool supported = sws_setColorspaceDetails(sws_ctx, sws_getCoefficients(SWS_CS_DEFAULT)
                              , srcRange, sws_getCoefficients(SWS_CS_DEFAULT)
                              , dstRange

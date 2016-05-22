@@ -395,6 +395,7 @@ VideoFrame VideoFrame::to(const VideoFormat &fmt, const QSize& dstSize, const QR
     conv.setOutFormat(fmt.pixelFormatFFmpeg());
     conv.setInSize(width(), height());
     conv.setOutSize(w, h);
+    conv.setInRange(colorRange());
     if (!conv.convert(d->planes.constData(), d->line_sizes.constData())) {
         qWarning() << "VideoFrame::to error: " << format() << "=>" << fmt;
         return VideoFrame();
@@ -518,6 +519,7 @@ VideoFrame VideoFrameConverter::convert(const VideoFrame &frame, int fffmt) cons
     m_cvt->setOutFormat(fffmt);
     m_cvt->setInSize(frame.width(), frame.height());
     m_cvt->setOutSize(frame.width(), frame.height());
+    m_cvt->setInRange(frame.colorRange());
     QVector<const uchar*> pitch(format.planeCount());
     QVector<int> stride(format.planeCount());
     for (int i = 0; i < format.planeCount(); ++i) {

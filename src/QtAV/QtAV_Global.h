@@ -133,8 +133,8 @@ enum ColorSpace {
  */
 enum ColorRange {
     ColorRange_Unknown,
-    ColorRange_Limited,
-    ColorRange_Full
+    ColorRange_Limited, // TV, MPEG
+    ColorRange_Full     // PC, JPEG
 };
 
 /*!

@@ -1,6 +1,6 @@
 /******************************************************************************
     ImageConverter: Base class for image resizing & color model convertion
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -111,6 +111,35 @@ void ImageConverter::setOutFormat(int format)
     d.update_data = true;
     prepareData();
     d.update_data = false;
+}
+
+void ImageConverter::setInRange(ColorRange range)
+{
+    DPTR_D(ImageConverter);
+    if (d.range_in == range)
+        return;
+    d.range_in = range;
+    // TODO: do not call setupColorspaceDetails(). use a wrapper convert() func and call there
+    d.setupColorspaceDetails();
+}
+
+ColorRange ImageConverter::inRange() const
+{
+    return d_func().range_in;
+}
+
+void ImageConverter::setOutRange(ColorRange range)
+{
+    DPTR_D(ImageConverter);
+    if (d.range_out == range)
+        return;
+    d.range_out = range;
+    d.setupColorspaceDetails();
+}
+
+ColorRange ImageConverter::outRange() const
+{
+    return d_func().range_out;
 }
 
 void ImageConverter::setBrightness(int value)
