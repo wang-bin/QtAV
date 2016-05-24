@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -115,7 +115,7 @@ bool AudioEncoderFFmpegPrivate::open()
         if (codec->channel_layouts) {
             char cl[128];
             av_get_channel_layout_string(cl, sizeof(cl), -1, codec->channel_layouts[0]); //TODO: ff version
-            qDebug("use first supported channel layout: %lld", cl);
+            qDebug("use first supported channel layout: %s", cl);
             format_used.setChannelLayoutFFmpeg((qint64)codec->channel_layouts[0]);
         } else {
             qWarning("channel layout and supported channel layout are not set. use stereo");
@@ -203,8 +203,8 @@ bool AudioEncoderFFmpeg::encode(const AudioFrame &frame)
     }
     AVPacket pkt;
     av_init_packet(&pkt);
-    pkt.data = (uint8_t*)d.buffer.constData();
-    pkt.size = d.buffer.size();
+    pkt.data = (uint8_t*)d.buffer.constData(); //NULL
+    pkt.size = d.buffer.size(); //0
     int got_packet = 0;
     int ret = avcodec_encode_audio2(d.avctx, &pkt, f, &got_packet);
     av_frame_free(&f);

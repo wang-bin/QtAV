@@ -111,7 +111,7 @@ static const struct xv_format_entry_t {
 #undef FOURCC
 int pixelFormatToXv(VideoFormat::PixelFormat fmt)
 {
-    for (int i = 0; i < sizeof(xv_fmt)/sizeof(xv_fmt[0]); ++i) {
+    for (size_t i = 0; i < sizeof(xv_fmt)/sizeof(xv_fmt[0]); ++i) {
         if (xv_fmt[i].format == fmt)
             return xv_fmt[i].fourcc;
     }
