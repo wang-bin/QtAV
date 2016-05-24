@@ -367,8 +367,6 @@ bool VideoDecoderD3DPrivate::open()
 
 void VideoDecoderD3DPrivate::close()
 {
-    if (codec_ctx)
-        codec_ctx->hwaccel_context = NULL;
     qDeleteAll(surfaces);
     surfaces.clear();
     restore();
@@ -377,18 +375,14 @@ void VideoDecoderD3DPrivate::close()
     destroyDevice();
 }
 
-bool VideoDecoderD3DPrivate::setup(AVCodecContext *avctx)
+void* VideoDecoderD3DPrivate::setup(AVCodecContext *avctx)
 {
     const int w = codedWidth(avctx);
     const int h = codedHeight(avctx);
-    if (avctx->hwaccel_context && surface_width == aligned(w) && surface_height == aligned(h))
-        return true;
     width = avctx->width; // not necessary. set in decode()
     height = avctx->height;
-    codec_ctx->hwaccel_context = NULL;
     releaseUSWC();
     destroyDecoder();
-    avctx->hwaccel_context = NULL;
 
     /* Allocates all surfaces needed for the decoder */
     if (surface_auto) {
@@ -417,7 +411,7 @@ bool VideoDecoderD3DPrivate::setup(AVCodecContext *avctx)
     hw_surfaces.clear();
     surfaces.resize(surface_count);
     if (!createDecoder(codec_ctx->codec_id, w, h, surfaces))
-        return false;
+        return NULL;
     hw_surfaces.resize(surface_count);
     for (int i = 0; i < surfaces.size(); ++i) {
         hw_surfaces[i] = surfaces[i]->getSurface();
@@ -425,9 +419,8 @@ bool VideoDecoderD3DPrivate::setup(AVCodecContext *avctx)
     surface_order = 0;
     surface_width = aligned(w);
     surface_height = aligned(h);
-    setupAVVAContext(avctx); //can not use codec_ctx for threaded mode!
     initUSWC(surface_width);
-    return true;
+    return setupAVVAContext(); //can not use codec_ctx for threaded mode!
 }
 
 /* FIXME it is nearly common with VAAPI */

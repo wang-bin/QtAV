@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2015)
@@ -107,7 +107,7 @@ public:
     bool open() Q_DECL_OVERRIDE;
     void close() Q_DECL_OVERRIDE;
 
-    bool setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
+    void* setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
     bool getBuffer(void **opaque, uint8_t **data) Q_DECL_OVERRIDE;
     void releaseBuffer(void *opaque, uint8_t *data) Q_DECL_OVERRIDE;
     AVPixelFormat vaPixelFormat() const Q_DECL_OVERRIDE { return AV_PIX_FMT_VIDEOTOOLBOX;}
@@ -148,13 +148,14 @@ static const char* cv_err_str(int err)
 VideoDecoderVideoToolbox::VideoDecoderVideoToolbox()
     : VideoDecoderFFmpegHW(*new VideoDecoderVideoToolboxPrivate())
 {
+    setProperty("threads", 1); // to avoid crash at av_videotoolbox_alloc_context/av_videotoolbox_default_free. I have no idea how the are called
     // dynamic properties about static property details. used by UI
     setProperty("detail_format", tr("Output pixel format from decoder. Performance NV12 > UYVY > BGRA > YUV420P > YUYV.\nOSX < 10.7 only supports UYVY, BGRA and YUV420p"));
     setProperty("detail_interop"
                 , tr("Interop with OpenGL") + QStringLiteral("\n") +
-                  tr("CVPixelBuffer: OSX+iOS") + QStringLiteral("\n") +
+                  tr("CVPixelBuffer: macOS+iOS") + QStringLiteral("\n") +
                   tr("CVOpenGLES: iOS, no copy, fast") + QStringLiteral("\n") +
-                  tr("IOSurface: OSX, no copy, fast") + QStringLiteral("\n") +
+                  tr("IOSurface: macOS, no copy, fast") + QStringLiteral("\n") +
                   tr("Auto: choose the fastest"));
     Q_UNUSED(QObject::tr("interop"));
     Q_UNUSED(QObject::tr("format"));
@@ -192,14 +193,14 @@ VideoFrame VideoDecoderVideoToolbox::frame()
     int pitch[3]; // must get the value from cvbuffer to compute opengl text size in VideoShader
     VideoFormat fmt(pixfmt);
     const bool zero_copy = copyMode() == ZeroCopy;
-    CVPixelBufferLockBaseAddress(cv_buffer, 0);
+    CVPixelBufferLockBaseAddress(cv_buffer, kCVPixelBufferLock_ReadOnly);
     for (int i = 0; i < fmt.planeCount(); ++i) {
         pitch[i] = CVPixelBufferGetBytesPerRowOfPlane(cv_buffer, i);
         // get address results in internal copy
         if (!zero_copy)
             src[i] = (uint8_t*)CVPixelBufferGetBaseAddressOfPlane(cv_buffer, i);
     }
-    CVPixelBufferUnlockBaseAddress(cv_buffer, 0);
+    CVPixelBufferUnlockBaseAddress(cv_buffer, kCVPixelBufferLock_ReadOnly);
     //CVPixelBufferRelease(cv_buffer); // release when video frame is destroyed
     VideoFrame f;
     // TODO: remove LazyCopy?
@@ -264,29 +265,24 @@ VideoDecoderVideoToolbox::Interop VideoDecoderVideoToolbox::interop() const
     return (Interop)d_func().interop_type;
 }
 
-bool VideoDecoderVideoToolboxPrivate::setup(AVCodecContext *avctx)
+void* VideoDecoderVideoToolboxPrivate::setup(AVCodecContext *avctx)
 {
     releaseUSWC();
-
-    if (avctx->hwaccel_context) {
-        AVVideotoolboxContext *vt = reinterpret_cast<AVVideotoolboxContext*>(avctx->hwaccel_context);
-        const CMVideoDimensions dim = CMVideoFormatDescriptionGetDimensions(vt->cm_fmt_desc);
-        qDebug("AVVideotoolboxContext ready: %dx%d", dim.width, dim.height);
-        return true;
-    }
-    //av_videotoolbox_default_free(codec_ctx);
+    av_videotoolbox_default_free(avctx);
     AVVideotoolboxContext *vtctx = av_videotoolbox_alloc_context();
     vtctx->cv_pix_fmt_type = out_fmt;
 
     qDebug("AVVideotoolboxContext: %p", vtctx);
-    int err = av_videotoolbox_default_init2(codec_ctx, vtctx); //ios h264 crashes when processing extra data. null H264Context
+    int err = av_videotoolbox_default_init2(avctx, vtctx); //ios h264 crashes when processing extra data. null H264Context
     if (err < 0) {
         qWarning("Failed to init videotoolbox decoder (%#x %s): %s", err, av_err2str(err), cv_err_str(err));
-        return false;
+        return NULL;
     }
+    const CMVideoDimensions dim = CMVideoFormatDescriptionGetDimensions(vtctx->cm_fmt_desc);
     initUSWC(codedWidth(avctx)); // TODO: use stride
     qDebug() << "VideoToolbox decoder created. format: " << cv::format_from_cv(out_fmt);
-    return true;
+    qDebug("AVVideotoolboxContext ready: %dx%d", dim.width, dim.height);
+    return vtctx; //the same as avctx->hwaccel_context;
 }
 
 bool VideoDecoderVideoToolboxPrivate::getBuffer(void **opaque, uint8_t **data)
@@ -329,7 +325,6 @@ bool VideoDecoderVideoToolboxPrivate::open()
         qWarning("VideoToolbox unsupported codec: %s", avcodec_get_name(codec_ctx->codec_id));
         return false;
     }
-    codec_ctx->thread_count = 1; // to avoid crash at av_videotoolbox_alloc_context/av_videotoolbox_default_free. I have no idea how the are called
     qDebug("opening VideoToolbox module");
     // setup() must be called in getFormat() from avcodec callback, otherwise in ffmpeg3.0 avctx->priv_data is null and crash
     // TODO: block AVDecoder.open() until hw callback is done

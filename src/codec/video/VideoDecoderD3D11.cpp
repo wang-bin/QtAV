@@ -137,7 +137,7 @@ private:
     bool createDecoder(AVCodecID codec_id, int w, int h, QVector<va_surface_t*>& surf) Q_DECL_OVERRIDE;
     void destroyDecoder() Q_DECL_OVERRIDE;
     bool setupSurfaceInterop() Q_DECL_OVERRIDE;
-    void setupAVVAContext(AVCodecContext *avctx) Q_DECL_OVERRIDE;
+    void* setupAVVAContext() Q_DECL_OVERRIDE;
     QVector<GUID> getSupportedCodecs() const Q_DECL_OVERRIDE;
     int fourccFor(const GUID *guid) const Q_DECL_OVERRIDE;
 
@@ -372,9 +372,8 @@ bool VideoDecoderD3D11Private::setupSurfaceInterop()
     return true;
 }
 
-void VideoDecoderD3D11Private::setupAVVAContext(AVCodecContext *avctx)
+void* VideoDecoderD3D11Private::setupAVVAContext()
 {
-    avctx->hwaccel_context = &hw;
     // TODO: FF_DXVA2_WORKAROUND_SCALING_LIST_ZIGZAG
     if (isIntelClearVideo(&codec_guid)) {
 #ifdef FF_DXVA2_WORKAROUND_INTEL_CLEARVIDEO //2014-03-07 - 8b2a130 - lavc 55.50.0 / 55.53.100 - dxva2.h
@@ -389,5 +388,6 @@ void VideoDecoderD3D11Private::setupAVVAContext(AVCodecContext *avctx)
     hw.cfg = &cfg;
     hw.surface_count = hw_surfaces.size();
     hw.surface = (ID3D11VideoDecoderOutputView**)hw_surfaces.constData();
+    return &hw;
 }
 } //namespace QtAV

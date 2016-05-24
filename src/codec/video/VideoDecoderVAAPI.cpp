@@ -226,7 +226,7 @@ public:
     void close() Q_DECL_OVERRIDE;
     bool ensureSurfaces(int count, int w, int h, bool discard_old = false);
     bool prepareVAImage(int w, int h);
-    bool setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
+    void* setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
     bool getBuffer(void **opaque, uint8_t **data) Q_DECL_OVERRIDE;
     void releaseBuffer(void *opaque, uint8_t *data) Q_DECL_OVERRIDE;
     AVPixelFormat vaPixelFormat() const Q_DECL_OVERRIDE { return QTAV_PIX_FMT_C(VAAPI_VLD); }
@@ -577,7 +577,6 @@ bool VideoDecoderVAAPIPrivate::open()
     }
 #endif //QTAV_HAVE(EGL_CAPI)
 #endif //QT_NO_OPENGL
-    codec_ctx->hwaccel_context = &hw_ctx; //must set before open
     return true;
 }
 
@@ -631,12 +630,12 @@ bool VideoDecoderVAAPIPrivate::prepareVAImage(int w, int h)
     return true;
 }
 
-bool VideoDecoderVAAPIPrivate::setup(AVCodecContext *avctx)
+void* VideoDecoderVAAPIPrivate::setup(AVCodecContext *avctx)
 {
     Q_UNUSED(avctx);
     if (!display || config_id == VA_INVALID_ID) {
         qWarning("va-api is not initialized. display: %p, config_id: %#x", display->get(), config_id);
-        return false;
+        return NULL;
     }
     int surface_count =  nb_surfaces;
     if (surface_count <= 0) {
@@ -652,24 +651,31 @@ bool VideoDecoderVAAPIPrivate::setup(AVCodecContext *avctx)
         if (codec_ctx->active_thread_type & FF_THREAD_FRAME)
             surface_count += codec_ctx->thread_count;
     }
+    releaseUSWC();
+    if (image.image_id != VA_INVALID_ID) {
+        VAWARN(vaDestroyImage(display->get(), image.image_id));
+        image.image_id = VA_INVALID_ID;
+    }
+    if (context_id != VA_INVALID_ID) {
+        VAWARN(vaDestroyContext(display->get(), context_id));
+        context_id = VA_INVALID_ID;
+    }
+    // TODO: config_id reset?
     if (!ensureSurfaces(surface_count, surface_width, surface_height, true))
-        return false;
+        return NULL;
     if (copy_mode != VideoDecoderFFmpegHW::ZeroCopy || OpenGLHelper::isEGL()) { //egl_dma && va_0_38
         // egl needs VAImage too
         if (!prepareVAImage(surface_width, surface_height))
-            return false;
-        // copy-back mode
-        if (copy_mode != VideoDecoderFFmpegHW::ZeroCopy)
-            initUSWC(surface_width);
+            return NULL;
     }
-    context_id = VA_INVALID_ID;
-    VA_ENSURE_TRUE(vaCreateContext(display->get(), config_id, surface_width, surface_height, VA_PROGRESSIVE, surfaces.data(), surfaces.size(), &context_id), false);
+    initUSWC(surface_width);
+    VA_ENSURE_TRUE(vaCreateContext(display->get(), config_id, surface_width, surface_height, VA_PROGRESSIVE, surfaces.data(), surfaces.size(), &context_id), NULL);
     /* Setup the ffmpeg hardware context */
     memset(&hw_ctx, 0, sizeof(hw_ctx));
     hw_ctx.display = display->get();
     hw_ctx.config_id = config_id;
     hw_ctx.context_id = context_id;
-    return true;
+    return &hw_ctx;
 }
 
 void VideoDecoderVAAPIPrivate::close()

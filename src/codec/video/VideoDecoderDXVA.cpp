@@ -127,7 +127,7 @@ private:
     bool createDecoder(AVCodecID codec_id, int w, int h, QVector<va_surface_t*>& surf) Q_DECL_OVERRIDE;
     void destroyDecoder() Q_DECL_OVERRIDE;
     bool setupSurfaceInterop() Q_DECL_OVERRIDE;
-    void setupAVVAContext(AVCodecContext *avctx) Q_DECL_OVERRIDE;
+    void* setupAVVAContext() Q_DECL_OVERRIDE;
     int fourccFor(const GUID *guid) const Q_DECL_OVERRIDE;
 
     /* DLL */
@@ -424,9 +424,8 @@ void VideoDecoderDXVAPrivate::destroyDecoder()
     SafeRelease(&decoder);
 }
 
-void VideoDecoderDXVAPrivate::setupAVVAContext(AVCodecContext* avctx)
+void* VideoDecoderDXVAPrivate::setupAVVAContext()
 {
-    avctx->hwaccel_context = &hw_ctx;
     // TODO: FF_DXVA2_WORKAROUND_SCALING_LIST_ZIGZAG
     if (isIntelClearVideo(&codec_guid)) {
 #ifdef FF_DXVA2_WORKAROUND_INTEL_CLEARVIDEO //2014-03-07 - 8b2a130 - lavc 55.50.0 / 55.53.100 - dxva2.h
@@ -440,6 +439,7 @@ void VideoDecoderDXVAPrivate::setupAVVAContext(AVCodecContext* avctx)
     hw_ctx.cfg = &cfg;
     hw_ctx.surface_count = hw_surfaces.size();
     hw_ctx.surface = (IDirect3DSurface9**)hw_surfaces.constData();
+    return &hw_ctx;
 }
 
 bool VideoDecoderDXVAPrivate::setupSurfaceInterop()

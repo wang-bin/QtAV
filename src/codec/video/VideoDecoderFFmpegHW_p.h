@@ -44,6 +44,9 @@ public:
         , get_buffer2(NULL)
         , threads(0)
         , copy_mode(VideoDecoderFFmpegHW::OptimizedCopy)
+        , hw_w(0)
+        , hw_h(0)
+        , hw_profile(0)
     {}
     virtual ~VideoDecoderFFmpegHWPrivate() {} //ctx is 0 now
     bool enableFrameRef() const Q_DECL_OVERRIDE { return false;} //because of ffmpeg_get_va_buffer2?
@@ -60,8 +63,8 @@ public:
         codec_ctx->reget_buffer = reget_buffer;
 #endif //QTAV_HAVE(AVBUFREF)
     }
-
-    virtual bool setup(AVCodecContext* avctx) = 0;
+    // return hwaccel_context or null
+    virtual void* setup(AVCodecContext* avctx) = 0;
 
     AVPixelFormat getFormat(struct AVCodecContext *p_context, const AVPixelFormat *pi_fmt);
     //TODO: remove opaque
@@ -88,6 +91,9 @@ public:
     // TODO: flag enable, disable, auto
     VideoDecoderFFmpegHW::CopyMode copy_mode;
     GPUMemCopy gpu_mem;
+
+private:
+    int hw_w, hw_h, hw_profile;
 };
 
 } //namespace QtAV

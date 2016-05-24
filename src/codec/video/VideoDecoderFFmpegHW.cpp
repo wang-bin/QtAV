@@ -153,7 +153,7 @@ bool VideoDecoderFFmpegHWPrivate::prepare()
     return true;
 }
 
-AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *p_context, const AVPixelFormat *pi_fmt)
+AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *avctx, const AVPixelFormat *pi_fmt)
 {
     bool can_hwaccel = false;
     for (size_t i = 0; pi_fmt[i] != QTAV_PIX_FMT_C(NONE); i++) {
@@ -172,21 +172,27 @@ AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *p_co
     for (size_t i = 0; pi_fmt[i] != QTAV_PIX_FMT_C(NONE); i++) {
         if (vaPixelFormat() != pi_fmt[i])
             continue;
-        /* We try to call setup when possible to detect errors when possible (later is too late) */
-        if (p_context->width > 0 && p_context->height > 0
-         && !setup(p_context)) {
+        if (hw_w == codedWidth((avctx)) && hw_h == codedHeight(avctx)
+                && hw_profile == avctx->profile // update decoder if profile changed. but now only surfaces are updated
+                && avctx->hwaccel_context)
+            return pi_fmt[i];
+        // TODO: manage uswc here for x86 (surface size is decoder dependent)
+        avctx->hwaccel_context = setup(avctx);
+        if (!avctx->hwaccel_context) {
             qWarning("acceleration setup failure");
             break;
         }
+        hw_w = codedWidth((avctx));
+        hw_h = codedHeight(avctx);
+        hw_profile = avctx->profile;
         qDebug("Using %s for hardware decoding.", qPrintable(description));
-        p_context->draw_horiz_band = NULL; //??
         return pi_fmt[i];
     }
     close();
 end:
     qWarning("hardware acceleration is not available" );
     /* Fallback to default behaviour */
-    return avcodec_default_get_format(p_context, pi_fmt);
+    return avcodec_default_get_format(avctx, pi_fmt);
 }
 
 int VideoDecoderFFmpegHWPrivate::codedWidth(AVCodecContext *avctx) const

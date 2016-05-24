@@ -96,7 +96,7 @@ public:
     bool open() Q_DECL_OVERRIDE;
     void close() Q_DECL_OVERRIDE;
 
-    bool setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
+    void* setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
     bool getBuffer(void **opaque, uint8_t **data) Q_DECL_OVERRIDE;
     void releaseBuffer(void *opaque, uint8_t *data) Q_DECL_OVERRIDE;
     AVPixelFormat vaPixelFormat() const Q_DECL_OVERRIDE { return QTAV_PIX_FMT_C(VDA_VLD);}
@@ -182,10 +182,10 @@ VideoFrame VideoDecoderVDA::frame()
         }
         void* mapToHost(const VideoFormat &format, void *handle, int plane) {
             Q_UNUSED(plane);
-            CVPixelBufferLockBaseAddress(cvbuf, 0);
+            CVPixelBufferLockBaseAddress(cvbuf, kCVPixelBufferLock_ReadOnly);
             const VideoFormat fmt(cv::format_from_cv(CVPixelBufferGetPixelFormatType(cvbuf)));
             if (!fmt.isValid()) {
-                CVPixelBufferUnlockBaseAddress(cvbuf, 0);
+                CVPixelBufferUnlockBaseAddress(cvbuf, kCVPixelBufferLock_ReadOnly);
                 return NULL;
             }
             const int w = CVPixelBufferGetWidth(cvbuf);
@@ -197,7 +197,7 @@ VideoFrame VideoDecoderVDA::frame()
                 src[i] = (uint8_t*)CVPixelBufferGetBaseAddressOfPlane(cvbuf, i);
                 pitch[i] = CVPixelBufferGetBytesPerRowOfPlane(cvbuf, i);
             }
-            CVPixelBufferUnlockBaseAddress(cvbuf, 0);
+            CVPixelBufferUnlockBaseAddress(cvbuf, kCVPixelBufferLock_ReadOnly);
             //CVPixelBufferRelease(cv_buffer); // release when video frame is destroyed
             VideoFrame frame(VideoFrame::fromGPU(fmt, w, h, h, src, pitch));
             if (fmt != format)
@@ -306,7 +306,7 @@ VideoFrame VideoDecoderVDA::frame()
             src[i] = (uint8_t*)CVPixelBufferGetBaseAddressOfPlane(cv_buffer, i);
             pitch[i] = CVPixelBufferGetBytesPerRowOfPlane(cv_buffer, i);
         }
-        CVPixelBufferUnlockBaseAddress(cv_buffer, 0);
+        CVPixelBufferUnlockBaseAddress(cv_buffer, kCVPixelBufferLock_ReadOnly);
         //CVPixelBufferRelease(cv_buffer); // release when video frame is destroyed
     }
     VideoFrame f;
@@ -346,14 +346,10 @@ VideoDecoderVDA::PixelFormat VideoDecoderVDA::format() const
     return d_func().out_fmt;
 }
 
-bool VideoDecoderVDAPrivate::setup(AVCodecContext *avctx)
+void* VideoDecoderVDAPrivate::setup(AVCodecContext *avctx)
 {
     const int w = codedWidth(avctx);
     const int h = codedHeight(avctx);
-    if (hw_ctx.width == w && hw_ctx.height == h && hw_ctx.decoder) {
-        avctx->hwaccel_context = &hw_ctx;
-        return true;
-    }
     if (hw_ctx.decoder) {
         ff_vda_destroy_decoder(&hw_ctx);
         releaseUSWC();
@@ -367,17 +363,15 @@ bool VideoDecoderVDAPrivate::setup(AVCodecContext *avctx)
     hw_ctx.height = h;
     width = avctx->width; // not necessary. set in decode()
     height = avctx->height;
-    avctx->hwaccel_context = NULL;
     /* create the decoder */
     int status = ff_vda_create_decoder(&hw_ctx, codec_ctx->extradata, codec_ctx->extradata_size);
     if (status) {
         qWarning("Failed to create decoder (%i): %s", status, vda_err_str(status));
-        return false;
+        return NULL;
     }
-    avctx->hwaccel_context = &hw_ctx;
     initUSWC(hw_ctx.width);
     qDebug() << "VDA decoder created. format: " << cv::format_from_cv(out_fmt);
-    return true;
+    return &hw_ctx;
 }
 
 bool VideoDecoderVDAPrivate::getBuffer(void **opaque, uint8_t **data)

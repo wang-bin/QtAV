@@ -73,7 +73,7 @@ public:
 
     bool open() Q_DECL_OVERRIDE;
     void close() Q_DECL_OVERRIDE;
-    bool setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
+    void* setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
     bool getBuffer(void **opaque, uint8_t **data) Q_DECL_OVERRIDE;
     void releaseBuffer(void *opaque, uint8_t *data) Q_DECL_OVERRIDE;
 
@@ -85,7 +85,7 @@ private:
     virtual bool checkDevice() {return true;}
     virtual QVector<GUID> getSupportedCodecs() const = 0;
 
-    virtual void setupAVVAContext(AVCodecContext* avctx) = 0;
+    virtual void* setupAVVAContext() = 0;
     /// create surfaces and decoder. width and height are coded value, maybe not aligned for d3d surface
     /// surfaces count is given, but not allocated
     virtual bool createDecoder(AVCodecID codec, int width, int height, QVector<va_surface_t*>& surf) = 0;
