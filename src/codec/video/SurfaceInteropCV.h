@@ -37,9 +37,9 @@ typedef int32_t  GLint;
 
 // FIXME: not texture if change from InteropCVOpenGLES to InteropCVPixelBuffer
 enum InteropType {
-    InteropCVPixelBuffer,   // osx+ios
-    InteropIOSurface,       // osx
-    InteropCVOpenGL,        // osx, not implemented
+    InteropCVPixelBuffer,   // macOS+ios
+    InteropIOSurface,       // macOS
+    InteropCVOpenGL,        // macOS, not implemented
     InteropCVOpenGLES,       // ios
     InteropAuto
 };

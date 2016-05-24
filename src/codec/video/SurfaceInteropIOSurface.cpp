@@ -87,7 +87,7 @@ bool InteropResourceIOSurface::map(CVPixelBufferRef buf, GLuint *tex, int w, int
         format = GL_RGB_422_APPLE;
         dtype = pixfmt == '2vuy' ? GL_UNSIGNED_SHORT_8_8_APPLE : GL_UNSIGNED_SHORT_8_8_REV_APPLE;
         break;
-        // OSX: GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV
+        // macOS: GL_RGBA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV
         // GL_YCBCR_422_APPLE: convert to rgb texture internally (bt601). only supports OSX
         // GL_RGB_422_APPLE: raw yuv422 texture
     case 'BGRA':

@@ -183,10 +183,10 @@ void* SurfaceInteropCV::createHandle(void *handle, SurfaceType type, const Video
 void* SurfaceInteropCV::mapToHost(const VideoFormat &format, void *handle, int plane)
 {
     Q_UNUSED(plane);
-    CVPixelBufferLockBaseAddress(m_surface, 0);
+    CVPixelBufferLockBaseAddress(m_surface, kCVPixelBufferLock_ReadOnly);
     const VideoFormat fmt(format_from_cv(CVPixelBufferGetPixelFormatType(m_surface)));
     if (!fmt.isValid()) {
-        CVPixelBufferUnlockBaseAddress(m_surface, 0);
+        CVPixelBufferUnlockBaseAddress(m_surface, kCVPixelBufferLock_ReadOnly);
         return NULL;
     }
     const int w = CVPixelBufferGetWidth(m_surface);
@@ -198,7 +198,7 @@ void* SurfaceInteropCV::mapToHost(const VideoFormat &format, void *handle, int p
         src[i] = (uint8_t*)CVPixelBufferGetBaseAddressOfPlane(m_surface, i);
         pitch[i] = CVPixelBufferGetBytesPerRowOfPlane(m_surface, i);
     }
-    CVPixelBufferUnlockBaseAddress(m_surface, 0);
+    CVPixelBufferUnlockBaseAddress(m_surface, kCVPixelBufferLock_ReadOnly);
     //CVPixelBufferRelease(cv_buffer); // release when video frame is destroyed
     VideoFrame frame(VideoFrame::fromGPU(fmt, w, h, h, src, pitch));
     if (fmt != format)
@@ -229,7 +229,7 @@ bool InteropResourceCVPixelBuffer::map(CVPixelBufferRef buf, GLuint *tex, int w,
 {
     Q_UNUSED(h);
     Q_UNUSED(w);
-    CVPixelBufferLockBaseAddress(buf, 0);
+    CVPixelBufferLockBaseAddress(buf, kCVPixelBufferLock_ReadOnly);
     GLint iformat;
     GLenum format, dtype;
     getParametersGL(CVPixelBufferGetPixelFormatType(buf), &iformat, &format, &dtype, plane); //TODO: call once when format changed
@@ -243,7 +243,7 @@ bool InteropResourceCVPixelBuffer::map(CVPixelBufferRef buf, GLuint *tex, int w,
                          , format
                          , dtype
                          , (uint8_t*)CVPixelBufferGetBaseAddressOfPlane(buf, plane)));
-    CVPixelBufferUnlockBaseAddress(buf, 0);
+    CVPixelBufferUnlockBaseAddress(buf, kCVPixelBufferLock_ReadOnly);
     return true;
 }
 } // namespace cv

@@ -135,6 +135,7 @@ bool InteropResourceCVOpenGLES::map(CVPixelBufferRef buf, GLuint *texInOut, int 
     }
     //CVOpenGLESTextureGetCleanTexCoords
     *texInOut = CVOpenGLESTextureGetName(tex);
+    //TODO: remove below?
     DYGL(glBindTexture(GL_TEXTURE_2D, *texInOut));
     DYGL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
     DYGL(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
