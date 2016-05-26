@@ -382,6 +382,10 @@ Module {
         Property { name: "frameSize"; type: "QSize"; isReadonly: true }
         Property { name: "backgroundColor"; type: "QColor" }
         Property { name: "filters"; type: "QuickVideoFilter"; isList: true; isReadonly: true }
+        Property { name: "brightness"; type: "double" }
+        Property { name: "contrast"; type: "double" }
+        Property { name: "hue"; type: "double" }
+        Property { name: "saturation"; type: "double" }
         Signal {
             name: "fillModeChanged"
             Parameter { type: "QuickFBORenderer::FillMode" }
@@ -390,6 +394,22 @@ Module {
         Signal {
             name: "sourceAspectRatioChanged"
             Parameter { name: "value"; type: "double" }
+        }
+        Signal {
+            name: "brightnessChanged"
+            Parameter { name: "value"; type: "double" }
+        }
+        Signal {
+            name: "contrastChanged"
+            Parameter { type: "double" }
+        }
+        Signal {
+            name: "hueChanged"
+            Parameter { type: "double" }
+        }
+        Signal {
+            name: "saturationChanged"
+            Parameter { type: "double" }
         }
         Method {
             name: "mapPointToItem"

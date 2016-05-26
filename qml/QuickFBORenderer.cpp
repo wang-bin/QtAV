@@ -399,6 +399,30 @@ void QuickFBORenderer::onSetOutAspectRatioMode(OutAspectRatioMode mode)
     d.setupAspectRatio();
 }
 
+bool QuickFBORenderer::onSetBrightness(qreal b)
+{
+    d_func().glv.setBrightness(b);
+    return true;
+}
+
+bool QuickFBORenderer::onSetContrast(qreal c)
+{
+    d_func().glv.setContrast(c);
+    return true;
+}
+
+bool QuickFBORenderer::onSetHue(qreal h)
+{
+    d_func().glv.setHue(h);
+    return true;
+}
+
+bool QuickFBORenderer::onSetSaturation(qreal s)
+{
+    d_func().glv.setSaturation(s);
+    return true;
+}
+
 void QuickFBORenderer::updateRenderRect()
 {
     DPTR_D(QuickFBORenderer);

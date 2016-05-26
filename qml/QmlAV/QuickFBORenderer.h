@@ -46,6 +46,10 @@ class QuickFBORenderer : public QQuickFramebufferObject, public VideoRenderer
     Q_PROPERTY(QSize frameSize READ videoFrameSize NOTIFY videoFrameSizeChanged)
     Q_PROPERTY(QColor backgroundColor READ backgroundColor WRITE setBackgroundColor NOTIFY backgroundColorChanged)
     Q_PROPERTY(QQmlListProperty<QuickVideoFilter> filters READ filters)
+    Q_PROPERTY(qreal brightness READ brightness WRITE setBrightness NOTIFY brightnessChanged)
+    Q_PROPERTY(qreal contrast READ contrast WRITE setContrast NOTIFY contrastChanged)
+    Q_PROPERTY(qreal hue READ hue WRITE setHue NOTIFY hueChanged)
+    Q_PROPERTY(qreal saturation READ saturation WRITE setSaturation NOTIFY saturationChanged)
     Q_ENUMS(FillMode)
 public:
     enum FillMode {
@@ -95,6 +99,10 @@ Q_SIGNALS:
     void sourceAspectRatioChanged(qreal value) Q_DECL_OVERRIDE;
     void videoFrameSizeChanged() Q_DECL_OVERRIDE;
     void backgroundColorChanged() Q_DECL_OVERRIDE;
+    void brightnessChanged(qreal value) Q_DECL_OVERRIDE;
+    void contrastChanged(qreal) Q_DECL_OVERRIDE;
+    void hueChanged(qreal) Q_DECL_OVERRIDE;
+    void saturationChanged(qreal) Q_DECL_OVERRIDE;
 protected:
     bool event(QEvent *e) Q_DECL_OVERRIDE;
     bool receiveFrame(const VideoFrame &frame) Q_DECL_OVERRIDE;
@@ -104,6 +112,10 @@ private:
     bool onSetOrientation(int value) Q_DECL_OVERRIDE;
     void onSetOutAspectRatio(qreal ratio) Q_DECL_OVERRIDE;
     void onSetOutAspectRatioMode(OutAspectRatioMode mode) Q_DECL_OVERRIDE;
+    bool onSetBrightness(qreal b) Q_DECL_OVERRIDE;
+    bool onSetContrast(qreal c) Q_DECL_OVERRIDE;
+    bool onSetHue(qreal h) Q_DECL_OVERRIDE;
+    bool onSetSaturation(qreal s) Q_DECL_OVERRIDE;
     void updateRenderRect();
 
     static void vf_append(QQmlListProperty<QuickVideoFilter> *property, QuickVideoFilter *value);

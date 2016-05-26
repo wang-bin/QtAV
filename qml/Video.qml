@@ -68,6 +68,10 @@ Item {
     property alias audioBackends: player.audioBackends
     property alias supportedAudioBackends: player.supportedAudioBackends
     property alias backgroundColor: videoOut.backgroundColor
+    property alias brightness: videoOut.brightness
+    property alias contrast: videoOut.contrast
+    property alias hue: videoOut.hue
+    property alias saturation: videoOut.saturation
     property alias frameSize: videoOut.frameSize
     property alias sourceAspectRatio: videoOut.sourceAspectRatio
     property alias opengl: videoOut.opengl
