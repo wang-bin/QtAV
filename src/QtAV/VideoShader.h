@@ -261,9 +261,13 @@ public:
      */
     QPointF mapToTexture(int plane, const QPointF& p, int normalize = -1) const;
     QRectF mapToTexture(int plane, const QRectF& r, int normalize = -1) const;
+    qreal brightness() const;
     void setBrightness(qreal value);
+    qreal contrast() const;
     void setContrast(qreal value);
+    qreal hue() const;
     void setHue(qreal value);
+    qreal saturation() const;
     void setSaturation(qreal value);
 protected:
     // TODO: roi

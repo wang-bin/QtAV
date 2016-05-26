@@ -112,6 +112,7 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
         if (roi_changed || target != t) {
             target = t;
             update_geo = true;
+            //target_rect = target (if valid). // relate to gvf bug?
         }
     } else {
         if (roi_changed) {
@@ -149,14 +150,25 @@ void OpenGLVideo::setOpenGLContext(QOpenGLContext *ctx)
     DPTR_D(OpenGLVideo);
     if (d.ctx == ctx)
         return;
+    qreal b = 0, c = 0, h = 0, s = 0;
+    if (d.material) {
+        b = d.material->brightness();
+        c = d.material->contrast();
+        h = d.material->hue();
+        s = d.material->saturation();
+        delete d.material;
+        d.material = 0;
+    }
     d.resetGL(); //TODO: is it ok to destroygl resources in another context?
     d.ctx = ctx; // Qt4: set to null in resetGL()
     if (!ctx) {
         return;
     }
-    if (d.material)
-        delete d.material;
     d.material = new VideoMaterial();
+    d.material->setBrightness(b);
+    d.material->setContrast(c);
+    d.material->setHue(h);
+    d.material->setSaturation(s);
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     d.manager = ctx->findChild<ShaderManager*>(QStringLiteral("__qtav_shader_manager"));
     QSizeF surfaceSize = ctx->surface()->size();

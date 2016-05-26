@@ -143,8 +143,6 @@ public:
     bool init_textures_required; // e.g. target changed
     int bpc;
     int width, height; //avoid accessing frame(need lock)
-    QRect viewport;
-    QRect out_rect;
     VideoFrame frame;
     /*
      *  old format. used to check whether we have to update textures. set to current frame's format after textures are updated.

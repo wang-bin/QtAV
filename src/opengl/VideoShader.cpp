@@ -744,10 +744,20 @@ int VideoMaterial::planeCount() const
     return d_func().frame.planeCount();
 }
 
+qreal VideoMaterial::brightness() const
+{
+    return d_func().colorTransform.brightness();
+}
+
 void VideoMaterial::setBrightness(qreal value)
 {
     d_func().colorTransform.setBrightness(value);
     d_func().dirty = true;
+}
+
+qreal VideoMaterial::contrast() const
+{
+    return d_func().colorTransform.contrast();
 }
 
 void VideoMaterial::setContrast(qreal value)
@@ -756,10 +766,20 @@ void VideoMaterial::setContrast(qreal value)
     d_func().dirty = true;
 }
 
+qreal VideoMaterial::hue() const
+{
+    return d_func().colorTransform.hue();
+}
+
 void VideoMaterial::setHue(qreal value)
 {
     d_func().colorTransform.setHue(value);
     d_func().dirty = true;
+}
+
+qreal VideoMaterial::saturation() const
+{
+    return d_func().colorTransform.saturation();
 }
 
 void VideoMaterial::setSaturation(qreal value)
