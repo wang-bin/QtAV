@@ -24,12 +24,17 @@
 
 #include <QtCore/QObject>
 #include <QtCore/QStringList> //5.0
+#include <QStandardPaths>
+#include <QDateTime>
+#include <QThread>
 #include <QtQml/QQmlParserStatus>
 #include <QtQml/QQmlListProperty>
 #include <QmlAV/MediaMetaData.h>
 #include <QmlAV/QuickFilter.h>
 #include <QtAV/AVError.h>
 #include <QtAV/VideoCapture.h>
+#include <QtAV/AVPlayer.h>
+#include <QtAV/AVTranscoder.h>
 
 namespace QtAV {
 class AVPlayer;
@@ -38,6 +43,7 @@ using namespace QtAV;
 class QmlAVPlayer : public QObject, public QQmlParserStatus
 {
     Q_OBJECT
+    QThread transcoderThread;
     Q_INTERFACES(QQmlParserStatus)
     Q_PROPERTY(qreal volume READ volume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
@@ -73,7 +79,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(QVariantMap videoCodecOptions READ videoCodecOptions WRITE setVideoCodecOptions NOTIFY videoCodecOptionsChanged)
     Q_PROPERTY(bool useWallclockAsTimestamps READ useWallclockAsTimestamps WRITE setWallclockAsTimestamps NOTIFY useWallclockAsTimestampsChanged)
     Q_PROPERTY(QtAV::VideoCapture *videoCapture READ videoCapture CONSTANT)
-    Q_PROPERTY(QtAV::AVPlayer *player READ player CONSTANT)
+    Q_PROPERTY(QtAV::AVTranscoder *videoRecorder READ videoRecorder CONSTANT)
     Q_PROPERTY(int audioTrack READ audioTrack WRITE setAudioTrack NOTIFY audioTrackChanged)
     Q_PROPERTY(QUrl externalAudio READ externalAudio WRITE setExternalAudio NOTIFY externalAudioChanged)
     Q_PROPERTY(QVariantList internalAudioTracks READ internalAudioTracks NOTIFY internalAudioTracksChanged)
@@ -123,6 +129,7 @@ public:
     };
 
     explicit QmlAVPlayer(QObject *parent = 0);
+    ~QmlAVPlayer();
     //derived
     virtual void classBegin();
     virtual void componentComplete();
@@ -175,6 +182,8 @@ public:
     MediaMetaData *metaData() const;
     QObject *mediaObject() const;
     QtAV::VideoCapture *videoCapture() const;
+
+    QtAV::AVTranscoder* videoRecorder() const;
 
     // "FFmpeg", "CUDA", "DXVA", "VAAPI" etc
     QStringList videoCodecs() const;
@@ -234,6 +243,9 @@ public Q_SLOTS:
     void seek(int offset);
     void seekForward();
     void seekBackward();
+    void recordInit();
+    void startRecord();
+    void stopRecord();
 
 Q_SIGNALS:
     void volumeChanged();
@@ -314,6 +326,7 @@ private:
     Error mError;
     QString mErrorString;
     QtAV::AVPlayer *mpPlayer;
+    QtAV::AVTranscoder* recorder;
     QUrl mSource;
     QStringList mVideoCodecs;
     ChannelLayout mChannelLayout;

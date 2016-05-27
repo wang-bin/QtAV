@@ -23,6 +23,7 @@
 #include <QtQml/qqml.h>
 #include "QmlAV/QQuickItemRenderer.h"
 #include "QmlAV/QmlAVPlayer.h"
+#include <QtAV/AVTranscoder.h>
 #include "QmlAV/QuickFilter.h"
 #include "QmlAV/QuickSubtitle.h"
 #include "QmlAV/QuickSubtitleItem.h"
@@ -52,6 +53,7 @@ public:
         qmlRegisterType<QuickFBORenderer>(uri, 1, 5, "VideoOutput2");
 #endif
         qmlRegisterUncreatableType<VideoCapture>(uri, 1, 6, "VideoCapture", trUtf8("VideoCapture is provided by MediaPlayer"));
+        qmlRegisterUncreatableType<AVTranscoder>(uri, 1, 6, "AVTranscoder", trUtf8("AVTranscoder is provided by QMLMediaPlayer"));
         qmlRegisterType<MediaMetaData>();
 
         // FIXME: if version is 2.x, some qtav types will be undefined, why?
