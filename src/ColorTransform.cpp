@@ -176,11 +176,12 @@ public:
                      0, 1, 0, b,
                      0, 0, 1, b,
                      0, 0, 0, 1);
-        const float c = contrast+1.0;
         // Contrast (offset) R,G,B
-        QMatrix4x4 C(c, 0, 0, 0,
-                     0, c, 0, 0,
-                     0, 0, c, 0,
+        const float c = contrast+1.0;
+        const float t = (1.0 - c) / 2.0;
+        QMatrix4x4 C(c, 0, 0, t,
+                     0, c, 0, t,
+                     0, 0, c, t,
                      0, 0, 0, 1);
         // Saturation
         const float wr = 0.3086f;
