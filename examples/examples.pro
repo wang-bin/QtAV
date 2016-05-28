@@ -5,7 +5,6 @@ SUBDIRS = common
   SUBDIRS += audiopipeline
 !no-widgets {
   SUBDIRS += \
-    shader \
     sharedoutput \
     simpletranscode \
     simpleplayer \
@@ -15,6 +14,9 @@ SUBDIRS = common
     videographicsitem \
     videogroup \
     videowall
+contains(QT_CONFIG, opengl): SUBDIRS += \
+    shader \
+    glslfilter
 
   player.depends += common
 
