@@ -19,12 +19,12 @@ Page {
             font.pixelSize: Utils.scaled(15)
             onContentHeightChanged: parent.contentHeight = contentHeight + 2*anchors.margins
             onLinkActivated: Qt.openUrlExternally(link)
-            text: "<img src='qrc:/QtAV.svg'><h3>QMLPlayer for " + Qt.platform.os + " " + qsTr("based on") + " QtAV 1.10.0</h3>"
+            text: "<img src='qrc:/QtAV.svg'><h3>QMLPlayer for " + Qt.platform.os + " " + qsTr("based on") + " QtAV 1.11.0</h3>"
                   + "<p>" + qsTr("QtAV is a cross platform, high performance multimedia framework") + "</p>"
                   + "<p>Distributed under the terms of LGPLv2.1 or later.</p>"
                   + "<p>Copyright (C) 2012-2016 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p><p>"
                   + qsTr("Home page") + ": <a href='http://qtav.org'>http://qtav.org</a></p>"
-            + "<p><a href='http://qtav.org/install.html'>"+qsTr("Install QtAV for Windows desktop/store, OSX, Linux and Android")+"</a></p>"
+            + "<p><a href='http://qtav.org/install.html'>"+qsTr("Install QtAV for Windows desktop/store, macOS, Linux and Android")+"</a></p>"
                   + "\n<p>" + qsTr("Double click") + ": " + qsTr("show/hide control bar") + "</p><p>"
                   + qsTr("Click right area") + ": " + qsTr("show config panel") + "</p><p>"
                   + qsTr("Open") + " " + qsTr("a subtitle") + ": " + qsTr("press open button to select a subtitle, or a video + a subtitle") + "</p>"

@@ -30,7 +30,8 @@ Item {
     property real gripTolerance: Utils.scaled(3.0)
     property int orientation: Qt.Horizontal
     property bool hovered: false //mouseArea.containsMouse || gripMouseArea.containsMouse
-
+    property real max: 1
+    property real min: 0
     Rectangle {
         anchors.centerIn: parent
         height: orientation === Qt.Horizontal ? lineWidth : parent.height
@@ -48,18 +49,18 @@ Item {
             hovered = mouseArea.containsMouse
         }
         onClicked: {
-            var newValue = mouse.x / parent.width
+            var newValue = min + (mouse.x / parent.width)*(max-min)
             if (orientation === Qt.Horizontal) {
-                newValue = mouse.x / parent.width
+                newValue = min + (mouse.x / parent.width)*(max-min)
             } else {
-                newValue = mouse.y / parent.height
+                newValue = min + (mouse.y / parent.height)*(max-min)
             }
             var increment = 1.0/width
-            if (Math.abs(newValue - parent.value) > parent.increment) {
+            if (Math.abs(newValue - parent.value) > parent.increment*(max-min)) {
                 if (newValue > parent.value)
-                    parent.value = Math.min(1.0, parent.value + parent.increment)
+                    parent.value = Math.min(max, parent.value + parent.increment*(max-min))
                 else
-                    parent.value = Math.max(0.0, parent.value - parent.increment)
+                    parent.value = Math.max(min, parent.value - parent.increment*(max-min))
             }
         }
     }
@@ -67,8 +68,8 @@ Item {
     Item {
         id: grip
         property real value: 0.5
-        x: orientation === Qt.Horizontal ? (value * parent.width - width/2) : (parent.width - width)/2
-        y: orientation === Qt.Horizontal ? (parent.height - height)/2 : (value * parent.height - height/2)
+        x: orientation === Qt.Horizontal ? ((value-min)/(max-min) * parent.width - width/2) : (parent.width - width)/2
+        y: orientation === Qt.Horizontal ? (parent.height - height)/2 : ((value-min)/(max-min) * parent.height - height/2)
         width: root.gripTolerance * root.gripSize
         height: width
         readonly property real radius: width/2
@@ -98,9 +99,9 @@ Item {
             onReleased: updatePosition()
             function updatePosition() {
                 if (orientation === Qt.Horizontal)
-                    value = (grip.x + grip.radius) / grip.parent.width
+                    value = min + ((grip.x + grip.radius) / grip.parent.width)*(max-min)
                 else
-                    value = (grip.y + grip.radius) / grip.parent.height
+                    value = min + ((grip.y + grip.radius) / grip.parent.height)*(max-min)
             }
         }
         Rectangle {

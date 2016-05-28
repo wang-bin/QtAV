@@ -5,7 +5,6 @@ import "utils.js" as Utils
 Page {
     id: root
     title: qsTr("Subtitle")
-    signal subtitleChanged(string file)
     signal subtitleTrackChanged(int track)
     property var supportedFormats: ["ass" , "ssa"]
     property var internalSubtitleTracks : "unkown"

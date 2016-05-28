@@ -18,5 +18,6 @@
         <file>i18n/QMLPlayer_zh_CN.qm</file>
         <file>qml/QMLPlayer/MiscPage.qml</file>
         <file>qml/QMLPlayer/PlayListPanel.qml</file>
+        <file>qml/QMLPlayer/EffectPage.qml</file>
     </qresource>
 </RCC>

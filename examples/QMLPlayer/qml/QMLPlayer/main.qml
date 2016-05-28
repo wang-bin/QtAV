@@ -27,7 +27,7 @@ import QtQuick.Dialogs 1.2
 import QtQuick.Dialogs 1.1 /*
 */
 //import QtMultimedia 5.0
-import QtAV 1.6
+import QtAV 1.7
 import QtQuick.Window 2.1
 import "utils.js" as Utils
 
@@ -45,6 +45,21 @@ Rectangle {
         console.log("init>>>>>screen density logical: " + Screen.logicalPixelDensity + " pixel: " + Screen.pixelDensity);
     }
 
+    VideoFilter {
+        id: negate
+        type: VideoFilter.GLSLFilter
+        shader: Shader {
+            postProcess: "gl_FragColor.rgb = vec3(1.0-gl_FragColor.r, 1.0-gl_FragColor.g, 1.0-gl_FragColor.b);"
+        }
+    }
+    VideoFilter {
+        id: hflip
+        type: VideoFilter.GLSLFilter
+        shader: Shader {
+            sample: "vec4 sample2d(sampler2D tex, vec2 pos, int p) { return texture(tex, vec2(1.0-pos.x, pos.y));}"
+        }
+    }
+
     VideoOutput2 {
         id: videoOut
         opengl: true
@@ -53,6 +68,7 @@ Rectangle {
         source: player
         orientation: 0
         property real zoom: 1
+        //filters: [negate, hflip]
         SubtitleItem {
             id: subtitleItem
             fillMode: videoOut.fillMode
@@ -438,10 +454,16 @@ Rectangle {
                     pageLoader.source = ""
             }
             onChannelChanged: player.channelLayout = channel
-            onSubtitleChanged: subtitle.file = file
             onExternalAudioChanged: player.externalAudio = file
             onAudioTrackChanged: player.audioTrack = track
             onSubtitleTrackChanged: player.internalSubtitleTrack = track
+            onBrightnessChanged: videoOut.brightness = target.brightness
+            onContrastChanged: videoOut.contrast = target.contrast
+            onHueChanged: videoOut.hue = target.hue
+            onSaturationChanged: {
+                console.log("saturation: " + target.saturation)
+                videoOut.saturation = target.saturation
+            }
         }
     }
     ConfigPanel {

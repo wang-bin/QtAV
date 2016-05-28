@@ -32,6 +32,7 @@ Rectangle {
     Component.onCompleted: {
         contentModel.append({name: qsTr("Media info"),  url: "MediaInfoPage.qml" })
         contentModel.append({name: qsTr("Video codec"), url: "VideoCodec.qml" })
+        contentModel.append({name: qsTr("Effect"), url: "EffectPage.qml" })
         contentModel.append({name: qsTr("Subtitle"), url: "SubtitlePage.qml" })
         contentModel.append({name: qsTr("Audio"), url: "AudioPage.qml" })
         contentModel.append({name: qsTr("Misc"), url: "MiscPage.qml" })
