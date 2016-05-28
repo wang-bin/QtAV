@@ -22,6 +22,7 @@
 #ifndef QTAV_AVPLAYER_H
 #define QTAV_AVPLAYER_H
 
+#include <limits>
 #include <QtCore/QHash>
 #include <QtCore/QScopedPointer>
 #include <QtAV/AudioOutput.h>
@@ -336,7 +337,7 @@ public:
     /*!
      * \brief setVideoDecoderPriority
      * also can set in opt.priority
-     * \param names the video decoder name list in priority order. Name can be "FFmpeg", "CUDA", "DXVV", "VAAPI", "VDA", "VideoToolbox", case insensitive
+     * \param names the video decoder name list in priority order. Name can be "FFmpeg", "CUDA", "DXVA", "D3D11", "VAAPI", "VDA", "VideoToolbox", case insensitive
      */
     void setVideoDecoderPriority(const QStringList& names);
     QStringList videoDecoderPriority() const;
@@ -428,32 +429,28 @@ public slots:
      *     player->setStartPosition();
      *     player->play("some video");
      * \endcode
-     *  pos < 0, equals duration()+pos
+     *  pos < 0: equals duration()+pos
      *  pos == 0, means start at the beginning of media stream
-     *  (may be not exactly equals 0, seek to demuxer.startPosition()/startTime())
-     *  pos > media end position: no effect
-     *  pos > stopPosition(): no effect (if stopPosition() > 0)
+     *  pos > media end position, or pos > normalized stopPosition(): undefined
      */
     void setStartPosition(qint64 pos);
     /*!
      * \brief stopPosition
-     *  pos = 0: mediaStopPosition()
+     *  pos > mediaStopPosition(): mediaStopPosition()
      *  pos < 0: duration() + pos
      */
-    void setStopPosition(qint64 pos);
+    void setStopPosition(qint64 pos = std::numeric_limits<qint64>::max());
     /*!
      * \brief setTimeRange
      * Set startPosition and stopPosition. Make sure start <= stop.
-     * Calling setStartPosition() with a value lager than current stopPosition() will fail. setTimeRange() can avoid this.
      */
-    void setTimeRange(qint64 start, qint64 stop);
+    void setTimeRange(qint64 start, qint64 stop = std::numeric_limits<qint64>::max());
 
     bool isSeekable() const;
     /*!
      * \brief setPosition equals to seek(qreal)
      *  position < 0: 0
      * \param position in ms
-     *
      */
     void setPosition(qint64 position);
     void seek(qreal r); // r: [0, 1]
@@ -579,6 +576,7 @@ protected:
     virtual void timerEvent(QTimerEvent *);
 
 private:
+    qint64 normalizedPosition(qint64 pos);
     class Private;
     QScopedPointer<Private> d;
 };

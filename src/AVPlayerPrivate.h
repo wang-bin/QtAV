@@ -22,7 +22,6 @@
 #ifndef QTAV_AVPLAYER_PRIVATE_H
 #define QTAV_AVPLAYER_PRIVATE_H
 
-#include <limits>
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/AVPlayer.h"
 #include "AudioThread.h"
@@ -116,6 +115,7 @@ public:
     qint64 last_position; //last_pos
     bool reset_state;
     qint64 start_position, stop_position;
+    qint64 start_position_norm, stop_position_norm; // real position
     int repeat_max, repeat_current;
     int timer_id; //notify position change and check AB repeat range. active when playing
 
