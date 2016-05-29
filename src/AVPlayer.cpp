@@ -1320,10 +1320,10 @@ void AVPlayer::stopFromDemuxerThread()
             stop_pts = masterClock()->value();
         masterClock()->reset();
         stopNotifyTimer();
+        // vars not set by user can be reset
         d->start_position_norm = 0;
         d->stop_position_norm = kInvalidPosition; // already stopped. so not 0 but invalid. 0 can stop the playback in timerEvent
         d->media_end = kInvalidPosition;
-        d->repeat_current = d->repeat_max = 0;
         qDebug("avplayer emit stopped()");
         d->state = StoppedState;
         QMetaObject::invokeMethod(this, "stateChanged", Q_ARG(QtAV::AVPlayer::State, d->state));
@@ -1454,10 +1454,10 @@ void AVPlayer::stop()
                 //TODO: post event.
             }
         }
+        // vars not set by user can be reset
         d->start_position_norm = 0;
         d->stop_position_norm = 0; // 0 can stop play in timerEvent
         d->media_end = kInvalidPosition;
-        d->repeat_current = d->repeat_max = 0;
     } else { //called by player
         stopNotifyTimer();
     }

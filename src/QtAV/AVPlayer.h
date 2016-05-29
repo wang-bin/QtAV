@@ -438,6 +438,7 @@ public slots:
      * \brief stopPosition
      *  pos > mediaStopPosition(): mediaStopPosition()
      *  pos < 0: duration() + pos
+     * With the default value, the playback will not stop until the end of media (including dynamically changed media duration, e.g. recording video)
      */
     void setStopPosition(qint64 pos = std::numeric_limits<qint64>::max());
     /*!
