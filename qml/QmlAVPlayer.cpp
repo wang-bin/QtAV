@@ -52,6 +52,8 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , m_fastSeek(false)
   , m_loading(false)
   , mLoopCount(1)
+  , mStart(0)
+  , mStop(PositionMax)
   , mPlaybackRate(1.0)
   , mVolume(1.0)
   , mPlaybackState(StoppedState)
@@ -565,6 +567,41 @@ bool QmlAVPlayer::isSeekable() const
     return mpPlayer && mpPlayer->isSeekable();
 }
 
+int QmlAVPlayer::startPosition() const
+{
+    return mStart;
+}
+
+void QmlAVPlayer::setStartPosition(int value)
+{
+    if (mStart == value)
+        return;
+    mStart = value;
+    Q_EMIT startPositionChanged();
+    if (mpPlayer) {
+        mpPlayer->setStartPosition(mStart);
+    }
+}
+
+int QmlAVPlayer::stopPosition() const
+{
+    return mStop;
+}
+
+void QmlAVPlayer::setStopPosition(int value)
+{
+    if (mStop == value)
+        return;
+    mStop = value;
+    Q_EMIT stopPositionChanged();
+    if (mpPlayer) {
+        if (value == PositionMax)
+            mpPlayer->setStopPosition();
+        else
+            mpPlayer->setStopPosition(value);
+    }
+}
+
 bool QmlAVPlayer::isFastSeek() const
 {
     return m_fastSeek;
@@ -632,6 +669,12 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
                 if (!vcopt.isEmpty())
                     mpPlayer->setOptionsForVideoCodec(vcopt);
             }
+            mpPlayer->setStartPosition(startPosition());
+            if (stopPosition() == PositionMax)
+                mpPlayer->setStopPosition();
+            else
+                mpPlayer->setStopPosition(stopPosition());
+
             m_loading = true;
             mpPlayer->stop();
             // change backends is not thread safe now, so change when stopped
