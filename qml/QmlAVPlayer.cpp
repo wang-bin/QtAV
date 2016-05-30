@@ -688,7 +688,6 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
         break;
     case StoppedState:
         mpPlayer->stop();
-        mpPlayer->unload();
         m_loading = false;
         mPlaybackState = StoppedState;
         break;

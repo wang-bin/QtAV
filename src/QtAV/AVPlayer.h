@@ -44,7 +44,21 @@ class Filter;
 class AudioFilter;
 class VideoFilter;
 class VideoCapture;
-
+/*!
+ * \brief The AVPlayer class
+ * Preload:
+ * \code
+ *  player->setFile(...);
+ *  player->load();
+ *  do some thing...
+ *  player->play();
+ * \endcode
+ * No preload:
+ * \code
+ *  player->setFile(...);
+ *  player->play();
+ * \endcode
+ */
 class Q_AV_EXPORT AVPlayer : public QObject
 {
     Q_OBJECT
@@ -110,25 +124,7 @@ public:
     void setInput(MediaIO* in);
     MediaIO* input() const;
 
-    // force reload even if already loaded. otherwise only reopen codecs if necessary
-    QTAV_DEPRECATED bool load(const QString& path, bool reload = true); //deprecated
-    QTAV_DEPRECATED bool load(bool reload); //deprecated
-    //
     bool isLoaded() const;
-    /*!
-     * \brief load
-     * Load the current media set by setFile();. If already loaded, does nothing and return true.
-     * If async load, mediaStatus() becomes LoadingMedia and user should connect signal loaded()
-     * or mediaStatusChanged(QtAV::LoadedMedia) to a slot
-     * \return true if success or already loaded.
-     */
-    bool load(); //NOT implemented.
-    /*!
-     * \brief unload
-     * If the media is loading or loaded but not playing, unload it.
-     * Does nothing if isPlaying()
-     */
-    void unload(); //TODO: emit signal?
     /*!
      * \brief setAsyncLoad
      * async load is enabled by default
@@ -389,13 +385,22 @@ public:
     void setMediaEndAction(MediaEndAction value);
 
 public slots:
+    /*!
+     * \brief load
+     * Load the current media set by setFile(); Can be used to reload a media and call play() later. If already loaded, does nothing and return true.
+     * If async load, mediaStatus() becomes LoadingMedia and user should connect signal loaded()
+     * or mediaStatusChanged(QtAV::LoadedMedia) to a slot
+     * \return true if success or already loaded.
+     */
+    bool load();
+
     void togglePause();
     void pause(bool p = true);
     /*!
      * \brief play
-     * Load media and start playback. The same as play(const QString&)
+     * Load media and start playback. If current media is playing and media source is not changed, nothing to do. If media source is not changed, try to load (not in LoadingStatus or LoadedStatus) and start playback. If media source changed, reload and start playback.
      */
-    void play(); //replay
+    void play();
     /*!
      * \brief stop
      * Stop playback. It blocks current thread until the playback is stopped. Will emit signal stopped(). startPosition(), stopPosition(), repeat() are reset
@@ -562,7 +567,6 @@ Q_SIGNALS:
 private Q_SLOTS:
     void loadInternal(); // simply load
     void playInternal(); // simply play
-    void loadAndPlay();
     void stopFromDemuxerThread();
     void aboutToQuitApp();
     // start/stop notify timer in this thread. use QMetaObject::invokeMethod
@@ -575,8 +579,12 @@ private Q_SLOTS:
 protected:
     // TODO: set position check timer interval
     virtual void timerEvent(QTimerEvent *);
-
 private:
+    /*!
+     * \brief unload
+     * If the media is loading or loaded but not playing, unload it. Internall use only.
+     */
+    void unload(); //TODO: private. call in stop() if not load() by user? or always unload() in stop()?
     qint64 normalizedPosition(qint64 pos);
     class Private;
     QScopedPointer<Private> d;

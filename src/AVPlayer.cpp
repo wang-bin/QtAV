@@ -630,66 +630,6 @@ bool AVPlayer::isLoaded() const
     return d->loaded;
 }
 
-bool AVPlayer::load(const QString &path, bool reload)
-{
-    setFile(path);
-    return load(reload);
-}
-
-bool AVPlayer::load(bool reload)
-{
-    // TODO: call unload if reload?
-    if (mediaStatus() == QtAV::LoadingMedia)
-        return true;
-    if (isLoaded()) {
-        // release codec ctx. if not loaded, they are released by avformat. TODO: always let avformat release them?
-        if (d->adec)
-            d->adec->setCodecContext(0);
-        if (d->vdec)
-            d->vdec->setCodecContext(0);
-    }
-    d->loaded = false;
-    if (!d->current_source.isValid()) {
-        qDebug("Invalid media source. No file or IODevice was set.");
-        return false;
-    }
-    if (!reload) {
-        if (d->current_source.type() == QVariant::String) {
-            reload = d->demuxer.fileName() != d->current_source.toString();
-        } else {
-            if (d->current_source.canConvert<QIODevice*>()) {
-                reload = d->demuxer.ioDevice() != d->current_source.value<QIODevice*>();
-            } else { // MediaIO
-                reload = d->demuxer.mediaIO() != d->current_source.value<QtAV::MediaIO*>();
-            }
-        }
-        reload = reload || !d->demuxer.isLoaded();
-    }
-    if (reload) {
-        d->status = LoadingMedia;
-        if (isAsyncLoad()) {
-            class LoadWorker : public QRunnable {
-            public:
-                LoadWorker(AVPlayer *player) : m_player(player) {}
-                virtual void run() {
-                    if (!m_player)
-                        return;
-                    m_player->loadInternal();
-                }
-            private:
-                AVPlayer* m_player;
-            };
-            // TODO: thread pool has a max thread limit
-            loaderThreadPool()->start(new LoadWorker(this));
-            return true;
-        }
-        loadInternal();
-    } else {
-        d->loaded = true;
-    }
-    return d->loaded;
-}
-
 void AVPlayer::loadInternal()
 {
     QMutexLocker lock(&d->load_mutex);
@@ -752,14 +692,6 @@ void AVPlayer::unload()
     Q_UNUSED(lock);
     d->loaded = false;
     d->demuxer.setInterruptStatus(-1);
-    /*
-     * FIXME: no a/v/d thread started and in LoadedMedia status when stop(). but now is running (and to using the decoder).
-     * then we must wait the threads finished. or use smart ptr for decoders? demuxer is still unsafe
-     * change to LoadedMedia until all threads started?
-     * will it happen if playInternal() and unloadInternal() in ui thread?(use singleShort())
-     */
-    if (isPlaying())
-        stop();
 
     if (d->adec) { // FIXME: crash if audio external=>internal then replay
         d->adec->setCodecContext(0);
@@ -1157,46 +1089,62 @@ void AVPlayer::setState(State value)
 
 }
 
-//FIXME: why no d->demuxer will not get an eof if replaying by seek(0)?
+bool AVPlayer::load()
+{
+    if (!d->current_source.isValid()) {
+        qDebug("Invalid media source. No file or IODevice was set.");
+        return false;
+    }
+    if (!d->checkSourceChange() && (mediaStatus() == QtAV::LoadingMedia || mediaStatus() == LoadedMedia))
+        return true;
+    if (isLoaded()) {
+        // release codec ctx. if not loaded, they are released by avformat. TODO: always let avformat release them?
+        if (d->adec)
+            d->adec->setCodecContext(0);
+        if (d->vdec)
+            d->vdec->setCodecContext(0);
+    }
+    d->loaded = false;
+    d->status = LoadingMedia;
+    if (!isAsyncLoad()) {
+        loadInternal();
+        return d->loaded;
+    }
+
+    class LoadWorker : public QRunnable {
+    public:
+        LoadWorker(AVPlayer *player) : m_player(player) {}
+        virtual void run() {
+            if (!m_player)
+                return;
+            m_player->loadInternal();
+        }
+    private:
+        AVPlayer* m_player;
+    };
+    // TODO: thread pool has a max thread limit
+    loaderThreadPool()->start(new LoadWorker(this));
+    return true;
+}
+
 void AVPlayer::play()
 {
     //FIXME: bad delay after play from here
-    bool start_last = d->last_position == -1;
     if (isPlaying()) {
         qDebug("play() when playing");
-        if (start_last) {
-            d->clock->pause(true); //external clock
-            d->last_position = mediaStopPosition() != kInvalidPosition ? -position() : 0;
-            d->reset_state = false; //set a new stream number should not reset other states
-            qDebug("start pos is current position: %lld", d->last_position);
-        } else {
-            d->last_position = 0;
-            qDebug("start pos is stream start time");
-        }
-        qint64 last_pos = d->last_position;
+        if (!d->checkSourceChange())
+            return;
         stop();
-        // wait here to ensure stopped() and startted() is in correct order
-        if (d->read_thread->isRunning()) {
-            d->read_thread->wait(500);
-        }
-        if (last_pos < 0)
-            d->last_position = -last_pos;
     }
-    disconnect(this, SIGNAL(loaded()), this, SLOT(playInternal()));
-    unload();
-    loadAndPlay();
-    // seek(0LL) instead of reload for loaded seekable stream?
-}
-
-void AVPlayer::loadAndPlay()
-{
-    if (isAsyncLoad()) {
-        connect(this, SIGNAL(loaded()), this, SLOT(playInternal()));
-        load(true);
+    if (!load()) {
+        qWarning("load error");
         return;
     }
-    loadInternal();
-    playInternal();
+    if (isLoaded()) { // !asyncLoad() is here
+        playInternal();
+        return;
+    }
+    connect(this, SIGNAL(loaded()), this, SLOT(playInternal()));
 }
 
 void AVPlayer::playInternal()

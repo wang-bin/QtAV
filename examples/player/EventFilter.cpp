@@ -143,6 +143,7 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
             player->stepBackward();
             break;
         case Qt::Key_P:
+            player->stop();
             player->play();
             break;
         case Qt::Key_Q:
@@ -289,13 +290,11 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         if (e->mimeData()->hasUrls()) {
             QString path = e->mimeData()->urls().first().toLocalFile();
             player->stop();
-            player->load(path);
-            player->play();
+            player->play(path);
             e->acceptProposedAction();
         } else {
             e->ignore();
         }
-
     }
         break;
     case QEvent::GraphicsSceneContextMenu: {
@@ -327,7 +326,6 @@ void EventFilter::showMenu(const QPoint &p)
     }
     menu->exec(p);
 }
-
 
 WindowEventFilter::WindowEventFilter(QWidget *window)
     : QObject(window)

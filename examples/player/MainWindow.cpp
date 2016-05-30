@@ -203,7 +203,6 @@ void MainWindow::onSeekFinished(qint64 pos)
 void MainWindow::stopUnload()
 {
     mpPlayer->stop();
-    mpPlayer->unload();
 }
 
 void MainWindow::setupUi()

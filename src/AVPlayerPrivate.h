@@ -38,6 +38,7 @@ public:
     Private();
     ~Private();
 
+    bool checkSourceChange();
     void updateNotifyInterval();
     void initStatistics();
     void initBaseStatistics();
