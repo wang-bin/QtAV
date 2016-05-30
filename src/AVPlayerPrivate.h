@@ -107,13 +107,6 @@ public:
     bool relative_time_mode;
     qint64 media_start_pts; // read from media stream
     qint64 media_end;
-    /*
-     * unit: s. 0~1. stream's start time/duration(). or last position/duration() if change to new stream
-     * auto set to 0 if stop(). to stream start time if load()
-     *
-     * -1: used by play() to get current playing position
-     */
-    qint64 last_position; //last_pos
     bool reset_state;
     qint64 start_position, stop_position;
     qint64 start_position_norm, stop_position_norm; // real position

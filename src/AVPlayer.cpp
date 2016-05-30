@@ -766,13 +766,20 @@ qint64 AVPlayer::normalizedPosition(qint64 pos)
 {
     if (!isLoaded())
         return pos;
+    qint64 p0 = mediaStartPosition();
+    qint64 p1 = mediaStopPosition();
+    if (relativeTimeMode()) {
+        p0 = 0;
+        if (p1 != kInvalidPosition)
+            p1 -= p0; //duration
+    }
     if (pos < 0) {
-        if (mediaStopPosition() == kInvalidPosition)
+        if (p1 == kInvalidPosition)
             pos = kInvalidPosition;
         else
-            pos += mediaStopPosition();
+            pos += p1;
     }
-    return qMax(qMin(pos, mediaStopPosition()), mediaStartPosition());
+    return qMax(qMin(pos, p1), p0);
 }
 
 qint64 AVPlayer::startPosition() const
@@ -1180,11 +1187,7 @@ void AVPlayer::playInternal()
         return;
     }
     // setup clock before avthread.start() becuase avthreads use clock. after avthreads setup because of ao check
-    if (d->last_position > 0) {//start_last) {
-        masterClock()->pause(false); //external clock
-    } else {
-        masterClock()->reset();
-    }
+    masterClock()->reset();
     // TODO: add isVideo() or hasVideo()?
     qreal vfps = d->force_fps;
     bool force_fps = vfps > 0;
@@ -1227,7 +1230,7 @@ void AVPlayer::playInternal()
         qDebug("Starting video thread...");
         d->vthread->start();
     }
-    if (d->start_position_norm > 0 && d->last_position <= 0) {
+    if (d->start_position_norm > 0) {
         if (relativeTimeMode())
             d->demuxer.seek(qint64((d->start_position_norm + absoluteMediaStartPosition())));
         else
@@ -1246,12 +1249,6 @@ void AVPlayer::playInternal()
         //d->timer_id = startNotifyTimer(); //may fail if not in this thread
         QMetaObject::invokeMethod(this, "startNotifyTimer", Qt::AutoConnection);
     }
-// ffplay does not seek to stream's start position. usually it's 0, maybe < 1. seeking will result in a non-key frame position and it's bad.
-    //if (d->last_position <= 0)
-    //    d->last_position = mediaStartPosition();
-    if (d->last_position > 0)
-        setPosition(d->last_position); //just use d->demuxer.startTime()/duration()?
-
     d->state = PlayingState;
     } //end lock scoped here to avoid dead lock if connect started() to a slot that call unload()/play()
     Q_EMIT stateChanged(PlayingState);
@@ -1287,7 +1284,6 @@ void AVPlayer::stopFromDemuxerThread()
         unload(); //TODO: invoke?
     } else {
         d->repeat_current++;
-        d->last_position = d->start_position_norm; // for seeking to d->start_position_norm if seekable. already set in stop()
         QMetaObject::invokeMethod(this, "play"); //ensure play() is called from player thread
     }
 }
@@ -1383,7 +1379,6 @@ void AVPlayer::tryClearVideoRenderers()
 
 void AVPlayer::stop()
 {
-    d->last_position = mediaStopPosition() != kInvalidPosition ? d->start_position_norm : 0;
     // check d->timer_id, <0 return?
     if (d->reset_state) {
         /*
