@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -34,6 +34,7 @@ class AVTranscoder::Private
 public:
     Private()
         : started(false)
+        , async(false)
         , encoded_frames(0)
         , start_time(0)
         , source_player(0)
@@ -52,6 +53,7 @@ public:
     }
 
     bool started;
+    bool async;
     int encoded_frames;
     qint64 start_time;
     AVPlayer *source_player;
@@ -60,6 +62,7 @@ public:
     //BlockingQueue<Packet> aqueue, vqueue; // TODO: 1 queue if packet.mediaType is enabled
     AVMuxer muxer;
     QString format;
+    QVector<Filter*> filters;
 };
 
 AVTranscoder::AVTranscoder(QObject *parent)
@@ -70,16 +73,38 @@ AVTranscoder::AVTranscoder(QObject *parent)
 
 AVTranscoder::~AVTranscoder()
 {
+    stop();
+}
+
+void AVTranscoder::setAsync(bool value)
+{
+    if (d->async == value)
+        return;
+    d->async = value;
+    Q_EMIT asyncChanged();
+    if (d->afilter) {
+        d->afilter->setAsync(value);
+    }
+    if (d->vfilter) {
+        d->vfilter->setAsync(value);
+    }
+}
+
+bool AVTranscoder::isAsync() const
+{
+    return d->async;
 }
 
 void AVTranscoder::setMediaSource(AVPlayer *player)
 {
     if (d->source_player) {
-        disconnect(d->source_player, SIGNAL(stopped()), this, SLOT(stop()));
+        if (d->afilter)
+            disconnect(d->source_player, SIGNAL(stopped()), d->afilter, SLOT(finish()));
+        if (d->vfilter)
+            disconnect(d->source_player, SIGNAL(stopped()), d->vfilter, SLOT(finish()));
         disconnect(d->source_player, SIGNAL(started()), this, SLOT(onSourceStarted()));
     }
     d->source_player = player;
-    connect(d->source_player, SIGNAL(stopped()), this, SLOT(stop()));
     // direct connect to ensure it's called before encoders open in filters
     connect(d->source_player, SIGNAL(started()), this, SLOT(onSourceStarted()), Qt::DirectConnection);
 }
@@ -144,9 +169,12 @@ bool AVTranscoder::createVideoEncoder(const QString &name)
 {
     if (!d->vfilter) {
         d->vfilter = new VideoEncodeFilter();
+        d->filters.append(d->vfilter);
+        d->vfilter->setAsync(isAsync());
         connect(d->vfilter, SIGNAL(readyToEncode()), SLOT(prepareMuxer()), Qt::DirectConnection);
         // direct: can ensure delayed frames (when stop()) are written at last
         connect(d->vfilter, SIGNAL(frameEncoded(QtAV::Packet)), SLOT(writeVideo(QtAV::Packet)), Qt::DirectConnection);
+        connect(d->vfilter, SIGNAL(finished()), SLOT(tryFinish()));
     }
     return !!d->vfilter->createEncoder(name);
 }
@@ -162,9 +190,13 @@ bool AVTranscoder::createAudioEncoder(const QString &name)
 {
     if (!d->afilter) {
         d->afilter = new AudioEncodeFilter();
+        d->filters.append(d->afilter);
+        d->afilter->setAsync(isAsync());
         connect(d->afilter, SIGNAL(readyToEncode()), SLOT(prepareMuxer()), Qt::DirectConnection);
         // direct: can ensure delayed frames (when stop()) are written at last
         connect(d->afilter, SIGNAL(frameEncoded(QtAV::Packet)), SLOT(writeAudio(QtAV::Packet)), Qt::DirectConnection);
+        connect(d->afilter, SIGNAL(finished()), SLOT(tryFinish()));
+
     }
     return !!d->afilter->createEncoder(name);
 }
@@ -225,6 +257,8 @@ void AVTranscoder::start()
         if (d->afilter) {
             d->afilter->setStartTime(startTime());
             sourcePlayer()->installFilter(d->afilter);
+            disconnect(sourcePlayer(), SIGNAL(stopped()), d->afilter, SLOT(finish()));
+            connect(sourcePlayer(), SIGNAL(stopped()), d->afilter, SLOT(finish()), Qt::DirectConnection);
         }
         if (d->vfilter) {
             d->vfilter->setStartTime(startTime());
@@ -233,6 +267,8 @@ void AVTranscoder::start()
                 videoEncoder()->setFrameRate(sourcePlayer()->statistics().video.frame_rate);
             }
             sourcePlayer()->installFilter(d->vfilter);
+            disconnect(sourcePlayer(), SIGNAL(stopped()), d->vfilter, SLOT(finish()));
+            connect(sourcePlayer(), SIGNAL(stopped()), d->vfilter, SLOT(finish()), Qt::DirectConnection);
         }
     }
     Q_EMIT started();
@@ -335,11 +371,16 @@ void AVTranscoder::writeVideo(const QtAV::Packet &packet)
         return;
     d->muxer.writeVideo(packet);
     Q_EMIT videoFrameEncoded(packet.pts);
-
     // TODO: startpts, duration, encoded size
     d->encoded_frames++;
-    //printf("encoded frames: %d, pos: %lld\r", d->encoded_frames, packet.position);
-    //fflush(0);
+    printf("encoded frames: %d, @%.3f pos: %lld\r", d->encoded_frames, packet.pts, packet.position);fflush(0);
 }
 
+void AVTranscoder::tryFinish()
+{
+    Filter* f = qobject_cast<Filter*>(sender());
+    d->filters.remove(d->filters.indexOf(f));
+    if (d->filters.isEmpty())
+        stop();
+}
 } //namespace QtAV

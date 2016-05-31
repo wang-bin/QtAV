@@ -1,8 +1,8 @@
 /******************************************************************************
     Simple Transcode:  this file is part of QtAV examples
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     qDebug("QtAV simpletranscode");
-    qDebug("./simpletranscode -i infile -o outfile [-c:v video_codec (default: libx264)] [-f format] [-an] [-ss HH:mm:ss.z]");
+    qDebug("./simpletranscode -i infile -o outfile [-async] [-c:v video_codec (default: libx264)] [-f format] [-an] [-ss HH:mm:ss.z]");
     qDebug("-an: disable audio");
     qDebug() << "examples:\n"
              << "./simpletranscode -i test.mp4 -o /tmp/test-%05d.png -f image2 -c:v png\n"
@@ -62,10 +62,8 @@ int main(int argc, char *argv[])
     idx = a.arguments().indexOf(QLatin1String("-f"));
     if (idx > 0)
         fmt = a.arguments().at(idx + 1);
-    bool an = false;
-    idx = a.arguments().indexOf(QLatin1String("-an"));
-    if (idx > 0)
-        an = true;
+    const bool an = a.arguments().contains(QLatin1String("-an"));
+    const bool async = a.arguments().contains(QLatin1String("-async"));
     qint64 ss = 0;
     idx = a.arguments().indexOf(QLatin1String("-ss"));
     if (idx > 0)
@@ -79,7 +77,7 @@ int main(int argc, char *argv[])
 
     AVPlayer player;
     player.setFile(file);
-    player.setFrameRate(1000.0); // as fast as possible
+    player.setFrameRate(10000.0); // as fast as possible. FIXME: why 1000 may block source player?
     player.audio()->setBackends(QStringList() << QString::fromLatin1("null"));
     AVTranscoder avt;
     if (ss > 0)
@@ -110,6 +108,7 @@ int main(int argc, char *argv[])
     }
 
     QObject::connect(&avt, SIGNAL(stopped()), qApp, SLOT(quit()));
+    avt.setAsync(async);
     avt.start(); //start transcoder first
     player.play();
 

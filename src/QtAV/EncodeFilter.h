@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -37,7 +37,12 @@ class Q_AV_EXPORT AudioEncodeFilter : public AudioFilter
     DPTR_DECLARE_PRIVATE(AudioEncodeFilter)
 public:
     AudioEncodeFilter(QObject *parent = 0);
-
+    /*!
+     * \brief setAsync
+     * Enable async encoding. Default is disabled.
+     */
+    void setAsync(bool value = true);
+    bool isAsync() const;
     /*!
      * \brief createEncoder
      * Destroy old encoder and create a new one. Filter has the ownership.
@@ -60,7 +65,14 @@ public:
      */
     qint64 startTime() const;
     void setStartTime(qint64 value);
+public Q_SLOTS:
+    /*!
+     * \brief finish
+     * Tell the encoder no more frames to encode. Signal finished() will be emitted when all frames are encoded
+     */
+    void finish();
 Q_SIGNALS:
+    void finished();
     /*!
      * \brief readyToEncode
      * Emitted when encoder is open. All parameters are set and muxer can set codec properties now.
@@ -69,9 +81,12 @@ Q_SIGNALS:
     void readyToEncode();
     void frameEncoded(const QtAV::Packet& packet);
     void startTimeChanged(qint64 value);
+    // internal use only
+    void requestToEncode(const AudioFrame& frame);
+protected Q_SLOTS:
+    void encode(const QtAV::AudioFrame& frame = AudioFrame());
 protected:
     virtual void process(Statistics* statistics, AudioFrame* frame = 0) Q_DECL_OVERRIDE;
-    void encode(const AudioFrame& frame = AudioFrame());
 };
 
 class VideoEncoder;
@@ -82,6 +97,12 @@ class Q_AV_EXPORT VideoEncodeFilter : public VideoFilter
     DPTR_DECLARE_PRIVATE(VideoEncodeFilter)
 public:
     VideoEncodeFilter(QObject* parent = 0);
+    /*!
+     * \brief setAsync
+     * Enable async encoding. Default is disabled.
+     */
+    void setAsync(bool value = true);
+    bool isAsync() const;
     bool isSupported(VideoFilterContext::Type t) const Q_DECL_OVERRIDE { return t == VideoFilterContext::None;}
     /*!
      * \brief createEncoder
@@ -105,7 +126,14 @@ public:
      */
     qint64 startTime() const;
     void setStartTime(qint64 value);
+public Q_SLOTS:
+    /*!
+     * \brief finish
+     * Tell the encoder no more frames to encode. Signal finished() will be emitted when all frames are encoded
+     */
+    void finish();
 Q_SIGNALS:
+    void finished();
     /*!
      * \brief readyToEncode
      * Emitted when encoder is open. All parameters are set and muxer can set codec properties now.
@@ -114,11 +142,13 @@ Q_SIGNALS:
     void readyToEncode();
     void frameEncoded(const QtAV::Packet& packet);
     void startTimeChanged(qint64 value);
+    // internal use only
+    void requestToEncode(const QtAV::VideoFrame& frame);
+protected Q_SLOTS:
+    void encode(const QtAV::VideoFrame& frame = VideoFrame());
 protected:
     virtual void process(Statistics* statistics, VideoFrame* frame = 0) Q_DECL_OVERRIDE;
-    void encode(const VideoFrame& frame = VideoFrame());
 };
-
 } //namespace QtAV
 #endif // QTAV_ENCODEFILTER_H
 
