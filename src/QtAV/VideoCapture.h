@@ -27,6 +27,7 @@
 #include <QtGui/QImage>
 #include <QtAV/QtAV_Global.h>
 #include <QtAV/VideoFrame.h>
+//#include <QAndroidJniEnvironment>
 
 namespace QtAV {
 
@@ -87,6 +88,7 @@ public:
     QString captureDir() const;
 public Q_SLOTS:
     void capture();
+//    void triggerScan();
 Q_SIGNALS:
     void requested();
     /*use it to popup a dialog for selecting dir, name etc. TODO: block avthread if not async*/
