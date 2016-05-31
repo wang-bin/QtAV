@@ -22,7 +22,6 @@
 #ifndef QTAV_VIDEOFRAME_H
 #define QTAV_VIDEOFRAME_H
 
-#include <QtAV/QtAV_Global.h>
 #include <QtAV/Frame.h>
 #include <QtAV/VideoFormat.h>
 #include <QtCore/QSize>

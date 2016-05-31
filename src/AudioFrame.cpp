@@ -26,6 +26,14 @@
 #include "utils/Logger.h"
 
 namespace QtAV {
+namespace{
+static const struct RegisterMetaTypes
+{
+    inline RegisterMetaTypes() {
+        qRegisterMetaType<QtAV::AudioFrame>("QtAV::AudioFrame");
+    }
+} _registerMetaTypes;
+}
 
 class AudioFramePrivate : public FramePrivate
 {
