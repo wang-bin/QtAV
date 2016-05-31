@@ -91,7 +91,8 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(QStringList supportedAudioBackends READ supportedAudioBackends)
 public:
     enum Loop { Infinite = -1 };
-    enum PositionValue { PositionMax = (1<<31)-1};
+    // use (1<<31)-1
+    enum PositionValue { PositionMax = int(~0)^(1<<(sizeof(int)*8-1))};
     enum PlaybackState {
         StoppedState,
         PlayingState,
