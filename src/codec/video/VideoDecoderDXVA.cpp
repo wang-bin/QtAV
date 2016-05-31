@@ -444,7 +444,8 @@ void* VideoDecoderDXVAPrivate::setupAVVAContext()
 
 bool VideoDecoderDXVAPrivate::setupSurfaceInterop()
 {
-    interop_res = d3d9::InteropResourcePtr(d3d9::InteropResource::create(d3ddev));
+    if (copy_mode == VideoDecoderFFmpegHW::ZeroCopy)
+        interop_res = d3d9::InteropResourcePtr(d3d9::InteropResource::create(d3ddev));
     return true;
 }
 } //namespace QtAV

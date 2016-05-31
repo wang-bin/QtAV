@@ -364,9 +364,8 @@ void VideoDecoderD3D11Private::destroyDecoder()
 
 bool VideoDecoderD3D11Private::setupSurfaceInterop()
 {
-    qDebug("%s", __FUNCTION__);
-    interop_res = d3d11::InteropResourcePtr(d3d11::InteropResource::create());
-    qDebug("interop res: %p", interop_res.data());
+    if (copy_mode == VideoDecoderFFmpegHW::ZeroCopy)
+        interop_res = d3d11::InteropResourcePtr(d3d11::InteropResource::create());
     if (interop_res)
         interop_res->setDevice(d3ddev);
     return true;
