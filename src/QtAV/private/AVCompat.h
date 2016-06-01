@@ -132,7 +132,7 @@ int avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputFormat *ofor
 #endif
 //TODO: always inline
 /* --gnu option of the RVCT compiler also defines __GNUC__ */
-#if defined(Q_CC_GNU) && !defined(Q_CC_RVCT)
+#if defined(__GNUC__) && !(defined(__ARMCC__) || defined(__CC_ARM))
 #define GCC_VERSION_AT_LEAST(major, minor, patch) \
     (__GNUC__ > major || (__GNUC__ == major && (__GNUC_MINOR__ > minor \
     || (__GNUC_MINOR__ == minor && __GNUC_PATCHLEVEL__ >= patch))))
@@ -144,10 +144,7 @@ int avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputFormat *ofor
 //FFmpeg2.0, Libav10 2013-03-08 - Reference counted buffers - lavu 52.19.100/52.8.0, lavc 55.0.100 / 55.0.0, lavf 55.0.100 / 55.0.0, lavd 54.4.100 / 54.0.0, lavfi 3.5.0
 #define QTAV_HAVE_AVBUFREF AV_MODULE_CHECK(LIBAVUTIL, 52, 8, 0, 19, 100)
 
-/*TODO: libav
-avutil: error.h
-*/
-#if defined(Q_CC_MSVC) || !defined(av_err2str) || (GCC_VERSION_AT_LEAST(4, 7, 0) && __cplusplus)
+#if defined(_MSC_VER) || !defined(av_err2str) || (GCC_VERSION_AT_LEAST(4, 7, 0) && __cplusplus)
 #ifdef av_err2str
 #undef av_err2str
 /*#define av_make_error_string qtav_make_error_string*/
@@ -170,22 +167,23 @@ static av_always_inline char *av_make_error_string(char *errbuf, size_t errbuf_s
 #endif /*av_err2str*/
 
 #define AV_ERROR_MAX_STRING_SIZE 64
+#ifdef QT_CORE_LIB
+#include <QtCore/QSharedPointer>
+#define av_err2str(e) av_err2str_qsp(e).data()
+av_always_inline QSharedPointer<char> av_err2str_qsp(int errnum)
+{
+    QSharedPointer<char> str((char*)calloc(AV_ERROR_MAX_STRING_SIZE, 1), ::free);
+    av_strerror(errnum, str.data(), AV_ERROR_MAX_STRING_SIZE);
+    return str;
+}
+#else
 av_always_inline char* av_err2str(int errnum)
 {
     static char str[AV_ERROR_MAX_STRING_SIZE];
     memset(str, 0, sizeof(str));
     return av_make_error_string(str, AV_ERROR_MAX_STRING_SIZE, errnum);
 }
-
-/**
- * Convenience macro, the return value should be used only directly in
- * function arguments but never stand-alone.
- */
-/*GCC: taking address of temporary array*/
-/*
-#define av_err2str(errnum) \
-    av_make_error_string((char[AV_ERROR_MAX_STRING_SIZE]){0}, AV_ERROR_MAX_STRING_SIZE, errnum)
-*/
+#endif /* QT_CORE_LIB */
 #endif /*!defined(av_err2str) || GCC_VERSION_AT_LEAST(4, 7, 2)*/
 
 #if (LIBAVCODEC_VERSION_INT <= AV_VERSION_INT(52,23,0))
@@ -445,7 +443,10 @@ const char *get_codec_long_name(AVCodecID id);
 #define AV_RUN_CHECK(FUNC, RETURN, ...) do { \
     int ret = FUNC; \
     if (ret < 0) { \
-        av_log(NULL, AV_LOG_WARNING, "Error " #FUNC " @%d " __FILE__ ": (%#x) %s\n", __LINE__, ret, av_err2str(ret)); \
+        char str[AV_ERROR_MAX_STRING_SIZE]; \
+        memset(str, 0, sizeof(str)); \
+        av_strerror(ret, str, sizeof(str)); \
+        av_log(NULL, AV_LOG_WARNING, "Error " #FUNC " @%d " __FILE__ ": (%#x) %s\n", __LINE__, ret, str); \
         RETURN __VA_ARGS__; \
      } } while(0)
 
