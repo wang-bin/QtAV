@@ -318,6 +318,8 @@ void AVThread::resetState()
     d.stop = false;
     d.packets.setBlocking(true);
     d.packets.clear();
+    d.wait_err = 0;
+    d.wait_timer.invalidate();
 }
 
 bool AVThread::tryPause(unsigned long timeout)
@@ -361,8 +363,11 @@ void AVThread::waitAndCheck(ulong value, qreal pts)
     DPTR_D(AVThread);
     if (value <= 0)
         return;
+    value += d.wait_err;
+    d.wait_timer.restart();
     //qDebug("wating for %lu msecs", value);
     ulong us = value * 1000UL;
+    const ulong ms = value;
     static const ulong kWaitSlice = 20 * 1000UL; //20ms
     while (us > kWaitSlice) {
         usleep(kWaitSlice);
@@ -372,13 +377,19 @@ void AVThread::waitAndCheck(ulong value, qreal pts)
             us -= kWaitSlice;
         if (pts > 0)
             us = qMin(us, ulong((double)(qMax<qreal>(0, pts - d.clock->value()))*1000000.0));
-        //qDebug("us: %ul, pts: %f, clock: %f", us, pts, d.clock->value());
+        //qDebug("us: %lu/%lu, pts: %f, clock: %f", us, ms-et.elapsed(), pts, d.clock->value());
         processNextTask();
+        us = qMin<ulong>(us, (ms-d.wait_timer.elapsed())*1000);
     }
-    if (us > 0) {
+    if (us > 0)
         usleep(us);
-        processNextTask();
-    }
+    //qDebug("wait elapsed: %lu %d/%lld", us, ms, et.elapsed());
+    const int de = ((ms-d.wait_timer.elapsed()) - d.wait_err);
+    if (de > -3 && de < 3)
+        d.wait_err += de;
+    else
+        d.wait_err += de > 0 ? 1 : -1;
+    //qDebug("err: %lld", d.wait_err);
 }
 
 } //namespace QtAV
