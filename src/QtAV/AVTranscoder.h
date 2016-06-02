@@ -141,6 +141,7 @@ private Q_SLOTS:
     void tryFinish();
 
 private:
+    void stopInternal();
     class Private;
     QScopedPointer<Private> d;
 };

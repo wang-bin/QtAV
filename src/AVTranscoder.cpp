@@ -74,6 +74,7 @@ AVTranscoder::AVTranscoder(QObject *parent)
 AVTranscoder::~AVTranscoder()
 {
     stop();
+    //TODO: wait for stopped()
 }
 
 void AVTranscoder::setAsync(bool value)
@@ -169,7 +170,6 @@ bool AVTranscoder::createVideoEncoder(const QString &name)
 {
     if (!d->vfilter) {
         d->vfilter = new VideoEncodeFilter();
-        d->filters.append(d->vfilter);
         d->vfilter->setAsync(isAsync());
         connect(d->vfilter, SIGNAL(readyToEncode()), SLOT(prepareMuxer()), Qt::DirectConnection);
         // direct: can ensure delayed frames (when stop()) are written at last
@@ -190,7 +190,6 @@ bool AVTranscoder::createAudioEncoder(const QString &name)
 {
     if (!d->afilter) {
         d->afilter = new AudioEncodeFilter();
-        d->filters.append(d->afilter);
         d->afilter->setAsync(isAsync());
         connect(d->afilter, SIGNAL(readyToEncode()), SLOT(prepareMuxer()), Qt::DirectConnection);
         // direct: can ensure delayed frames (when stop()) are written at last
@@ -253,14 +252,17 @@ void AVTranscoder::start()
         return;
     d->encoded_frames = 0;
     d->started = true;
+    d->filters.clear();
     if (sourcePlayer()) {
         if (d->afilter) {
+            d->filters.append(d->afilter);
             d->afilter->setStartTime(startTime());
             sourcePlayer()->installFilter(d->afilter);
             disconnect(sourcePlayer(), SIGNAL(stopped()), d->afilter, SLOT(finish()));
             connect(sourcePlayer(), SIGNAL(stopped()), d->afilter, SLOT(finish()), Qt::DirectConnection);
         }
         if (d->vfilter) {
+            d->filters.append(d->vfilter);
             d->vfilter->setStartTime(startTime());
             qDebug("framerate: %.3f/%.3f", videoEncoder()->frameRate(), sourcePlayer()->statistics().video.frame_rate);
             if (videoEncoder()->frameRate() <= 0) { // use source frame rate. set before install filter (so before open)
@@ -280,6 +282,18 @@ void AVTranscoder::stop()
         return;
     if (!d->muxer.isOpen())
         return;
+    if (!isAsync()) {
+        stopInternal();
+        return;
+    }
+    if (d->afilter)
+        d->afilter->finish();
+    if (d->vfilter)
+        d->vfilter->finish();
+}
+
+void AVTranscoder::stopInternal()
+{
     // uninstall encoder filters first then encoders can be closed safely
     if (sourcePlayer()) {
         sourcePlayer()->uninstallFilter(d->afilter);
@@ -381,6 +395,6 @@ void AVTranscoder::tryFinish()
     Filter* f = qobject_cast<Filter*>(sender());
     d->filters.remove(d->filters.indexOf(f));
     if (d->filters.isEmpty())
-        stop();
+        stopInternal();
 }
 } //namespace QtAV
