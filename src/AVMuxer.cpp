@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -405,6 +405,7 @@ bool AVMuxer::close()
     // custom io will call avio_close in ~MediaIO()
     if (!(d->format_ctx->oformat->flags & AVFMT_NOFILE) && !(d->format_ctx->flags & AVFMT_FLAG_CUSTOM_IO)) {
         if (d->format_ctx->pb) {
+            avio_flush(d->format_ctx->pb);
             avio_close(d->format_ctx->pb);
             d->format_ctx->pb = 0;
         }
