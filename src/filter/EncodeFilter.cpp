@@ -155,6 +155,7 @@ void AudioEncodeFilter::encode(const AudioFrame& frame)
             qDebug("encode delayed audio frames...");
             Q_EMIT frameEncoded(d.enc->encoded());
         }
+        d.enc->close();
         Q_EMIT finished();
         return;
     }
@@ -288,11 +289,13 @@ void VideoEncodeFilter::encode(const VideoFrame& frame)
         }
         Q_EMIT readyToEncode();
     }
+    // TODO: avoid call multiple times
     if (!frame.isValid() && frame.timestamp() == std::numeric_limits<qreal>::max()) {
         while (d.enc->encode()) {
             qDebug("encode delayed video frames...");
             Q_EMIT frameEncoded(d.enc->encoded());
         }
+        d.enc->close();
         Q_EMIT finished();
         return;
     }

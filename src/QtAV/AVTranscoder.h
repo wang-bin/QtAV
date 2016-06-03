@@ -76,6 +76,7 @@ public:
      * \brief encoder
      * Use this to set encoder properties and options.
      * If frameRate is not set, source frame rate will be set if it's valid, otherwise VideoEncoder::defaultFrameRate() will be used internally
+     * Do not call open()/close() manually
      * \return Encoder instance or null if createVideoEncoder failed
      */
     VideoEncoder* videoEncoder() const;
@@ -88,7 +89,8 @@ public:
     bool createAudioEncoder(const QString& name = QLatin1String("FFmpeg"));
     /*!
      * \brief encoder
-     * Use this to set encoder properties and options
+     * Use this to set encoder properties and options.
+     * Do not call open()/close() manually
      * \return Encoder instance or null if createAudioEncoder failed
      */
     AudioEncoder* audioEncoder() const;

@@ -171,7 +171,8 @@ bool AVTranscoder::createVideoEncoder(const QString &name)
     if (!d->vfilter) {
         d->vfilter = new VideoEncodeFilter();
         d->vfilter->setAsync(isAsync());
-        connect(d->vfilter, SIGNAL(readyToEncode()), SLOT(prepareMuxer()), Qt::DirectConnection);
+        // BlockingQueuedConnection: ensure muxer open()/close() in the same thread, and is open when packet is encoded
+        connect(d->vfilter, SIGNAL(readyToEncode()), SLOT(prepareMuxer()), Qt::BlockingQueuedConnection);
         // direct: can ensure delayed frames (when stop()) are written at last
         connect(d->vfilter, SIGNAL(frameEncoded(QtAV::Packet)), SLOT(writeVideo(QtAV::Packet)), Qt::DirectConnection);
         connect(d->vfilter, SIGNAL(finished()), SLOT(tryFinish()));
@@ -191,11 +192,11 @@ bool AVTranscoder::createAudioEncoder(const QString &name)
     if (!d->afilter) {
         d->afilter = new AudioEncodeFilter();
         d->afilter->setAsync(isAsync());
-        connect(d->afilter, SIGNAL(readyToEncode()), SLOT(prepareMuxer()), Qt::DirectConnection);
+        // BlockingQueuedConnection: ensure muxer open()/close() in the same thread, and is open when packet is encoded
+        connect(d->afilter, SIGNAL(readyToEncode()), SLOT(prepareMuxer()), Qt::BlockingQueuedConnection);
         // direct: can ensure delayed frames (when stop()) are written at last
         connect(d->afilter, SIGNAL(frameEncoded(QtAV::Packet)), SLOT(writeAudio(QtAV::Packet)), Qt::DirectConnection);
         connect(d->afilter, SIGNAL(finished()), SLOT(tryFinish()));
-
     }
     return !!d->afilter->createEncoder(name);
 }
@@ -286,6 +287,11 @@ void AVTranscoder::stop()
         stopInternal();
         return;
     }
+    // uninstall encoder filters first then encoders can be closed safely
+    if (sourcePlayer()) {
+        sourcePlayer()->uninstallFilter(d->afilter);
+        sourcePlayer()->uninstallFilter(d->vfilter);
+    }
     if (d->afilter)
         d->afilter->finish();
     if (d->vfilter)
@@ -294,13 +300,8 @@ void AVTranscoder::stop()
 
 void AVTranscoder::stopInternal()
 {
-    // uninstall encoder filters first then encoders can be closed safely
-    if (sourcePlayer()) {
-        sourcePlayer()->uninstallFilter(d->afilter);
-        sourcePlayer()->uninstallFilter(d->vfilter);
-    }
     // get delayed frames. call VideoEncoder.encode() directly instead of through filter
-    if (audioEncoder()) {
+    if (!isAsync() && audioEncoder()) {
         while (audioEncoder()->encode()) {
             qDebug("encode delayed audio frames...");
             Packet pkt(audioEncoder()->encoded());
@@ -308,7 +309,7 @@ void AVTranscoder::stopInternal()
         }
         audioEncoder()->close();
     }
-    if (videoEncoder()) {
+    if (!isAsync() && videoEncoder()) {
         while (videoEncoder()->encode()) {
             qDebug("encode delayed video frames...");
             Packet pkt(videoEncoder()->encoded());
@@ -342,6 +343,7 @@ void AVTranscoder::onSourceStarted()
 
 void AVTranscoder::prepareMuxer()
 {
+    // TODO: lock here?
     // open muxer only if all encoders are open
     if (audioEncoder() && videoEncoder()) {
         if (!audioEncoder()->isOpen() || !videoEncoder()->isOpen()) {
