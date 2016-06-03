@@ -283,43 +283,23 @@ void AVTranscoder::stop()
         return;
     if (!d->muxer.isOpen())
         return;
-    if (!isAsync()) {
-        stopInternal();
-        return;
-    }
     // uninstall encoder filters first then encoders can be closed safely
     if (sourcePlayer()) {
         sourcePlayer()->uninstallFilter(d->afilter);
         sourcePlayer()->uninstallFilter(d->vfilter);
     }
     if (d->afilter)
-        d->afilter->finish();
+        d->afilter->finish(); //FIXME: thread of sync mode
     if (d->vfilter)
         d->vfilter->finish();
 }
 
 void AVTranscoder::stopInternal()
 {
-    // get delayed frames. call VideoEncoder.encode() directly instead of through filter
-    if (!isAsync() && audioEncoder()) {
-        while (audioEncoder()->encode()) {
-            qDebug("encode delayed audio frames...");
-            Packet pkt(audioEncoder()->encoded());
-            d->muxer.writeAudio(pkt);
-        }
-        audioEncoder()->close();
-    }
-    if (!isAsync() && videoEncoder()) {
-        while (videoEncoder()->encode()) {
-            qDebug("encode delayed video frames...");
-            Packet pkt(videoEncoder()->encoded());
-            d->muxer.writeVideo(pkt);
-        }
-        videoEncoder()->close();
-    }
     d->muxer.close();
     d->started = false;
     Q_EMIT stopped();
+    qDebug("AVTranscoder stopped");
 }
 
 void AVTranscoder::pause(bool value)

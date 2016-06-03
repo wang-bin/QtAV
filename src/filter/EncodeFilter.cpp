@@ -116,7 +116,7 @@ void AudioEncodeFilter::finish()
     if (isAsync()) {
         Q_EMIT requestToEncode(f);
     } else {
-        encode(f);
+        encode(f); //FIXME: not thread safe. lock in encode?
     }
 }
 
