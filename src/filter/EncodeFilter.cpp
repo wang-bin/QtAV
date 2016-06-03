@@ -21,6 +21,7 @@
 
 #include "QtAV/EncodeFilter.h"
 #include <limits>
+#include <QtCore/QAtomicInt>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QThread>
 #include "QtAV/private/Filter_p.h"
@@ -33,7 +34,7 @@ namespace QtAV {
 class AudioEncodeFilterPrivate Q_DECL_FINAL : public AudioFilterPrivate
 {
 public:
-    AudioEncodeFilterPrivate() : enc(0), start_time(0), async(false) {}
+    AudioEncodeFilterPrivate() : enc(0), start_time(0), async(false), finishing(0) {}
     ~AudioEncodeFilterPrivate() {
         if (enc) {
             enc->close();
@@ -44,6 +45,7 @@ public:
     AudioEncoder* enc;
     qint64 start_time;
     bool async;
+    QAtomicInt finishing;
     QThread enc_thread;
 };
 
@@ -51,6 +53,7 @@ AudioEncodeFilter::AudioEncodeFilter(QObject *parent)
     : AudioFilter(*new AudioEncodeFilterPrivate(), parent)
 {
     connect(this, SIGNAL(requestToEncode(AudioFrame)), this, SLOT(encode(QtAV::AudioFrame)));
+    connect(this, SIGNAL(finished()), &d_func().enc_thread, SLOT(quit()));
 }
 
 void AudioEncodeFilter::setAsync(bool value)
@@ -105,6 +108,8 @@ void AudioEncodeFilter::finish()
     DPTR_D(AudioEncodeFilter);
     if (isAsync() && !d.enc_thread.isRunning())
         return;
+    if (!d.finishing.testAndSetRelaxed(0, 1))
+        return;
     qDebug("About finish audio encoding");
     AudioFrame f;
     f.setTimestamp(std::numeric_limits<qreal>::max());
@@ -157,17 +162,19 @@ void AudioEncodeFilter::encode(const AudioFrame& frame)
         }
         d.enc->close();
         Q_EMIT finished();
+        d.finishing = 0;
         return;
     }
     if (frame.timestamp()*1000.0 < startTime())
         return;
-    // TODO: async
     AudioFrame f(frame);
     if (f.format() != d.enc->audioFormat())
         f = f.to(d.enc->audioFormat());
     if (!d.enc->encode(f)) {
-        if (f.timestamp() == std::numeric_limits<qreal>::max())
+        if (f.timestamp() == std::numeric_limits<qreal>::max()) {
             Q_EMIT finished();
+            d.finishing = 0;
+        }
         return;
     }
     if (!d.enc->encoded().isValid())
@@ -179,7 +186,7 @@ void AudioEncodeFilter::encode(const AudioFrame& frame)
 class VideoEncodeFilterPrivate Q_DECL_FINAL : public VideoFilterPrivate
 {
 public:
-    VideoEncodeFilterPrivate() : enc(0), start_time(0), async(false) {}
+    VideoEncodeFilterPrivate() : enc(0), start_time(0), async(false), finishing(0) {}
     ~VideoEncodeFilterPrivate() {
         if (enc) {
             enc->close();
@@ -190,6 +197,7 @@ public:
     VideoEncoder* enc;
     qint64 start_time;
     bool async;
+    QAtomicInt finishing;
     QThread enc_thread;
 };
 
@@ -197,6 +205,7 @@ VideoEncodeFilter::VideoEncodeFilter(QObject *parent)
     : VideoFilter(*new VideoEncodeFilterPrivate(), parent)
 {
     connect(this, SIGNAL(requestToEncode(QtAV::VideoFrame)), this, SLOT(encode(QtAV::VideoFrame)));
+    connect(this, SIGNAL(finished()), &d_func().enc_thread, SLOT(quit()));
 }
 
 void VideoEncodeFilter::setAsync(bool value)
@@ -251,6 +260,8 @@ void VideoEncodeFilter::finish()
     DPTR_D(VideoEncodeFilter);
     if (isAsync() && !d.enc_thread.isRunning())
         return;
+    if (!d.finishing.testAndSetRelaxed(0, 1))
+        return;
     qDebug("About finish video encoding");
     VideoFrame f;
     f.setTimestamp(std::numeric_limits<qreal>::max());
@@ -289,7 +300,6 @@ void VideoEncodeFilter::encode(const VideoFrame& frame)
         }
         Q_EMIT readyToEncode();
     }
-    // TODO: avoid call multiple times
     if (!frame.isValid() && frame.timestamp() == std::numeric_limits<qreal>::max()) {
         while (d.enc->encode()) {
             qDebug("encode delayed video frames...");
@@ -297,6 +307,7 @@ void VideoEncodeFilter::encode(const VideoFrame& frame)
         }
         d.enc->close();
         Q_EMIT finished();
+        d.finishing = 0;
         return;
     }
     if (d.enc->width() != frame.width() || d.enc->height() != frame.height()) {
@@ -309,11 +320,15 @@ void VideoEncodeFilter::encode(const VideoFrame& frame)
     VideoFrame f(frame);
     if (f.pixelFormat() != d.enc->pixelFormat())
         f = f.to(d.enc->pixelFormat());
-    if (!d.enc->encode(f))
+    if (!d.enc->encode(f)) {
+        if (f.timestamp() == std::numeric_limits<qreal>::max()) {
+            Q_EMIT finished();
+            d.finishing = 0;
+        }
         return;
+    }
     if (!d.enc->encoded().isValid())
         return;
     Q_EMIT frameEncoded(d.enc->encoded());
 }
-
 } //namespace QtAV
