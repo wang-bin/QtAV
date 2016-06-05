@@ -305,7 +305,7 @@ void AVThread::onStarted()
 void AVThread::onFinished()
 {
     if (d_func().sem.available() > 0)
-        d_func().sem.release(d_func().sem.available());
+        d_func().sem.acquire(d_func().sem.available());
 }
 
 void AVThread::resetState()
@@ -355,7 +355,10 @@ void AVThread::setStatistics(Statistics *statistics)
 
 bool AVThread::waitForStarted(int msec)
 {
-    return d_func().sem.tryAcquire(1, msec > 0 ? msec : std::numeric_limits<int>::max());
+    if (!d_func().sem.tryAcquire(1, msec > 0 ? msec : std::numeric_limits<int>::max()))
+        return false;
+    d_func().sem.release(1); //ensure another waitForStarted() continues
+    return true;
 }
 
 void AVThread::waitAndCheck(ulong value, qreal pts)

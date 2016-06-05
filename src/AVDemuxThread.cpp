@@ -38,7 +38,7 @@ public:
     AutoSem(QSemaphore* sem) : s(sem) { s->release();}
     ~AutoSem() {
         if (s->available() > 0)
-            s->release(s->available());
+            s->acquire(s->available());
     }
 };
 
@@ -496,7 +496,10 @@ void AVDemuxThread::onAVThreadQuit()
 
 bool AVDemuxThread::waitForStarted(int msec)
 {
-    return sem.tryAcquire(1, msec > 0 ? msec : std::numeric_limits<int>::max());
+    if (!sem.tryAcquire(1, msec > 0 ? msec : std::numeric_limits<int>::max()))
+        return false;
+    sem.release(1); //ensure other waitForStarted() calls continue
+    return true;
 }
 
 void AVDemuxThread::run()
@@ -699,8 +702,6 @@ void AVDemuxThread::run()
     thread->disconnect(this, SIGNAL(seekFinished(qint64)));
     qDebug("Demux thread stops running....");
     Q_EMIT mediaStatusChanged(QtAV::EndOfMedia);
-    if (sem.available() > 0)
-        sem.acquire(sem.available());
 }
 
 bool AVDemuxThread::tryPause(unsigned long timeout)
