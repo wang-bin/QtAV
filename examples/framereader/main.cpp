@@ -17,9 +17,12 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
+#include <cstdio>
+#include <cstdlib>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDateTime>
 #include <QtCore/QQueue>
+#include <QtCore/QStringList>
 #include <QtAV/FrameReader.h>
 using namespace QtAV;
 int main(int argc, char *argv[])
