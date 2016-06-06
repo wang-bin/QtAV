@@ -450,6 +450,7 @@ SOURCES += \
     AVDemuxThread.cpp \
     ColorTransform.cpp \
     Frame.cpp \
+    FrameReader.cpp \
     filter/Filter.cpp \
     filter/FilterContext.cpp \
     filter/FilterManager.cpp \
@@ -508,6 +509,7 @@ SDK_HEADERS *= \
     QtAV/LibAVFilter.h \
     QtAV/EncodeFilter.h \
     QtAV/Frame.h \
+    QtAV/FrameReader.h \
     QtAV/QPainterRenderer.h \
     QtAV/Packet.h \
     QtAV/AVError.h \

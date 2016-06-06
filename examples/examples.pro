@@ -10,6 +10,7 @@ SUBDIRS = common
     simpleplayer \
     player \
     filters \
+    framereader \
     videocapture \
     videographicsitem \
     videogroup \
