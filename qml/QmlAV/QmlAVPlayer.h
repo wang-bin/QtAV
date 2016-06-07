@@ -136,6 +136,10 @@ public:
     bool hasVideo() const;
 
     QUrl source() const;
+    /*!
+     * \brief setSource
+     * If url is changed and auto load is true, current playback will stop.
+     */
     void setSource(const QUrl& url);
 
     // 0,1: play once. MediaPlayer.Infinite: forever.

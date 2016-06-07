@@ -104,17 +104,13 @@ void QmlAVPlayer::componentComplete()
     // TODO: set player parameters
     if (mSource.isValid() && (mAutoLoad || mAutoPlay)) {
         mpPlayer->setFile(QUrl::fromPercentEncoding(mSource.toEncoded()));
+        if (mAutoLoad)
+            mpPlayer->load();
+        if (mAutoPlay)
+            mpPlayer->play();
     }
 
     m_complete = true;
-
-    if (mAutoPlay) {
-        if (!mSource.isValid()) {
-            stop();
-        } else {
-            play();
-        }
-    }
 }
 
 bool QmlAVPlayer::hasAudio() const
@@ -159,8 +155,9 @@ void QmlAVPlayer::setSource(const QUrl &url)
         mErrorString = tr("No error");
         Q_EMIT error(mError, mErrorString);
         Q_EMIT errorChanged();
-        stop();
-        //mpPlayer->load(); //QtAV internal bug: load() or play() results in reload
+        stop(); // TODO: no stop for autoLoad?
+        if (mAutoLoad)
+            mpPlayer->load();
         if (mAutoPlay) {
             //mPlaybackState is actually changed in slots. But if set to a new source the state may not change before call play()
             mPlaybackState = StoppedState;
@@ -676,8 +673,7 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
                 mpPlayer->setStopPosition(stopPosition());
 
             m_loading = true;
-            mpPlayer->stop();
-            // change backends is not thread safe now, so change when stopped
+            // TODO: change backends is not thread safe now, so change when stopped
             mpPlayer->audio()->setBackends(m_ao);
             mpPlayer->play();
         }
