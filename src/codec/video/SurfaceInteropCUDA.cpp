@@ -579,6 +579,7 @@ bool EGLInteropResource::map(IDirect3DSurface9* surface, GLuint tex, int w, int 
 #if QTAV_HAVE(CUDA_GL)
 namespace QtAV {
 namespace cuda {
+//TODO: cuGLMapBufferObject: get cudeviceptr from pbo, then memcpy2d
 bool GLInteropResource::map(int picIndex, const CUVIDPROCPARAMS &param, GLuint tex, int w, int h, int H, int plane)
 {
     AutoCtxLock locker((cuda_api*)this, lock);

@@ -78,7 +78,7 @@ public:
         Adaptive = cudaVideoDeinterlaceMode_Adaptive  // Adaptive deinterlacing
     };
     enum CopyMode {
-        ZeroCopy,
+        ZeroCopy, // default for linux
         DirectCopy, // use the same host address without additional copy to frame. If address does not change, it should be safe
         GenericCopy
     };
@@ -157,6 +157,10 @@ public:
       , nb_dec_surface(kMaxDecodeSurfaces)
       , copy_mode(VideoDecoderCUDA::DirectCopy)
     {
+#ifndef Q_OS_WIN
+        // CUDA+GL/D3D interop requires NV GPU is used for rendering. Windows can use CUDA with intel GPU, I don't know how to detect this, so 0-copy interop can fail in this case. But linux always requires nvidia GPU to use CUDA, so interop works.
+        copy_mode = VideoDecoderCUDA::ZeroCopy;
+#endif
 #if QTAV_HAVE(DLLAPI_CUDA)
         can_load = dllapi::testLoad("nvcuvid");
 #endif //QTAV_HAVE(DLLAPI_CUDA)
@@ -596,6 +600,7 @@ bool VideoDecoderCUDAPrivate::createCUVIDDecoder(cudaVideoCodec cudaCodec, int c
     // No scaling
     dec_create_info.ulTargetWidth = cw;
     dec_create_info.ulTargetHeight = ch;
+    //TODO: dec_create_info.display_area.
     dec_create_info.ulNumOutputSurfaces = 2;  // We won't simultaneously map more than 8 surfaces
     dec_create_info.vidLock = vid_ctx_lock;//vidCtxLock; //FIXME
 
@@ -725,6 +730,7 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
                 host_data_size = size;
             }
             // copy to the memory not allocated by cuda is possible but much slower
+            // TODO: cuMemcpy2D?
             CUDA_ENSURE(cuMemcpyDtoHAsync(host_data, devptr, size, stream), false);
             CUDA_WARN(cuStreamSynchronize(stream));
         }
