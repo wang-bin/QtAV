@@ -98,6 +98,8 @@ AVPlayer::AVPlayer(QObject *parent) :
 AVPlayer::~AVPlayer()
 {
     stop();
+    QMutexLocker lock(&d->load_mutex);
+    Q_UNUSED(lock);
     // if not uninstall here, player's qobject children filters will call uninstallFilter too late that player is almost be destroyed
     QList<Filter*> filters(FilterManager::instance().videoFilters(this));
     foreach (Filter* f, filters) {
@@ -1147,7 +1149,7 @@ void AVPlayer::play()
         qWarning("load error");
         return;
     }
-    if (isLoaded()) { // !asyncLoad() is here
+    if (isLoaded()) { // !asyncLoad() is here because load() returned true
         playInternal();
         return;
     }
