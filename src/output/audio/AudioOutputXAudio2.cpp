@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -116,7 +116,7 @@ AudioOutputXAudio2::AudioOutputXAudio2(QObject *parent)
     uninit_com = CoInitializeEx(NULL, COINIT_MULTITHREADED) != RPC_E_CHANGED_MODE;
     // load dll. <win8: XAudio2_7.DLL, <win10: XAudio2_8.DLL, win10: XAudio2_9.DLL. also defined by XAUDIO2_DLL_A in xaudio2.h
     int ver = 9;
-    for (; ver >= 0; ver--) {
+    for (; ver >= 7; ver--) {
         dll.setFileName(QStringLiteral("XAudio2_%1").arg(ver));
         qDebug() << dll.fileName();
         if (!dll.load()) {
