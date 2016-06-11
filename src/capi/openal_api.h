@@ -47,6 +47,7 @@ namespace openal {
 #ifndef CAPI_LINK_OPENAL
 using namespace capi; // original header is in namespace capi, types are changed
 #endif // CAPI_LINK_OPENAL
+namespace capi { bool loaded();} // For link or NS style. Or load test for class style. api.loaded for class style.
 class api_dll;
 class api
 {

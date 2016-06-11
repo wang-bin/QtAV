@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
@@ -222,6 +222,12 @@ AudioOutputOpenAL::AudioOutputOpenAL(QObject *parent)
     , format_al(AL_FORMAT_STEREO16)
     , state(0)
 {
+#if QTAV_HAVE(CAPI)
+    if (!openal::capi::loaded()) {
+        available = false;
+        return;
+    }
+#endif
     //setDeviceFeatures(AudioOutput::SetVolume);
     // ensure we have a context to check format support
     // TODO: AudioOutput::getDevices() => ao.setDevice() => ao.open
