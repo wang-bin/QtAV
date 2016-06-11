@@ -16,7 +16,7 @@
     PhoneProductId=\"e556656c-d8e8-49f9-8148-26506e94575a\"
     PhonePublisherId=\"00000000-0000-0000-0000-000000000000\" />
   <Properties>
-    <DisplayName>QtAV QMLPlayer</DisplayName>
+    <DisplayName>QtAV Video Player</DisplayName>
     <PublisherDisplayName>Lucas Wang</PublisherDisplayName>
     <Logo>assets/logo_store.png</Logo>
   </Properties>
@@ -35,7 +35,7 @@
       Executable=\"QMLPlayer.exe\"
       EntryPoint=\"QMLPlayer.App\">
       <uap:VisualElements
-        DisplayName=\"QtAV QMLPlayer\"
+        DisplayName=\"QtAV Video Player\"
         Description=\"A powerful multimedia player for all platforms\"
         BackgroundColor=\"green\"
         Square150x150Logo=\"assets/logo_150x150.png\"
