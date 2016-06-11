@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -44,8 +44,6 @@ public:
     bool isSupported(const AudioFormat& format) const Q_DECL_OVERRIDE;
     bool isSupported(AudioFormat::SampleFormat sampleFormat) const Q_DECL_OVERRIDE;
     bool isSupported(AudioFormat::ChannelLayout channelLayout) const Q_DECL_OVERRIDE;
-    AudioFormat::SampleFormat preferredSampleFormat() const Q_DECL_OVERRIDE;
-    AudioFormat::ChannelLayout preferredChannelLayout() const Q_DECL_OVERRIDE;
     bool open() Q_DECL_OVERRIDE;
     bool close() Q_DECL_OVERRIDE;
     BufferControl bufferControl() const Q_DECL_OVERRIDE;
@@ -76,7 +74,6 @@ private:
 #endif
     bool m_android;
     SLint32 m_streamType;
-    int m_notifyInterval;
     quint32 buffers_queued;
     QSemaphore sem;
 
@@ -89,7 +86,7 @@ typedef AudioOutputOpenSL AudioOutputBackendOpenSL;
 static const AudioOutputBackendId AudioOutputBackendId_OpenSL = mkid::id32base36_6<'O', 'p', 'e', 'n', 'S', 'L'>::value;
 FACTORY_REGISTER(AudioOutputBackend, OpenSL, kName)
 
-#define SL_ENSURE_OK(FUNC, ...) \
+#define SL_ENSURE(FUNC, ...) \
     do { \
         SLresult ret = FUNC; \
         if (ret != SL_RESULT_SUCCESS) { \
@@ -165,14 +162,13 @@ AudioOutputOpenSL::AudioOutputOpenSL(QObject *parent)
     , m_bufferQueueItf_android(0)
     , m_android(false)
     , m_streamType(-1)
-    , m_notifyInterval(1000)
     , buffers_queued(0)
     , queue_data_write(0)
 {
     available = false;
-    SL_ENSURE_OK(slCreateEngine(&engineObject, 0, 0, 0, 0, 0));
-    SL_ENSURE_OK((*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE));
-    SL_ENSURE_OK((*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engine));
+    SL_ENSURE(slCreateEngine(&engineObject, 0, 0, 0, 0, 0));
+    SL_ENSURE((*engineObject)->Realize(engineObject, SL_BOOLEAN_FALSE));
+    SL_ENSURE((*engineObject)->GetInterface(engineObject, SL_IID_ENGINE, &engine));
     available = true;
 }
 
@@ -195,16 +191,6 @@ bool AudioOutputOpenSL::isSupported(AudioFormat::SampleFormat sampleFormat) cons
 bool AudioOutputOpenSL::isSupported(AudioFormat::ChannelLayout channelLayout) const
 {
     return channelLayout == AudioFormat::ChannelLayout_Mono || channelLayout == AudioFormat::ChannelLayout_Stereo;
-}
-
-AudioFormat::SampleFormat AudioOutputOpenSL::preferredSampleFormat() const
-{
-    return AudioFormat::SampleFormat_Signed16;
-}
-
-AudioFormat::ChannelLayout AudioOutputOpenSL::preferredChannelLayout() const
-{
-    return AudioFormat::ChannelLayout_Stereo;
 }
 
 AudioOutputBackend::BufferControl AudioOutputOpenSL::bufferControl() const
@@ -230,8 +216,8 @@ bool AudioOutputOpenSL::open()
         audioSrc.pLocator = &bufferQueueLocator_android;
 #endif
     // OutputMix
-    SL_ENSURE_OK((*engine)->CreateOutputMix(engine, &m_outputMixObject, 0, NULL, NULL), false);
-    SL_ENSURE_OK((*m_outputMixObject)->Realize(m_outputMixObject, SL_BOOLEAN_FALSE), false);
+    SL_ENSURE((*engine)->CreateOutputMix(engine, &m_outputMixObject, 0, NULL, NULL), false);
+    SL_ENSURE((*m_outputMixObject)->Realize(m_outputMixObject, SL_BOOLEAN_FALSE), false);
     SLDataLocator_OutputMix outputMixLocator = { SL_DATALOCATOR_OUTPUTMIX, m_outputMixObject };
     SLDataSink audioSink = { &outputMixLocator, NULL };
 
@@ -246,7 +232,7 @@ bool AudioOutputOpenSL::open()
 #endif
                             };
     // AudioPlayer
-    SL_ENSURE_OK((*engine)->CreateAudioPlayer(engine, &m_playerObject, &audioSrc, &audioSink, sizeof(ids)/sizeof(ids[0]), ids, req), false);
+    SL_ENSURE((*engine)->CreateAudioPlayer(engine, &m_playerObject, &audioSrc, &audioSink, sizeof(ids)/sizeof(ids[0]), ids, req), false);
 #ifdef Q_OS_ANDROID
     if (m_android) {
         m_streamType = SL_ANDROID_STREAM_MEDIA;
@@ -256,33 +242,33 @@ bool AudioOutputOpenSL::open()
         }
     }
 #endif
-    SL_ENSURE_OK((*m_playerObject)->Realize(m_playerObject, SL_BOOLEAN_FALSE), false);
+    SL_ENSURE((*m_playerObject)->Realize(m_playerObject, SL_BOOLEAN_FALSE), false);
     // Buffer interface
 #ifdef Q_OS_ANDROID
     if (m_android) {
-        SL_ENSURE_OK((*m_playerObject)->GetInterface(m_playerObject, SL_IID_ANDROIDSIMPLEBUFFERQUEUE, &m_bufferQueueItf_android), false);
-        SL_ENSURE_OK((*m_bufferQueueItf_android)->RegisterCallback(m_bufferQueueItf_android, AudioOutputOpenSL::bufferQueueCallbackAndroid, this), false);
+        SL_ENSURE((*m_playerObject)->GetInterface(m_playerObject, SL_IID_ANDROIDSIMPLEBUFFERQUEUE, &m_bufferQueueItf_android), false);
+        SL_ENSURE((*m_bufferQueueItf_android)->RegisterCallback(m_bufferQueueItf_android, AudioOutputOpenSL::bufferQueueCallbackAndroid, this), false);
     } else {
-        SL_ENSURE_OK((*m_playerObject)->GetInterface(m_playerObject, SL_IID_BUFFERQUEUE, &m_bufferQueueItf), false);
-        SL_ENSURE_OK((*m_bufferQueueItf)->RegisterCallback(m_bufferQueueItf, AudioOutputOpenSL::bufferQueueCallback, this), false);
+        SL_ENSURE((*m_playerObject)->GetInterface(m_playerObject, SL_IID_BUFFERQUEUE, &m_bufferQueueItf), false);
+        SL_ENSURE((*m_bufferQueueItf)->RegisterCallback(m_bufferQueueItf, AudioOutputOpenSL::bufferQueueCallback, this), false);
     }
 #else
-    SL_ENSURE_OK((*m_playerObject)->GetInterface(m_playerObject, SL_IID_BUFFERQUEUE, &m_bufferQueueItf), false);
-    SL_ENSURE_OK((*m_bufferQueueItf)->RegisterCallback(m_bufferQueueItf, AudioOutputOpenSL::bufferQueueCallback, this), false);
+    SL_ENSURE((*m_playerObject)->GetInterface(m_playerObject, SL_IID_BUFFERQUEUE, &m_bufferQueueItf), false);
+    SL_ENSURE((*m_bufferQueueItf)->RegisterCallback(m_bufferQueueItf, AudioOutputOpenSL::bufferQueueCallback, this), false);
 #endif
     // Play interface
-    SL_ENSURE_OK((*m_playerObject)->GetInterface(m_playerObject, SL_IID_PLAY, &m_playItf), false);
+    SL_ENSURE((*m_playerObject)->GetInterface(m_playerObject, SL_IID_PLAY, &m_playItf), false);
     // call when SL_PLAYSTATE_STOPPED
-    SL_ENSURE_OK((*m_playItf)->RegisterCallback(m_playItf, AudioOutputOpenSL::playCallback, this), false);
-    SL_ENSURE_OK((*m_playerObject)->GetInterface(m_playerObject, SL_IID_VOLUME, &m_volumeItf), false);
+    SL_ENSURE((*m_playItf)->RegisterCallback(m_playItf, AudioOutputOpenSL::playCallback, this), false);
+    SL_ENSURE((*m_playerObject)->GetInterface(m_playerObject, SL_IID_VOLUME, &m_volumeItf), false);
 #if 0
     SLuint32 mask = SL_PLAYEVENT_HEADATEND;
     // TODO: what does this do?
-    SL_ENSURE_OK((*m_playItf)->SetPositionUpdatePeriod(m_playItf, 100), false);
-    SL_ENSURE_OK((*m_playItf)->SetCallbackEventsMask(m_playItf, mask), false);
+    SL_ENSURE((*m_playItf)->SetPositionUpdatePeriod(m_playItf, 100), false);
+    SL_ENSURE((*m_playItf)->SetCallbackEventsMask(m_playItf, mask), false);
 #endif
     // Volume interface
-    //SL_ENSURE_OK((*m_playerObject)->GetInterface(m_playerObject, SL_IID_VOLUME, &m_volumeItf), false);
+    //SL_ENSURE((*m_playerObject)->GetInterface(m_playerObject, SL_IID_VOLUME, &m_volumeItf), false);
 
     sem.release(buffer_count - sem.available());
     return true;
@@ -332,11 +318,11 @@ bool AudioOutputOpenSL::write(const QByteArray& data)
     //qDebug("enqueue %p, queue_data_write: %d", data.constData(), queue_data_write);
 #ifdef Q_OS_ANDROID
     if (m_android)
-        SL_ENSURE_OK((*m_bufferQueueItf_android)->Enqueue(m_bufferQueueItf_android, queue_data.constData() + queue_data_write, data.size()), false);
+        SL_ENSURE((*m_bufferQueueItf_android)->Enqueue(m_bufferQueueItf_android, queue_data.constData() + queue_data_write, data.size()), false);
     else
-        SL_ENSURE_OK((*m_bufferQueueItf)->Enqueue(m_bufferQueueItf, queue_data.constData() + queue_data_write, data.size()), false);
+        SL_ENSURE((*m_bufferQueueItf)->Enqueue(m_bufferQueueItf, queue_data.constData() + queue_data_write, data.size()), false);
 #else
-    SL_ENSURE_OK((*m_bufferQueueItf)->Enqueue(m_bufferQueueItf, queue_data.constData() + queue_data_write, data.size()), false);
+    SL_ENSURE((*m_bufferQueueItf)->Enqueue(m_bufferQueueItf, queue_data.constData() + queue_data_write, data.size()), false);
 #endif
     buffers_queued++;
     queue_data_write += data.size();
@@ -351,7 +337,7 @@ bool AudioOutputOpenSL::play()
     (*m_playItf)->GetPlayState(m_playItf, &state);
     if (state == SL_PLAYSTATE_PLAYING)
         return true;
-    SL_ENSURE_OK((*m_playItf)->SetPlayState(m_playItf, SL_PLAYSTATE_PLAYING), false);
+    SL_ENSURE((*m_playItf)->SetPlayState(m_playItf, SL_PLAYSTATE_PLAYING), false);
     return true;
 }
 
@@ -389,12 +375,12 @@ bool AudioOutputOpenSL::setVolume(qreal value)
     else if (!qFuzzyCompare(value, 1.0))
         v = 20.0*log10(value)*100.0;
     SLmillibel vmax = SL_MILLIBEL_MAX;
-    SL_ENSURE_OK((*m_volumeItf)->GetMaxVolumeLevel(m_volumeItf, &vmax), false);
+    SL_ENSURE((*m_volumeItf)->GetMaxVolumeLevel(m_volumeItf, &vmax), false);
     if (vmax < v) {
         qDebug("OpenSL does not support volume: %f %d/%d. sw scale will be used", value, v, vmax);
         return false;
     }
-    SL_ENSURE_OK((*m_volumeItf)->SetVolumeLevel(m_volumeItf, v), false);
+    SL_ENSURE((*m_volumeItf)->SetVolumeLevel(m_volumeItf, v), false);
     return true;
 }
 
@@ -403,7 +389,7 @@ qreal AudioOutputOpenSL::getVolume() const
     if (!m_volumeItf)
         return false;
     SLmillibel v = 0;
-    SL_ENSURE_OK((*m_volumeItf)->GetVolumeLevel(m_volumeItf, &v), 1.0);
+    SL_ENSURE((*m_volumeItf)->GetVolumeLevel(m_volumeItf, &v), 1.0);
     if (v == SL_MILLIBEL_MIN)
         return 0;
     return pow(10.0, qreal(v)/2000.0);
@@ -413,7 +399,7 @@ bool AudioOutputOpenSL::setMute(bool value)
 {
     if (!m_volumeItf)
         return false;
-    SL_ENSURE_OK((*m_volumeItf)->SetMute(m_volumeItf, value), false);
+    SL_ENSURE((*m_volumeItf)->SetMute(m_volumeItf, value), false);
     return true;
 }
 
