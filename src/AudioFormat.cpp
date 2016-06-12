@@ -142,30 +142,16 @@ bool AudioFormat::isPlanar(SampleFormat format)
 
 AudioFormat::SampleFormat AudioFormat::packedSampleFormat(SampleFormat fmt)
 {
-    switch (fmt) {
-    case SampleFormat_Unsigned8Planar: return SampleFormat_Unsigned8;
-    case SampleFormat_Signed16Planar: return SampleFormat_Signed16;
-    case SampleFormat_Signed32Planar: return SampleFormat_Signed32;
-    case SampleFormat_FloatPlanar: return SampleFormat_Float;
-    case SampleFormat_DoublePlanar: return SampleFormat_Double;
-    default:
-        break;
-    }
+    if (isPlanar(fmt))
+        return SampleFormat((int)fmt^kPlanar);
     return fmt;
 }
 
 AudioFormat::SampleFormat AudioFormat::planarSampleFormat(SampleFormat fmt)
 {
-    switch (fmt) {
-    case SampleFormat_Unsigned8: return SampleFormat_Unsigned8Planar;
-    case SampleFormat_Signed16: return SampleFormat_Signed16Planar;
-    case SampleFormat_Signed32: return SampleFormat_Signed32Planar;
-    case SampleFormat_Float: return SampleFormat_FloatPlanar;
-    case SampleFormat_Double: return SampleFormat_DoublePlanar;
-    default:
-        break;
-    }
-    return fmt;
+    if (isPlanar(fmt))
+        return fmt;
+    return SampleFormat((int)fmt|kPlanar);
 }
 
 AudioFormat::AudioFormat():
@@ -493,7 +479,7 @@ QDebug operator<<(QDebug dbg, const QtAV::AudioFormat &fmt)
 
 QDebug operator<<(QDebug dbg, QtAV::AudioFormat::SampleFormat sampleFormat)
 {
-    dbg.nospace() << av_get_sample_fmt_name((AVSampleFormat)sampleFormat);
+    dbg.nospace() << av_get_sample_fmt_name((AVSampleFormat)AudioFormat::sampleFormatToFFmpeg(sampleFormat));
     return dbg.space();
 }
 

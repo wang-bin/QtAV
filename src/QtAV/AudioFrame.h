@@ -32,17 +32,12 @@ class Q_AV_EXPORT AudioFrame : public Frame
 {
     Q_DECLARE_PRIVATE(AudioFrame)
 public:
-    /*!
-     * \brief AudioFrame
-     * construct an audio frame for the given format. An invalid format results in invalid frame.
-     */
-    AudioFrame(const AudioFormat& format = AudioFormat());
     //data must be complete
     /*!
      * \brief AudioFrame
      * construct an audio frame from a given buffer and format
      */
-    AudioFrame(const QByteArray& data, const AudioFormat& format);
+    AudioFrame(const AudioFormat& format = AudioFormat(), const QByteArray& data = QByteArray());
     AudioFrame(const AudioFrame &other);
     virtual ~AudioFrame();
     AudioFrame &operator =(const AudioFrame &other);

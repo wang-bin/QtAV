@@ -58,11 +58,6 @@ public:
     AudioResampler *conv;
 };
 
-AudioFrame::AudioFrame(const AudioFormat &format) :
-    Frame(new AudioFramePrivate(format))
-{
-}
-
 /*!
     Constructs a shallow copy of \a other.  Since AudioFrame is
     explicitly shared, these two instances will reflect the same frame.
@@ -73,9 +68,11 @@ AudioFrame::AudioFrame(const AudioFrame &other)
 {
 }
 
-AudioFrame::AudioFrame(const QByteArray &data, const AudioFormat &format)
+AudioFrame::AudioFrame(const AudioFormat &format, const QByteArray& data)
     : Frame(new AudioFramePrivate(format))
 {
+    if (data.isEmpty())
+        return;
     Q_D(AudioFrame);
     d->format = format;
     d->data = data;
@@ -143,7 +140,7 @@ AudioFrame AudioFrame::clone() const
     if (d->samples_per_ch <= 0 || bytesPerLine(0) <= 0)
         return AudioFrame(format());
     QByteArray buf(bytesPerLine()*planeCount(), 0);
-    AudioFrame f(buf, d->format);
+    AudioFrame f(d->format, buf);
     f.setSamplesPerChannel(samplesPerChannel());
     char *dst = buf.data(); //must before buf is shared, otherwise data will be detached.
     for (int i = 0; i < f.planeCount(); ++i) {
@@ -230,7 +227,7 @@ AudioFrame AudioFrame::to(const AudioFormat &fmt) const
         qWarning() << "AudioFrame::to error: " << format() << "=>" << fmt;
         return AudioFrame();
     }
-    AudioFrame f(conv->outData(), fmt);
+    AudioFrame f(fmt, conv->outData());
     f.setSamplesPerChannel(conv->outSamplesPerChannel());
     f.setTimestamp(timestamp());
     f.d_ptr->metadata = d->metadata; // need metadata?
