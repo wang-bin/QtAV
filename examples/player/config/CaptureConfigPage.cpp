@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -64,11 +64,9 @@ CaptureConfigPage::CaptureConfigPage(QWidget *parent) :
 
     connect(&Config::instance(), SIGNAL(captureDirChanged(QString)), mpDir, SLOT(setText(QString)));
     connect(&Config::instance(), SIGNAL(captureQualityChanged(int)), mpQuality, SLOT(setValue(int)));
-    connect(&Config::instance(), SIGNAL(captureFormatChanged(QString)), SLOT(formatChanged(QString)));
     connect(mpDir, SIGNAL(textChanged(QString)), SLOT(changeDirByUi(QString)));
     connect(mpFormat, SIGNAL(currentIndexChanged(QString)), SLOT(changeFormatByUi(QString)));
     connect(mpQuality, SIGNAL(valueChanged(int)), SLOT(changeQualityByUi(int)));
-    applyToUi();
 }
 
 QString CaptureConfigPage::name() const
@@ -86,42 +84,10 @@ void CaptureConfigPage::applyFromUi()
 void CaptureConfigPage::applyToUi()
 {
     mpDir->setText(Config::instance().captureDir());
-    formatChanged(Config::instance().captureFormat());
-    mpQuality->setValue(Config::instance().captureQuality());
-}
-
-void CaptureConfigPage::changeDirByUi(const QString& dir)
-{
-    if (applyOnUiChange()) {
-        Config::instance().setCaptureDir(dir);
-    } else {
-        emit Config::instance().captureDirChanged(dir);
-    }
-}
-
-void CaptureConfigPage::changeFormatByUi(const QString& fmt)
-{
-    if (applyOnUiChange()) {
-        Config::instance().setCaptureFormat(mpFormat->currentText());
-    } else{
-        emit Config::instance().captureFormatChanged(fmt);
-    }
-}
-
-void CaptureConfigPage::changeQualityByUi(int q)
-{
-    if (applyOnUiChange()) {
-        Config::instance().setCaptureQuality(mpQuality->value());
-    } else {
-        emit Config::instance().captureQualityChanged(q);
-    }
-}
-
-void CaptureConfigPage::formatChanged(const QString& fmt)
-{
-    int idx = mpFormat->findText(fmt);
+    int idx = mpFormat->findText(Config::instance().captureFormat());
     if (idx >= 0)
         mpFormat->setCurrentIndex(idx);
+    mpQuality->setValue(Config::instance().captureQuality());
 }
 
 void CaptureConfigPage::selectSaveDir()

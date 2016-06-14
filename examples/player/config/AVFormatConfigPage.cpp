@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -55,7 +55,6 @@ AVFormatConfigPage::AVFormatConfigPage(QWidget *parent) :
     m_extra = new QLineEdit();
     m_extra->setToolTip(QString::fromLatin1("key1=value1 key2=value2 ..."));
     gl->addWidget(m_extra, r++, 1, Qt::AlignLeft);
-    applyToUi();
 }
 
 QString AVFormatConfigPage::name() const

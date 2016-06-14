@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -53,7 +53,6 @@ AVFilterConfigPage::AVFilterConfigPage(QWidget *parent)
         m_ui[i].options->setMaximumHeight(mw/6);
         gl->addWidget(m_ui[i].options, r++, 0);
     }
-    applyToUi();
     m_ui[0].options->setToolTip(QString::fromLatin1("example: negate"));
     m_ui[1].options->setToolTip(QString::fromLatin1("example: volume=volume=2.0"));
     connect(m_ui[0].name, SIGNAL(currentIndexChanged(QString)), SLOT(videoFilterChanged(QString)));

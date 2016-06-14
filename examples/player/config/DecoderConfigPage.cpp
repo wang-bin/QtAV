@@ -236,7 +236,6 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
     scrollArea->setWidget(scrollAreaWidgetContents);
     vbs->addWidget(scrollArea);
     connect(&Config::instance(), SIGNAL(decoderPriorityNamesChanged()), SLOT(onConfigChanged()));
-    applyToUi();
 }
 
 QString DecoderConfigPage::name() const
