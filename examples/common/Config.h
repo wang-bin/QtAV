@@ -74,6 +74,12 @@ class COMMON_EXPORT Config : public QObject
     Q_PROPERTY(QString logLevel READ logLevel WRITE setLogLevel NOTIFY logLevelChanged)
     Q_ENUMS(OpenGLType)
     Q_PROPERTY(QString language READ language WRITE setLanguage NOTIFY languageChanged)
+
+    Q_PROPERTY(bool userShaderEnabled READ userShaderEnabled WRITE setUserShaderEnabled NOTIFY userShaderEnabledChanged)
+    Q_PROPERTY(bool intermediateFBO READ intermediateFBO WRITE setIntermediateFBO NOTIFY intermediateFBOChanged)
+    Q_PROPERTY(QString fragHeader READ fragHeader WRITE setFragHeader NOTIFY fragHeaderChanged)
+    Q_PROPERTY(QString fragSample READ fragSample WRITE setFragSample NOTIFY fragSampleChanged)
+    Q_PROPERTY(QString fragPostProcess READ fragPostProcess WRITE setFragPostProcess NOTIFY fragPostProcessChanged)
 public:
     enum OpenGLType { // currently only for windows
         Auto,
@@ -216,8 +222,25 @@ public:
     Q_INVOKABLE void addHistory(const QVariantMap& value);
     Q_INVOKABLE void removeHistory(const QString& url);
     Q_INVOKABLE void clearHistory();
+
+    Config& setUserShaderEnabled(bool value);
+    bool userShaderEnabled() const;
+    Config& setIntermediateFBO(bool value);
+    bool intermediateFBO() const;
+    Config& setFragHeader(const QString& text);
+    QString fragHeader() const;
+    Config& setFragSample(const QString& text);
+    QString fragSample() const;
+    Config& setFragPostProcess(const QString& text);
+    QString fragPostProcess() const;
 public:
     Q_SIGNAL void changed();
+    Q_SIGNAL void userShaderEnabledChanged();
+    Q_SIGNAL void intermediateFBOChanged();
+    Q_SIGNAL void fragHeaderChanged();
+    Q_SIGNAL void fragSampleChanged();
+    Q_SIGNAL void fragPostProcessChanged();
+
     Q_SIGNAL void lastFileChanged();
     //keyword 'signals' maybe protected. we need call the signals in other classes. Q_SIGNAL is empty
     Q_SIGNAL void forceFrameRateChanged();

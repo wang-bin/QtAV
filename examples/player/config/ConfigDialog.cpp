@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -27,6 +27,7 @@
 #include "AVFormatConfigPage.h"
 #include "AVFilterConfigPage.h"
 #include "MiscPage.h"
+#include "ShaderPage.h"
 #include "common/Config.h"
 void ConfigDialog::display()
 {
@@ -62,9 +63,11 @@ ConfigDialog::ConfigDialog(QWidget *parent) :
            << new DecoderConfigPage()
            << new AVFormatConfigPage()
            << new AVFilterConfigPage()
+           << new ShaderPage()
               ;
 
     foreach (ConfigPageBase* page, mPages) {
+        page->applyToUi();
         page->applyOnUiChange(false);
         mpContent->addTab(page, page->name());
     }

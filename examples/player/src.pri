@@ -21,6 +21,7 @@ SOURCES += main.cpp \
     config/PropertyEditor.cpp \
     config/AVFormatConfigPage.cpp \
     config/AVFilterConfigPage.cpp \
+    config/ShaderPage.cpp \
     filters/AVFilterSubtitle.cpp
 
 HEADERS += \
@@ -45,4 +46,5 @@ HEADERS += \
     config/PropertyEditor.h \
     config/AVFormatConfigPage.h \
     config/AVFilterConfigPage.h \
+    config/ShaderPage.h \
     filters/AVFilterSubtitle.h

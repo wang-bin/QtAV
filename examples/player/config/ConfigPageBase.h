@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -40,12 +40,12 @@ public slots:
     void cancel();
     //call applyToUi() after Config::instance().reset();
     void reset();
-protected:
     /*!
      * \brief applyToUi
      * Apply configurations to UI. Call this in your page ctor when ui layout is ready.
      */
     virtual void applyToUi() = 0;
+protected:
     /*!
      * \brief applyFromUi
      * Save configuration values from UI. Call Config::xxx(value) in your implementation

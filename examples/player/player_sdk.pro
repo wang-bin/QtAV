@@ -1,3 +1,4 @@
+QT += sql
 ########## template for QtAV app project BEGIN ################
 greaterThan(QT_MAJOR_VERSION, 4) {
   QT += avwidgets

@@ -144,6 +144,13 @@ public:
         settings.setValue(QString::fromLatin1("type"), QString::fromLatin1(glname));
         settings.setValue(QString::fromLatin1("angle_platform"), angle_dx);
         settings.endGroup();
+        settings.beginGroup(QString::fromLatin1("shader"));
+        settings.setValue(QString::fromLatin1("enable"), user_shader);
+        settings.setValue(QString::fromLatin1("fbo"), fbo);
+        settings.setValue(QString::fromLatin1("fragHeader"), frag_header);
+        settings.setValue(QString::fromLatin1("fragSample"), frag_sample);
+        settings.setValue(QString::fromLatin1("fragPostProcess"), frag_pp);
+        settings.endGroup();
         settings.beginGroup(QString::fromLatin1("buffer"));
         settings.setValue(QString::fromLatin1("value"), buffer_value);
         settings.endGroup();
@@ -199,6 +206,12 @@ public:
     QString lang;
 
     QVariantList history;
+
+    bool user_shader;
+    bool fbo;
+    QString frag_header;
+    QString frag_sample;
+    QString frag_pp;
 
     static QString name;
 };
@@ -348,12 +361,25 @@ void Config::reload()
     avfilterAudioEnable(settings.value(QString::fromLatin1("enable"), true).toBool());
     avfilterAudioOptions(settings.value(QString::fromLatin1("options"), QString()).toString());
     settings.endGroup();
+
     settings.beginGroup(QString::fromLatin1("opengl"));
     setEGL(settings.value(QString::fromLatin1("egl"), false).toBool());
     const QString glname = settings.value(QString::fromLatin1("type"), QString::fromLatin1("OpenGLES")).toString();
     setOpenGLType((Config::OpenGLType)Config::staticMetaObject.enumerator(Config::staticMetaObject.indexOfEnumerator("OpenGLType")).keysToValue(glname.toLatin1().constData()));
     // d3d11 bad performance (gltexsubimage2d)
     setANGLEPlatform(settings.value(QString::fromLatin1("angle_platform"), QString::fromLatin1("d3d9")).toString());
+    settings.endGroup();
+
+    settings.beginGroup(QString::fromLatin1("shader"));
+    setUserShaderEnabled(settings.value(QString::fromLatin1("enable"), false).toBool());
+    setIntermediateFBO(settings.value(QString::fromLatin1("fbo"), false).toBool());
+    setFragHeader(settings.value(QString::fromLatin1("fragHeader"), QString()).toString());
+    setFragSample(settings.value(QString::fromLatin1("fragSample"), QString::fromLatin1("// horizontal mirror effect\n"
+                                                                                        "vec4 sample2d(sampler2D tex, vec2 pos, int p) {\n"
+                                                                                        "    return texture(tex, vec2(1.0-pos.x, pos.y));\n"
+                                                                                        "}")).toString());
+    setFragPostProcess(settings.value(QString::fromLatin1("fragPostProcess"), QString::fromLatin1("//negate color effect\n"
+                                                                                                  "gl_FragColor.rgb = vec3(1.0-gl_FragColor.r, 1.0-gl_FragColor.g, 1.0-gl_FragColor.b);")).toString());
     settings.endGroup();
 
     settings.beginGroup(QString::fromLatin1("buffer"));
@@ -866,6 +892,81 @@ Config& Config::setANGLEPlatform(const QString& value)
         return *this;
     mpData->angle_dx = value;
     Q_EMIT ANGLEPlatformChanged();
+    Q_EMIT changed();
+    return *this;
+}
+
+bool Config::userShaderEnabled() const
+{
+    return mpData->user_shader;
+}
+
+Config& Config::setUserShaderEnabled(bool value)
+{
+    if (mpData->user_shader == value)
+        return *this;
+    mpData->user_shader = value;
+    Q_EMIT userShaderEnabledChanged();
+    Q_EMIT changed();
+    return *this;
+}
+
+bool Config::intermediateFBO() const
+{
+    return mpData->fbo;
+}
+
+Config& Config::setIntermediateFBO(bool value)
+{
+    if (mpData->fbo == value)
+        return *this;
+    mpData->fbo = value;
+    Q_EMIT intermediateFBOChanged();
+    Q_EMIT changed();
+    return *this;
+}
+
+QString Config::fragHeader() const
+{
+    return mpData->frag_header;
+}
+
+Config& Config::setFragHeader(const QString &text)
+{
+    if (mpData->frag_header == text)
+        return *this;
+    mpData->frag_header = text;
+    Q_EMIT fragHeaderChanged();
+    Q_EMIT changed();
+    return *this;
+}
+
+QString Config::fragSample() const
+{
+    return mpData->frag_sample;
+}
+
+Config& Config::setFragSample(const QString &text)
+{
+    if (mpData->frag_sample == text)
+        return *this;
+    mpData->frag_sample = text;
+    Q_EMIT fragSampleChanged();
+    Q_EMIT changed();
+    return *this;
+}
+
+QString Config::fragPostProcess() const
+{
+    return mpData->frag_pp;
+}
+
+Config& Config::setFragPostProcess(const QString &text)
+{
+    if (mpData->frag_pp == text)
+        return *this;
+    mpData->frag_pp = text;
+    Q_EMIT fragPostProcessChanged();
     Q_EMIT changed();
     return *this;
 }

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -38,6 +38,7 @@ class LibAVFilterAudio;
 class LibAVFilterVideo;
 class SubtitleFilter;
 class VideoPreviewWidget;
+class DynamicShaderObject;
 }
 QT_BEGIN_NAMESPACE
 class QMenu;
@@ -131,6 +132,8 @@ private slots:
     void onBufferValueChanged();
     void onAbortOnTimeoutChanged();
 
+    void onUserShaderChanged();
+
     void donate();
     void setup();
 
@@ -208,6 +211,7 @@ private:
     OSDFilter *mpOSD;
     QtAV::SubtitleFilter *mpSubtitle;
     QtAV::VideoPreviewWidget *m_preview;
+    QtAV::DynamicShaderObject *m_shader;
 };
 
 
