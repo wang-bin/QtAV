@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -23,7 +23,7 @@
 #define QTAV_VIDEODECODERFFMPEGBASE_H
 
 #include "QtAV/VideoDecoder.h"
-#include "QtAV/private/VideoDecoder_p.h"
+#include "QtAV/private/AVDecoder_p.h"
 #include "QtAV/private/AVCompat.h"
 
 namespace QtAV {
@@ -34,7 +34,6 @@ class VideoDecoderFFmpegBase : public VideoDecoder
     Q_DISABLE_COPY(VideoDecoderFFmpegBase)
     DPTR_DECLARE_PRIVATE(VideoDecoderFFmpegBase)
 public:
-    QTAV_DEPRECATED virtual bool decode(const QByteArray &encoded) Q_DECL_OVERRIDE;
     virtual bool decode(const Packet& packet) Q_DECL_OVERRIDE;
 protected:
     VideoDecoderFFmpegBase(VideoDecoderFFmpegBasePrivate &d);
@@ -48,7 +47,10 @@ public:
     VideoDecoderFFmpegBasePrivate()
         : VideoDecoderPrivate()
         , frame(0)
+        , width(0)
+        , height(0)
     {
+        avcodec_register_all();
         frame = av_frame_alloc();
     }
     virtual ~VideoDecoderFFmpegBasePrivate() {
@@ -57,8 +59,11 @@ public:
             frame = 0;
         }
     }
+    void updateColorDetails(VideoFrame* f);
+    qreal getDAR(AVFrame *f);
 
     AVFrame *frame; //set once and not change
+    int width, height; //The current decoded frame size
 };
 
 } //namespace QtAV

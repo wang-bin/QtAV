@@ -1,6 +1,6 @@
 /******************************************************************************
     ImageConverter: Base class for image resizing & color model convertion
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -24,6 +24,7 @@
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/factory.h"
 #include "ImageConverter.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
 
@@ -61,7 +62,6 @@ void ImageConverter::setInSize(int width, int height)
         return;
     d.w_in = width;
     d.h_in = height;
-    prepareData();
 }
 
 // TODO: default is in size
@@ -72,22 +72,24 @@ void ImageConverter::setOutSize(int width, int height)
         return;
     d.w_out = width;
     d.h_out = height;
+    d.update_data = true;
     prepareData();
+    d.update_data = false;
 }
 
 void ImageConverter::setInFormat(const VideoFormat& format)
 {
-    d_func().fmt_in = format.pixelFormatFFmpeg();
+    d_func().fmt_in = (AVPixelFormat)format.pixelFormatFFmpeg();
 }
 
 void ImageConverter::setInFormat(VideoFormat::PixelFormat format)
 {
-    d_func().fmt_in = VideoFormat::pixelFormatToFFmpeg(format);
+    d_func().fmt_in = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg(format);
 }
 
 void ImageConverter::setInFormat(int format)
 {
-    d_func().fmt_in = format;
+    d_func().fmt_in = (AVPixelFormat)format;
 }
 
 void ImageConverter::setOutFormat(const VideoFormat& format)
@@ -105,18 +107,39 @@ void ImageConverter::setOutFormat(int format)
     DPTR_D(ImageConverter);
     if (d.fmt_out == format)
         return;
-    d.fmt_out = format;
+    d.fmt_out = (AVPixelFormat)format;
+    d.update_data = true;
     prepareData();
+    d.update_data = false;
 }
 
-void ImageConverter::setInterlaced(bool interlaced)
+void ImageConverter::setInRange(ColorRange range)
 {
-    d_func().interlaced = interlaced;
+    DPTR_D(ImageConverter);
+    if (d.range_in == range)
+        return;
+    d.range_in = range;
+    // TODO: do not call setupColorspaceDetails(). use a wrapper convert() func and call there
+    d.setupColorspaceDetails();
 }
 
-bool ImageConverter::isInterlaced() const
+ColorRange ImageConverter::inRange() const
 {
-    return d_func().interlaced;
+    return d_func().range_in;
+}
+
+void ImageConverter::setOutRange(ColorRange range)
+{
+    DPTR_D(ImageConverter);
+    if (d.range_out == range)
+        return;
+    d.range_out = range;
+    d.setupColorspaceDetails();
+}
+
+ColorRange ImageConverter::outRange() const
+{
+    return d_func().range_out;
 }
 
 void ImageConverter::setBrightness(int value)
@@ -163,24 +186,24 @@ int ImageConverter::saturation() const
 
 QVector<quint8*> ImageConverter::outPlanes() const
 {
-    DPTR_D(const ImageConverter);
-    QVector<quint8*> planes(4, 0); //TODO: only real plane count?
-    planes[0] = d.picture.data[0];
-    planes[1] = d.picture.data[1];
-    planes[2] = d.picture.data[2];
-    planes[3] = d.picture.data[3];
-    return planes;
+    return d_func().bits;
 }
 
 QVector<int> ImageConverter::outLineSizes() const
 {
-    DPTR_D(const ImageConverter);
-    QVector<int> lineSizes(4, 0);
-    lineSizes[0] = d.picture.linesize[0];
-    lineSizes[1] = d.picture.linesize[1];
-    lineSizes[2] = d.picture.linesize[2];
-    lineSizes[3] = d.picture.linesize[3];
-    return lineSizes;
+    return d_func().pitchs;
+}
+
+bool ImageConverter::convert(const quint8 * const src[], const int srcStride[])
+{
+    DPTR_D(ImageConverter);
+    if (d.update_data && !prepareData()) {
+        qWarning("prepair output data error");
+        return false;
+    } else {
+        d.update_data = false;
+    }
+    return convert(src, srcStride, (uint8_t**)d.bits.constData(), d.pitchs.constData());
 }
 
 bool ImageConverter::prepareData()
@@ -188,18 +211,28 @@ bool ImageConverter::prepareData()
     DPTR_D(ImageConverter);
     if (d.fmt_out == QTAV_PIX_FMT_C(NONE) || d.w_out <=0 || d.h_out <= 0)
         return false;
-    int bytes = avpicture_get_size((AVPixelFormat)d.fmt_out, d.w_out, d.h_out);
-    //if (d.data_out.size() < bytes) {
-        d.data_out.resize(bytes);
-    //}
-    //picture的数据按PIX_FMT格式自动"关联"到 data
-    avpicture_fill(
-            &d.picture,
-            (uint8_t*)d.data_out.constData(),
-            (AVPixelFormat)d.fmt_out,
-            d.w_out,
-            d.h_out
-            );
+    AV_ENSURE(av_image_check_size(d.w_out, d.h_out, 0, NULL), false);
+    const int nb_planes = qMax(av_pix_fmt_count_planes(d.fmt_out), 0);
+    d.bits.resize(nb_planes);
+    d.pitchs.resize(nb_planes);
+    // alignment is 16. sws in ffmpeg is 16, libav10 is 8
+    const int kAlign = 16;
+    AV_ENSURE(av_image_fill_linesizes((int*)d.pitchs.constData(), d.fmt_out, kAlign > 7 ? FFALIGN(d.w_out, 8) : d.w_out), false);
+    for (int i = 0; i < d.pitchs.size(); ++i)
+        d.pitchs[i] = FFALIGN(d.pitchs[i], kAlign);
+    int s = av_image_fill_pointers((uint8_t**)d.bits.constData(), d.fmt_out, d.h_out, NULL, d.pitchs.constData());
+    if (s < 0)
+        return false;
+    d.data_out.resize(s + kAlign-1);
+    const int offset = (kAlign - ((uintptr_t)d.data_out.constData() & (kAlign-1))) & (kAlign-1);
+    AV_ENSURE(av_image_fill_pointers((uint8_t**)d.bits.constData(), d.fmt_out, d.h_out, (uint8_t*)d.data_out.constData()+offset, d.pitchs.constData()), false);
+    // TODO: special formats
+    //if (desc->flags & AV_PIX_FMT_FLAG_PAL || desc->flags & AV_PIX_FMT_FLAG_PSEUDOPAL)
+       //    avpriv_set_systematic_pal2((uint32_t*)pointers[1], pix_fmt);
+    for (int i = 0; i < d.pitchs.size(); ++i) {
+        Q_ASSERT(d.pitchs[i]%kAlign == 0);
+        Q_ASSERT(qptrdiff(d.bits[i])%kAlign == 0);
+    }
     return true;
 }
 

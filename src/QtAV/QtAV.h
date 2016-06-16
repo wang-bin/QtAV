@@ -1,6 +1,6 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -29,33 +29,35 @@
 #include <QtAV/AVClock.h>
 #include <QtAV/AVDecoder.h>
 #include <QtAV/AVDemuxer.h>
+#include <QtAV/AVMuxer.h>
 #include <QtAV/AVOutput.h>
 #include <QtAV/AVPlayer.h>
 #include <QtAV/Packet.h>
 #include <QtAV/Statistics.h>
 
+#include <QtAV/AudioEncoder.h>
 #include <QtAV/AudioDecoder.h>
 #include <QtAV/AudioFormat.h>
 #include <QtAV/AudioOutput.h>
-#include <QtAV/AudioOutputTypes.h>
 #include <QtAV/AudioResampler.h>
-#include <QtAV/AudioResamplerTypes.h>
 
 #include <QtAV/Filter.h>
 #include <QtAV/FilterContext.h>
+#include <QtAV/GLSLFilter.h>
 #include <QtAV/LibAVFilter.h>
 
 #include <QtAV/VideoShader.h>
 #include <QtAV/OpenGLVideo.h>
+#include <QtAV/ConvolutionShader.h>
+#include <QtAV/VideoShaderObject.h>
 
 #include <QtAV/VideoCapture.h>
+#include <QtAV/VideoEncoder.h>
 #include <QtAV/VideoDecoder.h>
-#include <QtAV/VideoDecoderTypes.h>
 #include <QtAV/VideoFormat.h>
 #include <QtAV/VideoFrame.h>
 #include <QtAV/VideoFrameExtractor.h>
 #include <QtAV/VideoRenderer.h>
-#include <QtAV/VideoRendererTypes.h>
 #include <QtAV/VideoOutput.h>
 //The following renderer headers can be removed
 #include <QtAV/QPainterRenderer.h>
@@ -65,6 +67,6 @@
 #include <QtAV/Subtitle.h>
 #include <QtAV/SubtitleFilter.h>
 
-#include <QtAV/AVInput.h>
+#include <QtAV/MediaIO.h>
 
 #endif // QTAV_H

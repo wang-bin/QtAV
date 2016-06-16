@@ -62,8 +62,17 @@
         #error "Unsupported value of CUDA_FORCE_API_VERSION"
     #endif
 #else
-    #define __CUDA_API_VERSION 6050
+    #define __CUDA_API_VERSION 7050
 #endif /* CUDA_FORCE_API_VERSION */
+
+#if defined(__CUDA_API_VERSION_INTERNAL) || defined(CUDA_API_PER_THREAD_DEFAULT_STREAM)
+    #define __CUDA_API_PER_THREAD_DEFAULT_STREAM
+    #define __CUDA_API_PTDS(api) api ## _ptds
+    #define __CUDA_API_PTSZ(api) api ## _ptsz
+#else
+    #define __CUDA_API_PTDS(api) api
+    #define __CUDA_API_PTSZ(api) api
+#endif
 
 #if defined(__CUDA_API_VERSION_INTERNAL) || __CUDA_API_VERSION >= 3020
     #define cuDeviceTotalMem                    cuDeviceTotalMem_v2
@@ -76,30 +85,30 @@
     #define cuMemGetAddressRange                cuMemGetAddressRange_v2
     #define cuMemAllocHost                      cuMemAllocHost_v2
     #define cuMemHostGetDevicePointer           cuMemHostGetDevicePointer_v2
-    #define cuMemcpyHtoD                        cuMemcpyHtoD_v2
-    #define cuMemcpyDtoH                        cuMemcpyDtoH_v2
-    #define cuMemcpyDtoD                        cuMemcpyDtoD_v2
-    #define cuMemcpyDtoA                        cuMemcpyDtoA_v2
-    #define cuMemcpyAtoD                        cuMemcpyAtoD_v2
-    #define cuMemcpyHtoA                        cuMemcpyHtoA_v2
-    #define cuMemcpyAtoH                        cuMemcpyAtoH_v2
-    #define cuMemcpyAtoA                        cuMemcpyAtoA_v2
-    #define cuMemcpyHtoAAsync                   cuMemcpyHtoAAsync_v2
-    #define cuMemcpyAtoHAsync                   cuMemcpyAtoHAsync_v2
-    #define cuMemcpy2D                          cuMemcpy2D_v2
-    #define cuMemcpy2DUnaligned                 cuMemcpy2DUnaligned_v2
-    #define cuMemcpy3D                          cuMemcpy3D_v2
-    #define cuMemcpyHtoDAsync                   cuMemcpyHtoDAsync_v2
-    #define cuMemcpyDtoHAsync                   cuMemcpyDtoHAsync_v2
-    #define cuMemcpyDtoDAsync                   cuMemcpyDtoDAsync_v2
-    #define cuMemcpy2DAsync                     cuMemcpy2DAsync_v2
-    #define cuMemcpy3DAsync                     cuMemcpy3DAsync_v2
-    #define cuMemsetD8                          cuMemsetD8_v2
-    #define cuMemsetD16                         cuMemsetD16_v2
-    #define cuMemsetD32                         cuMemsetD32_v2
-    #define cuMemsetD2D8                        cuMemsetD2D8_v2
-    #define cuMemsetD2D16                       cuMemsetD2D16_v2
-    #define cuMemsetD2D32                       cuMemsetD2D32_v2
+    #define cuMemcpyHtoD                        __CUDA_API_PTDS(cuMemcpyHtoD_v2)
+    #define cuMemcpyDtoH                        __CUDA_API_PTDS(cuMemcpyDtoH_v2)
+    #define cuMemcpyDtoD                        __CUDA_API_PTDS(cuMemcpyDtoD_v2)
+    #define cuMemcpyDtoA                        __CUDA_API_PTDS(cuMemcpyDtoA_v2)
+    #define cuMemcpyAtoD                        __CUDA_API_PTDS(cuMemcpyAtoD_v2)
+    #define cuMemcpyHtoA                        __CUDA_API_PTDS(cuMemcpyHtoA_v2)
+    #define cuMemcpyAtoH                        __CUDA_API_PTDS(cuMemcpyAtoH_v2)
+    #define cuMemcpyAtoA                        __CUDA_API_PTDS(cuMemcpyAtoA_v2)
+    #define cuMemcpyHtoAAsync                   __CUDA_API_PTSZ(cuMemcpyHtoAAsync_v2)
+    #define cuMemcpyAtoHAsync                   __CUDA_API_PTSZ(cuMemcpyAtoHAsync_v2)
+    #define cuMemcpy2D                          __CUDA_API_PTDS(cuMemcpy2D_v2)
+    #define cuMemcpy2DUnaligned                 __CUDA_API_PTDS(cuMemcpy2DUnaligned_v2)
+    #define cuMemcpy3D                          __CUDA_API_PTDS(cuMemcpy3D_v2)
+    #define cuMemcpyHtoDAsync                   __CUDA_API_PTSZ(cuMemcpyHtoDAsync_v2)
+    #define cuMemcpyDtoHAsync                   __CUDA_API_PTSZ(cuMemcpyDtoHAsync_v2)
+    #define cuMemcpyDtoDAsync                   __CUDA_API_PTSZ(cuMemcpyDtoDAsync_v2)
+    #define cuMemcpy2DAsync                     __CUDA_API_PTSZ(cuMemcpy2DAsync_v2)
+    #define cuMemcpy3DAsync                     __CUDA_API_PTSZ(cuMemcpy3DAsync_v2)
+    #define cuMemsetD8                          __CUDA_API_PTDS(cuMemsetD8_v2)
+    #define cuMemsetD16                         __CUDA_API_PTDS(cuMemsetD16_v2)
+    #define cuMemsetD32                         __CUDA_API_PTDS(cuMemsetD32_v2)
+    #define cuMemsetD2D8                        __CUDA_API_PTDS(cuMemsetD2D8_v2)
+    #define cuMemsetD2D16                       __CUDA_API_PTDS(cuMemsetD2D16_v2)
+    #define cuMemsetD2D32                       __CUDA_API_PTDS(cuMemsetD2D32_v2)
     #define cuArrayCreate                       cuArrayCreate_v2
     #define cuArrayGetDescriptor                cuArrayGetDescriptor_v2
     #define cuArray3DCreate                     cuArray3DCreate_v2
@@ -134,6 +143,34 @@
 #endif /* __CUDA_API_VERSION && __CUDA_API_VERSION >= 3020 && __CUDA_API_VERSION < 4010 */
 #endif /* __CUDA_API_VERSION_INTERNAL */
 
+#if defined(__CUDA_API_PER_THREAD_DEFAULT_STREAM)
+    #define cuMemcpy                            __CUDA_API_PTDS(cuMemcpy)
+    #define cuMemcpyAsync                       __CUDA_API_PTSZ(cuMemcpyAsync)
+    #define cuMemcpyPeer                        __CUDA_API_PTDS(cuMemcpyPeer)
+    #define cuMemcpyPeerAsync                   __CUDA_API_PTSZ(cuMemcpyPeerAsync)
+    #define cuMemcpy3DPeer                      __CUDA_API_PTDS(cuMemcpy3DPeer)
+    #define cuMemcpy3DPeerAsync                 __CUDA_API_PTSZ(cuMemcpy3DPeerAsync)
+
+    #define cuMemsetD8Async                     __CUDA_API_PTSZ(cuMemsetD8Async)
+    #define cuMemsetD16Async                    __CUDA_API_PTSZ(cuMemsetD16Async)
+    #define cuMemsetD32Async                    __CUDA_API_PTSZ(cuMemsetD32Async)
+    #define cuMemsetD2D8Async                   __CUDA_API_PTSZ(cuMemsetD2D8Async)
+    #define cuMemsetD2D16Async                  __CUDA_API_PTSZ(cuMemsetD2D16Async)
+    #define cuMemsetD2D32Async                  __CUDA_API_PTSZ(cuMemsetD2D32Async)
+
+    #define cuStreamGetPriority                 __CUDA_API_PTSZ(cuStreamGetPriority)
+    #define cuStreamGetFlags                    __CUDA_API_PTSZ(cuStreamGetFlags)
+    #define cuStreamWaitEvent                   __CUDA_API_PTSZ(cuStreamWaitEvent)
+    #define cuStreamAddCallback                 __CUDA_API_PTSZ(cuStreamAddCallback)
+    #define cuStreamAttachMemAsync              __CUDA_API_PTSZ(cuStreamAttachMemAsync)
+    #define cuStreamQuery                       __CUDA_API_PTSZ(cuStreamQuery)
+    #define cuStreamSynchronize                 __CUDA_API_PTSZ(cuStreamSynchronize)
+    #define cuEventRecord                       __CUDA_API_PTSZ(cuEventRecord)
+    #define cuLaunchKernel                      __CUDA_API_PTSZ(cuLaunchKernel)
+    #define cuGraphicsMapResources              __CUDA_API_PTSZ(cuGraphicsMapResources)
+    #define cuGraphicsUnmapResources            __CUDA_API_PTSZ(cuGraphicsUnmapResources)
+#endif
+
 /**
  * \file cuda.h
  * \brief Header file for the CUDA Toolkit application programming interface.
@@ -155,7 +192,7 @@
 /**
  * CUDA API version number
  */
-#define CUDA_VERSION 6050
+#define CUDA_VERSION 7050
 
 #ifdef __cplusplus
 extern "C" {
@@ -163,10 +200,11 @@ extern "C" {
 
 /**
  * CUDA device pointer
+ * CUdeviceptr is defined as an unsigned integer type whose size matches the size of a pointer on the target platform.
  */ 
 #if __CUDA_API_VERSION >= 3020
 
-#if defined(__x86_64) || defined(AMD64) || defined(_M_AMD64) || defined(__aarch64__)
+#if defined(_WIN64) || defined(__LP64__)
 typedef unsigned long long CUdeviceptr;
 #else
 typedef unsigned int CUdeviceptr;
@@ -185,8 +223,8 @@ typedef struct CUsurfref_st *CUsurfref;                   /**< CUDA surface refe
 typedef struct CUevent_st *CUevent;                       /**< CUDA event */
 typedef struct CUstream_st *CUstream;                     /**< CUDA stream */
 typedef struct CUgraphicsResource_st *CUgraphicsResource; /**< CUDA graphics interop resource */
-typedef unsigned long long CUtexObject;                   /**< CUDA texture object */
-typedef unsigned long long CUsurfObject;                  /**< CUDA surface object */
+typedef unsigned long long CUtexObject;                   /**< An opaque value that represents a CUDA texture object */
+typedef unsigned long long CUsurfObject;                  /**< An opaque value that represents a CUDA surface object */
 
 typedef struct CUuuid_st {                                /**< CUDA definition of UUID */
     char bytes[16];
@@ -258,6 +296,26 @@ typedef enum CUstream_flags_enum {
 } CUstream_flags;
 
 /**
+ * Legacy stream handle
+ *
+ * Stream handle that can be passed as a CUstream to use an implicit stream
+ * with legacy synchronization behavior.
+ *
+ * See details of the \link_sync_behavior
+ */
+#define CU_STREAM_LEGACY     ((CUstream)0x1)
+
+/**
+ * Per-thread stream handle
+ *
+ * Stream handle that can be passed as a CUstream to use an implicit stream
+ * with per-thread synchronization behavior.
+ *
+ * See details of the \link_sync_behavior
+ */
+#define CU_STREAM_PER_THREAD ((CUstream)0x2)
+
+/**
  * Event creation flags
  */
 typedef enum CUevent_flags_enum {
@@ -266,6 +324,14 @@ typedef enum CUevent_flags_enum {
     CU_EVENT_DISABLE_TIMING = 0x2, /**< Event will not record timing data */
     CU_EVENT_INTERPROCESS   = 0x4  /**< Event is suitable for interprocess use. CU_EVENT_DISABLE_TIMING must be set */
 } CUevent_flags;
+
+/**
+ * Occupancy calculator flag
+ */
+typedef enum CUoccupancy_flags_enum {
+    CU_OCCUPANCY_DEFAULT                  = 0x0, /**< Default behavior */
+    CU_OCCUPANCY_DISABLE_CACHING_OVERRIDE = 0x1  /**< Assume global caching is enabled and cannot be automatically turned off */
+} CUoccupancy_flags;
 
 /**
  * Array formats
@@ -679,7 +745,8 @@ typedef enum CUjit_target_enum
     CU_TARGET_COMPUTE_32 = 32,       /**< Compute device class 3.2 */
     CU_TARGET_COMPUTE_35 = 35,       /**< Compute device class 3.5 */
     CU_TARGET_COMPUTE_37 = 37,       /**< Compute device class 3.7 */
-    CU_TARGET_COMPUTE_50 = 50       /**< Compute device class 5.0 */
+    CU_TARGET_COMPUTE_50 = 50,       /**< Compute device class 5.0 */
+    CU_TARGET_COMPUTE_52 = 52        /**< Compute device class 5.2 */
 } CUjit_target;
 
 /**
@@ -1250,6 +1317,20 @@ typedef size_t (CUDA_CB *CUoccupancyB2DSize)(int blockSize);
  * Flag for ::cuMemHostRegister()
  */
 #define CU_MEMHOSTREGISTER_DEVICEMAP    0x02
+
+/**
+ * If set, the passed memory pointer is treated as pointing to some
+ * memory-mapped I/O space, e.g. belonging to a third-party PCIe device.
+ * On Windows the flag is a no-op.
+ * On Linux that memory is marked as non cache-coherent for the GPU and
+ * is expected to be physically contiguous. It may return
+ * CUDA_ERROR_NOT_PERMITTED if run as an unprivileged user,
+ * CUDA_ERROR_NOT_SUPPORTED on older Linux kernel versions.
+ * On all other platforms, it is not supported and CUDA_ERROR_NOT_SUPPORTED
+ * is returned.
+ * Flag for ::cuMemHostRegister()
+ */
+#define CU_MEMHOSTREGISTER_IOMEMORY     0x04
 
 #if __CUDA_API_VERSION >= 3020
 
@@ -2129,6 +2210,238 @@ CUresult CUDAAPI cuDeviceComputeCapability(int *major, int *minor, CUdevice dev)
 /** @} */ /* END CUDA_DEVICE_DEPRECATED */
 
 /**
+ * \defgroup CUDA_PRIMARY_CTX Primary Context Management
+ *
+ * ___MANBRIEF___ primary context management functions of the low-level CUDA driver
+ * API (___CURRENT_FILE___) ___ENDMANBRIEF___
+ *
+ * This section describes the primary context management functions of the low-level
+ * CUDA driver application programming interface.
+ *
+ * The primary context unique per device and it's shared with CUDA runtime API.
+ * Those functions allows seemless integration with other libraries using CUDA.
+ *
+ * @{
+ */
+
+#if __CUDA_API_VERSION >= 7000
+
+/**
+ * \brief Retain the primary context on the GPU
+ *
+ * Retains the primary context on the device, creating it if necessary,
+ * increasing its usage count. The caller must call
+ * ::cuDevicePrimaryCtxRelease() when done using the context.
+ * Unlike ::cuCtxCreate() the newly created context is not pushed onto the stack.
+ *
+ * Context creation will fail with ::CUDA_ERROR_UNKNOWN if the compute mode of
+ * the device is ::CU_COMPUTEMODE_PROHIBITED. Similarly, context creation will
+ * also fail with ::CUDA_ERROR_UNKNOWN if the compute mode for the device is
+ * set to ::CU_COMPUTEMODE_EXCLUSIVE and there is already an active, non-primary,
+ * context on the device. The function ::cuDeviceGetAttribute() can be used with
+ * ::CU_DEVICE_ATTRIBUTE_COMPUTE_MODE to determine the compute mode of the
+ * device. The <i>nvidia-smi</i> tool can be used to set the compute mode for
+ * devices. Documentation for <i>nvidia-smi</i> can be obtained by passing a
+ * -h option to it.
+ *
+ * Please note that the primary context always supports pinned allocations. Other
+ * flags can be specified by ::cuDevicePrimaryCtxSetFlags().
+ *
+ * \param pctx  - Returned context handle of the new context
+ * \param dev   - Device for which primary context is requested
+ *
+ * \return
+ * ::CUDA_SUCCESS,
+ * ::CUDA_ERROR_DEINITIALIZED,
+ * ::CUDA_ERROR_NOT_INITIALIZED,
+ * ::CUDA_ERROR_INVALID_CONTEXT,
+ * ::CUDA_ERROR_INVALID_DEVICE,
+ * ::CUDA_ERROR_INVALID_VALUE,
+ * ::CUDA_ERROR_OUT_OF_MEMORY,
+ * ::CUDA_ERROR_UNKNOWN
+ * \notefnerr
+ *
+ * \sa ::cuDevicePrimaryCtxRelease,
+ * ::cuDevicePrimaryCtxSetFlags,
+ * ::cuCtxCreate,
+ * ::cuCtxGetApiVersion,
+ * ::cuCtxGetCacheConfig,
+ * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
+ * ::cuCtxGetLimit,
+ * ::cuCtxPopCurrent,
+ * ::cuCtxPushCurrent,
+ * ::cuCtxSetCacheConfig,
+ * ::cuCtxSetLimit,
+ * ::cuCtxSynchronize
+ */
+CUresult CUDAAPI cuDevicePrimaryCtxRetain(CUcontext *pctx, CUdevice dev);
+
+/**
+ * \brief Release the primary context on the GPU
+ *
+ * Releases the primary context interop on the device by decreasing the usage
+ * count by 1. If the usage drops to 0 the primary context of device \p dev
+ * will be destroyed regardless of how many threads it is current to.
+ *
+ * Please note that unlike ::cuCtxDestroy() this method does not pop the context
+ * from stack in any circumstances.
+ *
+ * \param dev - Device which primary context is released
+ *
+ * \return
+ * ::CUDA_SUCCESS,
+ * ::CUDA_ERROR_DEINITIALIZED,
+ * ::CUDA_ERROR_NOT_INITIALIZED,
+ * ::CUDA_ERROR_INVALID_DEVICE
+ * \notefnerr
+ *
+ * \sa ::cuDevicePrimaryCtxRetain,
+ * ::cuCtxDestroy,
+ * ::cuCtxGetApiVersion,
+ * ::cuCtxGetCacheConfig,
+ * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
+ * ::cuCtxGetLimit,
+ * ::cuCtxPopCurrent,
+ * ::cuCtxPushCurrent,
+ * ::cuCtxSetCacheConfig,
+ * ::cuCtxSetLimit,
+ * ::cuCtxSynchronize
+ */
+CUresult CUDAAPI cuDevicePrimaryCtxRelease(CUdevice dev);
+
+/**
+ * \brief Set flags for the primary context
+ *
+ * Sets the flags for the primary context on the device overwriting perviously
+ * set ones. If the primary context is already created
+ * ::CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE is returned.
+ *
+ * The three LSBs of the \p flags parameter can be used to control how the OS
+ * thread, which owns the CUDA context at the time of an API call, interacts
+ * with the OS scheduler when waiting for results from the GPU. Only one of
+ * the scheduling flags can be set when creating a context.
+ *
+ * - ::CU_CTX_SCHED_SPIN: Instruct CUDA to actively spin when waiting for
+ * results from the GPU. This can decrease latency when waiting for the GPU,
+ * but may lower the performance of CPU threads if they are performing work in
+ * parallel with the CUDA thread.
+ *
+ * - ::CU_CTX_SCHED_YIELD: Instruct CUDA to yield its thread when waiting for
+ * results from the GPU. This can increase latency when waiting for the GPU,
+ * but can increase the performance of CPU threads performing work in parallel
+ * with the GPU.
+ *
+ * - ::CU_CTX_SCHED_BLOCKING_SYNC: Instruct CUDA to block the CPU thread on a
+ * synchronization primitive when waiting for the GPU to finish work.
+ *
+ * - ::CU_CTX_BLOCKING_SYNC: Instruct CUDA to block the CPU thread on a
+ * synchronization primitive when waiting for the GPU to finish work. <br>
+ * <b>Deprecated:</b> This flag was deprecated as of CUDA 4.0 and was
+ * replaced with ::CU_CTX_SCHED_BLOCKING_SYNC.
+ *
+ * - ::CU_CTX_SCHED_AUTO: The default value if the \p flags parameter is zero,
+ * uses a heuristic based on the number of active CUDA contexts in the
+ * process \e C and the number of logical processors in the system \e P. If
+ * \e C > \e P, then CUDA will yield to other OS threads when waiting for
+ * the GPU (::CU_CTX_SCHED_YIELD), otherwise CUDA will not yield while
+ * waiting for results and actively spin on the processor (::CU_CTX_SCHED_SPIN).
+ * However, on low power devices like Tegra, it always defaults to
+ * ::CU_CTX_SCHED_BLOCKING_SYNC.
+ *
+ * - ::CU_CTX_LMEM_RESIZE_TO_MAX: Instruct CUDA to not reduce local memory
+ * after resizing local memory for a kernel. This can prevent thrashing by
+ * local memory allocations when launching many kernels with high local
+ * memory usage at the cost of potentially increased memory usage.
+ *
+ * \param dev   - Device for which the primary context flags are set
+ * \param flags - New flags for the device
+ *
+ * \return
+ * ::CUDA_SUCCESS,
+ * ::CUDA_ERROR_DEINITIALIZED,
+ * ::CUDA_ERROR_NOT_INITIALIZED,
+ * ::CUDA_ERROR_INVALID_DEVICE,
+ * ::CUDA_ERROR_INVALID_VALUE,
+ * ::CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE
+ * \notefnerr
+ *
+ * \sa ::cuDevicePrimaryCtxRetain,
+ * ::cuDevicePrimaryCtxGetState,
+ * ::cuCtxCreate,
+ * ::cuCtxGetFlags
+ */
+CUresult CUDAAPI cuDevicePrimaryCtxSetFlags(CUdevice dev, unsigned int flags);
+
+/**
+ * \brief Get the state of the primary context
+ *
+ * Returns in \p *flags the flags for the primary context of \p dev, and in
+ * \p *active whether it is active.  See ::cuDevicePrimaryCtxSetFlags for flag
+ * values.
+ *
+ * \param dev    - Device to get primary context flags for
+ * \param flags  - Pointer to store flags
+ * \param active - Pointer to store context state; 0 = inactive, 1 = active
+ *
+ * \return
+ * ::CUDA_SUCCESS,
+ * ::CUDA_ERROR_DEINITIALIZED,
+ * ::CUDA_ERROR_NOT_INITIALIZED,
+ * ::CUDA_ERROR_INVALID_DEVICE,
+ * ::CUDA_ERROR_INVALID_VALUE,
+ * \notefnerr
+ *
+ * \sa ::cuDevicePrimaryCtxSetFlags,
+ * ::cuCtxGetFlags
+ */
+CUresult CUDAAPI cuDevicePrimaryCtxGetState(CUdevice dev, unsigned int *flags, int *active);
+
+/**
+ * \brief Destroy all allocations and reset all state on the primary context
+ *
+ * Explicitly destroys and cleans up all resources associated with the current
+ * device in the current process.
+ *
+ * Note that it is responsibility of the calling function to ensure that no
+ * other module in the process is using the device any more. For that reason
+ * it is recommended to use ::cuDevicePrimaryCtxRelease() in most cases.
+ * However it is safe for other modules to call ::cuDevicePrimaryCtxRelease()
+ * even after resetting the device.
+ *
+ * \param dev - Device for which primary context is destroyed
+ *
+ * \return
+ * ::CUDA_SUCCESS,
+ * ::CUDA_ERROR_DEINITIALIZED,
+ * ::CUDA_ERROR_NOT_INITIALIZED,
+ * ::CUDA_ERROR_INVALID_DEVICE,
+ * ::CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE
+ * \notefnerr
+ *
+ * \sa ::cuDevicePrimaryCtxRetain,
+ * ::cuDevicePrimaryCtxRelease,
+ * ::cuCtxGetApiVersion,
+ * ::cuCtxGetCacheConfig,
+ * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
+ * ::cuCtxGetLimit,
+ * ::cuCtxPopCurrent,
+ * ::cuCtxPushCurrent,
+ * ::cuCtxSetCacheConfig,
+ * ::cuCtxSetLimit,
+ * ::cuCtxSynchronize
+ *
+ */
+CUresult CUDAAPI cuDevicePrimaryCtxReset(CUdevice dev);
+
+#endif /* __CUDA_API_VERSION >= 7000 */
+
+/** @} */ /* END CUDA_PRIMARY_CTX */
+
+
+/**
  * \defgroup CUDA_CTX Context Management
  *
  * ___MANBRIEF___ context management functions of the low-level CUDA driver
@@ -2156,13 +2469,6 @@ CUresult CUDAAPI cuDeviceComputeCapability(int *major, int *minor, CUdevice dev)
  * with the OS scheduler when waiting for results from the GPU. Only one of
  * the scheduling flags can be set when creating a context.
  *
- * - ::CU_CTX_SCHED_AUTO: The default value if the \p flags parameter is zero,
- * uses a heuristic based on the number of active CUDA contexts in the
- * process \e C and the number of logical processors in the system \e P. If
- * \e C > \e P, then CUDA will yield to other OS threads when waiting for
- * the GPU, otherwise CUDA will not yield while waiting for results and
- * actively spin on the processor.
- *
  * - ::CU_CTX_SCHED_SPIN: Instruct CUDA to actively spin when waiting for
  * results from the GPU. This can decrease latency when waiting for the GPU,
  * but may lower the performance of CPU threads if they are performing work in
@@ -2180,6 +2486,15 @@ CUresult CUDAAPI cuDeviceComputeCapability(int *major, int *minor, CUdevice dev)
  * synchronization primitive when waiting for the GPU to finish work. <br>
  * <b>Deprecated:</b> This flag was deprecated as of CUDA 4.0 and was
  * replaced with ::CU_CTX_SCHED_BLOCKING_SYNC. 
+ *
+ * - ::CU_CTX_SCHED_AUTO: The default value if the \p flags parameter is zero,
+ * uses a heuristic based on the number of active CUDA contexts in the
+ * process \e C and the number of logical processors in the system \e P. If
+ * \e C > \e P, then CUDA will yield to other OS threads when waiting for 
+ * the GPU (::CU_CTX_SCHED_YIELD), otherwise CUDA will not yield while 
+ * waiting for results and actively spin on the processor (::CU_CTX_SCHED_SPIN). 
+ * However, on low power devices like Tegra, it always defaults to 
+ * ::CU_CTX_SCHED_BLOCKING_SYNC.
  *
  * - ::CU_CTX_MAP_HOST: Instruct CUDA to support mapped pinned allocations.
  * This flag must be set in order to allocate pinned host memory that is
@@ -2219,6 +2534,7 @@ CUresult CUDAAPI cuDeviceComputeCapability(int *major, int *minor, CUdevice dev)
  * ::cuCtxGetApiVersion,
  * ::cuCtxGetCacheConfig,
  * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
  * ::cuCtxGetLimit,
  * ::cuCtxPopCurrent,
  * ::cuCtxPushCurrent,
@@ -2258,6 +2574,7 @@ CUresult CUDAAPI cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev);
  * ::cuCtxGetApiVersion,
  * ::cuCtxGetCacheConfig,
  * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
  * ::cuCtxGetLimit,
  * ::cuCtxPopCurrent,
  * ::cuCtxPushCurrent,
@@ -2294,6 +2611,7 @@ CUresult CUDAAPI cuCtxDestroy(CUcontext ctx);
  * ::cuCtxGetApiVersion,
  * ::cuCtxGetCacheConfig,
  * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
  * ::cuCtxGetLimit,
  * ::cuCtxPopCurrent,
  * ::cuCtxSetCacheConfig,
@@ -2327,6 +2645,7 @@ CUresult CUDAAPI cuCtxPushCurrent(CUcontext ctx);
  * ::cuCtxGetApiVersion,
  * ::cuCtxGetCacheConfig,
  * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
  * ::cuCtxGetLimit,
  * ::cuCtxPushCurrent,
  * ::cuCtxSetCacheConfig,
@@ -2400,6 +2719,7 @@ CUresult CUDAAPI cuCtxGetCurrent(CUcontext *pctx);
  * ::cuCtxDestroy,
  * ::cuCtxGetApiVersion,
  * ::cuCtxGetCacheConfig,
+ * ::cuCtxGetFlags,
  * ::cuCtxGetLimit,
  * ::cuCtxPopCurrent,
  * ::cuCtxPushCurrent,
@@ -2408,6 +2728,35 @@ CUresult CUDAAPI cuCtxGetCurrent(CUcontext *pctx);
  * ::cuCtxSynchronize
  */
 CUresult CUDAAPI cuCtxGetDevice(CUdevice *device);
+
+#if __CUDA_API_VERSION >= 7000
+/**
+ * \brief Returns the flags for the current context
+ *
+ * Returns in \p *flags the flags of the current context. See ::cuCtxCreate
+ * for flag values.
+ *
+ * \param flags - Pointer to store flags of current context
+ *
+ * \return
+ * ::CUDA_SUCCESS,
+ * ::CUDA_ERROR_DEINITIALIZED,
+ * ::CUDA_ERROR_NOT_INITIALIZED,
+ * ::CUDA_ERROR_INVALID_CONTEXT,
+ * ::CUDA_ERROR_INVALID_VALUE,
+ * \notefnerr
+ *
+ * \sa ::cuCtxCreate,
+ * ::cuCtxGetApiVersion,
+ * ::cuCtxGetCacheConfig,
+ * ::cuCtxGetCurrent,
+ * ::cuCtxGetDevice
+ * ::cuCtxGetLimit,
+ * ::cuCtxGetSharedMemConfig,
+ * ::cuCtxGetStreamPriorityRange
+ */
+CUresult CUDAAPI cuCtxGetFlags(unsigned int *flags);
+#endif /* __CUDA_API_VERSION >= 7000 */
 
 /**
  * \brief Block for a context's tasks to complete
@@ -2429,6 +2778,7 @@ CUresult CUDAAPI cuCtxGetDevice(CUdevice *device);
  * ::cuCtxGetApiVersion,
  * ::cuCtxGetCacheConfig,
  * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
  * ::cuCtxGetLimit,
  * ::cuCtxPopCurrent,
  * ::cuCtxPushCurrent,
@@ -2523,6 +2873,7 @@ CUresult CUDAAPI cuCtxSynchronize(void);
  * ::cuCtxGetApiVersion,
  * ::cuCtxGetCacheConfig,
  * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
  * ::cuCtxGetLimit,
  * ::cuCtxPopCurrent,
  * ::cuCtxPushCurrent,
@@ -2561,6 +2912,7 @@ CUresult CUDAAPI cuCtxSetLimit(CUlimit limit, size_t value);
  * ::cuCtxGetApiVersion,
  * ::cuCtxGetCacheConfig,
  * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
  * ::cuCtxPopCurrent,
  * ::cuCtxPushCurrent,
  * ::cuCtxSetCacheConfig,
@@ -2601,6 +2953,7 @@ CUresult CUDAAPI cuCtxGetLimit(size_t *pvalue, CUlimit limit);
  * ::cuCtxDestroy,
  * ::cuCtxGetApiVersion,
  * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
  * ::cuCtxGetLimit,
  * ::cuCtxPopCurrent,
  * ::cuCtxPushCurrent,
@@ -2651,6 +3004,7 @@ CUresult CUDAAPI cuCtxGetCacheConfig(CUfunc_cache *pconfig);
  * ::cuCtxGetApiVersion,
  * ::cuCtxGetCacheConfig,
  * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
  * ::cuCtxGetLimit,
  * ::cuCtxPopCurrent,
  * ::cuCtxPushCurrent,
@@ -2691,6 +3045,7 @@ CUresult CUDAAPI cuCtxSetCacheConfig(CUfunc_cache config);
  * ::cuCtxGetApiVersion,
  * ::cuCtxGetCacheConfig,
  * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
  * ::cuCtxGetLimit,
  * ::cuCtxPopCurrent,
  * ::cuCtxPushCurrent,
@@ -2742,6 +3097,7 @@ CUresult CUDAAPI cuCtxGetSharedMemConfig(CUsharedconfig *pConfig);
  * ::cuCtxGetApiVersion,
  * ::cuCtxGetCacheConfig,
  * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
  * ::cuCtxGetLimit,
  * ::cuCtxPopCurrent,
  * ::cuCtxPushCurrent,
@@ -2780,6 +3136,7 @@ CUresult CUDAAPI cuCtxSetSharedMemConfig(CUsharedconfig config);
  * \sa ::cuCtxCreate,
  * ::cuCtxDestroy,
  * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
  * ::cuCtxGetLimit,
  * ::cuCtxPopCurrent,
  * ::cuCtxPushCurrent,
@@ -2822,6 +3179,7 @@ CUresult CUDAAPI cuCtxGetApiVersion(CUcontext ctx, unsigned int *version);
  * \sa ::cuStreamCreateWithPriority,
  * ::cuStreamGetPriority,
  * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
  * ::cuCtxSetLimit,
  * ::cuCtxSynchronize
  */
@@ -2872,6 +3230,7 @@ CUresult CUDAAPI cuCtxGetStreamPriorityRange(int *leastPriority, int *greatestPr
  * ::cuCtxGetApiVersion,
  * ::cuCtxGetCacheConfig,
  * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
  * ::cuCtxGetLimit,
  * ::cuCtxPopCurrent,
  * ::cuCtxPushCurrent,
@@ -2907,6 +3266,7 @@ CUresult CUDAAPI cuCtxAttach(CUcontext *pctx, unsigned int flags);
  * ::cuCtxGetApiVersion,
  * ::cuCtxGetCacheConfig,
  * ::cuCtxGetDevice,
+ * ::cuCtxGetFlags,
  * ::cuCtxGetLimit,
  * ::cuCtxPopCurrent,
  * ::cuCtxPushCurrent,
@@ -4195,6 +4555,9 @@ CUresult CUDAAPI cuIpcCloseMemHandle(CUdeviceptr dptr);
  *   ::cuMemHostGetDevicePointer(). This feature is available only on GPUs
  *   with compute capability greater than or equal to 1.1.
  *
+ * - ::CU_MEMHOSTREGISTER_IOMEMORY: The pointer is treated as pointing to some
+ *   I/O memory space, e.g. the PCI Express resource of a 3rd party device.
+ *
  * All of these flags are orthogonal to one another: a developer may page-lock
  * memory that is portable or mapped with no restrictions.
  *
@@ -4220,7 +4583,9 @@ CUresult CUDAAPI cuIpcCloseMemHandle(CUdeviceptr dptr);
  * ::CUDA_ERROR_INVALID_CONTEXT,
  * ::CUDA_ERROR_INVALID_VALUE,
  * ::CUDA_ERROR_OUT_OF_MEMORY,
- * ::CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED
+ * ::CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED,
+ * ::CUDA_ERROR_NOT_PERMITTED,
+ * ::CUDA_ERROR_NOT_SUPPORTED
  * \notefnerr
  *
  * \sa ::cuMemHostUnregister, ::cuMemHostGetFlags, ::cuMemHostGetDevicePointer
@@ -4745,7 +5110,7 @@ CUresult CUDAAPI cuMemcpyAtoA(CUarray dstArray, size_t dstOffset, CUarray srcArr
  * ::CUDA_ERROR_INVALID_CONTEXT,
  * ::CUDA_ERROR_INVALID_VALUE
  * \notefnerr
- * \nore_sync
+ * \note_sync
  *
  * \sa ::cuArray3DCreate, ::cuArray3DGetDescriptor, ::cuArrayCreate,
  * ::cuArrayDestroy, ::cuArrayGetDescriptor, ::cuMemAlloc, ::cuMemAllocHost,
@@ -7028,6 +7393,7 @@ CUresult CUDAAPI cuPointerGetAttribute(void *data, CUpointer_attribute attribute
  * \notefnerr
  *
  * \sa ::cuPointerGetAttribute,
+ * ::cuPointerGetAttributes,
  * ::cuMemAlloc,
  * ::cuMemFree,
  * ::cuMemAllocHost,
@@ -7038,6 +7404,48 @@ CUresult CUDAAPI cuPointerGetAttribute(void *data, CUpointer_attribute attribute
  */
 CUresult CUDAAPI cuPointerSetAttribute(const void *value, CUpointer_attribute attribute, CUdeviceptr ptr);
 #endif /* __CUDA_API_VERSION >= 6000 */
+
+#if __CUDA_API_VERSION >= 7000
+/**
+ * \brief Returns information about a pointer.
+ *
+ * The supported attributes are (refer to ::cuPointerGetAttribute for attribute descriptions and restrictions):
+ *
+ * - ::CU_POINTER_ATTRIBUTE_CONTEXT
+ * - ::CU_POINTER_ATTRIBUTE_MEMORY_TYPE
+ * - ::CU_POINTER_ATTRIBUTE_DEVICE_POINTER
+ * - ::CU_POINTER_ATTRIBUTE_HOST_POINTER
+ * - ::CU_POINTER_ATTRIBUTE_SYNC_MEMOPS
+ * - ::CU_POINTER_ATTRIBUTE_BUFFER_ID
+ * - ::CU_POINTER_ATTRIBUTE_IS_MANAGED
+ *
+ * \param numAttributes - Number of attributes to query
+ * \param attributes    - An array of attributes to query
+ *                      (numAttributes and the number of attributes in this array should match)
+ * \param data          - A two-dimensional array containing pointers to memory
+ *                      locations where the result of each attribute query will be written to.
+ * \param ptr           - Pointer to query
+ *
+ * Unlike ::cuPointerGetAttribute, this function will not return an error when the \p ptr
+ * encountered is not a valid CUDA pointer. Instead, the attributes are assigned default NULL values
+ * and CUDA_SUCCESS is returned.
+ *
+ * If \p ptr was not allocated by, mapped by, or registered with a ::CUcontext which uses UVA
+ * (Unified Virtual Addressing), ::CUDA_ERROR_INVALID_CONTEXT is returned.
+ *
+ * \return
+ * ::CUDA_SUCCESS,
+ * ::CUDA_ERROR_DEINITIALIZED,
+ * ::CUDA_ERROR_INVALID_CONTEXT,
+ * ::CUDA_ERROR_INVALID_VALUE,
+ * ::CUDA_ERROR_INVALID_DEVICE
+ * \notefnerr
+ *
+ * \sa ::cuPointerGetAttribute,
+ * ::cuPointerSetAttribute
+ */
+CUresult CUDAAPI cuPointerGetAttributes(unsigned int numAttributes, CUpointer_attribute *attributes, void **data, CUdeviceptr ptr);
+#endif /* __CUDA_API_VERSION >= 7000 */
 
 /** @} */ /* END CUDA_UNIFIED */
 
@@ -8372,7 +8780,7 @@ CUresult CUDAAPI cuParamSetTexRef(CUfunction hfunc, int texunit, CUtexref hTexRe
  * streaming multiprocessor.
  *
  * \param numBlocks       - Returned occupancy
- * \param func            - Kernel for which occupancy is calulated
+ * \param func            - Kernel for which occupancy is calculated
  * \param blockSize       - Block size the kernel is intended to be launched with
  * \param dynamicSMemSize - Per-block dynamic shared memory usage intended, in bytes
  *
@@ -8388,6 +8796,46 @@ CUresult CUDAAPI cuParamSetTexRef(CUfunction hfunc, int texunit, CUtexref hTexRe
  */
 CUresult CUDAAPI cuOccupancyMaxActiveBlocksPerMultiprocessor(int *numBlocks, CUfunction func, int blockSize, size_t dynamicSMemSize);
 
+/**
+ * \brief Returns occupancy of a function
+ *
+ * Returns in \p *numBlocks the number of the maximum active blocks per
+ * streaming multiprocessor.
+ *
+ * The \p Flags parameter controls how special cases are handled. The
+ * valid flags are:
+ *
+ * - ::CU_OCCUPANCY_DEFAULT, which maintains the default behavior as
+ *   ::cuOccupancyMaxActiveBlocksPerMultiprocessor;
+ *
+ * - ::CU_OCCUPANCY_DISABLE_CACHING_OVERRIDE, which suppresses the
+ *   default behavior on platform where global caching affects
+ *   occupancy. On such platforms, if caching is enabled, but
+ *   per-block SM resource usage would result in zero occupancy, the
+ *   occupancy calculator will calculate the occupancy as if caching
+ *   is disabled. Setting ::CU_OCCUPANCY_DISABLE_CACHING_OVERRIDE makes
+ *   the occupancy calculator to return 0 in such cases. More information
+ *   can be found about this feature in the "Unified L1/Texture Cache"
+ *   section of the Maxwell tuning guide.
+ *
+ * \param numBlocks       - Returned occupancy
+ * \param func            - Kernel for which occupancy is calculated
+ * \param blockSize       - Block size the kernel is intended to be launched with
+ * \param dynamicSMemSize - Per-block dynamic shared memory usage intended, in bytes
+ * \param flags           - Requested behavior for the occupancy calculator
+ *
+ * \return
+ * ::CUDA_SUCCESS,
+ * ::CUDA_ERROR_DEINITIALIZED,
+ * ::CUDA_ERROR_NOT_INITIALIZED,
+ * ::CUDA_ERROR_INVALID_CONTEXT,
+ * ::CUDA_ERROR_INVALID_VALUE,
+ * ::CUDA_ERROR_UNKNOWN
+ * \notefnerr
+ *
+ */
+CUresult CUDAAPI cuOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(int *numBlocks, CUfunction func, int blockSize, size_t dynamicSMemSize, unsigned int flags);
+    
 /**
  * \brief Suggest a launch configuration with reasonable occupancy
  *
@@ -8421,7 +8869,7 @@ CUresult CUDAAPI cuOccupancyMaxActiveBlocksPerMultiprocessor(int *numBlocks, CUf
  *
  * \param minGridSize - Returned minimum grid size needed to achieve the maximum occupancy
  * \param blockSize   - Returned maximum block size that can achieve the maximum occupancy
- * \param func        - Kernel for which launch configuration is calulated
+ * \param func        - Kernel for which launch configuration is calculated
  * \param blockSizeToDynamicSMemSize - A function that calculates how much per-block dynamic shared memory \p func uses based on the block size
  * \param dynamicSMemSize - Dynamic shared memory usage intended, in bytes
  * \param blockSizeLimit  - The maximum block size \p func is designed to handle
@@ -8437,6 +8885,50 @@ CUresult CUDAAPI cuOccupancyMaxActiveBlocksPerMultiprocessor(int *numBlocks, CUf
  *
  */
 CUresult CUDAAPI cuOccupancyMaxPotentialBlockSize(int *minGridSize, int *blockSize, CUfunction func, CUoccupancyB2DSize blockSizeToDynamicSMemSize, size_t dynamicSMemSize, int blockSizeLimit);
+
+/**
+ * \brief Suggest a launch configuration with reasonable occupancy
+ *
+ * An extended version of ::cuOccupancyMaxPotentialBlockSize. In
+ * addition to arguments passed to ::cuOccupancyMaxPotentialBlockSize,
+ * ::cuOccupancyMaxPotentialBlockSizeWithFlags also takes a \p Flags
+ * parameter.
+ *
+ * The \p Flags parameter controls how special cases are handled. The
+ * valid flags are:
+ *
+ * - ::CU_OCCUPANCY_DEFAULT, which maintains the default behavior as
+ *   ::cuOccupancyMaxPotentialBlockSize;
+ *
+ * - ::CU_OCCUPANCY_DISABLE_CACHING_OVERRIDE, which suppresses the
+ *   default behavior on platform where global caching affects
+ *   occupancy. On such platforms, the launch configurations that
+ *   produces maximal occupancy might not support global
+ *   caching. Setting ::CU_OCCUPANCY_DISABLE_CACHING_OVERRIDE
+ *   guarantees that the the produced launch configuration is global
+ *   caching compatible at a potential cost of occupancy. More information
+ *   can be found about this feature in the "Unified L1/Texture Cache"
+ *   section of the Maxwell tuning guide.
+ *
+ * \param minGridSize - Returned minimum grid size needed to achieve the maximum occupancy
+ * \param blockSize   - Returned maximum block size that can achieve the maximum occupancy
+ * \param func        - Kernel for which launch configuration is calculated
+ * \param blockSizeToDynamicSMemSize - A function that calculates how much per-block dynamic shared memory \p func uses based on the block size
+ * \param dynamicSMemSize - Dynamic shared memory usage intended, in bytes
+ * \param blockSizeLimit  - The maximum block size \p func is designed to handle
+ * \param flags       - Options
+ *
+ * \return
+ * ::CUDA_SUCCESS,
+ * ::CUDA_ERROR_DEINITIALIZED,
+ * ::CUDA_ERROR_NOT_INITIALIZED,
+ * ::CUDA_ERROR_INVALID_CONTEXT,
+ * ::CUDA_ERROR_INVALID_VALUE,
+ * ::CUDA_ERROR_UNKNOWN
+ * \notefnerr
+ *
+ */
+CUresult CUDAAPI cuOccupancyMaxPotentialBlockSizeWithFlags(int *minGridSize, int *blockSize, CUfunction func, CUoccupancyB2DSize blockSizeToDynamicSMemSize, size_t dynamicSMemSize, int blockSizeLimit, unsigned int flags);
 
 /** @} */ /* END CUDA_OCCUPANCY */
 #endif /* __CUDA_API_VERSION >= 6050 */
@@ -9273,6 +9765,8 @@ CUresult CUDAAPI cuSurfRefGetArray(CUarray *phArray, CUsurfref hSurfRef);
  * the type of resource is a CUDA array or a CUDA mipmapped array.
  *
  * Texture objects are only supported on devices of compute capability 3.0 or higher.
+ * Additionally, a texture object is an opaque value, and, as such, should only be
+ * accessed through CUDA API calls.
  *
  * The ::CUDA_RESOURCE_DESC structure is defined as:
  * \code
@@ -9566,6 +10060,8 @@ CUresult CUDAAPI cuTexObjectGetResourceViewDesc(CUDA_RESOURCE_VIEW_DESC *pResVie
  * must be set to a valid CUDA array handle. ::CUDA_RESOURCE_DESC::flags must be set to zero.
  *
  * Surface objects are only supported on devices of compute capability 3.0 or higher.
+ * Additionally, a surface object is an opaque value, and, as such, should only be
+ * accessed through CUDA API calls.
  *
  * \param pSurfObject - Surface object to create
  * \param pResDesc    - Resource descriptor
@@ -9672,6 +10168,8 @@ CUresult CUDAAPI cuDeviceCanAccessPeer(int *canAccessPeer, CUdevice dev, CUdevic
  * Note that access granted by this call is unidirectional and that in order to access
  * memory from the current context in \p peerContext, a separate symmetric call 
  * to ::cuCtxEnablePeerAccess() is required.
+ *
+ * There is a system-wide maximum of eight peer connections per device.
  *
  * Returns ::CUDA_ERROR_PEER_ACCESS_UNSUPPORTED if ::cuDeviceCanAccessPeer() indicates
  * that the ::CUdevice of the current context cannot directly access memory
@@ -10058,6 +10556,29 @@ CUresult CUDAAPI cuGetExportTable(const void **ppExportTable, const CUuuid *pExp
     #undef cuCtxPushCurrent
     #undef cuStreamDestroy
     #undef cuEventDestroy
+    #undef cuMemcpy
+    #undef cuMemcpyAsync
+    #undef cuMemcpyPeer
+    #undef cuMemcpyPeerAsync
+    #undef cuMemcpy3DPeer
+    #undef cuMemcpy3DPeerAsync
+    #undef cuMemsetD8Async
+    #undef cuMemsetD16Async
+    #undef cuMemsetD32Async
+    #undef cuMemsetD2D8Async
+    #undef cuMemsetD2D16Async
+    #undef cuMemsetD2D32Async
+    #undef cuStreamGetPriority
+    #undef cuStreamGetFlags
+    #undef cuStreamWaitEvent
+    #undef cuStreamAddCallback
+    #undef cuStreamAttachMemAsync
+    #undef cuStreamQuery
+    #undef cuStreamSynchronize
+    #undef cuEventRecord
+    #undef cuLaunchKernel
+    #undef cuGraphicsMapResources
+    #undef cuGraphicsUnmapResources
 #endif /* __CUDA_API_VERSION_INTERNAL */
 
 #if defined(__CUDA_API_VERSION_INTERNAL) || (__CUDA_API_VERSION >= 4000 && __CUDA_API_VERSION < 6050)
@@ -10233,6 +10754,58 @@ CUresult CUDAAPI cuEventDestroy(CUevent hEvent);
     #undef CUDA_ARRAY3D_DESCRIPTOR_st
     #undef CUDA_ARRAY3D_DESCRIPTOR
 #endif /* __CUDA_API_VERSION_INTERNAL */
+
+#if defined(__CUDA_API_VERSION_INTERNAL)
+    CUresult CUDAAPI cuMemcpyHtoD_v2(CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount);
+    CUresult CUDAAPI cuMemcpyDtoH_v2(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount);
+    CUresult CUDAAPI cuMemcpyDtoD_v2(CUdeviceptr dstDevice, CUdeviceptr srcDevice, size_t ByteCount);
+    CUresult CUDAAPI cuMemcpyDtoA_v2(CUarray dstArray, size_t dstOffset, CUdeviceptr srcDevice, size_t ByteCount);
+    CUresult CUDAAPI cuMemcpyAtoD_v2(CUdeviceptr dstDevice, CUarray srcArray, size_t srcOffset, size_t ByteCount);
+    CUresult CUDAAPI cuMemcpyHtoA_v2(CUarray dstArray, size_t dstOffset, const void *srcHost, size_t ByteCount);
+    CUresult CUDAAPI cuMemcpyAtoH_v2(void *dstHost, CUarray srcArray, size_t srcOffset, size_t ByteCount);
+    CUresult CUDAAPI cuMemcpyAtoA_v2(CUarray dstArray, size_t dstOffset, CUarray srcArray, size_t srcOffset, size_t ByteCount);
+    CUresult CUDAAPI cuMemcpyHtoAAsync_v2(CUarray dstArray, size_t dstOffset, const void *srcHost, size_t ByteCount, CUstream hStream);
+    CUresult CUDAAPI cuMemcpyAtoHAsync_v2(void *dstHost, CUarray srcArray, size_t srcOffset, size_t ByteCount, CUstream hStream);
+    CUresult CUDAAPI cuMemcpy2D_v2(const CUDA_MEMCPY2D *pCopy);
+    CUresult CUDAAPI cuMemcpy2DUnaligned_v2(const CUDA_MEMCPY2D *pCopy);
+    CUresult CUDAAPI cuMemcpy3D_v2(const CUDA_MEMCPY3D *pCopy);
+    CUresult CUDAAPI cuMemcpyHtoDAsync_v2(CUdeviceptr dstDevice, const void *srcHost, size_t ByteCount, CUstream hStream);
+    CUresult CUDAAPI cuMemcpyDtoHAsync_v2(void *dstHost, CUdeviceptr srcDevice, size_t ByteCount, CUstream hStream);
+    CUresult CUDAAPI cuMemcpyDtoDAsync_v2(CUdeviceptr dstDevice, CUdeviceptr srcDevice, size_t ByteCount, CUstream hStream);
+    CUresult CUDAAPI cuMemcpy2DAsync_v2(const CUDA_MEMCPY2D *pCopy, CUstream hStream);
+    CUresult CUDAAPI cuMemcpy3DAsync_v2(const CUDA_MEMCPY3D *pCopy, CUstream hStream);
+    CUresult CUDAAPI cuMemsetD8_v2(CUdeviceptr dstDevice, unsigned char uc, size_t N);
+    CUresult CUDAAPI cuMemsetD16_v2(CUdeviceptr dstDevice, unsigned short us, size_t N);
+    CUresult CUDAAPI cuMemsetD32_v2(CUdeviceptr dstDevice, unsigned int ui, size_t N);
+    CUresult CUDAAPI cuMemsetD2D8_v2(CUdeviceptr dstDevice, size_t dstPitch, unsigned char uc, size_t Width, size_t Height);
+    CUresult CUDAAPI cuMemsetD2D16_v2(CUdeviceptr dstDevice, size_t dstPitch, unsigned short us, size_t Width, size_t Height);
+    CUresult CUDAAPI cuMemsetD2D32_v2(CUdeviceptr dstDevice, size_t dstPitch, unsigned int ui, size_t Width, size_t Height);
+    CUresult CUDAAPI cuMemcpy(CUdeviceptr dst, CUdeviceptr src, size_t ByteCount);
+    CUresult CUDAAPI cuMemcpyAsync(CUdeviceptr dst, CUdeviceptr src, size_t ByteCount, CUstream hStream);
+    CUresult CUDAAPI cuMemcpyPeer(CUdeviceptr dstDevice, CUcontext dstContext, CUdeviceptr srcDevice, CUcontext srcContext, size_t ByteCount);
+    CUresult CUDAAPI cuMemcpyPeerAsync(CUdeviceptr dstDevice, CUcontext dstContext, CUdeviceptr srcDevice, CUcontext srcContext, size_t ByteCount, CUstream hStream);
+    CUresult CUDAAPI cuMemcpy3DPeer(const CUDA_MEMCPY3D_PEER *pCopy);
+    CUresult CUDAAPI cuMemcpy3DPeerAsync(const CUDA_MEMCPY3D_PEER *pCopy, CUstream hStream);
+
+    CUresult CUDAAPI cuMemsetD8Async(CUdeviceptr dstDevice, unsigned char uc, size_t N, CUstream hStream);
+    CUresult CUDAAPI cuMemsetD16Async(CUdeviceptr dstDevice, unsigned short us, size_t N, CUstream hStream);
+    CUresult CUDAAPI cuMemsetD32Async(CUdeviceptr dstDevice, unsigned int ui, size_t N, CUstream hStream);
+    CUresult CUDAAPI cuMemsetD2D8Async(CUdeviceptr dstDevice, size_t dstPitch, unsigned char uc, size_t Width, size_t Height, CUstream hStream);
+    CUresult CUDAAPI cuMemsetD2D16Async(CUdeviceptr dstDevice, size_t dstPitch, unsigned short us, size_t Width, size_t Height, CUstream hStream);
+    CUresult CUDAAPI cuMemsetD2D32Async(CUdeviceptr dstDevice, size_t dstPitch, unsigned int ui, size_t Width, size_t Height, CUstream hStream);
+
+    CUresult CUDAAPI cuStreamGetPriority(CUstream hStream, int *priority);
+    CUresult CUDAAPI cuStreamGetFlags(CUstream hStream, unsigned int *flags);
+    CUresult CUDAAPI cuStreamWaitEvent(CUstream hStream, CUevent hEvent, unsigned int Flags);
+    CUresult CUDAAPI cuStreamAddCallback(CUstream hStream, CUstreamCallback callback, void *userData, unsigned int flags);
+    CUresult CUDAAPI cuStreamAttachMemAsync(CUstream hStream, CUdeviceptr dptr, size_t length, unsigned int flags);
+    CUresult CUDAAPI cuStreamQuery(CUstream hStream);
+    CUresult CUDAAPI cuStreamSynchronize(CUstream hStream);
+    CUresult CUDAAPI cuEventRecord(CUevent hEvent, CUstream hStream);
+    CUresult CUDAAPI cuLaunchKernel(CUfunction f, unsigned int gridDimX, unsigned int gridDimY, unsigned int gridDimZ, unsigned int blockDimX, unsigned int blockDimY, unsigned int blockDimZ, unsigned int sharedMemBytes, CUstream hStream, void **kernelParams, void **extra);
+    CUresult CUDAAPI cuGraphicsMapResources(unsigned int count, CUgraphicsResource *resources, CUstream hStream);
+    CUresult CUDAAPI cuGraphicsUnmapResources(unsigned int count, CUgraphicsResource *resources, CUstream hStream);
+#endif
 
 #ifdef __cplusplus
 }

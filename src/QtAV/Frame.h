@@ -1,6 +1,6 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -26,7 +26,7 @@
 #include <QtCore/QVariant>
 #include <QtCore/QSharedData>
 
-// TODO: plane=>channel
+// TODO: fromAVFrame() asAVFrame()?
 namespace QtAV {
 
 class FramePrivate;
@@ -37,9 +37,6 @@ public:
     Frame(const Frame& other);
     virtual ~Frame() = 0;
     Frame& operator =(const Frame &other);
-
-    // allocate memory with given format and other information
-    virtual int allocate();
     /*!
      * \brief planeCount
      *  a decoded frame can be packed and planar. packed format has only 1 plane, while planar
@@ -68,7 +65,8 @@ public:
     // deep copy 1 plane data
     QByteArray data(int plane = 0) const;
     uchar* bits(int plane = 0);
-    const uchar *bits(int plane = 0) const;
+    const uchar *bits(int plane = 0) const { return constBits(plane);}
+    const uchar* constBits(int plane = 0) const;
     /*!
      * \brief setBits
      * does nothing if plane is invalid. if given array size is greater than planeCount(), only planeCount() elements is used

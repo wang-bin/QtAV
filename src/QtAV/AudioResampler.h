@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -23,26 +23,45 @@
 #define QTAV_AUDIORESAMPLER_H
 
 #include <QtAV/QtAV_Global.h>
-#include <QtAV/FactoryDefine.h>
 
 namespace QtAV {
 
 typedef int AudioResamplerId;
-class AudioResampler;
-FACTORY_DECLARE(AudioResampler)
-
 class AudioFormat;
 class AudioResamplerPrivate;
 class Q_AV_EXPORT AudioResampler //export is required for users who want add their own subclass outside QtAV
 {
     DPTR_DECLARE_PRIVATE(AudioResampler)
 public:
-    AudioResampler();
     virtual ~AudioResampler();
+    // if QtAV is static linked (ios for example), components may be not automatically registered. Add registerAll() to workaround
+    static void registerAll();
+    template<class C>
+    static bool Register(AudioResamplerId id, const char* name) { return Register(id, create<C>, name);}
+    static AudioResampler* create(AudioResamplerId id);
+    /*!
+     * \brief create
+     * Create resampler from name
+     * \param name can be "FFmpeg", "Libav"
+     */
+    static AudioResampler* create(const char* name);
+    /*!
+     * \brief next
+     * \param id NULL to get the first id address
+     * \return address of id or NULL if not found/end
+     */
+    static AudioResamplerId* next(AudioResamplerId* id = 0);
+    static const char* name(AudioResamplerId id);
+    static AudioResamplerId id(const char* name);
 
     QByteArray outData() const;
     /* check whether the parameters are supported. If not, you should use ff*/
-    virtual bool prepare(); //call after all parameters are setted
+    /*!
+     * \brief prepare
+     * Check whether the parameters are supported and setup the resampler
+     * setIn/OutXXX will call prepare() if format is changed
+     */
+    virtual bool prepare();
     virtual bool convert(const quint8** data);
     //speed: >0, default is 1
     void setSpeed(qreal speed); //out_sample_rate = out_sample_rate/speed
@@ -72,11 +91,21 @@ public:
     void setInChannels(int channels);
     void setOutChannels(int channels);
     //Are getter functions required?
+private:
+    AudioResampler();
+    template<class C>
+    static AudioResampler* create() {
+        return new C();
+    }
+    typedef AudioResampler* (*AudioResamplerCreator)();
+    static bool Register(AudioResamplerId id, AudioResamplerCreator, const char *name);
+
 protected:
     AudioResampler(AudioResamplerPrivate& d);
     DPTR_DECLARE(AudioResampler)
 };
 
+extern Q_AV_EXPORT AudioResamplerId AudioResamplerId_FF;
+extern Q_AV_EXPORT AudioResamplerId AudioResamplerId_Libav;
 } //namespace QtAV
-
 #endif // QTAV_AUDIORESAMPLER_H

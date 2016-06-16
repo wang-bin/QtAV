@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -20,13 +20,17 @@
 ******************************************************************************/
 
 #include "PlainText.h"
+#include "QtAV/QtAV_Global.h"
 #include <stdio.h>
 #include <string.h>
 
 namespace QtAV {
 namespace PlainText {
 
-// from mpv/sub/sd_ass.c
+/*
+ *  from mpv/sub/sd_ass.c
+ * ass_to_plaintext() was written by wm4 and he says it can be under LGPL
+ */
 
 struct buf {
     char *start;
@@ -45,6 +49,7 @@ static void append(struct buf *b, char c)
 static void ass_to_plaintext(struct buf *b, const char *in)
 {
     bool in_tag = false;
+    const char *open_tag_pos = NULL;
     bool in_drawing = false;
     while (*in) {
         if (in_tag) {
@@ -53,11 +58,13 @@ static void ass_to_plaintext(struct buf *b, const char *in)
                 in_tag = false;
             } else if (in[0] == '\\' && in[1] == 'p') {
                 in += 2;
-                // skip text between \pN and \p0 tags
-                if (in[0] == '0') {
-                    in_drawing = false;
-                } else if (in[0] >= '1' && in[0] <= '9') {
-                    in_drawing = true;
+                // Skip text between \pN and \p0 tags. A \p without a number
+                // is the same as \p0, and leading 0s are also allowed.
+                in_drawing = false;
+                while (in[0] >= '0' && in[0] <= '9') {
+                    if (in[0] != '0')
+                        in_drawing = true;
+                    in += 1;
                 }
             } else {
                 in += 1;
@@ -70,6 +77,7 @@ static void ass_to_plaintext(struct buf *b, const char *in)
                 in += 2;
                 append(b, ' ');
             } else if (in[0] == '{') {
+                open_tag_pos = in;
                 in += 1;
                 in_tag = true;
             } else {
@@ -78,6 +86,11 @@ static void ass_to_plaintext(struct buf *b, const char *in)
                 in += 1;
             }
         }
+    }
+    // A '{' without a closing '}' is always visible.
+    if (in_tag) {
+        while (*open_tag_pos)
+            append(b, *open_tag_pos++);
     }
 }
 
@@ -124,7 +137,7 @@ QString fromAss(const char* ass) {
     QString line2 = QString::fromUtf8(b.start + p + 1).trimmed();
     if (line2.isEmpty())
         return QString::fromUtf8(ret);
-    return QString::fromUtf8(ret) + "\n" + line2;
+    return QString::fromUtf8(ret) + QStringLiteral("\n") + line2;
 }
 
 } //namespace PlainText

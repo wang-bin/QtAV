@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -104,6 +104,7 @@ class VideoFrameExtractorPrivate : public DPtrPrivate<VideoFrameExtractor>
 public:
     VideoFrameExtractorPrivate()
         : extracted(false)
+        , abort_seek(false)
         , async(true)
         , has_video(true)
         , auto_extract(true)
@@ -114,42 +115,39 @@ public:
         , decoder(0)
     {
         QVariantHash opt;
-        opt["skip_frame"] = 8; // 8 for "avcodec", "NoRef" for "FFmpeg". see AVDiscard
-        dec_opt_framedrop["avcodec"] = opt;
-        opt["skip_frame"] = 0; // 0 for "avcodec", "Default" for "FFmpeg". see AVDiscard
-        dec_opt_normal["avcodec"] = opt; // avcodec need correct string or value in libavcodec
+        opt[QString::fromLatin1("skip_frame")] = 8; // 8 for "avcodec", "NoRef" for "FFmpeg". see AVDiscard
+        opt[QString::fromLatin1("skip_loop_filter")] = 8; //skip all?
+        //skip_dict is slower
+        dec_opt_framedrop[QString::fromLatin1("avcodec")] = opt;
+        opt[QString::fromLatin1("skip_frame")] = 0; // 0 for "avcodec", "Default" for "FFmpeg". see AVDiscard
+        opt[QString::fromLatin1("skip_loop_filter")] = 0;
+        dec_opt_normal[QString::fromLatin1("avcodec")] = opt; // avcodec need correct string or value in libavcodec
         codecs
 #if QTAV_HAVE(DXVA)
-                    // << "DXVA"
+                    // << QStringLiteral("DXVA")
 #endif //QTAV_HAVE(DXVA)
 #if QTAV_HAVE(VAAPI)
-                    // << "VAAPI"
+                    // << QStringLiteral("VAAPI")
 #endif //QTAV_HAVE(VAAPI)
 #if QTAV_HAVE(CEDARV)
-                    //<< "Cedarv"
+                    //<< QStringLiteral("Cedarv")
 #endif //QTAV_HAVE(CEDARV)
 #if QTAV_HAVE(VDA)
-                    // << "VDA" // only 1 app can use VDA at a given time
+                    // << QStringLiteral("VDA") // only 1 app can use VDA at a given time
 #endif //QTAV_HAVE(VDA)
-                    << "FFmpeg";
+                    << QStringLiteral("FFmpeg");
     }
     ~VideoFrameExtractorPrivate() {
         // stop first before demuxer and decoder close to avoid running new seek task after demuxer is closed.
         thread.waitStop();
-        // close codec context first.
-        decoder.reset(0);
-        demuxer.unload();
+        releaseResourceInternal();
     }
-
     bool checkAndOpen() {
         const bool loaded = demuxer.fileName() == source && demuxer.isLoaded();
-        if (loaded && decoder && !demuxer.atEnd())
+        if (loaded && decoder)// && !demuxer.atEnd()) //we may seek back later when eof got. TODO: remove demuxer.atEnd()
             return true;
         seek_count = 0;
-        if (decoder) { // new source
-            decoder->close();
-            decoder.reset(0);
-        }
+        decoder.reset(0);
         if (!loaded || demuxer.atEnd()) {
             demuxer.unload();
             demuxer.setMedia(source);
@@ -171,23 +169,19 @@ public:
                 precision = kDefaultPrecision;
         }
         foreach (const QString& c, codecs) {
-            VideoDecoderId cid = VideoDecoderFactory::id(c.toUtf8().constData());
-            VideoDecoder *vd = VideoDecoderFactory::create(cid);
+            VideoDecoder *vd = VideoDecoder::create(c.toUtf8().constData());
             if (!vd)
                 continue;
             decoder.reset(vd);
             decoder->setCodecContext(demuxer.videoCodecContext());
-            if (!decoder->prepare()) {
-                decoder.reset(0);
-                continue;
-            }
             if (!decoder->open()) {
                 decoder.reset(0);
                 continue;
             }
             QVariantHash opt, va;
-            va["display"] = "X11"; // to support swscale
-            opt["vaapi"] = va;
+            // FIXME: why QStringLiteral can't be used as key for vs<2015 but somewhere else it can?  error C2958: the left bracket '[' found at qstringliteral
+            va[QString::fromLatin1("display")] = QString::fromLatin1("X11"); // to support swscale
+            opt[QString::fromLatin1("vaapi")] = va;
             decoder->setOptions(opt);
             break;
         }
@@ -196,56 +190,86 @@ public:
 
     // return the key frame position
     bool extractInPrecision(qint64 value, int range) {
+        abort_seek = false;
         frame = VideoFrame();
         if (value < demuxer.startTime())
             value += demuxer.startTime();
         demuxer.seek(value);
         const int vstream = demuxer.videoStream();
         Packet pkt;
+        qint64 pts0 = -1;
+        bool warn_bad_seek = true;
+        bool warn_out_of_range = true;
         while (!demuxer.atEnd()) {
+            if (abort_seek) {
+                qDebug("VideoFrameExtractor abort seek before read");
+                return false;
+            }
             if (!demuxer.readFrame())
                 continue;
             if (demuxer.stream() != vstream)
                 continue;
             pkt = demuxer.packet();
+            if (pts0 < 0LL)
+                pts0 = (qint64)(pkt.pts*1000.0);
             if ((qint64)(pkt.pts*1000.0) - value > (qint64)range) {
-                qDebug("read packet out of range");
-                return false;
+                if (warn_out_of_range)
+                    qDebug("read packet out of range");
+                warn_out_of_range = false;
+                // No return because decoder needs more packets before the desired frame is decoded
+                //return false;
             }
             //qDebug("video packet: %f", pkt.pts);
             // TODO: always key frame?
             if (pkt.hasKeyFrame)
                 break;
-            else
+            if (warn_bad_seek)
                 qWarning("Not seek to key frame!!!");
+            warn_bad_seek = false;
+        }
+        // enlarge range if seek to key-frame failed
+        const qint64 key_pts = (qint64)(pkt.pts*1000.0);
+        const bool enlarge_range = pts0 >= 0LL && key_pts - pts0 > 0LL;
+        if (enlarge_range) {
+            range = qMax<qint64>(key_pts - value, range);
+            qDebug() << "enlarge range ==>>>> " << range;
         }
         if (!pkt.isValid()) {
             qWarning("VideoFrameExtractor failed to get a packet at %lld", value);
             return false;
         }
-        // no flush is required because we compare the correct decoded timestamp
-        //decoder->flush(); //must flush otherwise old frames will be decoded at the beginning
+        decoder->flush(); //must flush otherwise old frames will be decoded at the beginning
         decoder->setOptions(dec_opt_normal);
         // must decode key frame
         int k = 0;
         while (k < 2 && !frame.isValid()) {
+            if (abort_seek) {
+                qDebug("VideoFrameExtractor abort seek before decoding key frames");
+                return false;
+            }
             //qWarning("invalid key frame!!!!! undecoded: %d", decoder->undecodedSize());
             if (decoder->decode(pkt)) {
                 frame = decoder->frame();
             }
             ++k;
         }
-        // seek backward, so value >= t
+        // if seek backward correctly to key frame, diff0 = t - value <= 0
+        // but sometimes seek to no-key frame(and range is enlarged), diff0 >= 0
         // decode key frame
-        if (int(value - frame.timestamp()) <= range) {
+        const int diff0 = qint64(frame.timestamp()*1000.0) - value;
+        if (qAbs(diff0) <= range) { //TODO: flag forward: result pts must >= value
             if (frame.isValid()) {
-                qDebug() << "VideoFrameExtractor: key frame found. format: " <<  frame.format();
+                qDebug() << "VideoFrameExtractor: key frame found @" << frame.timestamp() <<" diff=" << diff0 << ". format: " <<  frame.format();
                 return true;
             }
         }
         QVariantHash* dec_opt = &dec_opt_normal; // 0: default, 1: framedrop
         // decode at the given position
         while (!demuxer.atEnd()) {
+            if (abort_seek) {
+                qDebug("VideoFrameExtractor abort seek after key frame before read");
+                return false;
+            }
             if (!demuxer.readFrame())
                 continue;
             if (demuxer.stream() != vstream)
@@ -294,16 +318,20 @@ public:
             }
             // if decoder was not flushed, we may get old frame which is acceptable
             if (diff > range && t > pts) {
-                qWarning("out pts out of range");
+                qWarning("out pts out of range. diff=%lld, range=%d", diff, range);
                 frame = VideoFrame();
                 return false;
             }
         }
         ++seek_count;
         // now we get the final frame
+        if (demuxer.atEnd())
+            releaseResourceInternal();
         return true;
     }
     void releaseResourceInternal() {
+        seek_count = 0;
+        // close codec context first.
         decoder.reset(0);
         demuxer.unload();
     }
@@ -321,6 +349,7 @@ public:
     }
 
     bool extracted;
+    volatile bool abort_seek;
     bool async;
     bool has_video;
     bool loading;
@@ -350,14 +379,14 @@ VideoFrameExtractor::VideoFrameExtractor(QObject *parent) :
     connect(this, SIGNAL(aboutToExtract(qint64)), SLOT(extractInternal(qint64)));
 }
 
-void VideoFrameExtractor::setSource(const QString value)
+void VideoFrameExtractor::setSource(const QString url)
 {
     DPTR_D(VideoFrameExtractor);
-    if (value == d.source)
+    if (url == d.source)
         return;
-    d.source = value;
+    d.source = url;
     d.has_video = true;
-    emit sourceChanged();
+    Q_EMIT sourceChanged();
     d.frame = VideoFrame();
     d.safeReleaseResource();
 }
@@ -373,7 +402,7 @@ void VideoFrameExtractor::setAsync(bool value)
     if (d.async == value)
         return;
     d.async = value;
-    emit asyncChanged();
+    Q_EMIT asyncChanged();
 }
 
 bool VideoFrameExtractor::async() const
@@ -387,7 +416,7 @@ void VideoFrameExtractor::setAutoExtract(bool value)
     if (d.auto_extract == value)
         return;
     d.auto_extract = value;
-    emit autoExtractChanged();
+    Q_EMIT autoExtractChanged();
 }
 
 bool VideoFrameExtractor::autoExtract() const
@@ -406,7 +435,7 @@ void VideoFrameExtractor::setPosition(qint64 value)
     d.frame = VideoFrame();
     d.extracted = false;
     d.position = value;
-    emit positionChanged();
+    Q_EMIT positionChanged();
     if (!autoExtract())
         return;
     extract();
@@ -427,7 +456,7 @@ void VideoFrameExtractor::setPrecision(int value)
     // it's key frame finding rule
     if (value >= 0)
         d.precision = value;
-    emit precisionChanged();
+    Q_EMIT precisionChanged();
 }
 
 int VideoFrameExtractor::precision() const
@@ -453,7 +482,7 @@ void VideoFrameExtractor::extract()
     }
 #if ASYNC_SIGNAL
     else {
-        emit aboutToExtract(position());
+        Q_EMIT aboutToExtract(position());
         return;
     }
 #endif
@@ -471,6 +500,7 @@ void VideoFrameExtractor::extract()
         VideoFrameExtractor *extractor;
         qint64 position;
     };
+    d.abort_seek = true;
     d.thread.addTask(new ExtractTask(this, position()));
     return;
 #endif
@@ -484,19 +514,19 @@ void VideoFrameExtractor::extractInternal(qint64 pos)
     DPTR_D(VideoFrameExtractor);
     int precision_old = precision();
     if (!d.checkAndOpen()) {
-        emit error();
+        Q_EMIT error();
         //qWarning("can not open decoder....");
         return; // error handling
     }
     if (precision_old != precision()) {
-        emit precisionChanged();
+        Q_EMIT precisionChanged();
     }
     d.extracted = d.extractInPrecision(pos, precision());
     if (!d.extracted) {
-        emit error();
+        Q_EMIT error();
         return;
     }
-    emit frameExtracted(d.frame);
+    Q_EMIT frameExtracted(d.frame);
 }
 
 } //namespace QtAV

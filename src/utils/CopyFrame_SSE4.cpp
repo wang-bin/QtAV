@@ -21,8 +21,11 @@
 
 // for mingw gcc
 #include <smmintrin.h> //stream load
+#include <stdint.h> //intptr_t
+#include <string.h>
 #define STREAM_LOAD_SI128(x) _mm_stream_load_si128(x)
 namespace sse4 { //avoid name conflict
+#define INC_FROM_NAMESPACE
 #include "CopyFrame_SSE2.cpp"
 } //namespace sse4
 
@@ -30,4 +33,9 @@ namespace sse4 { //avoid name conflict
 void CopyFrame_SSE4(void *pSrc, void *pDest, void *pCacheBlock, UINT width, UINT height, UINT pitch)
 {
     sse4::CopyFrame_SSE2(pSrc, pDest, pCacheBlock, width, height, pitch);
+}
+
+void *memcpy_sse4(void* dst, const void* src, size_t size)
+{
+    return sse4::memcpy_sse2(dst, src, size);
 }

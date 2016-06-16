@@ -81,7 +81,10 @@ typedef struct
         unsigned int numerator;     // frame rate numerator   (0 = unspecified or variable frame rate)
         unsigned int denominator;   // frame rate denominator (0 = unspecified or variable frame rate)
     } frame_rate;                   // frame rate = numerator / denominator (for example: 30000/1001)
-    int progressive_sequence;       // 0=interlaced, 1=progressive
+    unsigned char progressive_sequence; // 0=interlaced, 1=progressive
+    unsigned char bit_depth_luma_minus8;
+    unsigned char bit_depth_chroma_minus8;
+    unsigned char reserved1;
     unsigned int coded_width;       // coded frame width
     unsigned int coded_height;      // coded frame height 
     struct {                        // area of the frame that should be displayed
@@ -97,7 +100,9 @@ typedef struct
         int y;
     } display_aspect_ratio;
     struct {
-        unsigned char video_format;
+        unsigned char video_format          : 3;
+        unsigned char video_full_range_flag : 1;
+        unsigned char reserved_zero_bits    : 4;
         unsigned char color_primaries;
         unsigned char transfer_characteristics;
         unsigned char matrix_coefficients;

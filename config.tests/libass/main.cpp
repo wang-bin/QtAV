@@ -21,8 +21,7 @@
 extern "C" {
 #include <ass/ass.h>
 }
-int main()
-{
-    ass_library_done(ass_library_init());
-    return 0;
+
+void test() {
+    ass_library_init();
 }

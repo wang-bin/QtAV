@@ -1,6 +1,6 @@
 /******************************************************************************
     Simple Player:  this file is part of QtAV examples
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -24,8 +24,10 @@
 #include <QWidget>
 #include <QtAV>
 
+QT_BEGIN_NAMESPACE
 class QSlider;
 class QPushButton;
+QT_END_NAMESPACE
 class PlayerWindow : public QWidget
 {
     Q_OBJECT
@@ -33,10 +35,14 @@ public:
     explicit PlayerWindow(QWidget *parent = 0);
 public Q_SLOTS:
     void openMedia();
-    void seek(int);
+    void seekBySlider(int value);
+    void seekBySlider();
     void playPause();
 private Q_SLOTS:
+    void updateSlider(qint64 value);
     void updateSlider();
+    void updateSliderUnit();
+
 private:
     QtAV::VideoOutput *m_vo;
     QtAV::AVPlayer *m_player;
@@ -44,6 +50,7 @@ private:
     QPushButton *m_openBtn;
     QPushButton *m_playBtn;
     QPushButton *m_stopBtn;
+    int m_unit;
 };
 
 #endif // PLAYERWINDOW_H

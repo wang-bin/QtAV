@@ -1,6 +1,6 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -27,6 +27,7 @@
 namespace QtAV {
 
 class AudioDecoder;
+class AudioFrame;
 class AudioThreadPrivate;
 class AudioThread : public AVThread
 {
@@ -36,6 +37,7 @@ public:
     explicit AudioThread(QObject *parent = 0);
 
 protected:
+    void applyFilters(AudioFrame& frame);
     virtual void run();
 };
 

@@ -3,7 +3,8 @@ TEMPLATE = subdirs
 SUBDIRS += \
     ao \
     decoder \
-    subtitle
+    subtitle \
+    transcode
 
 !no-widgets {
   SUBDIRS += \

@@ -6,6 +6,8 @@
 #   - sudo add-apt-repository ppa:wsnipex/vaapi
 set -ev
 
+echo "$TRAVIS_BUILD_DIR"
+
 tail -n 27 /proc/cpuinfo
 uname -a
 cat /etc/issue

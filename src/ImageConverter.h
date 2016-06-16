@@ -1,6 +1,6 @@
 /******************************************************************************
     ImageConverter: Base class for image resizing & color model convertion
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -24,16 +24,12 @@
 #define QTAV_IMAGECONVERTER_H
 
 #include <QtAV/QtAV_Global.h>
-#include <QtAV/FactoryDefine.h>
 #include <QtAV/VideoFormat.h>
 #include <QtCore/QVector>
 
 namespace QtAV {
 
 typedef int ImageConverterId;
-class ImageConverter;
-FACTORY_DECLARE(ImageConverter)
-
 class ImageConverterPrivate;
 class ImageConverter //export is not needed
 {
@@ -44,6 +40,7 @@ public:
 
     QByteArray outData() const;
     // return false if i/o format not supported, or size is not valid.
+    // TODO: use isSupported(i/o format);
     virtual bool check() const;
     void setInSize(int width, int height);
     void setOutSize(int width, int height);
@@ -53,8 +50,12 @@ public:
     void setOutFormat(const VideoFormat& format);
     void setOutFormat(VideoFormat::PixelFormat format);
     void setOutFormat(int formate);
-    void setInterlaced(bool interlaced);
-    bool isInterlaced() const;
+    // default is full range.
+    void setInRange(ColorRange range);
+    ColorRange inRange() const;
+    // default is full range
+    void setOutRange(ColorRange range);
+    ColorRange outRange() const;
     /*!
      * brightness, contrast, saturation: -100~100
      * If value changes, setup sws
@@ -67,9 +68,24 @@ public:
     int saturation() const;
     QVector<quint8*> outPlanes() const;
     QVector<int> outLineSizes() const;
-    virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]) = 0;
-    //virtual bool convertColor(const quint8 *const srcSlice[], const int srcStride[]) = 0;
-    //virtual bool resize(const quint8 *const srcSlice[], const int srcStride[]) = 0;
+    virtual bool convert(const quint8 *const src[], const int srcStride[]);
+    virtual bool convert(const quint8 *const src[], const int srcStride[], quint8 *const dst[], const int dstStride[]) = 0;
+public:
+    template<class C> static bool Register(ImageConverterId id, const char* name) { return Register(id, create<C>, name);}
+    static ImageConverter* create(ImageConverterId id);
+    static ImageConverter* create(const char* name);
+    /*!
+     * \brief next
+     * \param id NULL to get the first id address
+     * \return address of id or NULL if not found/end
+     */
+    static ImageConverterId* next(ImageConverterId* id = 0);
+    static const char* name(ImageConverterId id);
+    static ImageConverterId id(const char* name);
+private:
+    template<class C> static ImageConverter* create() { return new C();}
+    typedef ImageConverter* (*ImageConverterCreator)();
+    static bool Register(ImageConverterId id, ImageConverterCreator, const char *name);
 protected:
     ImageConverter(ImageConverterPrivate& d);
     //Allocate memory for out data. Called in setOutFormat()
@@ -82,13 +98,15 @@ class ImageConverterFFPrivate;
  * \brief The ImageConverterFF class
  * based on libswscale
  */
-class ImageConverterFF : public ImageConverter //Q_AV_EXPORT is not needed
+class ImageConverterFF Q_DECL_FINAL: public ImageConverter //Q_AV_EXPORT is not needed
 {
     DPTR_DECLARE_PRIVATE(ImageConverterFF)
 public:
     ImageConverterFF();
-    virtual bool check() const;
-    virtual bool convert(const quint8 *const srcSlice[], const int srcStride[]);
+    bool check() const Q_DECL_OVERRIDE;
+    // FIXME: why match to the pure virtual one if not declare here?
+    bool convert(const quint8 *const src[], const int srcStride[]) Q_DECL_OVERRIDE { return ImageConverter::convert(src, srcStride);}
+    bool convert(const quint8 *const src[], const int srcStride[], quint8 *const dst[], const int dstStride[]) Q_DECL_OVERRIDE;
 };
 typedef ImageConverterFF ImageConverterSWS;
 

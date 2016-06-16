@@ -1,6 +1,6 @@
 /******************************************************************************
     Simple Player:  this file is part of QtAV examples
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,19 +19,20 @@
 ******************************************************************************/
 #include <QApplication>
 
-#include <QtAV/AVPlayer.h>
+#include <QtAV>
 #include <QtAVWidgets>
 
 int main(int argc, char *argv[])
 {
+    QtAV::Widgets::registerRenderers();
     QApplication a(argc, argv);
-    QtAV::GLWidgetRenderer2 renderer;
-    renderer.show();
-    renderer.setWindowTitle("Play video from qrc--QtAV " + QtAV_Version_String_Long() + " wbsecg1@gmail.com");
+    QtAV::VideoOutput renderer;
+    renderer.widget()->show();
+    renderer.widget()->setWindowTitle(QString::fromLatin1("Play video from qrc--QtAV %1 wbsecg1@gmail.com").arg(QtAV_Version_String_Long()));
     QtAV::AVPlayer player;
     player.setRenderer(&renderer);
 
-    player.play("qrc:/test.mp4");
+    player.play(QString::fromLatin1("qrc:/test.mp4"));
 
     return a.exec();
 }

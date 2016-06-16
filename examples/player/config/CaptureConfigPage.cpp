@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -38,7 +38,7 @@ CaptureConfigPage::CaptureConfigPage(QWidget *parent) :
     mpDir = new QLineEdit();
     hb->addWidget(mpDir);
     QToolButton *bt = new QToolButton();
-    bt->setText("...");
+    bt->setText(QString::fromLatin1("..."));
     hb->addWidget(bt);
     connect(bt, SIGNAL(clicked()), SLOT(selectSaveDir()));
     bt = new QToolButton();
@@ -47,38 +47,26 @@ CaptureConfigPage::CaptureConfigPage(QWidget *parent) :
     connect(bt, SIGNAL(clicked()), SLOT(browseCaptureDir()));
     formLayout->addRow(tr("Save dir"), hb);
     mpDir->setEnabled(false);
-    mpDir->setText(Config::instance().captureDir());
     mpFormat = new QComboBox();
     formLayout->addRow(tr("Save format"), mpFormat);
     QList<QByteArray> formats;
     formats << "Original" << QImageWriter::supportedImageFormats();
     foreach (const QByteArray& fmt, formats) {
-        mpFormat->addItem(fmt);
+        mpFormat->addItem(QString::fromLatin1(fmt));
     }
-    int idx = mpFormat->findText(Config::instance().captureFormat());
-    mpFormat->setCurrentIndex(idx);
     mpQuality = new Slider();
     formLayout->addRow(tr("Quality"), mpQuality);
     mpQuality->setRange(0, 100);
     mpQuality->setOrientation(Qt::Horizontal);
-    mpQuality->setValue(Config::instance().captureQuality());
     mpQuality->setSingleStep(1);
     mpQuality->setTickInterval(10);
     mpQuality->setTickPosition(QSlider::TicksBelow);
 
     connect(&Config::instance(), SIGNAL(captureDirChanged(QString)), mpDir, SLOT(setText(QString)));
     connect(&Config::instance(), SIGNAL(captureQualityChanged(int)), mpQuality, SLOT(setValue(int)));
-    connect(&Config::instance(), SIGNAL(captureFormatChanged(QString)), SLOT(formatChanged(QString)));
     connect(mpDir, SIGNAL(textChanged(QString)), SLOT(changeDirByUi(QString)));
     connect(mpFormat, SIGNAL(currentIndexChanged(QString)), SLOT(changeFormatByUi(QString)));
     connect(mpQuality, SIGNAL(valueChanged(int)), SLOT(changeQualityByUi(int)));
-}
-
-void CaptureConfigPage::apply()
-{
-    Config::instance().setCaptureDir(mpDir->text())
-            .setCaptureFormat(mpFormat->currentText().toUtf8())
-            .setCaptureQuality(mpQuality->value());
 }
 
 QString CaptureConfigPage::name() const
@@ -86,50 +74,20 @@ QString CaptureConfigPage::name() const
     return tr("Capture");
 }
 
-void CaptureConfigPage::cancel()
+void CaptureConfigPage::applyFromUi()
+{
+    Config::instance().setCaptureDir(mpDir->text())
+            .setCaptureFormat(mpFormat->currentText())
+            .setCaptureQuality(mpQuality->value());
+}
+
+void CaptureConfigPage::applyToUi()
 {
     mpDir->setText(Config::instance().captureDir());
-    formatChanged(Config::instance().captureFormat());
-    mpQuality->setValue(Config::instance().captureQuality());
-}
-
-void CaptureConfigPage::reset()
-{
-
-}
-
-void CaptureConfigPage::changeDirByUi(const QString& dir)
-{
-    if (applyOnUiChange()) {
-        Config::instance().setCaptureDir(dir);
-    } else {
-        emit Config::instance().captureDirChanged(dir);
-    }
-}
-
-void CaptureConfigPage::changeFormatByUi(const QString& fmt)
-{
-    if (applyOnUiChange()) {
-        Config::instance().setCaptureFormat(mpFormat->currentText().toUtf8());
-    } else{
-        emit Config::instance().captureFormatChanged(fmt);
-    }
-}
-
-void CaptureConfigPage::changeQualityByUi(int q)
-{
-    if (applyOnUiChange()) {
-        Config::instance().setCaptureQuality(mpQuality->value());
-    } else {
-        emit Config::instance().captureQualityChanged(q);
-    }
-}
-
-void CaptureConfigPage::formatChanged(const QString& fmt)
-{
-    int idx = mpFormat->findText(fmt);
+    int idx = mpFormat->findText(Config::instance().captureFormat());
     if (idx >= 0)
         mpFormat->setCurrentIndex(idx);
+    mpQuality->setValue(Config::instance().captureQuality());
 }
 
 void CaptureConfigPage::selectSaveDir()
@@ -143,5 +101,5 @@ void CaptureConfigPage::selectSaveDir()
 void CaptureConfigPage::browseCaptureDir()
 {
     qDebug("browse capture dir");
-    QDesktopServices::openUrl(QUrl("file:///" + mpDir->text()));
+    QDesktopServices::openUrl(QUrl(QString::fromLatin1("file:///") + mpDir->text()));
 }

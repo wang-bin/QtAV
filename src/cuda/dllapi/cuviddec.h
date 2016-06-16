@@ -63,6 +63,8 @@ typedef enum cudaVideoCodec_enum {
     cudaVideoCodec_H264_SVC,
     cudaVideoCodec_H264_MVC,
     cudaVideoCodec_HEVC,
+    cudaVideoCodec_VP8,
+    cudaVideoCodec_VP9,
     cudaVideoCodec_NumCodecs,
     // Uncompressed YUV
     cudaVideoCodec_YUV420 = (('I'<<24)|('Y'<<16)|('U'<<8)|('V')),   // Y,U,V (4:2:0)
@@ -410,7 +412,10 @@ typedef struct _CUVIDHEVCPICPARAMS
     unsigned char scaling_list_enable_flag;
     unsigned char IrapPicFlag;
     unsigned char IdrPicFlag;
-    unsigned char reserved1[16];
+    
+    unsigned char bit_depth_luma_minus8;
+    unsigned char bit_depth_chroma_minus8;
+    unsigned char reserved1[14];
     
     // pps
     unsigned char dependent_slice_segments_enabled_flag;
@@ -450,8 +455,8 @@ typedef struct _CUVIDHEVCPICPARAMS
     unsigned char num_tile_rows_minus1;
     
     unsigned short column_width_minus1[21];
-    unsigned short row_height_minus1[19];
-    unsigned int reserved3[16];
+    unsigned short row_height_minus1[21];
+    unsigned int reserved3[15];
 
     // RefPicSets
     int NumBitsForShortTermRPSInSlice;
@@ -478,6 +483,83 @@ typedef struct _CUVIDHEVCPICPARAMS
     unsigned char ScalingListDCCoeff32x32[2];  // [matrixId]
 } CUVIDHEVCPICPARAMS;
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////
+//
+// VP9 Picture Parameters for Decoding 
+//
+typedef struct _CUVIDVP9PICPARAMS
+{
+    unsigned int width;
+    unsigned int height;
+
+    //Frame Indexes
+    unsigned char reserved1;
+    unsigned char LastRefIdx;
+    unsigned char GoldenRefIdx;
+    unsigned char AltRefIdx;
+
+    unsigned short  ref0_width;    //ref_last coded width
+    unsigned short  ref0_height;   //ref_last coded height
+    unsigned short  ref1_width;    //ref_golden coded width
+    unsigned short  ref1_height;   //ref_golden coded height
+    unsigned short  ref2_width;    //ref_alt coded width
+    unsigned short  ref2_height;   //ref_alt coded height
+
+    unsigned int keyFrame;
+    unsigned int version;
+    unsigned int showFrame;
+    unsigned int errorResilient;
+    unsigned int colorSpace;
+    unsigned int subsamplingX;
+    unsigned int subsamplingY;
+    unsigned int activeRefIdx[3];
+    unsigned int intraOnly;
+    unsigned int resetFrameContext;
+    unsigned int frameParallelDecoding;
+    unsigned int refreshFrameFlags;
+    unsigned char  refFrameSignBias[4];
+    unsigned int frameContextIdx;
+    unsigned int resolutionChange;
+    unsigned int allow_high_precision_mv;
+    unsigned int mcomp_filter_type;
+    unsigned int allow_comp_inter_inter;
+    unsigned int comp_fixed_ref;
+    unsigned int comp_var_ref[2];
+    unsigned int loopFilterLevel;
+    unsigned int loopFilterSharpness;
+    unsigned int log2_tile_columns;
+    unsigned int log2_tile_rows;
+    unsigned int mbRefLfDelta[4];
+    unsigned int mbModeLfDelta[2];
+    int segmentMapTemporalUpdate;
+    unsigned char segmentFeatureEnable[8][4];
+    unsigned char mb_segment_tree_probs[7];
+    unsigned char segment_pred_probs[3];
+    unsigned char reserved2[2];
+    short segmentFeatureData[8][4];
+    unsigned int scaledWidth;
+    unsigned int scaledHeight;
+    unsigned int scalingActive;
+    unsigned int segmentEnabled;
+    unsigned int prevIsKeyFrame;
+    unsigned int PrevShowFrame;
+    unsigned int modeRefLfEnabled;
+    int qpYAc;
+    int qpYDc;
+    int qpChDc;
+    int qpChAc;
+    unsigned int lossless;
+    unsigned int segmentMapUpdate;
+    unsigned int segmentFeatureMode;
+    unsigned int refreshEntropyProbs;
+    unsigned int transform_mode;
+    int probsDecoded;
+    unsigned int comp_pred_mode;
+    unsigned int probRefreshDetected;
+    unsigned int frameTagSize;
+    unsigned int offsetToDctParts;
+} CUVIDVP9PICPARAMS;
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -508,6 +590,7 @@ typedef struct _CUVIDPICPARAMS
         CUVIDMPEG4PICPARAMS mpeg4;
         CUVIDJPEGPICPARAMS jpeg;
         CUVIDHEVCPICPARAMS hevc;
+        CUVIDVP9PICPARAMS vp9;
         unsigned int CodecReserved[1024];
     } CodecSpecific;
 } CUVIDPICPARAMS;

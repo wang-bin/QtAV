@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -21,8 +21,10 @@
 
 #include "QtAV/VideoOutput.h"
 #include "QtAV/private/VideoRenderer_p.h"
-#include "QtAV/VideoRendererTypes.h"
-
+#include "QtAV/version.h"
+#include <QtCore/QLibrary>
+#include <QtGui/QResizeEvent>
+#include "utils/Logger.h"
 /*!
  * onSetXXX(...): impl->onSetXXX(...); set value as impl; return ;
  */
@@ -33,11 +35,31 @@ class VideoOutputPrivate : public VideoRendererPrivate
 {
 public:
     VideoOutputPrivate(VideoRendererId rendererId, bool force) {
-        impl = VideoRendererFactory::create(rendererId);
+        if (!VideoRenderer::id("Widget")) {
+            //TODO: dso version check?
+#if defined(Q_OS_DARWIN)
+            avwidgets.setFileName(QStringLiteral("QtAVWidgets.framework/QtAVWidgets")); //no dylib check
+#elif defined(Q_OS_WIN)
+            avwidgets.setFileName(QStringLiteral("QtAVWidgets").append(QString::number(QTAV_VERSION_MAJOR(QtAV_Version()))));
+#else
+            avwidgets.setFileNameAndVersion(QStringLiteral("QtAVWidgets"), QTAV_VERSION_MAJOR(QtAV_Version()));
+#endif
+            qDebug() << "Loading QtAVWidgets module: " << avwidgets.fileName();
+            if (!avwidgets.load()) {
+                qWarning("Failed to load QtAVWidgets module");
+            }
+        }
+        impl = VideoRenderer::create(rendererId);
         if (!impl && !force) {
-            foreach (VideoRendererId vid, VideoRendererFactory::registeredIds()) {
-                impl = VideoRendererFactory::create(vid);
-                if (impl && impl->widget())
+            VideoRendererId *vid = NULL;
+            while ((vid = VideoRenderer::next(vid))) {
+                qDebug("next id: %d, name: %s", *vid, VideoRenderer::name(*vid));
+                if (impl) {
+                    delete impl;
+                    impl = 0;
+                }
+                impl = VideoRenderer::create(*vid);
+                if (impl && impl->isAvailable() && impl->widget())
                     break;
             }
         }
@@ -48,15 +70,14 @@ public:
         filters = impl->filters();
         renderer_width = impl->rendererWidth();
         renderer_height = impl->rendererHeight();
-        src_width = impl->frameSize().width();
-        src_height = impl->frameSize().height();
+        src_width = impl->videoFrameSize().width();
+        src_height = impl->videoFrameSize().height();
         source_aspect_ratio = qreal(src_width)/qreal(src_height);
         out_aspect_ratio_mode = impl->outAspectRatioMode();
         out_aspect_ratio = impl->outAspectRatio();
         quality = impl->quality();
         out_rect = impl->videoRect();
         roi = impl->regionOfInterest();
-        default_event_filter = impl->isDefaultEventFilterEnabled();
         preferred_format = impl->preferredPixelFormat();
         force_preferred = impl->isPreferredPixelFormatForced();
         brightness = impl->brightness();
@@ -66,28 +87,40 @@ public:
     }
     ~VideoOutputPrivate() {
         if (impl) {
-            delete impl;
+            QObject* obj = reinterpret_cast<QObject*>(impl->widget());
+            if (obj && !obj->parent())
+                obj->deleteLater();
             impl = 0;
         }
     }
 
     VideoRenderer *impl;
+    QLibrary avwidgets;
 };
 
 VideoOutput::VideoOutput(QObject *parent)
     : QObject(parent)
     , VideoRenderer(*new VideoOutputPrivate(0, false))
 {
+    if (d_func().impl && d_func().impl->widget()) {
+        ((QObject*)d_func().impl->widget())->installEventFilter(this);
+    }
 }
 
 VideoOutput::VideoOutput(VideoRendererId rendererId, QObject *parent)
     : QObject(parent)
     , VideoRenderer(*new VideoOutputPrivate(rendererId, true))
 {
+    if (d_func().impl && d_func().impl->widget()) {
+        ((QObject*)d_func().impl->widget())->installEventFilter(this);
+    }
 }
 
 VideoOutput::~VideoOutput()
 {
+    if (d_func().impl && d_func().impl->widget()) {
+        ((QObject*)d_func().impl->widget())->removeEventFilter(this);
+    }
 }
 
 VideoRendererId VideoOutput::id() const
@@ -97,25 +130,6 @@ VideoRendererId VideoOutput::id() const
     return d_func().impl->id();
 }
 
-bool VideoOutput::receive(const VideoFrame& frame)
-{
-    if (!isAvailable())
-        return false;
-    DPTR_D(VideoOutput);
-    d.source_aspect_ratio = frame.displayAspectRatio();
-    d.impl->d_func().source_aspect_ratio = d.source_aspect_ratio;
-    setInSize(frame.width(), frame.height());
-    // or simply call d.impl->receive(frame) to avoid lock here
-    QMutexLocker locker(&d.impl->dptr.pri<VideoRendererPrivate>().img_mutex);
-    Q_UNUSED(locker);
-    return d.impl->receiveFrame(frame);
-}
-/*
-void VideoOutput::setVideoFormat(const VideoFormat& format)
-{
-    d_func().impl->setVideoFormat(format);
-}
-*/
 bool VideoOutput::onSetPreferredPixelFormat(VideoFormat::PixelFormat pixfmt)
 {
     if (!isAvailable())
@@ -161,20 +175,35 @@ QGraphicsItem* VideoOutput::graphicsItem()
     return d_func().impl->graphicsItem();
 }
 
+OpenGLVideo* VideoOutput::opengl() const
+{
+    if (!isAvailable())
+        return 0;
+    return d_func().impl->opengl();
+}
+
+bool VideoOutput::eventFilter(QObject *obj, QEvent *event)
+{
+    DPTR_D(VideoOutput);
+    if (!d.impl || (QObject*)d.impl->widget() != obj)
+        return QObject::eventFilter(obj, event);
+    if (event->type() == QEvent::Resize) {
+        QResizeEvent *re = static_cast<QResizeEvent*>(event);
+        resizeRenderer(re->size());
+    }
+    return QObject::eventFilter(obj, event);
+}
+
 bool VideoOutput::receiveFrame(const VideoFrame& frame)
 {
     if (!isAvailable())
         return false;
     DPTR_D(VideoOutput);
+    d.impl->d_func().source_aspect_ratio = d.source_aspect_ratio;
+    d.impl->setInSize(frame.size());
+    QMutexLocker locker(&d.impl->d_func().img_mutex);
+    Q_UNUSED(locker); //TODO: double buffer for display/dec frame to avoid mutex
     return d.impl->receiveFrame(frame);
-}
-
-bool VideoOutput::needUpdateBackground() const
-{
-    if (!isAvailable())
-        return false;
-    DPTR_D(const VideoOutput);
-    return d.impl->needUpdateBackground();
 }
 
 void VideoOutput::drawBackground()
@@ -185,26 +214,12 @@ void VideoOutput::drawBackground()
     d.impl->drawBackground();
 }
 
-bool VideoOutput::needDrawFrame() const
-{
-    DPTR_D(const VideoOutput);
-    return d.impl->needDrawFrame();
-}
-
 void VideoOutput::drawFrame()
 {
     if (!isAvailable())
         return;
     DPTR_D(VideoOutput);
     d.impl->drawFrame();
-}
-
-void VideoOutput::resizeFrame(int width, int height)
-{
-    if (!isAvailable())
-        return;
-    DPTR_D(VideoOutput);
-    d.impl->resizeFrame(width, height);
 }
 
 void VideoOutput::handlePaintEvent()
@@ -230,13 +245,7 @@ void VideoOutput::onSetOutAspectRatioMode(OutAspectRatioMode mode)
     if (!isAvailable())
         return;
     DPTR_D(VideoOutput);
-    qreal a = d.impl->outAspectRatio();
-    OutAspectRatioMode am = d.impl->outAspectRatioMode();
     d.impl->setOutAspectRatioMode(mode);
-    if (a != outAspectRatio())
-        emit outAspectRatioChanged(outAspectRatio());
-    if (am != outAspectRatioMode())
-        emit outAspectRatioModeChanged(mode);
 }
 
 void VideoOutput::onSetOutAspectRatio(qreal ratio)
@@ -244,13 +253,7 @@ void VideoOutput::onSetOutAspectRatio(qreal ratio)
     if (!isAvailable())
         return;
     DPTR_D(VideoOutput);
-    qreal a = d.impl->outAspectRatio();
-    OutAspectRatioMode am = d.impl->outAspectRatioMode();
     d.impl->setOutAspectRatio(ratio);
-    if (a != outAspectRatio())
-        emit outAspectRatioChanged(ratio);
-    if (am != outAspectRatioMode())
-        emit outAspectRatioModeChanged(outAspectRatioMode());
 }
 
 bool VideoOutput::onSetQuality(Quality q)
@@ -272,7 +275,6 @@ bool VideoOutput::onSetOrientation(int value)
     if (d.impl->orientation() != value) {
         return false;
     }
-    emit orientationChanged(value);
     return true;
 }
 
@@ -290,7 +292,6 @@ bool VideoOutput::onSetRegionOfInterest(const QRectF& roi)
         return false;
     DPTR_D(VideoOutput);
     d.impl->setRegionOfInterest(roi);
-    emit regionOfInterestChanged(roi);
     return true;
 }
 
@@ -320,7 +321,6 @@ bool VideoOutput::onSetBrightness(qreal brightness)
     if (brightness != d.impl->brightness()) {
         return false;
     }
-    emit brightnessChanged(brightness);
     return true;
 }
 
@@ -334,7 +334,6 @@ bool VideoOutput::onSetContrast(qreal contrast)
     if (contrast != d.impl->contrast()) {
         return false;
     }
-    emit contrastChanged(contrast);
     return true;
 }
 
@@ -348,7 +347,6 @@ bool VideoOutput::onSetHue(qreal hue)
     if (hue != d.impl->hue()) {
         return false;
     }
-    emit hueChanged(hue);
     return true;
 }
 
@@ -362,8 +360,14 @@ bool VideoOutput::onSetSaturation(qreal saturation)
     if (saturation != d.impl->saturation()) {
         return false;
     }
-    emit saturationChanged(saturation);
     return true;
+}
+
+void VideoOutput::onSetBackgroundColor(const QColor &color)
+{
+    if (!isAvailable())
+        return;
+    d_func().impl->setBackgroundColor(color);
 }
 
 void VideoOutput::setStatistics(Statistics* statistics)
@@ -376,12 +380,12 @@ void VideoOutput::setStatistics(Statistics* statistics)
     //d.statistics =
 }
 
-bool VideoOutput::onInstallFilter(Filter *filter)
+bool VideoOutput::onInstallFilter(Filter *filter, int index)
 {
     if (!isAvailable())
         return false;
     DPTR_D(VideoOutput);
-    bool ret = d.impl->onInstallFilter(filter);
+    bool ret = d.impl->onInstallFilter(filter, index);
     d.filters = d.impl->filters();
     return ret;
 }

@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -32,13 +32,25 @@ class VideoDecoderFFmpegHW : public VideoDecoderFFmpegBase
     Q_OBJECT
     Q_DISABLE_COPY(VideoDecoderFFmpegHW)
     DPTR_DECLARE_PRIVATE(VideoDecoderFFmpegHW)
-    Q_PROPERTY(bool SSE4 READ isSSE4 WRITE setSSE4)
+    Q_PROPERTY(int threads READ threads WRITE setThreads NOTIFY threadsChanged) // <=0 is auto
+    Q_PROPERTY(CopyMode copyMode READ copyMode WRITE setCopyMode NOTIFY copyModeChanged)
+    Q_ENUMS(CopyMode)
 public:
-    virtual bool prepare() Q_DECL_OVERRIDE;
+    enum CopyMode {
+        ZeroCopy,
+        LazyCopy,
+        OptimizedCopy,
+        GenericCopy
+    };
     VideoFrame copyToFrame(const VideoFormat& fmt, int surface_h, quint8* src[], int pitch[], bool swapUV);
     // properties
-    void setSSE4(bool value);
-    bool isSSE4() const;
+    int threads() const;
+    void setThreads(int value);
+    void setCopyMode(CopyMode value);
+    CopyMode copyMode() const;
+Q_SIGNALS:
+    void copyModeChanged();
+    void threadsChanged();
 protected:
     VideoDecoderFFmpegHW(VideoDecoderFFmpegHWPrivate &d);
 private:

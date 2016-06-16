@@ -1,5 +1,4 @@
 SCRIPT_DIR=${0%/*}
-. $SCRIPT_DIR/../scripts/functions.sh
 
 help_post(){
   echo  "This will create a test for $1. You may change the default value: \"#include <$1.h>\" in $1/main.cpp and \"LIBS += -l$1\" in $1/$1.pro"
@@ -16,23 +15,20 @@ NAME=$1
 help_post $NAME
 mkdir -p $NAME
 cat >$NAME/${NAME}.pro <<EOF
-CONFIG -= qt
-CONFIG += console
+include(../paths.pri)
 
+TARGET = ${NAME}_test
 SOURCES += main.cpp
-
 LIBS += -l$NAME
 EOF
 
 YEAR=`date +%Y`
-COPY=../templates/COPYRIGHT.h
+COPY=../tools/templates/COPYRIGHT.h
 cat $COPY | sed "s/%YEAR%/$YEAR/g" > $NAME/main.cpp
-cat >$NAME/main.cpp <<EOF
+cat >> $NAME/main.cpp <<EOF
 #include <${NAME}.h>
 
-int main()
-{
-	return 0;
+void test() {
 }
 EOF
 

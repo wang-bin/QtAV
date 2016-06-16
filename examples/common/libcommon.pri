@@ -97,7 +97,6 @@ DEPENDPATH *= $$PROJECT_SRCPATH
     #}
 } else {
 	#Add your additional configuration first. e.g.
-
 #	win32: LIBS += -lUser32
 # The following may not need to change
     !CONFIG(plugin) {
@@ -107,11 +106,11 @@ DEPENDPATH *= $$PROJECT_SRCPATH
     }
         TARGET = $$PROJECT_TARGETNAME ##I commented out this before, why?
         CONFIG *= create_prl #
-	isEqual(STATICLINK, 1) {
+        DEFINES += BUILD_$$upper($$NAME)_LIB #win32-msvc*
+        isEqual(STATICLINK, 1) {
 		CONFIG -= shared dll ##otherwise the following shared is true, why?
 		CONFIG *= staticlib
 	} else {
-                DEFINES += BUILD_$$upper($$NAME)_LIB #win32-msvc*
 		CONFIG *= shared #shared includes dll
 	}
 
@@ -140,11 +139,8 @@ DEPENDPATH *= $$PROJECT_SRCPATH
 		INSTALLS += target
 	}
 }
+!no_rpath:!cross_compile:set_rpath($$PROJECT_LIBDIR)
 
-!cross_compile: RPATHDIR *= $$PROJECT_LIBDIR
-set_rpath($$RPATHDIR)
-
-unset(RPATHDIR)
 unset(LIB_VERSION)
 unset(PROJECT_SRCPATH)
 unset(PROJECT_LIBDIR)
@@ -155,8 +151,8 @@ QMAKE_INFO_PLIST = $$PWD/Info.plist
 defineTest(genRC) {
     RC_ICONS = $$PROJECTROOT/src/QtAV.ico
     QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
-    QMAKE_TARGET_DESCRIPTION = "QtAV Multimedia playback framework. http://www.qtav.org"
-    QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2015 WangBin, wbsecg1@gmail.com"
+    QMAKE_TARGET_DESCRIPTION = "QtAV Multimedia framework. http://qtav.org"
+    QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2016 WangBin, wbsecg1@gmail.com"
     QMAKE_TARGET_PRODUCT = "QtAV $$1"
     export(RC_ICONS)
     export(QMAKE_TARGET_COMPANY)

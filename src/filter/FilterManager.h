@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -22,46 +22,43 @@
 #ifndef QTAV_FILTERMANAGER_H
 #define QTAV_FILTERMANAGER_H
 
-#include <QtCore/QObject>
+#include <QtCore/QList>
+#include "QtAV/Filter.h" // signal qobj parameter
 #include "QtAV/QtAV_Global.h"
 
 namespace QtAV {
 
 class AVOutput;
 class AVPlayer;
-class Filter;
 class FilterManagerPrivate;
-class FilterManager : public QObject
+class FilterManager
 {
     DPTR_DECLARE_PRIVATE(FilterManager)
-    Q_OBJECT
     Q_DISABLE_COPY(FilterManager)
 public:
     static FilterManager& instance();
-    bool registerFilter(Filter *filter, AVOutput *output);
+    /*!
+     * \brief registerFilter
+     * record the filter in manager
+     * target.installXXXFilter/filter.installTo(target) must call registerXXXFilter
+     */
+    bool registerFilter(Filter *filter, AVOutput *output, int pos = 0x7FFFFFFF);
     QList<Filter*> outputFilters(AVOutput* output) const;
-    bool registerAudioFilter(Filter *filter, AVPlayer *player);
+    bool registerAudioFilter(Filter *filter, AVPlayer *player, int pos = 0x7FFFFFFF);
     QList<Filter *> audioFilters(AVPlayer* player) const;
-    bool registerVideoFilter(Filter *filter, AVPlayer *player);
+    bool registerVideoFilter(Filter *filter, AVPlayer *player, int pos = 0x7FFFFFFF);
     QList<Filter*> videoFilters(AVPlayer* player) const;
-    bool unregisterFilter(Filter *filter);
-    // async. release filter until filter is removed from it's target.filters
-    bool releaseFilter(Filter *filter);
-    bool uninstallFilter(Filter *filter);
-
-    // TODO: use QMetaObject::invokeMethod
-    void emitOnUninstallInTargetDone(Filter *filter);
-signals:
-    // invoked in UninstallFilterTask in AVThread.
-    void uninstallInTargetDone(Filter *filter);
-
-private slots:
-    // queued connected to uninstallInTargetDone(). also release filter if release was requested
-    void onUninstallInTargetDone(Filter *filter);
-
+    bool unregisterAudioFilter(Filter *filter, AVPlayer *player);
+    bool unregisterVideoFilter(Filter *filter, AVPlayer *player);
+    bool unregisterFilter(Filter *filter, AVOutput *output);
+    // unregister and call target.uninstall
+    bool uninstallFilter(Filter *filter); //called by filter.uninstall
+    bool uninstallAudioFilter(Filter *filter, AVPlayer* player);
+    bool uninstallVideoFilter(Filter *filter, AVPlayer* player);
+    bool uninstallFilter(Filter *filter, AVOutput* output);
 private:
-    //convenient function to uninstall the filter. used by releaseFilter
-    bool releaseFilterNow(Filter *filter);
+    // return bool is for AVPlayer.installAudio/VideoFilter compatibility
+    bool insert(Filter* filter, QList<Filter*>& filters, int pos);
     FilterManager();
     ~FilterManager();
 

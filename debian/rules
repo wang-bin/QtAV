@@ -1,13 +1,11 @@
 #!/usr/bin/make -f
 
 DEB_BUILD_MULTIARCH ?= $(shell dpkg-architecture -qDEB_BUILD_MULTIARCH)
+export QT_SELECT=qt5
 
 %:
 	dh $@ --parallel
 
 override_dh_auto_configure:
-	qmake
+	qmake "CONFIG+=no_rpath recheck config_libass_link config_openal_link no-tests"
 
-override_dh_auto_clean:
-	dh_auto_clean
-	rm -f .qmake.cache

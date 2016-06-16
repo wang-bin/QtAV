@@ -1,6 +1,6 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,35 +22,35 @@
 #ifndef QTAV_VIDEOFORMAT_H
 #define QTAV_VIDEOFORMAT_H
 
-#include <QtCore/QMetaType>
 #include <QtCore/QSharedDataPointer>
 #include <QtCore/QString>
 #include <QtGui/QImage>
 #include <QtAV/QtAV_Global.h>
 
-// FF_API_PIX_FMT
-#ifdef PixelFormat
-#undef PixelFormat
-#endif
-
+QT_BEGIN_NAMESPACE
 class QDebug;
+QT_END_NAMESPACE
 namespace QtAV {
-
 class VideoFormatPrivate;
+/*!
+ * \brief The VideoFormat class
+ * Describes the layout of video data. Some properties like display aspect ratio, color space and color range, which describes how to display the video frame, should be in VideoFrame class.
++ */
 class Q_AV_EXPORT VideoFormat
 {
 public:
     /*!
      * \brief The PixelFormat enum
      * 32 bit rgba format enum name indicates it's channel layout. For example,
-     * Format_ARGB32 layout is AARRGGBB, it's integer value is 0xAARRGGBB on big endian platforms
+     * Format_ARGB32 byte layout is AARRGGBB, it's integer value is 0xAARRGGBB on big endian platforms
      * and 0xBBGGRRAA on little endian platforms
      * Format_RGB32 and QImage::Format_ARGB32 are the same.
      * TODO: 0RGB, XRGB, not native endia use R8 or R16. ffmpeg does not have native endian format
+     * currently 0rgb xrgb use rgba formats and check hasAlpha() is required
      */
     enum PixelFormat {
         Format_Invalid = -1,
-        Format_ARGB32, // AARRGGBB
+        Format_ARGB32, // AARRGGBB or 00RRGGBB, check hasAlpha is required
         Format_BGRA32, //BBGGRRAA
         Format_ABGR32, // QImage.RGBA8888 le
         Format_RGBA32, // QImage. no
@@ -71,8 +71,10 @@ public:
         Format_YUV411P,
         Format_YUV410P,
         Format_YV12,
-        Format_UYVY,
-        Format_YUYV,
+        Format_UYVY, //422
+        Format_VYUY, //not in ffmpeg. OMX_COLOR_FormatCrYCbY
+        Format_YUYV, //422, aka yuy2
+        Format_YVYU, //422
         Format_NV12,
         Format_NV21,
         Format_IMC1,
@@ -124,13 +126,26 @@ public:
         Format_BGR48,
         Format_BGR48LE,
         Format_BGR48BE,
+        Format_RGBA64, //native endian
+        Format_RGBA64LE,
+        Format_RGBA64BE,
+        Format_BGRA64, //native endian
+        Format_BGRA64LE,
+        Format_BGRA64BE,
+
+        Format_VYU, // for rgb422_apple texture, the layout is like rgb24: (v, y, u, )
         Format_User
     };
 
     static PixelFormat pixelFormatFromImageFormat(QImage::Format format);
+    /*!
+     * \brief imageFormatFromPixelFormat
+     * If returns a negative value, the QImage format is the positive one but R/G components are swapped because no direct support by QImage. QImage can swap R/G very fast.
+     */
     static QImage::Format imageFormatFromPixelFormat(PixelFormat format);
     static PixelFormat pixelFormatFromFFmpeg(int ff); //AVPixelFormat
     static int pixelFormatToFFmpeg(PixelFormat fmt);
+    static QVector<int> pixelFormatsFFmpeg();
 
     VideoFormat(PixelFormat format = Format_Invalid);
     VideoFormat(int formatFF);
@@ -167,9 +182,15 @@ public:
 
     /*!
      * \brief channels
-     * \return number of channels(components). e.g. RGBA has 4 channels, NV12 is 3
+     * \return number of channels(components) the the format. e.g. RGBA has 4 channels, NV12 is 3
      */
     int channels() const;
+    /*!
+     * \brief channels
+     * \param plane
+     * \return number of channels in a plane
+     */
+    int channels(int plane) const;
     /*!
      * \brief planeCount
      * \return -1 if not a valid format
@@ -177,14 +198,23 @@ public:
     int planeCount() const;
     /*!
      * https://wiki.videolan.org/YUV
-     *  YUV420P: 1pix = 4Y+U+V
+     * bytesPerPixel()
+     *  YUV420P: 1pix = 4Y+U+V, (4*8+8+8)/4 = 12
+     * bytesPerPixel(plane) is different, for example
+     * uyvy422 bytesPerPixel(0) = 8+8+8 = 24, while bytesPerPixel() = (2*8+8+8)/2 = 16
      */
     int bitsPerPixel() const;
+    /// nv12: 16 for uv plane
     int bitsPerPixel(int plane) const;
+    /// bgr24 is 24 not 32
     int bitsPerPixelPadded() const;
-    int bitsPerPixelPadded(int plane) const;
     int bytesPerPixel() const;
     int bytesPerPixel(int plane) const;
+    /*!
+     * \brief bitsPerComponent
+     * \return number of bits per component (0 if uneven)
+     */
+    int bitsPerComponent() const;
 
     // return line size with given width
     int bytesPerLine(int width, int plane) const;
@@ -195,6 +225,19 @@ public:
      */
     int chromaWidth(int lumaWidth) const;
     int chromaHeight(int lumaHeight) const;
+    /*!
+     * \brief width
+     * plane width for given lumaWidth in current format
+     * \return lumaWidth if plane <= 0. otherwise chromaWidth
+     */
+    int width(int lumaWidth, int plane) const;
+    int height(int lumaHeight, int plane) const;
+    /*!
+     * \brief normalizedWidth
+     * \return 1.0 for plane <= 0. otherwise chroma width
+     */
+    qreal normalizedWidth(int plane) const;
+    qreal normalizedHeight(int plane) const;
     //TODO: add planeWidth()/planeHeight()
     // test AV_PIX_FMT_FLAG_XXX
     bool isBigEndian() const;

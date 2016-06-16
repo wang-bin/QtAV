@@ -1,5 +1,5 @@
 # qmake common template pri file
-# Copyright (C) 2011-2015 Wang Bin <wbsecg1@gmail.com>
+# Copyright (C) 2011-2016 Wang Bin <wbsecg1@gmail.com>
 # Shanghai, China.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -46,21 +46,31 @@ _ARCH =
 _EXTRA =
 
 unix {
-	_OS = _unix
-	macx: _OS = _mac
-	else:*linux*: _OS = _linux
-	*maemo* {
-		_OS = _maemo
-		*maemo5*:_OS = _maemo5
-		*maemo6*:_OS = _maemo6
-	} else:*meego*: _OS = _meego
-	!isEmpty(MEEGO_EDITION): _OS = _$$MEEGO_EDITION
+    _OS = _unix
+    android {
+        _OS = _android
+    } else:ios {
+        _OS = _ios
+    } else:macx {
+        _OS = _osx
+    } else:*maemo* {
+        _OS = _maemo
+        *maemo5*:_OS = _maemo5
+        *maemo6*:_OS = _maemo6
+    } else:*meego* {
+        _OS = _meego
+        !isEmpty(MEEGO_EDITION): _OS = _$$MEEGO_EDITION
+    } else:*linux* {
+        _OS = _linux
+    }
 # QMAKE_RPATHDIR will be ignored if QMAKE_LFLAGS_RPATH is not defined. e.g. qt4.8 unsupported/macx-clang-libc++
   isEmpty(QMAKE_LFLAGS_RPATH): QMAKE_LFLAGS_RPATH=-Wl,-rpath,
 } else:wince* {
-	_OS = _wince
+    _OS = _wince
+} else:winrt {
+    _OS = _winrt
 } else:win32 { #true for wince
-        _OS = _win
+    _OS = _win
 }
 #*arm*: _ARCH = $${_ARCH}_arm
 contains(QT_ARCH, arm.*) {
@@ -76,6 +86,19 @@ win32-msvc* {
 }
 
 #################################functions#########################################
+defineTest(qtAtLeast) { #e.g. qtAtLeast(4), qtAtLeast(5, 2), qtAtLeast(5, 4, 2)
+  lessThan(QT_MAJOR_VERSION, $$1):return(false)
+  isEmpty(2):return(true)
+  greaterThan(QT_MAJOR_VERSION, $$1):return(true)
+
+  lessThan(QT_MINOR_VERSION, $$2):return(false)
+  isEmpty(3):return(true)
+  greaterThan(QT_MINOR_VERSION, $$2):return(true)
+
+  lessThan(QT_PATCH_VERSION, $$3):return(false)
+  return(true)
+}
+
 defineTest(qtRunQuitly) {
     #win32 always call windows command
     contains(QMAKE_HOST.os,Windows) {
@@ -108,14 +131,15 @@ defineReplace(qtLibName) {
 	#TEMPLATE -= fakelib
         unset(RET)
         RET = $$1
-    greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3) {
+#qt5.4.2 add qt5LibraryTarget to fix qtLibraryTarget break
+    qtAtLeast(5, 4) {
         mac:CONFIG(shared, static|shared):contains(QT_CONFIG, qt_framework) {
           QMAKE_FRAMEWORK_BUNDLE_NAME = $$RET
           export(QMAKE_FRAMEWORK_BUNDLE_NAME)
        } else {
            # insert the major version of Qt in the library name
            # unless it's a framework build
-           RET ~= s,^Qt,Qt$$QT_MAJOR_VERSION,
+           isEqual(QT_MAJOR_VERSION, 5):isEqual(QT_MINOR_VERSION,4):lessThan(QT_PATCH_VERSION, 2):RET ~= s,^Qt,Qt$$QT_MAJOR_VERSION,
        }
     }
         RET = $$RET$$platformTargetSuffix()
@@ -135,8 +159,11 @@ defineReplace(qtLibName) {
 
 #fakelib
 defineReplace(qtStaticLib) {
+# static lib does not have major version flag at the end
 	unset(LIB_FULLNAME)
-	LIB_FULLNAME = $$qtLibName($$1, $$2)
+        TEMPLATE += fakelib
+        LIB_FULLNAME = $$qtLibraryTarget($$1)
+        TEMPLATE -= fakelib
         LIB_FULLNAME = $${QMAKE_PREFIX_STATICLIB}$$member(LIB_FULLNAME, 0).$${QMAKE_EXTENSION_STATICLIB}
 	return($$LIB_FULLNAME)
 }
@@ -149,9 +176,9 @@ defineReplace(qtSharedLib) {
 }
 
 defineReplace(qtLongName) {
-	unset(LONG_NAME)
-		LONG_NAME = $$1$${_OS}_$${TARGET_ARCH}$${_EXTRA}
-	return($$LONG_NAME)
+  unset(LONG_NAME)
+  LONG_NAME = $$1$${_OS}_$$join(TARGET_ARCH,+)$${_EXTRA}
+  return($$LONG_NAME)
 }
 
 defineTest(empty_file) {
@@ -337,7 +364,7 @@ defineReplace(shell_quote_win) {
 # - control chars & space
 # - the windows shell meta chars "&()<>^|
 # - the potential separators ,;=
-#TODO: how to deal with  "^", "|"? every char are seperated by "|"?
+#TODO: how to deal with  "^", "|"? every char are separated by "|"?
 #how to avoid replacing "^" again for the second time
     isEmpty(1):error("shell_quote(arg) requires one argument.")
     special_chars = & \( \) < >

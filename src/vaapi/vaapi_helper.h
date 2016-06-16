@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -24,41 +24,55 @@
 
 #include <assert.h>
 #include <va/va.h>
-
 #include <QtCore/QLibrary>
 #include <QtCore/QSharedPointer>
-//TODO: check glx or gles used by Qt. then use va-gl or va-egl
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <qopengl.h>
-#else
+#elif defined(QT_OPENGL_LIB)
 #include <qgl.h>
 #endif
 #include "utils/SharedPtr.h"
 
 namespace QtAV {
-
+#ifndef VA_FOURCC_RGBX
+#define VA_FOURCC_RGBX		0x58424752
+#endif
+#ifndef VA_FOURCC_BGRX
+    #define VA_FOURCC_BGRX		0x58524742
+#endif
 #ifndef VA_SURFACE_ATTRIB_SETTABLE
-#define vaCreateSurfaces(d, f, w, h, s, ns, a, na) \
-    vaCreateSurfaces(d, w, h, f, ns, s)
+// travis-ci use old vaapi
+struct VASurfaceAttrib;
+inline VAStatus vaCreateSurfaces(VADisplay dpy, unsigned int format, unsigned int width, unsigned int height, VASurfaceID *surfaces, unsigned int num_surfaces, VASurfaceAttrib *attrib_list, unsigned int num_attribs
+) {
+    return ::vaCreateSurfaces(dpy, width, height, format, num_surfaces, surfaces);
+}
 #endif
 
-#define VACHECK(a, ret) \
-do { \
-  VAStatus res = a; \
-  if(res != VA_STATUS_SUCCESS) { \
-    qDebug("VAAPI - failed executing "#a" at line %d with error %x:%s", __LINE__, res, vaErrorStr(res)); \
-    return ret; \
-  } \
-} while(0);
-
+#define VA_ENSURE_TRUE(x, ...) \
+    do { \
+        VAStatus ret = x; \
+        if (ret != VA_STATUS_SUCCESS) { \
+            qWarning("VA-API error@%d. " #x ": %#x %s", __LINE__, ret, vaErrorStr(ret)); \
+            return __VA_ARGS__; \
+        } \
+    } while(0)
+#define VA_ENSURE(...) VA_ENSURE_TRUE(__VA_ARGS__)
 #define VAWARN(a) \
 do { \
   VAStatus res = a; \
   if(res != VA_STATUS_SUCCESS) \
-    qWarning("VAAPI - failed executing "#a" at line %d with error %x:%s", __LINE__, res, vaErrorStr(res)); \
+    qWarning("VA-API error %s@%d. " #a ": %#x %s", __FILE__, __LINE__, res, vaErrorStr(res)); \
 } while(0);
 
 namespace vaapi {
+const char *profileName(VAProfile profile);
+/*!
+ * \brief va_new_image
+ * create image (if img is not null)/find format for the first supported fourcc from given fourcc list.
+ * if s is not null, also test vaGetImage for the fourcc
+ */
+VAImageFormat va_new_image(VADisplay display, const unsigned int* fourccs, VAImage* img = 0, int w = 0, int h = 0, VASurfaceID s = VA_INVALID_SURFACE);
 class dll_helper {
 public:
     dll_helper(const QString& soname, int version = -1);
@@ -69,41 +83,44 @@ private:
     QLibrary m_lib;
 };
 
-struct _XDisplay;
-typedef struct _XDisplay Display;
-//TODO: use macro template. DEFINE_DL_SYMB(R, NAME, ARG....);
-class X11_API : public dll_helper {
+class va_0_38 : protected dll_helper {
 public:
-    typedef Display* XOpenDisplay_t(const char* name);
-    typedef int XCloseDisplay_t(Display* dpy);
-    typedef int XInitThreads_t();
-    X11_API(): dll_helper("X11") {
-        fp_XOpenDisplay = (XOpenDisplay_t*)resolve("XOpenDisplay");
-        fp_XCloseDisplay = (XCloseDisplay_t*)resolve("XCloseDisplay");
-        fp_XInitThreads = (XInitThreads_t*)resolve("XInitThreads");
+    typedef struct {
+        uintptr_t           handle;
+        uint32_t            type;
+        uint32_t            mem_type;
+        size_t              mem_size;
+    } VABufferInfo;
+    static va_0_38& instance() {
+        static va_0_38 self;
+        return self;
     }
-    Display* XOpenDisplay(const char* name) {
-        assert(fp_XOpenDisplay);
-        return fp_XOpenDisplay(name);
+    static bool isValid() { return instance().f_vaAcquireBufferHandle && instance().f_vaReleaseBufferHandle;}
+    static VAStatus vaAcquireBufferHandle(VADisplay dpy, VABufferID buf_id, VABufferInfo *buf_info) {
+        if (!instance().f_vaAcquireBufferHandle)
+            return VA_STATUS_ERROR_UNIMPLEMENTED;
+        return instance().f_vaAcquireBufferHandle(dpy, buf_id, buf_info);
     }
-    int XCloseDisplay(Display* dpy) {
-        assert(fp_XCloseDisplay);
-        return fp_XCloseDisplay(dpy);
+    static VAStatus vaReleaseBufferHandle(VADisplay dpy, VABufferID buf_id) {
+        if (!instance().f_vaReleaseBufferHandle)
+            return VA_STATUS_ERROR_UNIMPLEMENTED;
+        return instance().f_vaReleaseBufferHandle(dpy, buf_id);
     }
-    int XInitThreads() {
-        assert(fp_XInitThreads);
-        return fp_XInitThreads();
+protected:
+    va_0_38() : dll_helper(QString::fromLatin1("va"), 1) {
+        f_vaAcquireBufferHandle = (vaAcquireBufferHandle_t)resolve("vaAcquireBufferHandle");
+        f_vaReleaseBufferHandle = (vaReleaseBufferHandle_t)resolve("vaReleaseBufferHandle");
     }
 private:
-    XOpenDisplay_t* fp_XOpenDisplay;
-    XCloseDisplay_t* fp_XCloseDisplay;
-    XInitThreads_t* fp_XInitThreads;
+    typedef VAStatus (*vaAcquireBufferHandle_t)(VADisplay dpy, VABufferID buf_id, VABufferInfo *buf_info);
+    typedef VAStatus (*vaReleaseBufferHandle_t)(VADisplay dpy, VABufferID buf_id);
+    static vaAcquireBufferHandle_t f_vaAcquireBufferHandle;
+    static vaReleaseBufferHandle_t f_vaReleaseBufferHandle;
 };
-
-class VAAPI_DRM : public dll_helper {
+class VAAPI_DRM : protected dll_helper {
 public:
     typedef VADisplay vaGetDisplayDRM_t(int fd);
-    VAAPI_DRM(): dll_helper("va-drm",1) {
+    VAAPI_DRM(): dll_helper(QString::fromLatin1("va-drm"),1) {
         fp_vaGetDisplayDRM = (vaGetDisplayDRM_t*)resolve("vaGetDisplayDRM");
     }
     VADisplay vaGetDisplayDRM(int fd) {
@@ -113,26 +130,60 @@ public:
 private:
     vaGetDisplayDRM_t* fp_vaGetDisplayDRM;
 };
-class VAAPI_X11 : public dll_helper {
+
+typedef struct _XDisplay Display;
+class VAAPI_X11 : protected dll_helper {
 public:
+    typedef unsigned long Drawable;
     typedef VADisplay vaGetDisplay_t(Display *);
-    VAAPI_X11(): dll_helper("va-x11",1) {
+    typedef VAStatus vaPutSurface_t(VADisplay, VASurfaceID,	Drawable,
+                                   short, short, unsigned short,  unsigned short,
+                                   short, short, unsigned short, unsigned short,
+                                   VARectangle *, unsigned int,  unsigned int);
+    VAAPI_X11(): dll_helper(QString::fromLatin1("va-x11"),1) {
         fp_vaGetDisplay = (vaGetDisplay_t*)resolve("vaGetDisplay");
+        fp_vaPutSurface = (vaPutSurface_t*)resolve("vaPutSurface");
     }
     VADisplay vaGetDisplay(Display *dpy) {
         assert(fp_vaGetDisplay);
         return fp_vaGetDisplay(dpy);
     }
+    VAStatus vaPutSurface (VADisplay dpy, VASurfaceID surface,	Drawable draw, /* X Drawable */
+        short srcx, short srcy, unsigned short srcw,  unsigned short srch,
+        short destx, short desty, unsigned short destw, unsigned short desth,
+        VARectangle *cliprects, /* client supplied destination clip list */
+        unsigned int number_cliprects, /* number of clip rects in the clip list */
+        unsigned int flags /* PutSurface flags */
+    ) {
+        assert(fp_vaPutSurface);
+        return fp_vaPutSurface(dpy, surface, draw, srcx, srcy, srcw, srch, destx, desty, destw, desth, cliprects, number_cliprects, flags);
+    }
 private:
     vaGetDisplay_t* fp_vaGetDisplay;
+    vaPutSurface_t* fp_vaPutSurface;
 };
-class VAAPI_GLX : public dll_helper {
+
+typedef void*   EGLClientBuffer;
+class VAAPI_EGL : protected dll_helper { //not implemented
+    typedef VAStatus vaGetEGLClientBufferFromSurface_t(VADisplay dpy, VASurfaceID surface, EGLClientBuffer *buffer/* out*/);
+    vaGetEGLClientBufferFromSurface_t* fp_vaGetEGLClientBufferFromSurface;
+public:
+    VAAPI_EGL(): dll_helper(QString::fromLatin1("va-egl"),1) {
+        fp_vaGetEGLClientBufferFromSurface = (vaGetEGLClientBufferFromSurface_t*)resolve("vaGetEGLClientBufferFromSurface");
+    }
+    VAStatus vaGetEGLClientBufferFromSurface(VADisplay dpy, VASurfaceID surface, EGLClientBuffer *buffer/* out*/) {
+        assert(fp_vaGetEGLClientBufferFromSurface);
+        return fp_vaGetEGLClientBufferFromSurface(dpy, surface, buffer);
+    }
+};
+#ifndef QT_NO_OPENGL
+class VAAPI_GLX : protected dll_helper {
 public:
     typedef VADisplay vaGetDisplayGLX_t(Display *);
     typedef VAStatus vaCreateSurfaceGLX_t(VADisplay, GLenum, GLuint, void **);
     typedef VAStatus vaDestroySurfaceGLX_t(VADisplay, void *);
     typedef VAStatus vaCopySurfaceGLX_t(VADisplay, void *, VASurfaceID, unsigned int);
-    VAAPI_GLX(): dll_helper("va-glx",1) {
+    VAAPI_GLX(): dll_helper(QString::fromLatin1("va-glx"),1) {
         fp_vaGetDisplayGLX = (vaGetDisplayGLX_t*)resolve("vaGetDisplayGLX");
         fp_vaCreateSurfaceGLX = (vaCreateSurfaceGLX_t*)resolve("vaCreateSurfaceGLX");
         fp_vaDestroySurfaceGLX = (vaDestroySurfaceGLX_t*)resolve("vaDestroySurfaceGLX");
@@ -177,22 +228,40 @@ private:
     vaDestroySurfaceGLX_t* fp_vaDestroySurfaceGLX;
     vaCopySurfaceGLX_t* fp_vaCopySurfaceGLX;
 };
+#endif //QT_NO_OPENGL
 
+class NativeDisplayBase;
+typedef QSharedPointer<NativeDisplayBase> NativeDisplayPtr;
+struct NativeDisplay {
+    enum Type {
+        Auto,
+        X11,
+        GLX, //the same as X11 but use vaGetDisplayGLX()?
+        DRM,
+        Wayland,
+        VA
+    };
+    intptr_t handle;
+    Type type;
+    NativeDisplay() : handle(-1), type(Auto) {}
+};
+class display_t;
+typedef QSharedPointer<display_t> display_ptr;
 class display_t {
 public:
-    display_t(VADisplay display = 0) : m_display(display) {}
-    ~display_t() {
-        if (!m_display)
-            return;
-        qDebug("vaapi: destroy display %p", m_display);
-        VAWARN(vaTerminate(m_display)); //FIXME: what about thread?
-    }
+    // display can have a valid handle (!=-1, 0), then it's an external display. you have to manager the external display handle yourself
+    static display_ptr create(const NativeDisplay& display);
+    ~display_t();
     operator VADisplay() const { return m_display;}
     VADisplay get() const {return m_display;}
+    void getVersion(int* majorV, int* minorV) { *majorV = m_major; *minorV = m_minor;}
+    NativeDisplay::Type nativeDisplayType() const;
+    intptr_t nativeHandle() const;
 private:
     VADisplay m_display;
+    NativeDisplayPtr m_native;
+    int m_major, m_minor;
 };
-typedef QSharedPointer<display_t> display_ptr;
 
 class surface_t {
 public:
@@ -201,6 +270,7 @@ public:
         , m_display(display)
         , m_width(w)
         , m_height(h)
+        , color_space(VA_SRC_BT709)
     {}
     ~surface_t() {
         //qDebug("VAAPI - destroying surface 0x%x", (int)m_id);
@@ -211,47 +281,46 @@ public:
     VASurfaceID get() const { return m_id;}
     int width() const { return m_width;}
     int height() const { return m_height;}
-    VADisplay display() const { return m_display->get();}
+    void setColorSpace(int cs = VA_SRC_BT709) { color_space = cs;}
+    int colorSpace() const { return color_space;}
+    display_ptr display() const { return m_display;}
+    VADisplay vadisplay() const { return m_display->get();}
 private:
     VASurfaceID m_id;
     display_ptr m_display;
     int m_width, m_height;
+    int color_space;
 };
 typedef SharedPtr<surface_t> surface_ptr;
-
+#ifndef QT_NO_OPENGL
 class surface_glx_t : public VAAPI_GLX {
 public:
-    surface_glx_t() : m_glx(0) {}
-    void set(const surface_ptr& surface) { m_surface = surface;}
+    surface_glx_t(const display_ptr& dpy) : m_dpy(dpy), m_glx(0) {}
+    ~surface_glx_t() {destroy();}
     bool create(GLuint tex) {
         destroy();
-        VACHECK(vaCreateSurfaceGLX(display(), GL_TEXTURE_2D, tex, &m_glx), false);
+        VA_ENSURE_TRUE(vaCreateSurfaceGLX(m_dpy->get(), GL_TEXTURE_2D, tex, &m_glx), false);
         return true;
     }
     bool destroy() {
         if (!m_glx)
             return true;
-        VACHECK(vaDestroySurfaceGLX(display(), m_glx), false);
+        VA_ENSURE_TRUE(vaDestroySurfaceGLX(m_dpy->get(), m_glx), false);
+        m_glx = 0;
         return true;
     }
-    bool copy() {
+    bool copy(const surface_ptr& surface) {
         if (!m_glx)
             return false;
-        VACHECK(vaCopySurfaceGLX(display(), m_glx, m_surface->get(), VA_FRAME_PICTURE | VA_SRC_BT709), false);
+        VA_ENSURE_TRUE(vaCopySurfaceGLX(m_dpy->get(), m_glx, surface->get(), VA_FRAME_PICTURE | surface->colorSpace()), false);
         return true;
     }
-    void sync() {
-        VAWARN(vaSyncSurface(display(), m_surface->get()));
-    }
-    VADisplay display() const { return m_surface->display();}
-    surface_t* surface() { return m_surface.get();}
-    void* glxSurface() { return m_glx;}
 private:
-    surface_ptr m_surface;
+    display_ptr m_dpy;
     void* m_glx;
 };
 typedef QSharedPointer<surface_glx_t> surface_glx_ptr; //store in a vector
-
+#endif //QT_NO_OPENGL
 } //namespace vaapi
 } //namespace QtAV
 #endif // QTAV_VAAPI_HELPER_H

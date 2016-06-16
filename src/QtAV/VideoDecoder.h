@@ -1,6 +1,6 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,17 +23,11 @@
 #define QTAV_VIDEODECODER_H
 
 #include <QtAV/AVDecoder.h>
-#include <QtAV/FactoryDefine.h>
 #include <QtAV/VideoFrame.h>
+#include <QtCore/QStringList>
 
-class QSize;
-struct SwsContext;
 namespace QtAV {
-
 typedef int VideoDecoderId;
-class VideoDecoder;
-FACTORY_DECLARE(VideoDecoder)
-
 /*!
     Useful properties.
     A key is a string, a value can be int, bool or string. Both int and string are valid for enumerate
@@ -65,29 +59,48 @@ class Q_AV_EXPORT VideoDecoder : public AVDecoder
     Q_DISABLE_COPY(VideoDecoder)
     DPTR_DECLARE_PRIVATE(VideoDecoder)
 public:
+    static QStringList supportedCodecs();
     static VideoDecoder* create(VideoDecoderId id);
     /*!
      * \brief create
-     * create a decoder from registered name
+     * create a decoder from registered name. FFmpeg decoder will be created for empty name
      * \param name can be "FFmpeg", "CUDA", "VDA", "VAAPI", "DXVA", "Cedarv"
      * \return 0 if not registered
      */
-    static VideoDecoder* create(const QString& name);
+    static VideoDecoder* create(const char* name = "FFmpeg");
     virtual VideoDecoderId id() const = 0;
-    virtual QString name() const; //name from factory
+    QString name() const; //name from factory
     virtual VideoFrame frame() = 0;
-    //TODO: new api: originalVideoSize()(inSize()), decodedVideoSize()(outSize())
-    void resizeVideoFrame(const QSize& size);
-    virtual void resizeVideoFrame(int width, int height);
-    //TODO: decodedSize()
-    int width() const;
-    int height() const;
-
+public:
+    typedef int Id;
+    static QVector<VideoDecoderId> registered();
+    template<class C> static bool Register(VideoDecoderId id, const char* name) { return Register(id, create<C>, name);}
+    /*!
+     * \brief next
+     * \param id NULL to get the first id address
+     * \return address of id or NULL if not found/end
+     */
+    static VideoDecoderId* next(VideoDecoderId* id = 0);
+    static const char* name(VideoDecoderId id);
+    static VideoDecoderId id(const char* name);
+private:
+    template<class C> static VideoDecoder* create() { return new C();}
+    typedef VideoDecoder* (*VideoDecoderCreator)();
+    static bool Register(VideoDecoderId id, VideoDecoderCreator, const char *name);
 protected:
     VideoDecoder(VideoDecoderPrivate& d);
 private:
     VideoDecoder();
 };
 
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_FFmpeg;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_CUDA;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_DXVA;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_D3D11;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_VAAPI;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_Cedarv;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_VDA;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_VideoToolbox;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_MediaCodec;
 } //namespace QtAV
 #endif // QTAV_VIDEODECODER_H

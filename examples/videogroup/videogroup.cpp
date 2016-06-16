@@ -36,7 +36,7 @@ VideoGroup::VideoGroup(QObject *parent) :
   , m1Frame(true)
   , mFrameless(false)
   , r(3),c(3),view(0)
-  , vid("qpainter")
+  , vid(QString::fromLatin1("qpainter"))
 {
     mpPlayer = new AVPlayer(this);
     //mpPlayer->setPlayerEventFilter(0);
@@ -45,19 +45,19 @@ VideoGroup::VideoGroup(QObject *parent) :
     mpBar->setMaximumSize(400, 60);
     mpBar->show();
     mpBar->setLayout(new QHBoxLayout);
-    mpOpen = new QPushButton("Open");
-    mpPlay = new QPushButton("Play");
-    mpStop = new QPushButton("Stop");
-    mpPause = new QPushButton("Pause");
+    mpOpen = new QPushButton(tr("Open"));
+    mpPlay = new QPushButton(tr("Play"));
+    mpStop = new QPushButton(tr("Stop"));
+    mpPause = new QPushButton(tr("Pause"));
     mpPause->setCheckable(true);
-    mpAdd = new QPushButton("+");
-    mpRemove = new QPushButton("-");
-    mp1Window = new QPushButton("Single Window");
+    mpAdd = new QPushButton(QString::fromLatin1("+"));
+    mpRemove = new QPushButton(QString::fromLatin1("-"));
+    mp1Window = new QPushButton(tr("Single Window"));
     mp1Window->setCheckable(true);
-    mp1Frame = new QPushButton("Single Frame");
+    mp1Frame = new QPushButton(tr("Single Frame"));
     mp1Frame->setCheckable(true);
     mp1Frame->setChecked(true);
-    mpFrameless = new QPushButton("no window frame");
+    mpFrameless = new QPushButton(tr("no window frame"));
     mpFrameless->setCheckable(true);
     connect(mpOpen, SIGNAL(clicked()), SLOT(openLocalFile()));
     connect(mpPlay, SIGNAL(clicked()), mpPlayer, SLOT(play()));
@@ -208,15 +208,15 @@ void VideoGroup::openLocalFile()
 void VideoGroup::addRenderer()
 {
     VideoRendererId v = VideoRendererId_Widget;
-    if (vid == "gl")
+    if (vid == QLatin1String("gl"))
         v = VideoRendererId_GLWidget2;
-    else if (vid == "d2d")
+    else if (vid == QLatin1String("d2d"))
         v = VideoRendererId_Direct2D;
-    else if (vid == "gdi")
+    else if (vid == QLatin1String("gdi"))
         v = VideoRendererId_GDI;
-    else if (vid == "xv")
+    else if (vid == QLatin1String("xv"))
         v = VideoRendererId_XV;
-    VideoRenderer* renderer = VideoRendererFactory::create(v);
+    VideoRenderer* renderer = VideoRenderer::create(v);
     mRenderers = mpPlayer->videoOutputs();
     mRenderers.append(renderer);
     renderer->widget()->setAttribute(Qt::WA_DeleteOnClose);

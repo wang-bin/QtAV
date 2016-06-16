@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -26,6 +26,8 @@
 #include "DecoderConfigPage.h"
 #include "AVFormatConfigPage.h"
 #include "AVFilterConfigPage.h"
+#include "MiscPage.h"
+#include "ShaderPage.h"
 #include "common/Config.h"
 void ConfigDialog::display()
 {
@@ -56,13 +58,16 @@ ConfigDialog::ConfigDialog(QWidget *parent) :
     vbl->addWidget(mpContent);
     vbl->addWidget(mpButtonBox);
 
-    mPages << new CaptureConfigPage()
+    mPages << new MiscPage()
+           << new CaptureConfigPage()
            << new DecoderConfigPage()
            << new AVFormatConfigPage()
            << new AVFilterConfigPage()
+           << new ShaderPage()
               ;
 
     foreach (ConfigPageBase* page, mPages) {
+        page->applyToUi();
         page->applyOnUiChange(false);
         mpContent->addTab(page, page->name());
     }
@@ -92,11 +97,11 @@ void ConfigDialog::onButtonClicked(QAbstractButton *btn)
 
 void ConfigDialog::onReset()
 {
+    Config::instance().reset();
     // TODO: check change
     foreach (ConfigPageBase* page, mPages) {
         page->reset();
     }
-    Config::instance().reset();
 }
 
 void ConfigDialog::onApply()
@@ -105,6 +110,7 @@ void ConfigDialog::onApply()
     foreach (ConfigPageBase* page, mPages) {
         page->apply();
     }
+    Config::instance().save();
 }
 
 void ConfigDialog::onCancel()

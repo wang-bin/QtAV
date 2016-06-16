@@ -1,8 +1,8 @@
 ﻿/******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -22,16 +22,20 @@
 #ifndef QTAV_VIDEOSHADER_P_H
 #define QTAV_VIDEOSHADER_P_H
 
+#include "QtAV/OpenGLTypes.h"
 #include "QtAV/VideoFrame.h"
-#include "QtAV/ColorTransform.h"
+#include "ColorTransform.h"
+#include <QVector4D>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLBuffer>
 #include <QtGui/QOpenGLShaderProgram>
 #include <QtGui/QOpenGLFunctions>
 #else
+#if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
+#include <QtOpenGL/QGLFunctions>
+#endif
 #include <QtOpenGL/QGLBuffer>
 #include <QtOpenGL/QGLShaderProgram>
-#include <QtOpenGL/QGLFunctions>
 typedef QGLBuffer QOpenGLBuffer;
 #define QOpenGLShaderProgram QGLShaderProgram
 #define QOpenGLShader QGLShader
@@ -40,6 +44,12 @@ typedef QGLBuffer QOpenGLBuffer;
 #endif
 
 namespace QtAV {
+// can not move to OpenGLHelper.h because that's not public/private header
+enum ShaderType {
+    VertexShader,
+    FragmentShader,
+    ShaderTypeCount
+};
 
 class VideoShader;
 class Q_AV_PRIVATE_EXPORT VideoShaderPrivate : public DPtrPrivate<VideoShader>
@@ -47,11 +57,16 @@ class Q_AV_PRIVATE_EXPORT VideoShaderPrivate : public DPtrPrivate<VideoShader>
 public:
     VideoShaderPrivate()
         : owns_program(false)
+        , rebuild_program(false)
+        , update_builtin_uniforms(true)
         , program(0)
-        , u_MVP_matrix(-1)
+        , u_Matrix(-1)
         , u_colorMatrix(-1)
-        , u_bpp(-1)
+        , u_to8(-1)
         , u_opacity(-1)
+        , u_c(-1)
+        , material_type(0)
+        , texture_target(GL_TEXTURE_2D)
     {}
     virtual ~VideoShaderPrivate() {
         if (owns_program && program) {
@@ -65,15 +80,23 @@ public:
     }
 
     bool owns_program; // shader program is not created by this. e.g. scene graph create it's own program and we store it here
+    bool rebuild_program;
+    bool update_builtin_uniforms; //builtin uniforms are static, set the values once is enough if no change
     QOpenGLShaderProgram *program;
-    // TODO: compare with texture width uniform used in qtmm
-    int u_MVP_matrix;
+    int u_Matrix;
     int u_colorMatrix;
-    int u_bpp;
+    int u_to8;
     int u_opacity;
+    int u_c;
+    int u_texelSize;
+    int u_textureSize;
+    qint32 material_type;
     QVector<int> u_Texture;
+    GLenum texture_target;
     VideoFormat video_format;
     mutable QByteArray planar_frag, packed_frag;
+    mutable QByteArray vert;
+    QVector<Uniform> user_uniforms[ShaderTypeCount];
 };
 
 class VideoMaterial;
@@ -82,37 +105,44 @@ class VideoMaterialPrivate : public DPtrPrivate<VideoMaterial>
 public:
     VideoMaterialPrivate()
         : update_texure(true)
-        , bpp(1)
+        , init_textures_required(true)
+        , bpc(0)
         , width(0)
         , height(0)
         , video_format(VideoFormat::Format_Invalid)
         , plane1_linesize(0)
         , effective_tex_width_ratio(1.0)
         , target(GL_TEXTURE_2D)
+        , dirty(true)
         , try_pbo(true)
     {
+        v_texel_size.reserve(4);
+        textures.reserve(4);
+        texture_size.reserve(4);
+        texture_upload_size.reserve(4);
+        effective_tex_width.reserve(4);
+        internal_format.reserve(4);
+        data_format.reserve(4);
+        data_type.reserve(4);
+        texture_coords.reserve(4);
         static bool enable_pbo = qgetenv("QTAV_PBO").toInt() > 0;
         if (try_pbo)
             try_pbo = enable_pbo;
         pbo.reserve(4);
-        pbo.resize(4);
-        // QOpenGLBuffer is shared, must initialize 1 by 1.
-        for (int i = 0; i < pbo.size(); ++i)
-            pbo[i] = QOpenGLBuffer(QOpenGLBuffer::PixelUnpackBuffer);
-        colorTransform.setOutputColorSpace(ColorTransform::RGB);
+        colorTransform.setOutputColorSpace(ColorSpace_RGB);
     }
     ~VideoMaterialPrivate();
     bool initPBO(int plane, int size);
     bool initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height);
-    bool initTextures(const VideoFormat& fmt);
-    bool updateTexturesIfNeeded();
+    bool updateTextureParameters(const VideoFormat& fmt);
+    bool ensureResources();
+    bool ensureTextures();
     void setupQuality();
 
     bool update_texure; // reduce upload/map times. true: new frame not bound. false: current frame is bound
-    int bpp;
+    bool init_textures_required; // e.g. target changed
+    int bpc;
     int width, height; //avoid accessing frame(need lock)
-    QRect viewport;
-    QRect out_rect;
     VideoFrame frame;
     /*
      *  old format. used to check whether we have to update textures. set to current frame's format after textures are updated.
@@ -123,9 +153,10 @@ public:
     // width is in bytes. different alignments may result in different plane 1 linesize even if plane 0 are the same
     int plane1_linesize;
 
-    // textures.d in initTextures() changed. happens in qml. why?
-    quint8 workaround_vector_crash_on_linux[8];
+    // textures.d in updateTextureParameters() changed. happens in qml. why?
+    quint8 workaround_vector_crash_on_linux[8]; //TODO: remove
     QVector<GLuint> textures; //texture ids. size is plane count
+    QHash<GLuint, bool> owns_texture;
     QVector<QSize> texture_size;
     /*
      * actually if render a full frame, only plane 0 is enough. other planes are the same as texture size.
@@ -144,10 +175,14 @@ public:
     QVector<GLenum> data_type;
 
     QVector<GLfloat> texture_coords;
+    bool dirty;
     ColorTransform colorTransform;
-    QMatrix4x4 matrix;
     bool try_pbo;
     QVector<QOpenGLBuffer> pbo;
+    QVector2D vec_to8; //TODO: vec3 to support both RG and LA (.rga, vec_to8)
+    QMatrix4x4 channel_map;
+    QVector<QVector2D> v_texel_size;
+    QVector<QVector2D> v_texture_size;
 };
 
 } //namespace QtAV

@@ -1,6 +1,6 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -20,13 +20,75 @@
 ******************************************************************************/
 
 #include "QtAV/private/AVCompat.h"
-#include "QtAV/private/prepost.h"
 #include "QtAV/version.h"
 
 #ifndef av_err2str
 
 #endif //av_err2str
 
+#if !FFMPEG_MODULE_CHECK(LIBAVFORMAT, 56, 4, 101)
+int avio_feof(AVIOContext *s)
+{
+#if QTAV_USE_FFMPEG(LIBAVFORMAT)
+    return url_feof(s);
+#else
+    return s && s->eof_reached;
+#endif
+}
+#endif
+#if QTAV_USE_LIBAV(LIBAVFORMAT)
+int avformat_alloc_output_context2(AVFormatContext **avctx, AVOutputFormat *oformat, const char *format, const char *filename)
+{
+    AVFormatContext *s = avformat_alloc_context();
+    int ret = 0;
+
+    *avctx = NULL;
+    if (!s)
+        goto nomem;
+
+    if (!oformat) {
+        if (format) {
+            oformat = av_guess_format(format, NULL, NULL);
+            if (!oformat) {
+                av_log(s, AV_LOG_ERROR, "Requested output format '%s' is not a suitable output format\n", format);
+                ret = AVERROR(EINVAL);
+                goto error;
+            }
+        } else {
+            oformat = av_guess_format(NULL, filename, NULL);
+            if (!oformat) {
+                ret = AVERROR(EINVAL);
+                av_log(s, AV_LOG_ERROR, "Unable to find a suitable output format for '%s'\n",
+                       filename);
+                goto error;
+            }
+        }
+    }
+
+    s->oformat = oformat;
+    if (s->oformat->priv_data_size > 0) {
+        s->priv_data = av_mallocz(s->oformat->priv_data_size);
+        if (!s->priv_data)
+            goto nomem;
+        if (s->oformat->priv_class) {
+            *(const AVClass**)s->priv_data= s->oformat->priv_class;
+            av_opt_set_defaults(s->priv_data);
+        }
+    } else
+        s->priv_data = NULL;
+
+    if (filename)
+        av_strlcpy(s->filename, filename, sizeof(s->filename));
+    *avctx = s;
+    return 0;
+nomem:
+    av_log(s, AV_LOG_ERROR, "Out of memory\n");
+    ret = AVERROR(ENOMEM);
+error:
+    avformat_free_context(s);
+    return ret;
+}
+#endif //QTAV_USE_LIBAV(LIBAVFORMAT)
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(51, 32, 0)
 static const struct {
     const char *name;
@@ -93,13 +155,54 @@ AVAudioResampleContext *swr_alloc_set_opts(AVAudioResampleContext *s
 extern const AVPixFmtDescriptor av_pix_fmt_descriptors[];
 const AVPixFmtDescriptor *av_pix_fmt_desc_get(AVPixelFormat pix_fmt)
 {
-    if (pix_fmt < 0 || pix_fmt >= PIX_FMT_NB)
+    if (pix_fmt < 0 || pix_fmt >= QTAV_PIX_FMT_C(NB))
         return NULL;
     return &av_pix_fmt_descriptors[pix_fmt];
 }
 
-#endif // !AV_MODULE_CHECK(LIBAVUTIL, 52, 3, 0, 13, 100)
+const AVPixFmtDescriptor *av_pix_fmt_desc_next(const AVPixFmtDescriptor *prev)
+{
+    if (!prev)
+        return &av_pix_fmt_descriptors[0];
+    // can not use sizeof(av_pix_fmt_descriptors)
+    while (prev - av_pix_fmt_descriptors < QTAV_PIX_FMT_C(NB) - 1) {
+        prev++;
+        if (prev->name)
+            return prev;
+    }
+    return NULL;
+}
 
+AVPixelFormat av_pix_fmt_desc_get_id(const AVPixFmtDescriptor *desc)
+{
+    if (desc < av_pix_fmt_descriptors ||
+        desc >= av_pix_fmt_descriptors + QTAV_PIX_FMT_C(NB))
+        return QTAV_PIX_FMT_C(NONE);
+
+    return AVPixelFormat(desc - av_pix_fmt_descriptors);
+}
+#endif // !AV_MODULE_CHECK(LIBAVUTIL, 52, 3, 0, 13, 100)
+#if !FFMPEG_MODULE_CHECK(LIBAVUTIL, 52, 48, 101)
+enum AVColorSpace av_frame_get_colorspace(const AVFrame *frame)
+{
+    if (!frame)
+        return AVCOL_SPC_NB;
+#if LIBAV_MODULE_CHECK(LIBAVUTIL, 53, 16, 0) //8c02adc
+    return frame->colorspace;
+#endif
+    return AVCOL_SPC_NB;
+}
+
+enum AVColorRange av_frame_get_color_range(const AVFrame *frame)
+{
+    if (!frame)
+        return AVCOL_RANGE_UNSPECIFIED;
+#if LIBAV_MODULE_CHECK(LIBAVUTIL, 53, 16, 0) //8c02adc
+    return frame->color_range;
+#endif
+    return AVCOL_RANGE_UNSPECIFIED;
+}
+#endif //!FFMPEG_MODULE_CHECK(LIBAVUTIL, 52, 28, 101)
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(52, 38, 100)
 int av_pix_fmt_count_planes(AVPixelFormat pix_fmt)
 {
@@ -111,7 +214,7 @@ int av_pix_fmt_count_planes(AVPixelFormat pix_fmt)
 
     for (i = 0; i < desc->nb_components; i++)
         planes[desc->comp[i].plane] = 1;
-    for (i = 0; i < FF_ARRAY_ELEMS(planes); i++)
+    for (i = 0; i < (int)FF_ARRAY_ELEMS(planes); i++)
         ret += planes[i];
     return ret;
 }
@@ -165,6 +268,19 @@ const char *avcodec_get_name(enum AVCodecID id)
 }
 #endif
 
+#if !AV_MODULE_CHECK(LIBAVCODEC, 55, 55, 0, 68, 100)
+void av_packet_rescale_ts(AVPacket *pkt, AVRational src_tb, AVRational dst_tb)
+{
+    if (pkt->pts != (int64_t)AV_NOPTS_VALUE)
+        pkt->pts = av_rescale_q(pkt->pts, src_tb, dst_tb);
+    if (pkt->dts != (int64_t)AV_NOPTS_VALUE)
+        pkt->dts = av_rescale_q(pkt->dts, src_tb, dst_tb);
+    if (pkt->duration > 0)
+        pkt->duration = av_rescale_q(pkt->duration, src_tb, dst_tb);
+    if (pkt->convergence_duration > 0)
+        pkt->convergence_duration = av_rescale_q(pkt->convergence_duration, src_tb, dst_tb);
+}
+#endif
 // since libav-11, ffmpeg-2.1
 #if !LIBAV_MODULE_CHECK(LIBAVCODEC, 56, 1, 0) && !FFMPEG_MODULE_CHECK(LIBAVCODEC, 55, 39, 100)
 int av_packet_copy_props(AVPacket *dst, const AVPacket *src)
@@ -205,6 +321,13 @@ void av_packet_free_side_data(AVPacket *pkt)
 }
 #endif
 
+#if !AV_MODULE_CHECK(LIBAVCODEC, 55, 52, 0, 63, 100)
+void avcodec_free_context(AVCodecContext **avctx)
+{
+    av_freep(avctx);
+}
+#endif
+
 const char *get_codec_long_name(enum AVCodecID id)
 {
     if (id == AV_CODEC_ID_NONE)
@@ -222,3 +345,16 @@ const char *get_codec_long_name(enum AVCodecID id)
     return "unknown_codec";
 }
 
+#if QTAV_HAVE(AVFILTER)
+#if !AV_MODULE_CHECK(LIBAVFILTER, 2, 22, 0, 79, 100) //FF_API_AVFILTERPAD_PUBLIC
+const char *avfilter_pad_get_name(const AVFilterPad *pads, int pad_idx)
+{
+    return pads[pad_idx].name;
+}
+
+enum AVMediaType avfilter_pad_get_type(const AVFilterPad *pads, int pad_idx)
+{
+    return pads[pad_idx].type;
+}
+#endif
+#endif //QTAV_HAVE(AVFILTER)

@@ -1,0 +1,86 @@
+branches:
+  only:
+    - master
+    - prelease
+    - ci/appveyor
+    - appveyor
+
+environment:
+
+  matrix:
+  - arch: x64
+    cc: VS2013
+    qt: 5.5
+    toolchain_version: 12
+    mode: debug
+    QTDIR: C:\Qt\5.5\msvc2013_64
+
+  - arch: x86
+    cc: VS2015
+    qt: 5.6
+    toolchain_version: 14
+    mode: release
+    QTDIR: C:\Qt\5.6\msvc2015
+
+  - arch: 32
+    cc: MinGW
+    qt: 5.4
+    toolchain_version: 491
+    mode: release
+    QTDIR: C:\Qt\5.4\mingw491_32
+
+  - arch: 32
+    cc: MinGW
+    qt: 5.3
+    toolchain_version: 482
+    mode: debug
+    QTDIR: C:\Qt\5.3\mingw482_32
+
+matrix:
+  fast_finish: false
+
+cache:
+  - AV
+
+init:
+  - set vcarch=%arch%
+  - if "%arch%" == "x64" set vcarch=amd64
+  - if not %cc%==MinGW call "C:\Program Files (x86)\Microsoft Visual Studio %toolchain_version%.0\VC\vcvarsall.bat" %vcarch%
+  - echo NUMBER_OF_PROCESSORS=%NUMBER_OF_PROCESSORS%
+  - echo PROCESSOR_IDENTIFIER=%PROCESSOR_IDENTIFIER%
+  - echo QTDIR=%QTDIR%
+
+install:
+  - git submodule update --init
+  - mkdir build
+  - cd build
+  - ..\tools\ci\win\install_dep.bat
+
+before_build:
+  - set PATH=%QTDIR%\bin;%PATH%
+  - if %cc%==MinGW set PATH=C:\Qt\Tools\mingw%toolchain_version%_32\bin;%PATH%
+  - echo PATH=%PATH%
+
+build_script:
+  - ..\tools\ci\win\build.bat
+
+after_build:
+  - ..\tools\ci\win\deploy_win.bat
+
+test: off
+
+artifacts:
+  - path: 'QtAV*.7z'  # relative to repo root
+
+deploy:
+  provider: FTP
+  protocol: sftp
+  host: frs.sourceforge.net
+  username: novesky,qtav
+  password:
+    secure: 2mQg4oxdX8S7rMJz2TCGGg==
+  folder: /home/frs/project/q/qt/qtav/ci # why always relative path even if starts with / ? I have to make a link home/frs/project/q/qt/qtav/ci => /home/frs/project/q/qt/qtav/ci
+  active_mode: false
+  on:
+    mode: release
+    cc: VS2015

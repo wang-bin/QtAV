@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -18,21 +18,17 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
 #ifndef QTAV_SUBTITLE_H
 #define QTAV_SUBTITLE_H
-
+#include <QtAV/SubImage.h>
 #include <QtCore/QObject>
 #include <QtCore/QStringList>
 #include <QtCore/QUrl>
 #include <QtGui/QImage>
-#include <QtAV/QtAV_Global.h>
-
 /*
  * to avoid read error, subtitle size > 10*1024*1024 will be ignored.
  */
 namespace QtAV {
-
 class Q_AV_EXPORT SubtitleFrame
 {
 public:
@@ -44,7 +40,7 @@ public:
     bool isValid() const { return begin < end;}
     operator bool() const { return isValid();}
     bool operator !() const { return !isValid();}
-    inline bool operator <(const SubtitleFrame& f) const { return begin < f.begin;}
+    inline bool operator <(const SubtitleFrame& f) const { return end < f.end;}
     inline bool operator <(qreal t) const { return end < t;}
     qreal begin;
     qreal end;
@@ -65,9 +61,14 @@ class Q_AV_EXPORT Subtitle : public QObject
     Q_PROPERTY(QStringList suffixes READ suffixes WRITE setSuffixes NOTIFY suffixesChanged)
     Q_PROPERTY(QStringList supportedSuffixes READ supportedSuffixes NOTIFY supportedSuffixesChanged)
     Q_PROPERTY(qreal timestamp READ timestamp WRITE setTimestamp)
+    Q_PROPERTY(qreal delay READ delay WRITE setDelay NOTIFY delayChanged)
     Q_PROPERTY(QString text READ getText)
     Q_PROPERTY(bool loaded READ isLoaded)
     Q_PROPERTY(bool canRender READ canRender NOTIFY canRenderChanged)
+    // font properties for libass engine
+    Q_PROPERTY(QString fontFile READ fontFile WRITE setFontFile NOTIFY fontFileChanged)
+    Q_PROPERTY(QString fontsDir READ fontsDir WRITE setFontsDir NOTIFY fontsDirChanged)
+    Q_PROPERTY(bool fontFileForced READ isFontFileForced WRITE setFontFileForced NOTIFY fontFileForcedChanged)
 public:
     explicit Subtitle(QObject *parent = 0);
     virtual ~Subtitle();
@@ -132,6 +133,14 @@ public:
 
     qreal timestamp() const;
     /*!
+     * \brief delay
+     * unit: second
+     * The subtitle from getText() and getImage() is at the time: timestamp() + delay()
+     * \return
+     */
+    qreal delay() const;
+    void setDelay(qreal value);
+    /*!
      * \brief canRender
      * wether current processor supports rendering. Check before getImage()
      * \return
@@ -149,12 +158,27 @@ public:
       * \return empty image if no image, or subtitle processor does not support renderering
       */
     QImage getImage(int width, int height, QRect* boundingRect = 0);
+    SubImageSet getSubImages(int width, int height, QRect* boundingRect = 0);
     // used for embedded subtitles.
-    // used by libass to set style etc.
-    bool processHeader(const QByteArray& data);
+    /*!
+     * \brief processHeader
+     * Always called if switch to a new internal subtitle stream. But header data can be empty
+     * Used by libass to set style etc.
+     */
+    bool processHeader(const QByteArray &codec, const QByteArray& data);
     // ffmpeg decodes subtitle lines and call processLine. if AVPacket contains plain text, no decoding is ok
     bool processLine(const QByteArray& data, qreal pts = -1, qreal duration = 0);
 
+    QString fontFile() const;
+    void setFontFile(const QString& value);
+    /*!
+     * \brief fontsDir
+     * Not tested for dwrite provider. FontConfig can work.
+     */
+    QString fontsDir() const;
+    void setFontsDir(const QString& value);
+    bool isFontFileForced() const;
+    void setFontFileForced(bool value);
 public slots:
     /*!
      * \brief start
@@ -165,7 +189,8 @@ public slots:
     void setTimestamp(qreal t);
 signals:
     // TODO: also add to AVPlayer?
-    void loaded(const QString& path);
+    /// empty path if load from raw data
+    void loaded(const QString& path = QString());
     void canRenderChanged();
     void codecChanged();
     void enginesChanged();
@@ -181,6 +206,10 @@ signals:
     void suffixesChanged();
     void supportedSuffixesChanged();
     void engineChanged();
+    void delayChanged();
+    void fontFileChanged();
+    void fontsDirChanged();
+    void fontFileForcedChanged();
 private:
     void checkCapability();
     class Private;
@@ -215,6 +244,16 @@ public:
     void setSuffixes(const QStringList& value);
     QStringList suffixes() const;
     bool canRender() const; // TODO: rename to capability()
+    qreal delay() const;
+    void setDelay(qreal value);
+
+    QString fontFile() const;
+    void setFontFile(const QString& value);
+    QString fontsDir() const;
+    void setFontsDir(const QString& value);
+    bool isFontFileForced() const;
+    void setFontFileForced(bool value);
+
     // API from PlayerSubtitle
     /*
     void setFile(const QString& file);

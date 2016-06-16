@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,6 +23,7 @@
 #define QTAV_AVCLOCK_H
 
 #include <QtAV/QtAV_Global.h>
+#include <QtCore/QAtomicInt>
 #include <QtCore/QBasicTimer>
 #include <QtCore/QObject>
 #if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
@@ -86,11 +87,29 @@ public:
     inline double videoTime() const;
     inline double delay() const; //playing audio spends some time
     inline void updateDelay(double delay);
+    inline qreal diff() const;
 
     void setSpeed(qreal speed);
     inline qreal speed() const;
 
     bool isPaused() const;
+
+    /*!
+     * \brief syncStart
+     * For internal use now
+     * Start to sync "count" objects. Call syncEndOnce(id) "count" times to end sync.
+     * \param count Number of objects to sync. Each one should call syncEndOnce(int id)
+     * \return an id
+     */
+    int syncStart(int count);
+    int syncId() const {return sync_id;}
+    /*!
+     * \brief syncEndOnce
+     * Decrease sync objects count if id is current sync id.
+     * \return true if sync is end for id or id is not current sync id
+     */
+    bool syncEndOnce(int id);
+
 signals:
     void paused(bool);
     void paused(); //equals to paused(true)
@@ -114,7 +133,7 @@ private Q_SLOTS:
     void stopCorrectionTimer();
 private:
     bool auto_clock;
-    bool m_paused;
+    int m_state;
     ClockType clock_type;
     mutable double pts_;
     mutable double pts_v;
@@ -135,6 +154,8 @@ private:
     double last_pts;
     double avg_err; // average error of restart()
     mutable int nb_restarted;
+    QAtomicInt nb_sync;
+    int sync_id;
 };
 
 double AVClock::value() const
@@ -146,17 +167,17 @@ double AVClock::value() const
     } else if (clock_type == ExternalClock) {
         if (timer.isValid()) {
             ++nb_restarted;
-            pts_ += double(timer.restart()) * kThousandth + avg_err;
+            pts_ += (double(timer.restart()) * kThousandth + avg_err)* speed();
         } else {//timer is paused
             //qDebug("clock is paused. return the last value %f", pts_);
         }
-        return pts_ * speed() + value0;
+        return pts_ + value0;
     } else {
         if (timer.isValid()) {
             ++nb_restarted;
-            pts_v += double(timer.restart()) * kThousandth + avg_err;
+            pts_v += (double(timer.restart()) * kThousandth + avg_err)* speed();
         }
-        return pts_v * speed(); // value0 is 1st video pts_v already
+        return pts_v; // value0 is 1st video pts_v already
     }
 }
 
@@ -186,6 +207,11 @@ double AVClock::delay() const
 void AVClock::updateDelay(double delay)
 {
     delay_ = delay;
+}
+
+qreal AVClock::diff() const
+{
+    return value() - videoTime();
 }
 
 qreal AVClock::speed() const

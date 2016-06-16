@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -75,8 +75,9 @@ QuickSubtitle::QuickSubtitle(QObject *parent) :
 
     m_filter = new Filter(m_player_sub->subtitle(), this);
     setSubtitle(m_player_sub->subtitle()); //for proxy
-    connect(this, SIGNAL(enableChanged(bool)), m_player_sub, SLOT(onEnableChanged(bool))); //////
-    connect(m_player_sub, SIGNAL(autoLoadChanged(bool)), this, SIGNAL(autoLoadChanged(bool)));
+    connect(this, SIGNAL(enabledChanged(bool)), m_player_sub, SLOT(onEnabledChanged(bool))); //////
+    connect(m_player_sub, SIGNAL(autoLoadChanged(bool)), this, SIGNAL(autoLoadChanged()));
+    connect(m_player_sub, SIGNAL(fileChanged()), this, SIGNAL(fileChanged()));
 }
 
 QString QuickSubtitle::getText() const
@@ -123,8 +124,9 @@ void QuickSubtitle::setPlayer(QObject *player)
     if (m_player)
         m_filter->uninstall();
     m_player = p;
-    if (p)
-        m_filter->installTo(p->player());
+    if (!p)
+        return;
+    m_filter->installTo(p->player());
     // ~Filter() can not call uninstall() unless player is still exists
     // TODO: check AVPlayer null?
     m_player_sub->setPlayer(p->player());
@@ -140,7 +142,7 @@ void QuickSubtitle::setEnabled(bool value)
     if (m_enable == value)
         return;
     m_enable = value;
-    emit enableChanged(value);
+    Q_EMIT enabledChanged(value);
     m_filter->setEnabled(m_enable);
     if (!m_enable) { //display nothing
         notifyObservers(QImage(), QRect(), 0, 0);

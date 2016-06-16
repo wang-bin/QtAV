@@ -3,40 +3,37 @@ CONFIG += qt plugin
 TARGET = QmlAV
 QT += quick qml
 CONFIG *= qmlav-buildlib
-#https://github.com/wang-bin/QtAV/issues/368#issuecomment-73246253
-#http://qt-project.org/forums/viewthread/38438
-# mkspecs/features/qml_plugin.prf
-URI = QtAV #uri used in QtAVQmlPlugin::registerTypes(uri)
-greaterThan(QT_MAJOR_VERSION, 4) {
-  isEqual(QT_MAJOR_VERSION, 5) {
-    greaterThan(QT_MINOR_VERSION, 2) {
-QMAKE_MOC_OPTIONS += -Muri=$$URI # not sure what moc does
-    }
-  } else {
-QMAKE_MOC_OPTIONS += -Muri=$$URI # not sure what moc does
-  }
-}
+#QMAKE_RPATHLINKDIR
+#CONFIG *= qml_module relative_qt_rpath
+
 #var with '_' can not pass to pri?
 PROJECTROOT = $$PWD/..
 !include($$PROJECTROOT/src/libQtAV.pri): error("could not find libQtAV.pri")
 !include(libQmlAV.pri): error("could not find libQmlAV.pri")
 preparePaths($$OUT_PWD/../out)
-
+#https://github.com/wang-bin/QtAV/issues/368#issuecomment-73246253
+#http://qt-project.org/forums/viewthread/38438
+# mkspecs/features/qml_plugin.prf
+URI = QtAV #uri used in QtAVQmlPlugin::registerTypes(uri)
+qtAtLeast(5, 3): QMAKE_MOC_OPTIONS += -Muri=$$URI # not sure what moc does
 #DESTDIR = $$BUILD_DIR/bin/QtAV
-RESOURCES +=
-
-QML_FILES = $$PWD/Video.qml
-
-qtav_qml.files = $$PWD/qmldir $$PWD/Video.qml $$PWD/plugins.qmltypes
-!ios: plugin.files = $$DESTDIR/$$qtSharedLib($$NAME)
+qtav_qml.files = qmldir Video.qml plugins.qmltypes
+!static { #static lib copy error before ranlib. copy only in sdk_install
+  plugin.files = $$DESTDIR/$$qtSharedLib($$NAME)
+}
 plugin.path = $$BUILD_DIR/bin/QtAV/
 mkpath($$plugin.path)
 #plugin.depends = #makefile target
-#windows: copy /y file1+file2+... dir. need '+'
-for(f, plugin.files) {
-  plugin.commands += $$escape_expand(\\n\\t)$$quote(-\$\(COPY_FILE\) $$shell_path($$f) $$shell_path($$plugin.path))
+#windows: copy /y file1+file2+... dir. need '+'. $(COPY_FILE) is exists in makefile, not in vc projects (MAKEFILE_GENERATOR is MSBUILD or MSVC.NET)
+if(equals(MAKEFILE_GENERATOR, MSVC.NET)|equals(MAKEFILE_GENERATOR, MSBUILD)) {
+  TRY_COPY = $$QMAKE_COPY
+} else {
+  TRY_COPY = -$$QMAKE_COPY #makefile. or -\$\(COPY_FILE\)
 }
-#join values seperated by space. so quote is needed
+for(f, plugin.files) {
+  plugin.commands += $$escape_expand(\\n\\t)$$TRY_COPY $$shell_path($$f) $$shell_path($$plugin.path)
+}
+#join values separated by space. so quote is needed
 #plugin.commands = $$join(plugin.commands,$$escape_expand(\\n\\t))
 OTHER_FILES += $$qtav_qml.files
 #just append as a string to $$QMAKE_POST_LINK
@@ -55,7 +52,7 @@ else: QMAKE_POST_LINK = $${QMAKE_POST_LINK}$$escape_expand(\\n\\t)$$plugin.comma
 # sa mkspecs/features/qml_plugin.prf
 extra_copy.output = $$shell_path($$plugin.path)${QMAKE_FILE_BASE}${QMAKE_FILE_EXT}
 # QMAKE_COPY_FILE, QMAKE_MKDIR_CMD ?
-extra_copy.commands = -\$\(COPY_FILE\) ${QMAKE_FILE_NAME} $$shell_path($$plugin.path)
+extra_copy.commands = $$TRY_COPY ${QMAKE_FILE_NAME} $$shell_path($$plugin.path)
 #extra_copy.depends = $$EXTRA_COPY_FILES #.input is already the depends
 extra_copy.input = EXTRA_COPY_FILES
 extra_copy.CONFIG += no_link
@@ -67,23 +64,16 @@ EXTRA_COPY_FILES = $$qtav_qml.files
 
 QMAKE_WRITE_DEFAULT_RC = 1
 QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
-QMAKE_TARGET_DESCRIPTION = "QtAV QML module. QtAV Multimedia playback framework. http://www.qtav.org"
-QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2015 WangBin, wbsecg1@gmail.com"
+QMAKE_TARGET_DESCRIPTION = "QtAV QML module. QtAV Multimedia framework. http://qtav.org"
+QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2016 WangBin, wbsecg1@gmail.com"
 QMAKE_TARGET_PRODUCT = "QtAV QML"
-
-*msvc* {
-#link FFmpeg and portaudio which are built by gcc need /SAFESEH:NO
-    QMAKE_LFLAGS += /SAFESEH:NO
-    INCLUDEPATH += $$PROJECTROOT/srccompat/msvc
-}
-#UINT64_C: C99 math features, need -D__STDC_CONSTANT_MACROS in CXXFLAGS
-DEFINES += __STDC_CONSTANT_MACROS
 
 SOURCES += \
     plugin.cpp \
     QQuickItemRenderer.cpp \
     SGVideoNode.cpp \
     QmlAVPlayer.cpp \
+    QuickFilter.cpp \
     QuickSubtitle.cpp \
     MediaMetaData.cpp \
     QuickSubtitleItem.cpp \
@@ -99,6 +89,7 @@ SDK_HEADERS += \
     QmlAV/MediaMetaData.h \
     QmlAV/SGVideoNode.h \
     QmlAV/QQuickItemRenderer.h \
+    QmlAV/QuickFilter.h \
     QmlAV/QmlAVPlayer.h
 
 HEADERS *= \
@@ -121,7 +112,4 @@ target.depends += $${deb_install_list.target}
 
 target.path = $$[QT_INSTALL_QML]/QtAV
 qtav_qml.path = $$[QT_INSTALL_QML]/QtAV
-INSTALLS *= target qtav_qml
-
-MODULE = QmlAV
-include($$PROJECTROOT/deploy.pri)
+!contains(QMAKE_HOST.os, Windows):INSTALLS *= target qtav_qml

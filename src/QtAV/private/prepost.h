@@ -36,24 +36,19 @@
  */
 #define PRE_FUNC_ADD(f, .../*args*/) \
     namespace { \
-        class initializer_for_##f { \
-        public: \
-            initializer_for_##f() { \
+        static const struct initializer_for_##f { \
+            inline initializer_for_##f() { \
                 f(__VA_ARGS__); \
             } \
-        }; \
-        static initializer_for_##f __sInit_##f; \
+        }  __sInit_##f; \
     }
 
 #define POST_FUNC_ADD(f, .../*args*/) \
     namespace { \
-        class deinitializer_for_##f { \
-        public: \
-            ~deinitializer_for_##f() { \
-                f(__VA_ARGS__); \
-            } \
-        }; \
-        static deinitializer_for_##f __sDeinit_##f; \
+        static const struct deinitializer_for_##f { \
+            inline deinitializer_for_##f() {} \
+            inline ~deinitializer_for_##f() { f(__VA_ARGS__); } \
+        } __sDeinit_##f; \
     }
 
 #else /*for C. ! defined __cplusplus*/

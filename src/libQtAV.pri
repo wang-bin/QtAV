@@ -1,5 +1,5 @@
 # qmake library building template pri file
-# Copyright (C) 2011-2015 Wang Bin <wbsecg1@gmail.com>
+# Copyright (C) 2011-2016 Wang Bin <wbsecg1@gmail.com>
 # Shanghai, China.
 #
 # This program is free software; you can redistribute it and/or modify
@@ -98,7 +98,6 @@ DEPENDPATH *= $$PROJECT_SRCPATH
     }
 } else {
 	#Add your additional configuration first. e.g.
-
 #	win32: LIBS += -lUser32
 # The following may not need to change
     !CONFIG(plugin) {
@@ -108,11 +107,11 @@ DEPENDPATH *= $$PROJECT_SRCPATH
     }
         TARGET = $$PROJECT_TARGETNAME ##I commented out this before, why?
         CONFIG *= create_prl #
-	isEqual(STATICLINK, 1) {
+        DEFINES += BUILD_$$upper($$NAME)_LIB #win32-msvc*
+        isEqual(STATICLINK, 1) {
 		CONFIG -= shared dll ##otherwise the following shared is true, why?
 		CONFIG *= staticlib
 	} else {
-                DEFINES += BUILD_$$upper($$NAME)_LIB #win32-msvc*
 		CONFIG *= shared #shared includes dll
 	}
 
@@ -141,11 +140,9 @@ DEPENDPATH *= $$PROJECT_SRCPATH
 		INSTALLS += target
 	}
 }
-!cross_compile: RPATHDIR *= $$PROJECT_LIBDIR
-set_rpath($$RPATHDIR)
+!no_rpath:!cross_compile:set_rpath($$PROJECT_LIBDIR)
 
 *maemo*: QMAKE_LFLAGS += -lasound
-unset(RPATHDIR)
 unset(LIB_VERSION)
 unset(PROJECT_SRCPATH)
 unset(PROJECT_LIBDIR)

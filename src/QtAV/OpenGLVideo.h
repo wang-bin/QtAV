@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -21,7 +21,7 @@
 
 #ifndef QTAV_OPENGLVIDEO_H
 #define QTAV_OPENGLVIDEO_H
-
+#ifndef QT_NO_OPENGL
 #include <QtAV/QtAV_Global.h>
 #include <QtAV/VideoFormat.h>
 #include <QtCore/QHash>
@@ -30,16 +30,17 @@
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QOpenGLContext>
 #else
-#if !defined(QT_NO_OPENGL)
 #include <QtOpenGL/QGLContext>
 #define QOpenGLContext QGLContext
-#endif //!defined(QT_NO_OPENGL)
 #endif
+QT_BEGIN_NAMESPACE
 class QColor;
+QT_END_NAMESPACE
 
 namespace QtAV {
 
 class VideoFrame;
+class VideoShader;
 class OpenGLVideoPrivate;
 /*!
  * \brief The OpenGLVideo class
@@ -58,9 +59,11 @@ public:
      * \brief setOpenGLContext
      * a context must be set before renderering.
      * \param ctx
-     * 0: current context in OpenGL is done. shaders all will be released.
+     * 0: current context in OpenGL is done. shaders will be released.
      * QOpenGLContext is QObject in Qt5, and gl resources here will be released automatically if context is destroyed.
-     * But you have to call setOpenGLContext(0) for Qt4 explicitly.
+     * But you have to call setOpenGLContext(0) for Qt4 explicitly in the old context.
+     * Viewport is also set here using context surface/paintDevice size and devicePixelRatio.
+     * devicePixelRatio may be wrong for multi-screen with 5.0<qt<5.5, so you should call setProjectionMatrixToRect later in this case
      */
     void setOpenGLContext(QOpenGLContext *ctx);
     QOpenGLContext* openGLContext();
@@ -75,13 +78,27 @@ public:
      * \param transform: additinal transformation.
      */
     void render(const QRectF& target = QRectF(), const QRectF& roi = QRectF(), const QMatrix4x4& transform = QMatrix4x4());
+    /*!
+     * \brief setProjectionMatrixToRect
+     * the rect will be viewport
+     */
     void setProjectionMatrixToRect(const QRectF& v);
-    void setProjectionMatrix(const QMatrix4x4 &matrix);
 
     void setBrightness(qreal value);
     void setContrast(qreal value);
     void setHue(qreal value);
     void setSaturation(qreal value);
+
+    void setUserShader(VideoShader* shader);
+    VideoShader* userShader() const;
+Q_SIGNALS:
+    void beforeRendering();
+    /*!
+     * \brief afterRendering
+     * Emitted when video frame is rendered.
+     * With DirectConnection, it can be used to draw GL on top of video, or to do screen scraping of the current frame buffer.
+     */
+    void afterRendering();
 protected:
     DPTR_DECLARE(OpenGLVideo)
 
@@ -94,5 +111,5 @@ private slots:
 
 
 } //namespace QtAV
-
+#endif //QT_NO_OPENGL
 #endif // QTAV_OPENGLVIDEO_H

@@ -1,6 +1,6 @@
 /******************************************************************************
     VideoCapture.cpp: description
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -18,8 +18,6 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
-
 #include "QtAV/VideoCapture.h"
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
@@ -45,7 +43,7 @@ public:
         , save(true)
         , original_fmt(false)
         , quality(-1)
-        , format("PNG")
+        , format(QStringLiteral("PNG"))
         , qfmt(QImage::Format_ARGB32)
     {
         setAutoDelete(true);
@@ -73,8 +71,11 @@ public:
             }
         }
         name += QString::number(frame.timestamp(), 'f', 3);
-        QString path(dir + "/" + name + ".");
+        QString path(dir + QStringLiteral("/") + name + QStringLiteral("."));
         if (original_fmt) {
+            if (!frame.constBits(0)) {
+                frame = frame.to(frame.format());
+            }
             path.append(frame.format().name());
             qDebug("Saving capture to %s", qPrintable(path));
             QFile file(path);
@@ -127,8 +128,8 @@ VideoCapture::VideoCapture(QObject *parent) :
     dir = QStandardPaths::writableLocation(QStandardPaths::PicturesLocation);
 #endif
     if (dir.isEmpty())
-        dir = qApp->applicationDirPath() + "/capture";
-    fmt = "PNG";
+        dir = qApp->applicationDirPath() + QStringLiteral("/capture");
+    fmt = QStringLiteral("PNG");
     qual = -1;
     // seems no direct connection is fine too
     connect(qApp, SIGNAL(aboutToQuit()), SLOT(handleAppQuit()), Qt::DirectConnection);
@@ -139,7 +140,7 @@ void VideoCapture::setAsync(bool value)
     if (async == value)
         return;
     async = value;
-    emit asyncChanged();
+    Q_EMIT asyncChanged();
 }
 
 bool VideoCapture::isAsync() const
@@ -152,7 +153,7 @@ void VideoCapture::setAutoSave(bool value)
     if (auto_save == value)
         return;
     auto_save = value;
-    emit autoSaveChanged();
+    Q_EMIT autoSaveChanged();
 }
 
 bool VideoCapture::autoSave() const
@@ -165,7 +166,7 @@ void VideoCapture::setOriginalFormat(bool value)
     if (original_fmt == value)
         return;
     original_fmt = value;
-    emit originalFormatChanged();
+    Q_EMIT originalFormatChanged();
 }
 
 bool VideoCapture::isOriginalFormat() const
@@ -184,18 +185,16 @@ void VideoCapture::handleAppQuit()
     videoCaptureThreadPool()->waitForDone();
 }
 
-void VideoCapture::request()
+void  VideoCapture::capture()
 {
-    emit requested();
+    Q_EMIT requested();
 }
 
 void VideoCapture::start()
 {
-    emit frameAvailable(frame); //TODO: no copy
-    if (!frame.isValid() || !frame.bits(0)) { // if frame is always cloned, then size is at least width*height
-        qWarning("Captured frame data is invalid.");
-        emit failed();
-        return;
+    Q_EMIT frameAvailable(frame);
+    if (!frame.isValid() || !frame.constBits(0)) { // if frame is always cloned, then size is at least width*height
+        qDebug("Captured frame from hardware decoder surface.");
     }
     CaptureTask *task = new CaptureTask(this);
     // copy properties so the task will not be affect even if VideoCapture properties changed
@@ -220,7 +219,7 @@ void VideoCapture::setSaveFormat(const QString &format)
     if (format.toLower() == fmt.toLower())
         return;
     fmt = format;
-    emit saveFormatChanged();
+    Q_EMIT saveFormatChanged();
 }
 
 QString VideoCapture::saveFormat() const
@@ -233,7 +232,7 @@ void VideoCapture::setQuality(int value)
     if (qual == value)
         return;
     qual = value;
-    emit qualityChanged();
+    Q_EMIT qualityChanged();
 }
 
 int VideoCapture::quality() const
@@ -246,7 +245,7 @@ void VideoCapture::setCaptureName(const QString &value)
     if (name == value)
         return;
     name = value;
-    emit captureNameChanged();
+    Q_EMIT captureNameChanged();
 }
 
 QString VideoCapture::captureName() const
@@ -259,7 +258,7 @@ void VideoCapture::setCaptureDir(const QString &value)
     if (dir == value)
         return;
     dir = value;
-    emit captureDirChanged();
+    Q_EMIT captureDirChanged();
 }
 
 QString VideoCapture::captureDir() const

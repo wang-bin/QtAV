@@ -10,5 +10,21 @@
         <file>default/stop.svg</file>
         <file>default/fullscreen.svg</file>
         <file>default/close.svg</file>
+        <file>dark/capture.svg</file>
+        <file>dark/menu.svg</file>
+        <file>dark/sound.svg</file>
+        <file>dark/backward.svg</file>
+        <file>dark/forward.svg</file>
+        <file>dark/fullscreen.svg</file>
+        <file>dark/help.svg</file>
+        <file>dark/info.svg</file>
+        <file>dark/open.svg</file>
+        <file>dark/pause.svg</file>
+        <file>dark/play.svg</file>
+        <file>dark/stop.svg</file>
+        <file>dark/fullscreen.svg</file>
+        <file>dark/close.svg</file>
+        <file>default/volume.svg</file>
+        <file>default/mute.svg</file>
     </qresource>
 </RCC>

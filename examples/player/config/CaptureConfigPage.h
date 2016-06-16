@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -38,18 +38,11 @@ class CaptureConfigPage : public ConfigPageBase
 public:
     explicit CaptureConfigPage(QWidget *parent = 0);
     virtual QString name() const;
-
-public slots:
-    virtual void apply(); //store the values on ui. call Config::xxx
-    virtual void cancel(); //cancel the values on ui. values are from Config
-    virtual void reset(); //reset to default
-
+protected:
+    virtual void applyToUi();
+    virtual void applyFromUi();
 private slots:
     // only emit signals. no value stores.
-    void changeDirByUi(const QString& dir);
-    void changeFormatByUi(const QString& fmt);
-    void changeQualityByUi(int q);
-    void formatChanged(const QString &fmt);
     void selectSaveDir();
     void browseCaptureDir();
 

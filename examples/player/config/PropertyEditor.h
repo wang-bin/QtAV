@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -25,8 +25,10 @@
 #include <QtCore/QMetaProperty>
 #include <QtCore/QMetaEnum>
 
+QT_BEGIN_NAMESPACE
 class QAction;
 class QWidget;
+QT_END_NAMESPACE
 class PropertyEditor : public QObject
 {
     Q_OBJECT
@@ -58,7 +60,7 @@ private:
     QWidget* createWidgetForEnum(const QString& name, const QVariant& value, QMetaEnum me, const QString& detail = QString(), QWidget* parent = 0);
     QWidget* createWidgetForInt(const QString& name, int value, const QString& detail = QString(), QWidget* parent = 0);
     QWidget* createWidgetForReal(const QString& name, qreal value, const QString& detail = QString(), QWidget* parent = 0);
-    QWidget* createWidgetForText(const QString& name, const QString& value, const QString& detail = QString(), QWidget* parent = 0);
+    QWidget* createWidgetForText(const QString& name, const QString& value, bool readOnly, const QString& detail = QString(), QWidget* parent = 0);
     QWidget* createWidgetForBool(const QString& name, bool value, const QString& detail = QString(), QWidget* parent = 0);
 
     // called if value changed by ui (in onXXXChange)
@@ -75,6 +77,7 @@ private slots:
 private:
     QList<QMetaProperty> mMetaProperties;
     QVariantHash mProperties;
+    QVariantHash mPropertyDetails;
 };
 
 #endif // PROPERTYEDITOR_H

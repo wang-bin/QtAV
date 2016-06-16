@@ -10,7 +10,7 @@
 
 #include "qtquick2applicationviewer.h"
 
-#include <QtCore/QCoreApplication>
+#include <QtGui/QGuiApplication>
 #include <QtCore/QDir>
 #include <QtQml/QQmlEngine>
 
@@ -23,7 +23,7 @@ class QtQuick2ApplicationViewerPrivate
 
 QString QtQuick2ApplicationViewerPrivate::adjustPath(const QString &path)
 {
-    if (path.startsWith("qrc:"))
+    if (path.startsWith(QLatin1String("qrc:")))
         return path;
 #if defined(Q_OS_IOS)
     if (!QDir::isAbsolutePath(path))
@@ -66,9 +66,9 @@ QtQuick2ApplicationViewer::~QtQuick2ApplicationViewer()
 
 void QtQuick2ApplicationViewer::setMainQmlFile(const QString &file)
 {
-    if (file.startsWith("qrc:")) {
+    if (file.startsWith(QLatin1String("qrc:"))) {
         d->mainQmlFile = file;
-        setSource(d->mainQmlFile);
+        setSource(QUrl(d->mainQmlFile));
         return;
     }
     d->mainQmlFile = QtQuick2ApplicationViewerPrivate::adjustPath(file);
@@ -77,7 +77,7 @@ void QtQuick2ApplicationViewer::setMainQmlFile(const QString &file)
 #else
     QUrl qmlUrl(QUrl::fromLocalFile(d->mainQmlFile));
 #endif
-    if (d->mainQmlFile.startsWith("qrc:/")) {
+    if (d->mainQmlFile.startsWith(QLatin1String("qrc:/"))) {
         qmlUrl = QUrl(d->mainQmlFile);
     }
     setSource(qmlUrl);
@@ -90,7 +90,14 @@ void QtQuick2ApplicationViewer::addImportPath(const QString &path)
 
 void QtQuick2ApplicationViewer::showExpanded()
 {
-#if defined(Q_OS_QNX) || defined(Q_OS_ANDROID) || defined(Q_OS_IOS) || defined(Q_OS_MAEMO)
+    if (QGuiApplication::platformName() == QLatin1String("qnx") ||
+          QGuiApplication::platformName() == QLatin1String("eglfs")) {
+        showFullScreen();
+    } else {
+        show();
+    }
+    return;
+#if defined(Q_OS_QNX) //|| defined(Q_OS_ANDROID) || defined(Q_OS_IOS) || defined(Q_OS_MAEMO)
     showFullScreen();
 #else
     show();

@@ -1,6 +1,6 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,8 +23,8 @@
 #ifndef QTAV_IMAGECONVERTER_P_H
 #define QTAV_IMAGECONVERTER_P_H
 
-#include "QtAV/private/AVCompat.h"
-#include <QtCore/QByteArray>
+#include <QtAV/private/AVCompat.h>
+#include <QtCore/QVector>
 
 namespace QtAV {
 
@@ -33,26 +33,33 @@ class ImageConverterPrivate : public DPtrPrivate<ImageConverter>
 {
 public:
     ImageConverterPrivate()
-        : interlaced(false)
-        , w_in(0),h_in(0)
+        : w_in(0),h_in(0)
         , w_out(0),h_out(0)
-        , fmt_in(PIX_FMT_YUV420P)
-        , fmt_out(PIX_FMT_RGB32)
+        , fmt_in(QTAV_PIX_FMT_C(YUV420P))
+        , fmt_out(QTAV_PIX_FMT_C(RGB32))
+        , range_in(ColorRange_Unknown)
+        , range_out(ColorRange_Unknown)
         , brightness(0)
         , contrast(0)
         , saturation(0)
-    {}
+        , update_data(true)
+    {
+        bits.reserve(8);
+        pitchs.reserve(8);
+    }
     virtual bool setupColorspaceDetails(bool force = true) {
         Q_UNUSED(force);
         return true;
     }
 
-    bool interlaced;
     int w_in, h_in, w_out, h_out;
-    int fmt_in, fmt_out;
+    AVPixelFormat fmt_in, fmt_out;
+    ColorRange range_in, range_out;
     int brightness, contrast, saturation;
+    bool update_data;
     QByteArray data_out;
-    AVPicture picture;
+    QVector<quint8*> bits;
+    QVector<int> pitchs;
 };
 
 } //namespace QtAV

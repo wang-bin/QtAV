@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -37,11 +37,12 @@ class QmlAVPlayer;
 /*!
  * \brief The QuickSubtitle class
  * high level Subtitle processor for QML. No rendering.
+ * Subtitle load priority: user specified file (setFile(...)) > auto load external (autoLoad() must be true) > embedded subtitle
  */
 class QuickSubtitle : public QObject, public QtAV::SubtitleAPIProxy
 {
     Q_OBJECT
-    Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY enableChanged)
+    Q_PROPERTY(bool enabled READ isEnabled WRITE setEnabled NOTIFY enabledChanged)
     Q_PROPERTY(QObject* player READ player WRITE setPlayer)
     // proxy api
     Q_PROPERTY(QByteArray codec READ codec WRITE setCodec NOTIFY codecChanged)
@@ -52,12 +53,17 @@ class QuickSubtitle : public QObject, public QtAV::SubtitleAPIProxy
     Q_PROPERTY(QStringList dirs READ dirs WRITE setDirs NOTIFY dirsChanged)
     Q_PROPERTY(QStringList suffixes READ suffixes WRITE setSuffixes NOTIFY suffixesChanged)
     Q_PROPERTY(QStringList supportedSuffixes READ supportedSuffixes NOTIFY supportedSuffixesChanged)
+    Q_PROPERTY(qreal delay READ delay WRITE setDelay NOTIFY delayChanged)
     Q_PROPERTY(bool canRender READ canRender NOTIFY canRenderChanged)
     //PlayerSubtitle api
     Q_PROPERTY(bool autoLoad READ autoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
-    Q_PROPERTY(QString file READ file WRITE setFile)
+    Q_PROPERTY(QString file READ file WRITE setFile NOTIFY fileChanged)
     //
     Q_PROPERTY(QString text READ getText)
+    // font properties for libass engine
+    Q_PROPERTY(QString fontFile READ fontFile WRITE setFontFile NOTIFY fontFileChanged)
+    Q_PROPERTY(QString fontsDir READ fontsDir WRITE setFontsDir NOTIFY fontsDirChanged)
+    Q_PROPERTY(bool fontFileForced READ isFontFileForced WRITE setFontFileForced NOTIFY fontFileForcedChanged)
 public:
     explicit QuickSubtitle(QObject *parent = 0);
     Q_INVOKABLE QString getText() const;
@@ -79,27 +85,25 @@ public:
     bool isEnabled() const;
     /*!
      * \brief setFile
-     * load user selected subtitle. autoLoad must be false.
-     * if replay the same video, subtitle does not change
-     * if play a new video, you have to set subtitle again
+     * Load user selected subtitle. The subtitle will not change unless you manually setFile(QString()).
      */
     void setFile(const QString& file);
     QString file() const;
     /*!
      * \brief autoLoad
-     * auto find a suitable subtitle.
-     * if false, load the user selected subtile in setFile() (empty if start a new video)
-     * \return
+     * Auto find and load a suitable external subtitle if file() is not empty.
      */
     bool autoLoad() const;
+    //void setAssFrameSize(int width, int height);
 public Q_SLOTS:
     // TODO: enable changed & autoload=> load
     void setAutoLoad(bool value);
 Q_SIGNALS:
+    void fileChanged();
     void canRenderChanged();
     void loaded(const QString& path);
-    void enableChanged(bool);
-    void autoLoadChanged(bool value);
+    void enabledChanged(bool value);
+    void autoLoadChanged();
 
     void codecChanged();
     void enginesChanged();
@@ -110,6 +114,10 @@ Q_SIGNALS:
     void suffixesChanged();
     void supportedSuffixesChanged();
     void engineChanged();
+    void delayChanged();
+    void fontFileChanged();
+    void fontsDirChanged();
+    void fontFileForcedChanged();
 
 private:
     bool m_enable;

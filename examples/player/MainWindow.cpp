@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -44,10 +44,10 @@
 #include <QInputDialog>
 #include <QMenu>
 #include <QMessageBox>
+#include <QToolButton>
 #include <QToolTip>
 #include <QKeyEvent>
 #include <QWheelEvent>
-#include "Button.h"
 #include "ClickableMenu.h"
 #include "Slider.h"
 #include "StatisticsView.h"
@@ -59,18 +59,21 @@
 //#include "filters/AVFilterSubtitle.h"
 #include "playlist/PlayList.h"
 #include "../common/common.h"
-
+#ifndef QT_NO_OPENGL
+#include "QtAV/GLSLFilter.h"
+#endif
 /*
  *TODO:
  * disable a/v actions if player is 0;
  * use action's value to set player's parameters when start to play a new file
  */
 
+
 #define AVDEBUG() \
     qDebug("%s %s @%d", __FILE__, __FUNCTION__, __LINE__);
 
 using namespace QtAV;
-const qreal kVolumeInterval = 0.05;
+const qreal kVolumeInterval = 0.04;
 
 extern QStringList idsToNames(QVector<VideoDecoderId> ids);
 extern QVector<VideoDecoderId> idsFromNames(const QStringList& names);
@@ -93,21 +96,22 @@ MainWindow::MainWindow(QWidget *parent) :
     QWidget(parent)
   , mIsReady(false)
   , mHasPendingPlay(false)
-  , mNullAO(false)
   , mControlOn(false)
   , mShowControl(2)
   , mRepeateMax(0)
+  , mpVOAction(0)
   , mpPlayer(0)
   , mpRenderer(0)
-  , mpTempRenderer(0)
-  , mpAVFilter(0)
+  , mpVideoFilter(0)
+  , mpAudioFilter(0)
   , mpStatisticsView(0)
   , mpOSD(0)
   , mpSubtitle(0)
   , m_preview(0)
+  , m_shader(NULL)
 {
-    setWindowIcon(QIcon(":/QtAV.svg"));
-    mpOSD = new OSDFilterQPainter(this);
+    setWindowIcon(QIcon(QString::fromLatin1(":/QtAV.svg")));
+    mpOSD = new OSDFilter(this);
     mpSubtitle = new SubtitleFilter(this);
     mpChannelAction = 0;
     mpChannelMenu = 0;
@@ -145,6 +149,11 @@ void MainWindow::initPlayer()
 {
     mpPlayer = new AVPlayer(this);
     mIsReady = true;
+    VideoRenderer *vo = VideoRenderer::create((VideoRendererId)property("rendererId").toInt());
+    if (!vo || !vo->isAvailable() || !vo->widget()) {
+        QMessageBox::critical(0, QString::fromLatin1("QtAV"), tr("Video renderer is ") + tr("not availabe on your platform!"));
+    }
+    setRenderer(vo);
     //mpSubtitle->installTo(mpPlayer); //filter on frame
     mpSubtitle->setPlayer(mpPlayer);
     //mpPlayer->setAudioOutput(AudioOutputFactory::create(AudioOutputId_OpenAL));
@@ -153,11 +162,15 @@ void MainWindow::initPlayer()
     connect(ef, SIGNAL(helpRequested()), SLOT(help()));
     connect(ef, SIGNAL(showNextOSD()), SLOT(showNextOSD()));
     onCaptureConfigChanged();
-    onAVFilterConfigChanged();
+    onAVFilterVideoConfigChanged();
+    onAVFilterAudioConfigChanged();
     connect(&Config::instance(), SIGNAL(captureDirChanged(QString)), SLOT(onCaptureConfigChanged()));
     connect(&Config::instance(), SIGNAL(captureFormatChanged(QString)), SLOT(onCaptureConfigChanged()));
     connect(&Config::instance(), SIGNAL(captureQualityChanged(int)), SLOT(onCaptureConfigChanged()));
-    connect(&Config::instance(), SIGNAL(avfilterChanged()), SLOT(onAVFilterConfigChanged()));
+    connect(&Config::instance(), SIGNAL(avfilterVideoChanged()), SLOT(onAVFilterVideoConfigChanged()));
+    connect(&Config::instance(), SIGNAL(avfilterAudioChanged()), SLOT(onAVFilterAudioConfigChanged()));
+    connect(&Config::instance(), SIGNAL(bufferValueChanged()), SLOT(onBufferValueChanged()));
+    connect(&Config::instance(), SIGNAL(abortOnTimeoutChanged()), SLOT(onAbortOnTimeoutChanged()));
     connect(mpStopBtn, SIGNAL(clicked()), this, SLOT(stopUnload()));
     connect(mpForwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekForward()));
     connect(mpBackwardBtn, SIGNAL(clicked()), mpPlayer, SLOT(seekBackward()));
@@ -165,109 +178,90 @@ void MainWindow::initPlayer()
     connect(mpVolumeSlider, SIGNAL(sliderPressed()), SLOT(setVolume()));
     connect(mpVolumeSlider, SIGNAL(valueChanged(int)), SLOT(setVolume()));
 
+    connect(mpPlayer, SIGNAL(seekFinished(qint64)), SLOT(onSeekFinished(qint64)));
     connect(mpPlayer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), SLOT(onMediaStatusChanged()));
+    connect(mpPlayer, SIGNAL(bufferProgressChanged(qreal)), SLOT(onBufferProgress(qreal)));
     connect(mpPlayer, SIGNAL(error(QtAV::AVError)), this, SLOT(handleError(QtAV::AVError)));
     connect(mpPlayer, SIGNAL(started()), this, SLOT(onStartPlay()));
     connect(mpPlayer, SIGNAL(stopped()), this, SLOT(onStopPlay()));
     connect(mpPlayer, SIGNAL(paused(bool)), this, SLOT(onPaused(bool)));
     connect(mpPlayer, SIGNAL(speedChanged(qreal)), this, SLOT(onSpeedChange(qreal)));
     connect(mpPlayer, SIGNAL(positionChanged(qint64)), this, SLOT(onPositionChange(qint64)));
+    //connect(mpPlayer, SIGNAL(volumeChanged(qreal)), SLOT(syncVolumeUi(qreal)));
     connect(mpVideoEQ, SIGNAL(brightnessChanged(int)), this, SLOT(onBrightnessChanged(int)));
     connect(mpVideoEQ, SIGNAL(contrastChanged(int)), this, SLOT(onContrastChanged(int)));
     connect(mpVideoEQ, SIGNAL(hueChanegd(int)), this, SLOT(onHueChanged(int)));
     connect(mpVideoEQ, SIGNAL(saturationChanged(int)), this, SLOT(onSaturationChanged(int)));
 
-    connect(mpCaptureBtn, SIGNAL(clicked()), mpPlayer->videoCapture(), SLOT(request()));
+    connect(mpCaptureBtn, SIGNAL(clicked()), mpPlayer->videoCapture(), SLOT(capture()));
 
     emit ready(); //emit this signal after connection. otherwise the slots may not be called for the first time
+}
+
+void MainWindow::onSeekFinished(qint64 pos)
+{
+    qDebug("seek finished at %lld/%lld", pos, mpPlayer->position());
 }
 
 void MainWindow::stopUnload()
 {
     mpPlayer->stop();
-    mpPlayer->unload();
 }
 
 void MainWindow::setupUi()
 {
     QVBoxLayout *mainLayout = new QVBoxLayout();
     mainLayout->setSpacing(0);
-    mainLayout->setMargin(0);
+    mainLayout->setContentsMargins(QMargins());
     setLayout(mainLayout);
 
     mpPlayerLayout = new QVBoxLayout();
     mpControl = new QWidget(this);
-    mpControl->setMaximumHeight(25);
+    mpControl->setMaximumHeight(30);
 
     //mpPreview = new QLable(this);
 
     mpTimeSlider = new Slider(mpControl);
     mpTimeSlider->setDisabled(true);
-    //mpTimeSlider->setFixedHeight(8);
-    mpTimeSlider->setMaximumHeight(8);
     mpTimeSlider->setTracking(true);
     mpTimeSlider->setOrientation(Qt::Horizontal);
     mpTimeSlider->setMinimum(0);
     mpCurrent = new QLabel(mpControl);
     mpCurrent->setToolTip(tr("Current time"));
-    mpCurrent->setMargin(2);
-    mpCurrent->setText("00:00:00");
+    mpCurrent->setContentsMargins(QMargins(2, 2, 2, 2));
+    mpCurrent->setText(QString::fromLatin1("00:00:00"));
     mpEnd = new QLabel(mpControl);
     mpEnd->setToolTip(tr("Duration"));
-    mpEnd->setMargin(2);
-    mpEnd->setText("00:00:00");
+    mpEnd->setContentsMargins(QMargins(2, 2, 2, 2));
+    mpEnd->setText(QString::fromLatin1("00:00:00"));
     mpTitle = new QLabel(mpControl);
     mpTitle->setToolTip(tr("Render engine"));
-    mpTitle->setText("QPainter");
+    mpTitle->setText(QString::fromLatin1("QPainter"));
     mpTitle->setIndent(8);
-    mpSpeed = new QLabel("1.00");
-    mpSpeed->setMargin(1);
+    mpSpeed = new QLabel(QString::fromLatin1("1.00"));
+    mpSpeed->setContentsMargins(QMargins(1, 1, 1, 1));
     mpSpeed->setToolTip(tr("Speed. Ctrl+Up/Down"));
 
-    mPlayPixmap = QPixmap(":/theme/button-play-pause.png");
-    int w = mPlayPixmap.width(), h = mPlayPixmap.height();
-    mPausePixmap = mPlayPixmap.copy(QRect(w/2, 0, w/2, h));
-    mPlayPixmap = mPlayPixmap.copy(QRect(0, 0, w/2, h));
-    qDebug("%d x %d", mPlayPixmap.width(), mPlayPixmap.height());
-    mpPlayPauseBtn = new Button(mpControl);
-    int a = qMin(w/2, h);
-    const int kMaxButtonIconWidth = 20;
-    const int kMaxButtonIconMargin = kMaxButtonIconWidth/3;
-    a = qMin(a, kMaxButtonIconWidth);
-    mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
-    mpPlayPauseBtn->setIconSize(QSize(a, a));
-    mpPlayPauseBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-    mpStopBtn = new Button(mpControl);
-    mpStopBtn->setIconWithSates(QPixmap(":/theme/button-stop.png"));
-    mpStopBtn->setIconSize(QSize(a, a));
-    mpStopBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-    mpBackwardBtn = new Button(mpControl);
-    mpBackwardBtn->setIconWithSates(QPixmap(":/theme/button-rewind.png"));
-    mpBackwardBtn->setIconSize(QSize(a, a));
-    mpBackwardBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-    mpForwardBtn = new Button(mpControl);
-    mpForwardBtn->setIconWithSates(QPixmap(":/theme/button-fastforward.png"));
-    mpForwardBtn->setIconSize(QSize(a, a));
-    mpForwardBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-    mpOpenBtn = new Button(mpControl);
+    mpPlayPauseBtn = new QToolButton(mpControl);
+    mpPlayPauseBtn->setIcon(QIcon(QString::fromLatin1(":/theme/dark/play.svg")));
+    mpStopBtn = new QToolButton(mpControl);
+    mpStopBtn->setIcon(QIcon(QString::fromLatin1(":/theme/dark/stop.svg")));
+    mpBackwardBtn = new QToolButton(mpControl);
+    mpBackwardBtn->setIcon(QIcon(QString::fromLatin1(":/theme/dark/backward.svg")));
+    mpForwardBtn = new QToolButton(mpControl);
+    mpForwardBtn->setIcon(QIcon(QString::fromLatin1(":/theme/dark/forward.svg")));
+    mpOpenBtn = new QToolButton(mpControl);
     mpOpenBtn->setToolTip(tr("Open"));
-    mpOpenBtn->setIconWithSates(QPixmap(":/theme/open_folder.png"));
-    mpOpenBtn->setIconSize(QSize(a, a));
-    mpOpenBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
+    mpOpenBtn->setIcon(QIcon(QString::fromLatin1(":/theme/dark/open.svg")));
 
-    mpInfoBtn = new Button();
-    mpInfoBtn->setToolTip(QString("Media information. Not implemented."));
-    mpInfoBtn->setIconWithSates(QPixmap(":/theme/info.png"));
-    mpInfoBtn->setIconSize(QSize(a, a));
-    mpInfoBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-    mpCaptureBtn = new Button();
-    mpCaptureBtn->setIconWithSates(QPixmap(":/theme/screenshot.png"));
-    mpCaptureBtn->setIconSize(QSize(a, a));
-    mpCaptureBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-    mpVolumeBtn = new Button();
-    mpVolumeBtn->setIconWithSates(QPixmap(":/theme/button-max-volume.png"));
-    mpVolumeBtn->setIconSize(QSize(a, a));
-    mpVolumeBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
+    mpInfoBtn = new QToolButton();
+    mpInfoBtn->setToolTip(QString::fromLatin1("Media information"));
+    mpInfoBtn->setIcon(QIcon(QString::fromLatin1(":/theme/dark/info.svg")));
+    mpCaptureBtn = new QToolButton();
+    mpCaptureBtn->setToolTip(tr("Capture"));
+    mpCaptureBtn->setIcon(QIcon(QString::fromLatin1(":/theme/dark/capture.svg")));
+    mpVolumeBtn = new QToolButton();
+    mpVolumeBtn->setIcon(QIcon(QString::fromLatin1(":/theme/dark/sound.svg")));
 
     mpVolumeSlider = new Slider();
     mpVolumeSlider->hide();
@@ -275,20 +269,16 @@ void MainWindow::setupUi()
     mpVolumeSlider->setMinimum(0);
     const int kVolumeSliderMax = 100;
     mpVolumeSlider->setMaximum(kVolumeSliderMax);
-    mpVolumeSlider->setMaximumHeight(8);
+    //mpVolumeSlider->setMaximumHeight(12);
     mpVolumeSlider->setMaximumWidth(88);
     mpVolumeSlider->setValue(int(1.0/kVolumeInterval*qreal(kVolumeSliderMax)/100.0));
     setVolume();
 
-    mpMenuBtn = new Button();
+    mpMenuBtn = new QToolButton();
+    mpMenuBtn->setIcon(QIcon(QString::fromLatin1(":/theme/dark/menu.svg")));
     mpMenuBtn->setAutoRaise(true);
     mpMenuBtn->setPopupMode(QToolButton::InstantPopup);
 
-/*
-    mpMenuBtn->setIconWithSates(QPixmap(":/theme/search-arrow.png"));
-    mpMenuBtn->setIconSize(QSize(a, a));
-    mpMenuBtn->setMaximumSize(a+kMaxButtonIconMargin+2, a+kMaxButtonIconMargin);
-*/
     QMenu *subMenu = 0;
     QWidgetAction *pWA = 0;
     mpMenu = new QMenu(mpMenuBtn);
@@ -299,7 +289,7 @@ void MainWindow::setupUi()
     subMenu = new QMenu(tr("Play list"));
     mpMenu->addMenu(subMenu);
     mpPlayList = new PlayList(this);
-    mpPlayList->setSaveFile(Config::instance().defaultDir() + "/playlist.qds");
+    mpPlayList->setSaveFile(Config::instance().defaultDir() + QString::fromLatin1("/playlist.qds"));
     mpPlayList->load();
     connect(mpPlayList, SIGNAL(aboutToPlay(QString)), SLOT(play(QString)));
     pWA = new QWidgetAction(0);
@@ -310,7 +300,7 @@ void MainWindow::setupUi()
     mpMenu->addMenu(subMenu);
     mpHistory = new PlayList(this);
     mpHistory->setMaxRows(20);
-    mpHistory->setSaveFile(Config::instance().defaultDir() + "/history.qds");
+    mpHistory->setSaveFile(Config::instance().defaultDir() + QString::fromLatin1("/history.qds"));
     mpHistory->load();
     connect(mpHistory, SIGNAL(aboutToPlay(QString)), SLOT(play(QString)));
     pWA = new QWidgetAction(0);
@@ -322,7 +312,6 @@ void MainWindow::setupUi()
     //mpMenu->addAction(tr("Report"))->setEnabled(false); //report bug, suggestions etc. using maillist?
     mpMenu->addAction(tr("About"), this, SLOT(about()));
     mpMenu->addAction(tr("Help"), this, SLOT(help()));
-    mpMenu->addAction(tr("About Qt"), qApp, SLOT(aboutQt()));
     mpMenu->addAction(tr("Donate"), this, SLOT(donate()));
     mpMenu->addAction(tr("Setup"), this, SLOT(setup()));
     mpMenu->addSeparator();
@@ -350,7 +339,7 @@ void MainWindow::setupUi()
     mpRepeatBox = new QSpinBox(0);
     mpRepeatBox->setMinimum(-1);
     mpRepeatBox->setValue(-1);
-    mpRepeatBox->setToolTip("-1: " + tr("infinity"));
+    mpRepeatBox->setToolTip(QString::fromLatin1("-1: ") + tr("infinity"));
     connect(mpRepeatBox, SIGNAL(valueChanged(int)), SLOT(setRepeateMax(int)));
     QLabel *pRepeatLabel = new QLabel(tr("Times"));
     QHBoxLayout *hb = new QHBoxLayout;
@@ -360,7 +349,7 @@ void MainWindow::setupUi()
     vb->addLayout(hb);
     pRepeatLabel = new QLabel(tr("From"));
     mpRepeatA = new QTimeEdit();
-    mpRepeatA->setDisplayFormat("HH:mm:ss");
+    mpRepeatA->setDisplayFormat(QString::fromLatin1("HH:mm:ss"));
     mpRepeatA->setToolTip(tr("negative value means from the end"));
     connect(mpRepeatA, SIGNAL(timeChanged(QTime)), SLOT(repeatAChanged(QTime)));
     hb = new QHBoxLayout;
@@ -369,7 +358,7 @@ void MainWindow::setupUi()
     vb->addLayout(hb);
     pRepeatLabel = new QLabel(tr("To"));
     mpRepeatB = new QTimeEdit();
-    mpRepeatB->setDisplayFormat("HH:mm:ss");
+    mpRepeatB->setDisplayFormat(QString::fromLatin1("HH:mm:ss"));
     mpRepeatB->setToolTip(tr("negative value means from the end"));
     connect(mpRepeatB, SIGNAL(timeChanged(QTime)), SLOT(repeatBChanged(QTime)));
     hb = new QHBoxLayout;
@@ -424,11 +413,11 @@ void MainWindow::setupUi()
     pWA = new QWidgetAction(0);
     pWA->setDefaultWidget(wgt);
     subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
-    box->addItem("FFmpeg", "FFmpeg");
-    box->addItem("LibASS", "LibASS");
+    box->addItem(QString::fromLatin1("FFmpeg"), QString::fromLatin1("FFmpeg"));
+    box->addItem(QString::fromLatin1("LibASS"), QString::fromLatin1("LibASS"));
     connect(box, SIGNAL(activated(QString)), SLOT(setSubtitleEngine(QString)));
     mpSubtitle->setEngines(QStringList() << box->itemData(box->currentIndex()).toString());
-    box->setToolTip(tr("FFmpeg supports more subtitles but only render plain text") + "\n" + tr("LibASS supports ass styles"));
+    box->setToolTip(tr("FFmpeg supports more subtitles but only render plain text") + QString::fromLatin1("\n") + tr("LibASS supports ass styles"));
 
     wgt = new QWidget();
     hb = new QHBoxLayout();
@@ -439,10 +428,10 @@ void MainWindow::setupUi()
     pWA = new QWidgetAction(0);
     pWA->setDefaultWidget(wgt);
     subMenu->addAction(pWA); //must add action after the widget action is ready. is it a Qt bug?
-    box->addItem(tr("Auto detect"), "AutoDetect");
-    box->addItem(tr("System"), "System");
+    box->addItem(tr("Auto detect"), QString::fromLatin1("AutoDetect"));
+    box->addItem(tr("System"), QString::fromLatin1("System"));
     foreach (const QByteArray& cs, QTextCodec::availableCodecs()) {
-        box->addItem(cs, cs);
+        box->addItem(QString::fromLatin1(cs), QString::fromLatin1(cs));
     }
     connect(box, SIGNAL(activated(QString)), SLOT(setSubtitleCharset(QString)));
     mpSubtitle->setCodec(box->itemData(box->currentIndex()).toByteArray());
@@ -452,13 +441,14 @@ void MainWindow::setupUi()
     mpMenu->addMenu(subMenu);
     mpAudioTrackMenu = subMenu;
     connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(changeAudioTrack(QAction*)));
+    initAudioTrackMenu();
 
     subMenu = new ClickableMenu(tr("Channel"));
     mpMenu->addMenu(subMenu);
     mpChannelMenu = subMenu;
     connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(changeChannel(QAction*)));
     subMenu->addAction(tr("As input"))->setData(AudioFormat::ChannelLayout_Unsupported); //will set to input in resampler if not supported.
-    subMenu->addAction(tr("Stero"))->setData(AudioFormat::ChannelLayout_Stero);
+    subMenu->addAction(tr("Stereo"))->setData(AudioFormat::ChannelLayout_Stereo);
     subMenu->addAction(tr("Mono (center)"))->setData(AudioFormat::ChannelLayout_Center);
     subMenu->addAction(tr("Left"))->setData(AudioFormat::ChannelLayout_Left);
     subMenu->addAction(tr("Right"))->setData(AudioFormat::ChannelLayout_Right);
@@ -475,8 +465,8 @@ void MainWindow::setupUi()
     mpARAction = subMenu->addAction(tr("Video"));
     mpARAction->setData(0);
     subMenu->addAction(tr("Window"))->setData(-1);
-    subMenu->addAction("4:3")->setData(4.0/3.0);
-    subMenu->addAction("16:9")->setData(16.0/9.0);
+    subMenu->addAction(QString::fromLatin1("4:3"))->setData(4.0/3.0);
+    subMenu->addAction(QString::fromLatin1("16:9"))->setData(16.0/9.0);
     subMenu->addAction(tr("Custom"))->setData(-2);
     foreach(QAction* action, subMenu->actions()) {
         action->setCheckable(true);
@@ -502,20 +492,19 @@ void MainWindow::setupUi()
     mpMenu->addMenu(subMenu);
     connect(subMenu, SIGNAL(triggered(QAction*)), SLOT(changeVO(QAction*)));
     //TODO: AVOutput.name,detail(description). check whether it is available
-    mpVOAction = subMenu->addAction("QPainter");
-    mpVOAction->setData(VideoRendererId_Widget);
-    subMenu->addAction("OpenGLWidget")->setData(VideoRendererId_OpenGLWidget);
-    subMenu->addAction("GLWidget 2")->setData(VideoRendererId_GLWidget2);
-    subMenu->addAction("GLWidget")->setData(VideoRendererId_GLWidget);
-    subMenu->addAction("GDI+")->setData(VideoRendererId_GDI);
-    subMenu->addAction("Direct2D")->setData(VideoRendererId_Direct2D);
-    subMenu->addAction("XV")->setData(VideoRendererId_XV);
-    mVOActions = subMenu->actions();
-    foreach(QAction* action, subMenu->actions()) {
-        action->setCheckable(true);
+    VideoRendererId *vo = NULL;
+    while ((vo = VideoRenderer::next(vo))) {
+        // skip non-widget renderers
+        if (*vo == VideoRendererId_OpenGLWindow || *vo == VideoRendererId_GraphicsItem)
+            continue;
+        QAction *voa = subMenu->addAction(QString::fromLatin1(VideoRenderer::name(*vo)));
+        voa->setData(*vo);
+        voa->setCheckable(true);
+        if (!mpVOAction)
+            mpVOAction = voa;
     }
     mpVOAction->setChecked(true);
-
+    mVOActions = subMenu->actions();
 
     mainLayout->addLayout(mpPlayerLayout);
     mainLayout->addWidget(mpTimeSlider);
@@ -523,7 +512,7 @@ void MainWindow::setupUi()
 
     QHBoxLayout *controlLayout = new QHBoxLayout();
     controlLayout->setSpacing(0);
-    controlLayout->setMargin(1);
+    controlLayout->setContentsMargins(QMargins(1, 1, 1, 1));
     mpControl->setLayout(controlLayout);
     controlLayout->addWidget(mpCurrent);
     controlLayout->addWidget(mpTitle);
@@ -548,12 +537,14 @@ void MainWindow::setupUi()
     connect(mpPlayPauseBtn, SIGNAL(clicked()), SLOT(togglePlayPause()));
     connect(mpInfoBtn, SIGNAL(clicked()), SLOT(showInfo()));
     //valueChanged can be triggered by non-mouse event
-    //TODO: connect sliderMoved(int) to preview(int)
-    //connect(mpTimeSlider, SIGNAL(sliderMoved(int)), this, SLOT(seekToMSec(int)));
+    connect(mpTimeSlider, SIGNAL(sliderMoved(int)), SLOT(seek(int)));
     connect(mpTimeSlider, SIGNAL(sliderPressed()), SLOT(seek()));
-    connect(mpTimeSlider, SIGNAL(sliderReleased()), SLOT(seek()));
     connect(mpTimeSlider, SIGNAL(onLeave()), SLOT(onTimeSliderLeave()));
     connect(mpTimeSlider, SIGNAL(onHover(int,int)), SLOT(onTimeSliderHover(int,int)));
+    connect(&Config::instance(), SIGNAL(userShaderEnabledChanged()), SLOT(onUserShaderChanged()));
+    connect(&Config::instance(), SIGNAL(fragHeaderChanged()), SLOT(onUserShaderChanged()));
+    connect(&Config::instance(), SIGNAL(fragSampleChanged()), SLOT(onUserShaderChanged()));
+    connect(&Config::instance(), SIGNAL(fragPostProcessChanged()), SLOT(onUserShaderChanged()));
     QTimer::singleShot(0, this, SLOT(initPlayer()));
 }
 
@@ -585,17 +576,28 @@ void MainWindow::changeChannel(QAction *action)
 
 void MainWindow::changeAudioTrack(QAction *action)
 {
-    if (mpAudioTrackAction == action) {
-        action->toggle();
-        return;
-    }
     int track = action->data().toInt();
-
-    if (!mpPlayer->setAudioStream(track)) {
+    if (mpAudioTrackAction == action && track >= 0) { // external action is always clickable
         action->toggle();
         return;
     }
-    mpAudioTrackAction->setChecked(false);
+    if (track < 0) {
+        QString f = QFileDialog::getOpenFileName(0, tr("Open an external audio track"));
+        if (f.isEmpty()) {
+            action->toggle();
+            return;
+        }
+        mpPlayer->setExternalAudio(f);
+    } else {
+        mpPlayer->setExternalAudio(QString());
+        if (!mpPlayer->setAudioStream(track)) {
+            action->toggle();
+            return;
+        }
+    }
+
+    if (mpAudioTrackAction)
+        mpAudioTrackAction->setChecked(false);
     mpAudioTrackAction = action;
     mpAudioTrackAction->setChecked(true);
     if (mpStatisticsView && mpStatisticsView->isVisible())
@@ -609,50 +611,38 @@ void MainWindow::changeVO(QAction *action)
         return;
     }
     VideoRendererId vid = (VideoRendererId)action->data().toInt();
-    VideoRenderer *vo = VideoRendererFactory::create(vid);
+    VideoRenderer *vo = VideoRenderer::create(vid);
     if (vo && vo->isAvailable()) {
-
-        setRenderer(vo);
+        if (!setRenderer(vo))
+            action->toggle();
     } else {
         action->toggle(); //check state changes if clicked
-        QMessageBox::critical(0, "QtAV", tr("not availabe on your platform!"));
+        QMessageBox::critical(0, QString::fromLatin1("QtAV"), tr("not availabe on your platform!"));
         return;
     }
 }
 
 void MainWindow::processPendingActions()
 {
-    if (!mpTempRenderer)
-        return;
-    setRenderer(mpTempRenderer);
-    mpTempRenderer = 0;
     if (mHasPendingPlay) {
         mHasPendingPlay = false;
         play(mFile);
     }
 }
 
-void MainWindow::enableAudio(bool yes)
+void MainWindow::setAudioBackends(const QStringList& backends)
 {
-    mNullAO = !yes;
-    if (!mpPlayer)
-        return;
-    mpPlayer->enableAudio(yes);
+    mAudioBackends = backends;
 }
 
-void MainWindow::setAudioOutput(AudioOutput *ao)
+bool MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
 {
-    Q_UNUSED(ao);
-}
-
-void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
-{
-    if (!mIsReady) {
-        mpTempRenderer = renderer;
-        return;
-    }
     if (!renderer)
-        return;
+        return false;
+    if (!renderer->widget()) {
+        QMessageBox::warning(0, QString::fromLatin1("QtAV"), tr("Can not use this renderer"));
+        return false;
+    }
     mpOSD->uninstall();
     mpSubtitle->uninstall();
     renderer->widget()->setMouseTracking(true); //mouseMoveEvent without press.
@@ -705,6 +695,19 @@ void MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     onVideoEQEngineChanged();
     mpOSD->installTo(mpRenderer);
     mpSubtitle->installTo(mpRenderer);
+    onUserShaderChanged();
+#if GL_ASS
+    GLSLFilter* glsl = new GLSLFilter(this);
+    glsl->setOutputSize(QSize(4096, 2160));
+    //mpRenderer->installFilter(glsl);
+    if (mpRenderer->opengl()) {
+        connect(mpRenderer->opengl(), &OpenGLVideo::beforeRendering, [this](){
+            OpenGLVideo* glv = mpRenderer->opengl();
+            glv->setSubImages(mpSubtitle->subImages(glv->frameTime(), glv->frameWidth(), glv->frameHeight()));
+        });
+    }
+#endif
+    return true;
 }
 
 void MainWindow::play(const QString &name)
@@ -715,18 +718,27 @@ void MainWindow::play(const QString &name)
         return;
     }
     mTitle = mFile;
-    if (!mFile.contains("://") || mFile.startsWith("file://")) {
+    if (!mFile.contains(QLatin1String("://")) || mFile.startsWith(QLatin1String("file://"))) {
         mTitle = QFileInfo(mFile).fileName();
     }
     setWindowTitle(mTitle);
-    mpPlayer->enableAudio(!mNullAO);
+    mpPlayer->stop(); //if no stop, in setPriority decoder will reopen
+    mpPlayer->setFrameRate(Config::instance().forceFrameRate());
+    if (!mAudioBackends.isEmpty())
+        mpPlayer->audio()->setBackends(mAudioBackends);
     if (!mpRepeatEnableAction->isChecked())
         mRepeateMax = 0;
+    mpPlayer->setInterruptOnTimeout(Config::instance().abortOnTimeout());
+    mpPlayer->setInterruptTimeout(Config::instance().timeout()*1000.0);
+    mpPlayer->setBufferMode(QtAV::BufferPackets);
+    mpPlayer->setBufferValue(Config::instance().bufferValue());
     mpPlayer->setRepeat(mRepeateMax);
     mpPlayer->setPriority(idsFromNames(Config::instance().decoderPriorityNames()));
     mpPlayer->setOptionsForAudioCodec(mpDecoderConfigPage->audioDecoderOptions());
     mpPlayer->setOptionsForVideoCodec(mpDecoderConfigPage->videoDecoderOptions());
-    mpPlayer->setOptionsForFormat(Config::instance().avformatOptions());
+    if (Config::instance().avformatOptionsEnabled())
+        mpPlayer->setOptionsForFormat(Config::instance().avformatOptions());
+    qDebug() << Config::instance().avformatOptions();
     PlayListItem item;
     item.setUrl(mFile);
     item.setTitle(mTitle);
@@ -748,7 +760,7 @@ void MainWindow::setVideoDecoderNames(const QStringList &vd)
         vdnames << v.toLower();
     }
     QStringList vidp;
-    QStringList vids = idsToNames(GetRegistedVideoDecoderIds());
+    QStringList vids = idsToNames(VideoDecoder::registered());
     foreach (const QString& v, vids) {
         if (vdnames.contains(v.toLower())) {
             vidp.append(v);
@@ -759,9 +771,10 @@ void MainWindow::setVideoDecoderNames(const QStringList &vd)
 
 void MainWindow::openFile()
 {
-    QString file = QFileDialog::getOpenFileName(0, tr("Open a media file"));
+    QString file = QFileDialog::getOpenFileName(0, tr("Open a media file"), Config::instance().lastFile());
     if (file.isEmpty())
         return;
+    Config::instance().setLastFile(file);
     play(file);
 }
 
@@ -773,8 +786,11 @@ void MainWindow::togglePlayPause()
     } else {
         if (mFile.isEmpty())
             return;
-        mpPlayer->play();
-        mpPlayPauseBtn->setIconWithSates(mPausePixmap);
+        if (!mpPlayer->isPlaying())
+            play(mFile);
+        else
+            mpPlayer->play();
+        mpPlayPauseBtn->setIcon(QIcon(QString::fromLatin1(":/theme/dark/pause.svg")));
     }
 }
 
@@ -796,10 +812,10 @@ void MainWindow::onPaused(bool p)
 {
     if (p) {
         qDebug("start pausing...");
-        mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
+        mpPlayPauseBtn->setIcon(QIcon(QString::fromLatin1(":/theme/dark/play.svg")));
     } else {
         qDebug("stop pausing...");
-        mpPlayPauseBtn->setIconWithSates(mPausePixmap);
+        mpPlayPauseBtn->setIcon(QIcon(QString::fromLatin1(":/theme/dark/pause.svg")));
     }
 }
 
@@ -807,14 +823,17 @@ void MainWindow::onStartPlay()
 {
     mpRenderer->setRegionOfInterest(QRectF());
     mFile = mpPlayer->file(); //open from EventFilter's menu
+    mTitle = mFile;
+    if (!mFile.contains(QLatin1String("://")) || mFile.startsWith(QLatin1String("file://")))
+        mTitle = QFileInfo(mFile).fileName();
     setWindowTitle(mTitle);
 
-    mpPlayPauseBtn->setIconWithSates(mPausePixmap);
+    mpPlayPauseBtn->setIcon(QIcon(QString::fromLatin1(":/theme/dark/pause.svg")));
     mpTimeSlider->setMinimum(mpPlayer->mediaStartPosition());
     mpTimeSlider->setMaximum(mpPlayer->mediaStopPosition());
     mpTimeSlider->setValue(0);
     mpTimeSlider->setEnabled(mpPlayer->isSeekable());
-    mpEnd->setText(QTime(0, 0, 0).addMSecs(mpPlayer->mediaStopPosition()).toString("HH:mm:ss"));
+    mpEnd->setText(QTime(0, 0, 0).addMSecs(mpPlayer->mediaStopPosition()).toString(QString::fromLatin1("HH:mm:ss")));
     setVolume();
     mShowControl = 0;
     QTimer::singleShot(3000, this, SLOT(tryHideControlBar()));
@@ -844,18 +863,20 @@ void MainWindow::onStopPlay()
     if (mpPlayer->currentRepeat() < mpPlayer->repeat())
         return;
     // use shortcut to replay in EventFilter, the options will not be set, so set here
+    mpPlayer->setFrameRate(Config::instance().forceFrameRate());
     mpPlayer->setOptionsForAudioCodec(mpDecoderConfigPage->audioDecoderOptions());
     mpPlayer->setOptionsForVideoCodec(mpDecoderConfigPage->videoDecoderOptions());
-    mpPlayer->setOptionsForFormat(Config::instance().avformatOptions());
+    if (Config::instance().avformatOptionsEnabled())
+        mpPlayer->setOptionsForFormat(Config::instance().avformatOptions());
 
-    mpPlayPauseBtn->setIconWithSates(mPlayPixmap);
+    mpPlayPauseBtn->setIcon(QIcon(QString::fromLatin1(":/theme/dark/play.svg")));
     mpTimeSlider->setValue(0);
     qDebug(">>>>>>>>>>>>>>disable slider");
     mpTimeSlider->setDisabled(true);
     mpTimeSlider->setMinimum(0);
     mpTimeSlider->setMaximum(0);
-    mpCurrent->setText("00:00:00");
-    mpEnd->setText("00:00:00");
+    mpCurrent->setText(QString::fromLatin1("00:00:00"));
+    mpEnd->setText(QString::fromLatin1("00:00:00"));
     tryShowControlBar();
     ScreenSaver::instance().enable();
     toggleRepeat(false);
@@ -868,26 +889,25 @@ void MainWindow::onStopPlay()
 
 void MainWindow::onSpeedChange(qreal speed)
 {
-    mpSpeed->setText(QString("%1").arg(speed, 4, 'f', 2, '0'));
+    mpSpeed->setText(QString::fromLatin1("%1").arg(speed, 4, 'f', 2, QLatin1Char('0')));
 }
 
-void MainWindow::seekToMSec(int msec)
+void MainWindow::seek(int value)
 {
-    mpPlayer->seek(qint64(msec));
+    mpPlayer->setSeekType(AccurateSeek);
+    mpPlayer->seek((qint64)value);
+    if (!m_preview || !Config::instance().previewEnabled())
+        return;
+    m_preview->setTimestamp(value);
+    m_preview->preview();
+    m_preview->setWindowFlags(m_preview->windowFlags() |Qt::FramelessWindowHint|Qt::WindowStaysOnTopHint);
+    m_preview->resize(Config::instance().previewWidth(), Config::instance().previewHeight());
+    m_preview->show();
 }
 
 void MainWindow::seek()
 {
-    mpPlayer->seek((qint64)mpTimeSlider->value());
-    if (!m_preview)
-        return;
-    m_preview->setTimestamp(mpTimeSlider->value());
-    m_preview->preview();
-    const int w = 160;
-    const int h = 90;
-    m_preview->setWindowFlags(m_preview->windowFlags() |Qt::FramelessWindowHint|Qt::WindowStaysOnTopHint);
-    m_preview->resize(w, h);
-    m_preview->show();
+    seek(mpTimeSlider->value());
 }
 
 void MainWindow::showHideVolumeBar()
@@ -904,7 +924,9 @@ void MainWindow::setVolume()
     AudioOutput *ao = mpPlayer ? mpPlayer->audio() : 0;
     qreal v = qreal(mpVolumeSlider->value())*kVolumeInterval;
     if (ao) {
-        ao->setVolume(v);
+        if (qAbs(int(ao->volume()/kVolumeInterval) - mpVolumeSlider->value()) >= int(0.1/kVolumeInterval)) {
+            ao->setVolume(v);
+        }
     }
     mpVolumeSlider->setToolTip(QString::number(v));
     mpVolumeBtn->setToolTip(QString::number(v));
@@ -941,7 +963,8 @@ void MainWindow::onPositionChange(qint64 pos)
 {
     if (mpPlayer->isSeekable())
         mpTimeSlider->setValue(pos);
-    mpCurrent->setText(QTime(0, 0, 0).addMSecs(pos).toString("HH:mm:ss"));
+    mpCurrent->setText(QTime(0, 0, 0).addMSecs(pos).toString(QString::fromLatin1("HH:mm:ss")));
+    //setWindowTitle(QString::number(mpPlayer->statistics().video_only.currentDisplayFPS(), 'f', 2).append(" ").append(mTitle));
 }
 
 void MainWindow::repeatAChanged(const QTime& t)
@@ -1009,8 +1032,10 @@ void MainWindow::wheelEvent(QWheelEvent *e)
     if (!mpRenderer || !mpRenderer->widget()) {
         return;
     }
+    QPoint dp;
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     qreal deg = e->angleDelta().y()/8;
+    dp = e->pixelDelta();
 #else
     qreal deg = e->delta()/8;
 #endif //QT_VERSION
@@ -1023,26 +1048,36 @@ void MainWindow::wheelEvent(QWheelEvent *e)
 #endif //WHEEL_SPEED
     QPointF p = mpRenderer->widget()->mapFrom(this, e->pos());
     QPointF fp = mpRenderer->mapToFrame(p);
+    //qDebug() <<  p << fp;
     if (fp.x() < 0)
         fp.setX(0);
     if (fp.y() < 0)
         fp.setY(0);
-    if (fp.x() > mpRenderer->frameSize().width())
-        fp.setX(mpRenderer->frameSize().width());
-    if (fp.y() > mpRenderer->frameSize().height())
-        fp.setY(mpRenderer->frameSize().height());
-
+    if (fp.x() > mpRenderer->videoFrameSize().width())
+        fp.setX(mpRenderer->videoFrameSize().width());
+    if (fp.y() > mpRenderer->videoFrameSize().height())
+        fp.setY(mpRenderer->videoFrameSize().height());
     QRectF viewport = QRectF(mpRenderer->mapToFrame(QPointF(0, 0)), mpRenderer->mapToFrame(QPointF(mpRenderer->rendererWidth(), mpRenderer->rendererHeight())));
     //qDebug("vo: (%.1f, %.1f)=> frame: (%.1f, %.1f)", p.x(), p.y(), fp.x(), fp.y());
-
     qreal zoom = 1.0 + deg*3.14/180.0;
-    //qDebug("deg: %d, %d zoom: %.2f", e->angleDelta().x(), e->angleDelta().y(), zoom);
+    if (!dp.isNull()) {
+        zoom = 1.0 + (qreal)dp.y()/100.0;
+    }
+    static qreal z = 1.0;
+    z *= zoom;
+    if (z < 1.0)
+        z = 1.0;
+    qreal x0 = fp.x() - fp.x()/z;
+    qreal y0 = fp.y() - fp.y()/z;
+    //qDebug() << "fr: " << QRectF(x0, y0, qreal(mpRenderer->videoFrameSize().width())/z, qreal(mpRenderer->videoFrameSize().height())/z) << fp << z;
+    mpRenderer->setRegionOfInterest(QRectF(x0, y0, qreal(mpRenderer->videoFrameSize().width())/z, qreal(mpRenderer->videoFrameSize().height())/z));
+    return;
     QTransform m;
     m.translate(fp.x(), fp.y());
     m.scale(1.0/zoom, 1.0/zoom);
     m.translate(-fp.x(), -fp.y());
     QRectF r = m.mapRect(mpRenderer->realROI());
-    mpRenderer->setRegionOfInterest((r | m.mapRect(viewport))&QRectF(QPointF(0,0), mpRenderer->frameSize()));
+    mpRenderer->setRegionOfInterest((r | m.mapRect(viewport))&QRectF(QPointF(0,0), mpRenderer->videoFrameSize()));
 }
 
 void MainWindow::about()
@@ -1052,16 +1087,16 @@ void MainWindow::about()
 
 void MainWindow::help()
 {
-    QString name = QString("help-%1.html").arg(QLocale::system().name());
-    QFile f(qApp->applicationDirPath() + "/" + name);
+    QString name = QString::fromLatin1("help-%1.html").arg(QLocale::system().name());
+    QFile f(qApp->applicationDirPath() + QString::fromLatin1("/") + name);
     if (!f.exists()) {
-        f.setFileName(":/" + name);
+        f.setFileName(QString::fromLatin1(":/") + name);
     }
     if (!f.exists()) {
-        f.setFileName(qApp->applicationDirPath() + "/help.html");
+        f.setFileName(qApp->applicationDirPath() + QString::fromLatin1("/help.html"));
     }
     if (!f.exists()) {
-        f.setFileName(":/help.html");
+        f.setFileName(QString::fromLatin1(":/help.html"));
     }
     if (!f.open(QIODevice::ReadOnly)) {
         qWarning("Failed to open help-%s.html and help.html: %s", qPrintable(QLocale::system().name()), qPrintable(f.errorString()));
@@ -1070,7 +1105,7 @@ void MainWindow::help()
     QTextStream ts(&f);
     ts.setCodec("UTF-8");
     QString text = ts.readAll();
-    QMessageBox::information(0, "Help", text);
+    QMessageBox::information(0, tr("Help"), text);
 }
 
 void MainWindow::openUrl()
@@ -1102,37 +1137,61 @@ void MainWindow::updateChannelMenu()
 
 void MainWindow::initAudioTrackMenu()
 {
-    int track = mpPlayer->currentAudioStream();
-    QList<QAction*> as = mpAudioTrackMenu->actions();
-    int tracks = mpPlayer->audioStreamCount();
-    if (mpAudioTrackAction && tracks == as.size() && mpAudioTrackAction->data().toInt() == track)
+    int track = -2;
+    QAction *a = 0;
+    QList<QAction*> as;
+    int tracks = 0;
+    if (!mpPlayer) {
+        a = mpAudioTrackMenu->addAction(tr("External"));
+        a->setData(-1);
+        a->setCheckable(true);
+        a->setChecked(false);
+        as.push_back(a);
+        mpAudioTrackAction = 0;
+        goto end;
+    }
+    track = mpPlayer->currentAudioStream();
+    as = mpAudioTrackMenu->actions();
+    tracks = mpPlayer->audioStreamCount();
+    if (mpAudioTrackAction && tracks == as.size()-1 && mpAudioTrackAction->data().toInt() == track)
         return;
-    while (tracks < as.size()) {
-        QAction *a = as.takeLast();
+    while (tracks + 1 < as.size()) {
+        a = as.takeLast();
         mpAudioTrackMenu->removeAction(a);
         delete a;
     }
-    while (tracks > as.size()) {
-        QAction *a = mpAudioTrackMenu->addAction(QString::number(as.size()));
-        a->setData(as.size());
+    if (as.isEmpty()) {
+        a = mpAudioTrackMenu->addAction(tr("External"));
+        a->setData(-1);
+        a->setCheckable(true);
+        a->setChecked(false);
+        as.push_back(a);
+        mpAudioTrackAction = 0;
+    }
+    while (tracks + 1 > as.size()) {
+        a = mpAudioTrackMenu->addAction(QString::number(as.size()-1));
+        a->setData(as.size()-1);
         a->setCheckable(true);
         a->setChecked(false);
         as.push_back(a);
     }
-    if (as.isEmpty()) {
-        mpAudioTrackAction = 0;
-        return;
-    }
-    foreach(QAction *a, as) {
-        if (a->data().toInt() == track) {
-            qDebug("track found!!!!!");
-            mpAudioTrackAction = a;
-            a->setChecked(true);
+end:
+    foreach(QAction *ac, as) {
+        if (ac->data().toInt() == track && track >= 0) {
+            if (mpPlayer && mpPlayer->externalAudio().isEmpty()) {
+                qDebug("track found!!!!!");
+                mpAudioTrackAction = ac;
+                ac->setChecked(true);
+            }
         } else {
-            a->setChecked(false);
+            ac->setChecked(false);
         }
     }
-    mpAudioTrackAction->setChecked(true);
+    if (mpPlayer && !mpPlayer->externalAudio().isEmpty()) {
+        mpAudioTrackAction = as.first();
+    }
+    if (mpAudioTrackAction)
+        mpAudioTrackAction->setChecked(true);
 }
 
 void MainWindow::switchAspectRatio(QAction *action)
@@ -1148,7 +1207,7 @@ void MainWindow::switchAspectRatio(QAction *action)
         mpPlayer->renderer()->setOutAspectRatioMode(VideoRenderer::RendererAspectRatio);
     } else {
         if (r == -2)
-            r = QInputDialog::getDouble(0, tr("Aspect ratio"), "", 1.0);
+            r = QInputDialog::getDouble(0, tr("Aspect ratio"), QString(), 1.0);
         mpPlayer->renderer()->setOutAspectRatioMode(VideoRenderer::CustomAspectRation);
         mpPlayer->renderer()->setOutAspectRatio(r);
     }
@@ -1168,6 +1227,12 @@ void MainWindow::toggleRepeat(bool r)
     }
     if (mpPlayer) {
         mpPlayer->setRepeat(mRepeateMax);
+        if (r) {
+            repeatAChanged(mpRepeatA->time());
+            repeatBChanged(mpRepeatB->time());
+        } else {
+            mpPlayer->setTimeRange(0);
+        }
     }
 }
 
@@ -1233,14 +1298,16 @@ void MainWindow::showInfo()
 void MainWindow::onTimeSliderHover(int pos, int value)
 {
     QPoint gpos = mapToGlobal(mpTimeSlider->pos() + QPoint(pos, 0));
-    QToolTip::showText(gpos, QTime(0, 0, 0).addMSecs(value).toString("HH:mm:ss"));
+    QToolTip::showText(gpos, QTime(0, 0, 0).addMSecs(value).toString(QString::fromLatin1("HH:mm:ss")));
+    if (!Config::instance().previewEnabled())
+        return;
     if (!m_preview)
         m_preview = new VideoPreviewWidget();
     m_preview->setFile(mpPlayer->file());
     m_preview->setTimestamp(value);
     m_preview->preview();
-    const int w = 160;
-    const int h = 90;
+    const int w = Config::instance().previewWidth();
+    const int h = Config::instance().previewHeight();
     m_preview->setWindowFlags(m_preview->windowFlags() |Qt::FramelessWindowHint|Qt::WindowStaysOnTopHint);
     m_preview->resize(w, h);
     m_preview->move(gpos - QPoint(w/2, h));
@@ -1249,51 +1316,76 @@ void MainWindow::onTimeSliderHover(int pos, int value)
 
 void MainWindow::onTimeSliderLeave()
 {
-    if (m_preview && m_preview)
+    if (m_preview && m_preview->isVisible())
         m_preview->hide();
 }
 
 void MainWindow::handleError(const AVError &e)
 {
-    QMessageBox::warning(0, "Player error", e.string());
+    QMessageBox::warning(0, tr("Player error"), e.string());
 }
 
 void MainWindow::onMediaStatusChanged()
 {
     QString status;
-    AVPlayer *player = qobject_cast<AVPlayer*>(sender());
+    AVPlayer *player = reinterpret_cast<AVPlayer*>(sender());
+    if (!player) { //why it happens? reinterpret_cast  works.
+        qWarning() << "invalid sender() " << sender() << player;
+        return;
+    }
     switch (player->mediaStatus()) {
     case NoMedia:
-        status = "No media";
+        status = tr("No media");
         break;
     case InvalidMedia:
-        status = "Invalid meida";
+        status = tr("Invalid meida");
         break;
     case BufferingMedia:
-        status = "Buffering...";
+        status = tr("Buffering...");
         break;
     case BufferedMedia:
-        status = "Buffered";
+        status = tr("Buffered");
         break;
     case LoadingMedia:
-        status = "Loading...";
+        status = tr("Loading...");
         break;
     case LoadedMedia:
-        status = "Loaded";
+        status = tr("Loaded");
+        break;
+    case StalledMedia:
+        status = tr("Stalled");
         break;
     default:
-        status = "";
+        status = QString();
         onStopPlay();
         break;
     }
-    setWindowTitle(status);
+    qDebug() << "status changed " << status;
+    setWindowTitle(status + QString::fromLatin1(" ") + mTitle);
+}
+
+void MainWindow::onBufferProgress(qreal percent)
+{
+    const qreal bs = mpPlayer->bufferSpeed();
+    QString s;
+    if (bs > 1024*1024*1024)
+        s = QString("%1G/s").arg(bs/1024.0/1024.0/1024.0, 6, 'f', 1);
+    else if (bs > 1024*1024)
+        s = QString("%1M/s").arg(bs/1024.0/1024.0, 6, 'f', 1);
+    else if (bs > 1024)
+        s = QString("%1K/s").arg(bs/1024.0, 6, 'f', 1);
+    else
+        s = QString("%1B/s").arg(bs, 6, 'f', 1);
+    setWindowTitle(QString::fromLatin1("Buffering... %1% @%2 ").arg(percent*100.0, 5, 'f', 1).arg(s) + mTitle);
 }
 
 void MainWindow::onVideoEQEngineChanged()
 {
     VideoRenderer *vo = mpPlayer->renderer();
     VideoEQConfigPage::Engine e = mpVideoEQ->engine();
-    if (e == VideoEQConfigPage::SWScale) {
+    if (e == VideoEQConfigPage::SWScale
+            && vo->id() != VideoRendererId_X11 // X11 scales in the renderer
+            ) {
         vo->forcePreferredPixelFormat(true);
         vo->setPreferredPixelFormat(VideoFormat::Format_RGB32);
     } else {
@@ -1357,38 +1449,83 @@ void MainWindow::onCaptureConfigChanged()
 {
     mpPlayer->videoCapture()->setCaptureDir(Config::instance().captureDir());
     mpPlayer->videoCapture()->setQuality(Config::instance().captureQuality());
-    if (Config::instance().captureFormat().toLower() == "original") {
+    if (Config::instance().captureFormat().toLower() == QLatin1String("original")) {
         mpPlayer->videoCapture()->setOriginalFormat(true);
     } else {
         mpPlayer->videoCapture()->setOriginalFormat(false);
         mpPlayer->videoCapture()->setSaveFormat(Config::instance().captureFormat());
     }
-    mpCaptureBtn->setToolTip(tr("Capture video frame") + "\n" + tr("Save to") + ": " + mpPlayer->videoCapture()->captureDir()
-                             + "\n" + tr("Format") + ": " + Config::instance().captureFormat());
+    mpCaptureBtn->setToolTip(QString::fromLatin1("%1\n%2: %3\n%4: %5")
+                             .arg(tr("Capture video frame"))
+                             .arg(tr("Save to"))
+                             .arg(mpPlayer->videoCapture()->captureDir())
+                             .arg(tr("Format"))
+                             .arg(Config::instance().captureFormat()));
 
 }
 
-void MainWindow::onAVFilterConfigChanged()
+void MainWindow::onAVFilterVideoConfigChanged()
 {
-    if (Config::instance().avfilterEnable()) {
-        if (!mpAVFilter) {
-            mpAVFilter = new LibAVFilter();
-        }
-        mpAVFilter->setEnabled(true);
-        mpPlayer->installVideoFilter(mpAVFilter);
-        mpAVFilter->setOptions(Config::instance().avfilterOptions());
-    } else {
-        if (mpAVFilter) {
-            mpAVFilter->setEnabled(false);
-        }
-        mpPlayer->uninstallFilter(mpAVFilter);
+    if (mpVideoFilter) {
+        mpVideoFilter->uninstall();
+        delete mpVideoFilter;
+        mpVideoFilter = 0;
     }
+    mpVideoFilter = new LibAVFilterVideo(this);
+    mpVideoFilter->setEnabled(Config::instance().avfilterVideoEnable());
+    mpPlayer->installFilter(mpVideoFilter);
+    mpVideoFilter->setOptions(Config::instance().avfilterVideoOptions());
+}
+
+void MainWindow::onAVFilterAudioConfigChanged()
+{
+    if (mpAudioFilter) {
+        mpAudioFilter->uninstall();
+        delete mpAudioFilter;
+        mpAudioFilter = 0;
+    }
+    mpAudioFilter = new LibAVFilterAudio(this);
+    mpAudioFilter->setEnabled(Config::instance().avfilterAudioEnable());
+    mpAudioFilter->installTo(mpPlayer);
+    mpAudioFilter->setOptions(Config::instance().avfilterAudioOptions());
 }
 
 void MainWindow::donate()
 {
     //QDesktopServices::openUrl(QUrl("https://sourceforge.net/p/qtav/wiki/Donate%20%E6%8D%90%E8%B5%A0/"));
-    QDesktopServices::openUrl(QUrl("http://www.qtav.org/#donate"));
+    QDesktopServices::openUrl(QUrl(QString::fromLatin1("http://www.qtav.org/donate.html")));
+}
+
+void MainWindow::onBufferValueChanged()
+{
+    if (!mpPlayer)
+        return;
+    mpPlayer->setBufferValue(Config::instance().bufferValue());
+}
+
+void MainWindow::onAbortOnTimeoutChanged()
+{
+    if (!mpPlayer)
+        return;
+    mpPlayer->setInterruptOnTimeout(Config::instance().abortOnTimeout());
+}
+
+void MainWindow::onUserShaderChanged()
+{
+    if (!mpRenderer || !mpRenderer->opengl())
+        return;
+#ifndef QT_NO_OPENGL
+    if (Config::instance().userShaderEnabled()) {
+        if (!m_shader)
+            m_shader = new DynamicShaderObject(this);
+        m_shader->setHeader(Config::instance().fragHeader());
+        m_shader->setSample(Config::instance().fragSample());
+        m_shader->setPostProcess(Config::instance().fragPostProcess());
+        mpRenderer->opengl()->setUserShader(m_shader);
+    } else {
+        mpRenderer->opengl()->setUserShader(NULL);
+    }
+#endif
 }
 
 void MainWindow::setup()
@@ -1452,6 +1589,14 @@ void MainWindow::changeClockType(QAction *action)
     }
     mpPlayer->masterClock()->setClockAuto(false);
     mpPlayer->masterClock()->setClockType(AVClock::ClockType(value));
+}
+
+void MainWindow::syncVolumeUi(qreal value)
+{
+    const int v(value/kVolumeInterval);
+    if (mpVolumeSlider->value() == v)
+        return;
+    mpVolumeSlider->setValue(v);
 }
 
 void MainWindow::workaroundRendererSize()

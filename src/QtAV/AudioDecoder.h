@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,9 +23,15 @@
 #define QAV_AUDIODECODER_H
 
 #include <QtAV/AVDecoder.h>
+#include <QtAV/AudioFrame.h>
+#include <QtCore/QStringList>
 
+#define USE_AUDIO_FRAME 1
 //TODO: decoder.in/outAudioFormat()?
 namespace QtAV {
+typedef int AudioDecoderId;
+// built-in decoders
+extern Q_AV_EXPORT AudioDecoderId AudioDecoderId_FFmpeg;
 
 class AudioResampler;
 class AudioDecoderPrivate;
@@ -34,12 +40,40 @@ class Q_AV_EXPORT AudioDecoder : public AVDecoder
     Q_DISABLE_COPY(AudioDecoder)
     DPTR_DECLARE_PRIVATE(AudioDecoder)
 public:
-    AudioDecoder();
-    virtual bool prepare() Q_DECL_OVERRIDE;
-    QTAV_DEPRECATED virtual bool decode(const QByteArray &encoded) Q_DECL_OVERRIDE;
-    virtual bool decode(const Packet& packet) Q_DECL_OVERRIDE;
+    static QStringList supportedCodecs();
+    static AudioDecoder* create(AudioDecoderId id);
+    /*!
+     * \brief create
+     * create a decoder from registered name. FFmpeg decoder will be created for empty name
+     * \param name can be "FFmpeg"
+     * \return 0 if not registered
+     */
+    static AudioDecoder* create(const char* name = "FFmpeg");
+    virtual AudioDecoderId id() const = 0;
+    QString name() const; //name from factory
     virtual QByteArray data() const; //decoded data
-    AudioResampler *resampler();
+    virtual AudioFrame frame() = 0;
+    AudioResampler *resampler(); //TODO: remove. can not share the same resampler for multiple frames
+public:
+    template<class C> static bool Register(AudioDecoderId id, const char* name) { return Register(id, create<C>, name);}
+    /*!
+     * \brief next
+     * \param id NULL to get the first id address
+     * \return address of id or NULL if not found/end
+     */
+    static AudioDecoderId* next(AudioDecoderId* id = 0);
+    static const char* name(AudioDecoderId id);
+    static AudioDecoderId id(const char* name);
+private:
+    // if QtAV is static linked (ios for example), components may be not automatically registered. Add registerAll() to workaround
+    static void registerAll();
+    template<class C> static AudioDecoder* create() { return new C();}
+    typedef AudioDecoder* (*AudioDecoderCreator)();
+    static bool Register(AudioDecoderId id, AudioDecoderCreator, const char *name);
+protected:
+    AudioDecoder(AudioDecoderPrivate& d);
+private:
+    AudioDecoder();
 };
 
 } //namespace QtAV

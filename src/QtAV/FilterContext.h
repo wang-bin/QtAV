@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -30,9 +30,11 @@
  * QPainterFilterContext, D2DFilterContext, ...
  */
 
+QT_BEGIN_NAMESPACE
 class QPainter;
 class QPaintDevice;
 class QTextDocument;
+QT_END_NAMESPACE
 namespace QtAV {
 
 class VideoFrame;
@@ -41,10 +43,10 @@ class Q_AV_EXPORT VideoFilterContext
 public:
     enum Type { ////audio and video...
         QtPainter,
-        OpenGL, //Not implemented
+        OpenGL,
         Direct2D, //Not implemeted
         GdiPlus, //Not implemented
-        XV, //Not implemented
+        X11,
         None //user defined filters, no context can be used
     };
     static VideoFilterContext* create(Type t);
@@ -54,9 +56,9 @@ public:
 
     // map to Qt types
     //drawSurface?
-    virtual void drawImage(const QPointF& pos, const QImage& image, const QRectF& source, Qt::ImageConversionFlags flags = Qt::AutoColor);
+    virtual void drawImage(const QPointF& pos, const QImage& image, const QRectF& source = QRectF(), Qt::ImageConversionFlags flags = Qt::AutoColor);
     // if target is null, draw image at target.topLeft(). if source is null, draw the whole image
-    virtual void drawImage(const QRectF& target, const QImage& image, const QRectF& source, Qt::ImageConversionFlags flags = Qt::AutoColor);
+    virtual void drawImage(const QRectF& target, const QImage& image, const QRectF& source = QRectF(), Qt::ImageConversionFlags flags = Qt::AutoColor);
     virtual void drawPlainText(const QPointF& pos, const QString& text);
     // if rect is null, draw single line text at rect.topLeft(), ignoring flags
     virtual void drawPlainText(const QRectF& rect, int flags, const QString& text);
@@ -97,29 +99,76 @@ protected:
 
 class VideoFrameConverter;
 //TODO: font, pen, brush etc?
-class Q_AV_EXPORT QPainterFilterContext : public VideoFilterContext
+class Q_AV_EXPORT QPainterFilterContext Q_DECL_FINAL: public VideoFilterContext
 {
 public:
     QPainterFilterContext();
     virtual ~QPainterFilterContext();
-    virtual Type type() const; //QtPainter
+    Type type() const Q_DECL_OVERRIDE { return VideoFilterContext::QtPainter;}
     // empty source rect equals to the whole source rect
-    virtual void drawImage(const QPointF& pos, const QImage& image, const QRectF& source = QRectF(), Qt::ImageConversionFlags flags = Qt::AutoColor);
-    virtual void drawImage(const QRectF& target, const QImage& image, const QRectF& source = QRectF(), Qt::ImageConversionFlags flags = Qt::AutoColor);
-    virtual void drawPlainText(const QPointF& pos, const QString& text);
+    void drawImage(const QPointF& pos, const QImage& image, const QRectF& source = QRectF(), Qt::ImageConversionFlags flags = Qt::AutoColor) Q_DECL_OVERRIDE;
+    void drawImage(const QRectF& target, const QImage& image, const QRectF& source = QRectF(), Qt::ImageConversionFlags flags = Qt::AutoColor) Q_DECL_OVERRIDE;
+    void drawPlainText(const QPointF& pos, const QString& text) Q_DECL_OVERRIDE;
     // if rect is null, draw single line text at rect.topLeft(), ignoring flags
-    virtual void drawPlainText(const QRectF& rect, int flags, const QString& text);
-    virtual void drawRichText(const QRectF& rect, const QString& text, bool wordWrap = true);
+    void drawPlainText(const QRectF& rect, int flags, const QString& text) Q_DECL_OVERRIDE;
+    void drawRichText(const QRectF& rect, const QString& text, bool wordWrap = true) Q_DECL_OVERRIDE;
 
 protected:
-    virtual bool isReady() const;
-    virtual bool prepare();
-    virtual void initializeOnFrame(VideoFrame *vframe);
+    bool isReady() const Q_DECL_OVERRIDE;
+    bool prepare() Q_DECL_OVERRIDE;
+    void initializeOnFrame(VideoFrame *vframe) Q_DECL_OVERRIDE;
 
     QTextDocument *doc;
     VideoFrameConverter *cvt;
 };
 
+#if QTAV_HAVE(X11)
+class Q_AV_EXPORT X11FilterContext Q_DECL_FINAL: public VideoFilterContext
+{
+public:
+    typedef struct _XDisplay Display;
+    typedef struct _XGC *GC;
+    typedef quintptr Drawable;
+    typedef quintptr Pixmap;
+    struct XImage;
+
+    X11FilterContext();
+    virtual ~X11FilterContext();
+    Type type() const Q_DECL_OVERRIDE { return VideoFilterContext::X11;}
+    void resetX11(Display* dpy = 0, GC g = 0, Drawable d = 0);
+    // empty source rect equals to the whole source rect
+    void drawImage(const QPointF& pos, const QImage& image, const QRectF& source = QRectF(), Qt::ImageConversionFlags flags = Qt::AutoColor) Q_DECL_OVERRIDE;
+    void drawImage(const QRectF& target, const QImage& image, const QRectF& source = QRectF(), Qt::ImageConversionFlags flags = Qt::AutoColor) Q_DECL_OVERRIDE;
+    void drawPlainText(const QPointF& pos, const QString& text) Q_DECL_OVERRIDE;
+    // if rect is null, draw single line text at rect.topLeft(), ignoring flags
+    void drawPlainText(const QRectF& rect, int flags, const QString& text) Q_DECL_OVERRIDE;
+    void drawRichText(const QRectF& rect, const QString& text, bool wordWrap = true) Q_DECL_OVERRIDE;
+protected:
+    bool isReady() const Q_DECL_OVERRIDE;
+    bool prepare() Q_DECL_OVERRIDE;
+    void initializeOnFrame(VideoFrame *vframe) Q_DECL_OVERRIDE;
+    void shareFrom(VideoFilterContext *vctx) Q_DECL_OVERRIDE;
+    // null image: use the old x11 image/pixmap
+    void renderTextImageX11(QImage* img, const QPointF &pos);
+    void destroyX11Resources();
+
+    QTextDocument *doc;
+    VideoFrameConverter *cvt;
+
+    Display* display;
+    GC gc;
+    Drawable drawable;
+    XImage *text_img;
+    XImage *mask_img;
+    Pixmap mask_pix;
+    QImage text_q;
+    QImage mask_q;
+
+    bool plain;
+    QString text;
+    QImage test_img; //for computing bounding rect
+};
+#endif //QTAV_HAVE(X11)
 } //namespace QtAV
 
 #endif // QTAV_FILTERCONTEXT_H

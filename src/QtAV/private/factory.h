@@ -16,11 +16,8 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
-
 #ifndef FACTORY_H
 #define FACTORY_H
-
 /*
  * NOTE: this file can not be included in public headers! It must be used
  * inside the library, i.e., only be included in cpp or internal header.
@@ -28,10 +25,9 @@
  */
 
 #include <ctype.h> //tolower
+#include <cstring>
 #include <time.h>
-#include <iostream>
 #include <map>
-#include <string>
 #include <vector>
 #include <algorithm> //std::remove
 #include "singleton.h"
@@ -44,6 +40,43 @@ Class& Loki::Singleton<Class>::Instance()
 }
 #endif
 
+#define FACTORY_REGISTER(BASE, _ID, NAME) FACTORY_REGISTER_ID_TYPE(BASE, BASE##Id_##_ID, BASE##_ID, NAME)
+#define FACTORY_REGISTER_ID_TYPE(BASE, ID, TYPE, NAME) \
+    FACTORY_REGISTER_ID_TYPE_AUTO(BASE, ID, TYPE, NAME) \
+    bool Register##TYPE##_Man() { \
+        return BASE::Register<TYPE>(ID, NAME); \
+    }
+
+#define FACTORY_REGISTER_ID_TYPE_AUTO(BASE, ID, TYPE, NAME) \
+    namespace { \
+        static const struct factory_register_##TYPE { \
+            inline factory_register_##TYPE() { \
+                BASE::Register<TYPE>(ID, NAME); \
+            } \
+        } sInit_##TYPE; \
+    }
+
+#define FACTORY_DEFINE(T) \
+    class T##Factory : public Factory<T##Id, T, T##Factory> {}; \
+    bool T::Register(T##Id id, T##Creator c, const char *name) { \
+        DBG(#T "::Register(..., %s)\n", name); \
+        return T##Factory::Instance().registerCreator(id, c) && T##Factory::Instance().registerIdName(id, name); \
+    } \
+    T* T::create(T##Id id) {return T##Factory::Instance().create(id);} \
+    T* T::create(const char* name) { return T::create(T::id(name));} \
+    T##Id* T::next(T##Id *id) { \
+        const std::vector<T##Id>& ids = T##Factory::Instance().registeredIds(); \
+        if (!id) return (T##Id*)&ids[0];  DBG(#T "::next(%p)\n", id);\
+        T##Id *id0 = (T##Id*)&ids[0], *id1 = (T##Id*)&ids[ids.size() - 1]; \
+        if (id >= id0 && id < id1) return id + 1; \
+        if (id == id1) return NULL; \
+        std::vector<T##Id>::const_iterator it = std::find(ids.begin(), ids.end(), *id); \
+        if (it == ids.end()) return NULL; \
+    DBG(#T "::next(%p) found\n", id); \
+        return (T##Id*)&*(it++); \
+    } \
+    T##Id T::id(const char* name) { DBG(#T "::id(\"%s\")\n", name); return T##Factory::Instance().id(name, false);} \
+    const char* T::name(T##Id id) {return T##Factory::Instance().name(id);}
 /*
  * Used in library, can not be used both in library and outside. so we don't need export it
  */
@@ -56,40 +89,54 @@ class Factory : public Singleton<Class>
     typedef T Type;
     typedef Type* (*Creator)();
 public:
-    virtual void init() {}
     Type* create(const ID& id);
+    template<class C>
+    bool register_(const ID& id) { // register_<C>(id, name)
+        std::pair<typename CreatorMap::iterator, bool> result = creators.insert(std::make_pair(id, create<C>));
+        return result.second;
+    }
+
     //template <typename Func>
     bool registerCreator(const ID& id, const Creator& callback);
-    bool registerIdName(const ID& id, const std::string& name);
+    bool registerIdName(const ID& id, const char* name);
     bool unregisterCreator(const ID& id);
     //bool unregisterAll();
-    ID id(const std::string& name, bool caseSensitive = true) const;
-    std::string name(const ID &id) const;
+    ID id(const char* name, bool caseSensitive = true) const;
+    const char* name(const ID &id) const;
     size_t count() const;
-    std::vector<ID> registeredIds() const;
-    std::vector<std::string> registeredNames() const;
+    const std::vector<ID> &registeredIds() const;
+    std::vector<const char*> registeredNames() const;
     Type* getRandom(); //remove
 //    Type* at(int index);
 //    ID idAt(int index);
 
 protected:
     Factory() {}
-    //virtual ~Factory() {}
+    virtual ~Factory() {}
 
+private:
+    template<class C>
+    static Type* create() {
+        return new C();
+    }
     typedef std::map<ID, Creator> CreatorMap;
     CreatorMap creators;
     std::vector<ID> ids;
-    typedef std::map<ID, std::string> NameMap;
-    NameMap name_map;
+    typedef std::map<ID, const char*> NameMap;
+    NameMap name_map; //static?
 };
-
-
+#if 0
+template<typename Id, typename T, class Class>
+typename Factory<Id, T, Class>::CreatorMap Factory<Id, T, Class>::creators;
+template<typename Id, typename T, class Class>
+typename Factory<Id, T, Class>::NameMap Factory<Id, T, Class>::name_map;
+#endif
 template<typename Id, typename T, class Class>
 typename Factory<Id, T, Class>::Type *Factory<Id, T, Class>::create(const ID& id)
 {
     typename CreatorMap::const_iterator it = creators.find(id);
     if (it == creators.end()) {
-        //std::cerr << "Unknown id: " << id << std::endl;
+        DBG("Unknown id ");
         return 0;
         //throw std::runtime_error(err_msg.arg(id).toStdString());
     }
@@ -99,71 +146,66 @@ typename Factory<Id, T, Class>::Type *Factory<Id, T, Class>::create(const ID& id
 template<typename Id, typename T, class Class>
 bool Factory<Id, T, Class>::registerCreator(const ID& id, const Creator& callback)
 {
-    //DBG("%p id [%d] registered. size=%d", &Factory<Id, T, Class>::Instance(), id, ids.size());
+    //DBG("%p id [%d] registered. size=%d\n", &Factory<Id, T, Class>::Instance(), id, ids.size());
     ids.insert(ids.end(), id);
     return creators.insert(typename CreatorMap::value_type(id, callback)).second;
 }
 
 template<typename Id, typename T, class Class>
-bool Factory<Id, T, Class>::registerIdName(const ID& id, const std::string& name)
+bool Factory<Id, T, Class>::registerIdName(const ID& id, const char* name)
 {
-    //DBG("Id with name [%s] registered", qPrintable(name));
     return name_map.insert(typename NameMap::value_type(id, name/*.toLower()*/)).second;
 }
 
 template<typename Id, typename T, class Class>
 bool Factory<Id, T, Class>::unregisterCreator(const ID& id)
 {
-    //DBG("Id [%d] unregistered", id);
+    //DBG("Id [%d] unregistered\n", id);
     ids.erase(std::remove(ids.begin(), ids.end(), id), ids.end());
     name_map.erase(id);
     return creators.erase(id) == 1;
 }
 
-// TODO: why gcc error if nested?
-struct lower_equal { //: public std::binary_function<char, char, bool> {
-    bool operator()(char c1, char c2) const {
-        return ::tolower(c1) == ::tolower(c2);
-    }
-};
 template<typename Id, typename T, class Class>
-typename Factory<Id, T, Class>::ID Factory<Id, T, Class>::id(const std::string &name, bool caseSensitive) const
+typename Factory<Id, T, Class>::ID Factory<Id, T, Class>::id(const char* name, bool caseSensitive) const
 {
-    DBG("get id of '%s'", name.c_str());
+#ifdef _MSC_VER
+#define strcasecmp(s1, s2) _strcmpi(s1, s2)
+#endif
     //need 'typename'  because 'Factory<Id, T, Class>::NameMap' is a dependent scope
     for (typename NameMap::const_iterator it = name_map.begin(); it!=name_map.end(); ++it) {
         if (caseSensitive) {
-            if (it->second == name)
+            if (it->second == name || !strcmp(it->second, name))
                 return it->first;
         } else {
-            if (std::equal(name.begin(), name.end(), it->second.begin(), lower_equal())) {
+            if (!strcasecmp(it->second, name)) {
                 return it->first;
             }
         }
     }
-    DBG("Not found");
+    DBG("Not found\n");
     return ID(); //can not return ref. TODO: Use a ID wrapper class
 }
 
 template<typename Id, typename T, class Class>
-std::string Factory<Id, T, Class>::name(const ID &id) const
+const char* Factory<Id, T, Class>::name(const ID &id) const
 {
     typename NameMap::const_iterator it = name_map.find(id);
     if (it == name_map.end())
-        return std::string();
+        return NULL;
     return it->second;
 }
 
 template<typename Id, typename T, class Class>
-std::vector<typename Factory<Id, T, Class>::ID> Factory<Id, T, Class>::registeredIds() const
+const std::vector<Id>& Factory<Id, T, Class>::registeredIds() const
 {
     return ids;
 }
 
 template<typename Id, typename T, class Class>
-std::vector<std::string> Factory<Id, T, Class>::registeredNames() const
+std::vector<const char*> Factory<Id, T, Class>::registeredNames() const
 {
-    std::vector<std::string> names;
+    std::vector<const char*> names;
     for (typename NameMap::const_iterator it = name_map.begin(); it != name_map.end(); ++it) {
         names.push_back((*it).second);
     }

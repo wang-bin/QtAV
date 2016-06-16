@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -38,23 +38,6 @@
  */
 namespace QtAV {
 
-void safeReleaseFilter(Filter **ppFilter)
-{
-    if (!ppFilter || !*ppFilter) {
-        qWarning("filter to release is null!");
-        return;
-    }
-    FilterManager::instance().releaseFilter(*ppFilter);
-    *ppFilter = 0;
-}
-
-Filter::Filter(QObject *parent)
-    : QObject(parent)
-{
-    if (parent)
-        setOwnedByTarget(false);
-}
-
 Filter::Filter(FilterPrivate &d, QObject *parent)
     : QObject(parent)
     , DPTR_INIT(&d)
@@ -74,7 +57,7 @@ void Filter::setEnabled(bool enabled)
     if (d.enabled == enabled)
         return;
     d.enabled = enabled;
-    emit enableChanged(enabled);
+    Q_EMIT enabledChanged(enabled);
 }
 
 bool Filter::isEnabled() const
@@ -95,7 +78,7 @@ bool Filter::isOwnedByTarget() const
 
 bool Filter::uninstall()
 {
-    return FilterManager::instance().uninstallFilter(this);
+    return FilterManager::instance().uninstallFilter(this); // TODO: target
 }
 
 AudioFilter::AudioFilter(QObject *parent)
@@ -109,13 +92,12 @@ AudioFilter::AudioFilter(AudioFilterPrivate& d, QObject *parent)
 /*TODO: move to AVPlayer.cpp to reduce dependency?*/
 bool AudioFilter::installTo(AVPlayer *player)
 {
-    return player->installAudioFilter(this);
+    return player->installFilter(this);
 }
 
-void AudioFilter::apply(Statistics *statistics, const QByteArray &data)
+void AudioFilter::apply(Statistics *statistics, AudioFrame *frame)
 {
-    Q_UNUSED(statistics);
-    Q_UNUSED(data);
+    process(statistics, frame);
 }
 
 VideoFilter::VideoFilter(QObject *parent)
@@ -130,51 +112,69 @@ VideoFilterContext *VideoFilter::context()
 {
     DPTR_D(VideoFilter);
     if (!d.context) {
-        d.context = VideoFilterContext::create(contextType());
+        //fake. only to store some parameters at the beginnig. it will be destroyed and set to a new instance if context type mismatch in prepareContext, with old parameters
+        d.context = VideoFilterContext::create(VideoFilterContext::QtPainter);
     }
     return d.context;
 }
 
-VideoFilterContext::Type VideoFilter::contextType() const
+bool VideoFilter::isSupported(VideoFilterContext::Type ct) const
 {
-    return VideoFilterContext::None;
+    // TODO: return false
+    return VideoFilterContext::None == ct;
 }
 
 bool VideoFilter::installTo(AVPlayer *player)
 {
-    return player->installVideoFilter(this);
+    return player->installFilter(this);
 }
 
 /*TODO: move to AVOutput.cpp to reduce dependency?*/
+/*
+ * filter.installTo(target,...) calls target.installFilter(filter)
+ * If filter is already registered in FilterManager, then return false
+ * Otherwise, call FilterManager.register(filter) and target.filters.push_back(filter), return true
+ * NOTE: the installed filter will be deleted by the target if filter is owned by target AND it's parent (QObject) is null.
+ */
 bool VideoFilter::installTo(AVOutput *output)
 {
     return output->installFilter(this);
 }
 
-//copy qpainter if context nut null
-void VideoFilter::prepareContext(VideoFilterContext *&context, Statistics *statistics, VideoFrame* frame)
+bool VideoFilter::prepareContext(VideoFilterContext *&ctx, Statistics *statistics, VideoFrame *frame)
 {
-    if (contextType() == VideoFilterContext::None)
-        return;
     DPTR_D(VideoFilter);
-    if (!d.context) {
-        d.context = VideoFilterContext::create(contextType());
-        d.context->video_width = statistics->video_only.width;
-        d.context->video_height = statistics->video_only.height;
+    if (!ctx || !isSupported(ctx->type())) {
+        //qDebug("no context: %p, or context type %d is not supported", ctx, ctx? ctx->type() : 0);
+        return isSupported(VideoFilterContext::None);
     }
-    // TODO: reduce mem allocation
-    if (!context || context->type() != contextType()) {
-        if (context) {
-            delete context;
+    if (!d.context || d.context->type() != ctx->type()) {
+        VideoFilterContext* c = VideoFilterContext::create(ctx->type());//each filter has it's own context instance, but share the common parameters
+        if (d.context) {
+            c->pen = d.context->pen;
+            c->brush = d.context->brush;
+            c->clip_path = d.context->clip_path;
+            c->rect = d.context->rect;
+            c->transform = d.context->transform;
+            c->font = d.context->font;
+            c->opacity = d.context->opacity;
+            c->paint_device = d.context->paint_device;
         }
-        context = VideoFilterContext::create(contextType());
-        context->video_width = statistics->video_only.width;
-        context->video_height = statistics->video_only.height;
+        if (d.context) {
+            delete d.context;
+        }
+        d.context = c;
     }
+    d.context->video_width = statistics->video_only.width;
+    d.context->video_height = statistics->video_only.height;
+    ctx->video_width = statistics->video_only.width;
+    ctx->video_height = statistics->video_only.height;
+
     // share common data
-    d.context->shareFrom(context);
+    d.context->shareFrom(ctx);
     d.context->initializeOnFrame(frame);
-    context->shareFrom(d.context);
+    ctx->shareFrom(d.context);
+    return true;
 }
 
 void VideoFilter::apply(Statistics *statistics, VideoFrame *frame)

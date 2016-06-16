@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -46,6 +46,8 @@ private:
     } cache_t;
     cache_t mCache;
 };
+
+void* gpu_memcpy(void* dst, const void* src, size_t size);
 
 } //namespace QtAV
 

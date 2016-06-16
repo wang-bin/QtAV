@@ -1,16 +1,31 @@
-<?xml version="1.0" standalone="no"?>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
 
-<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
-"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-
-<svg width="75%" height="75%" version="1.1"
-xmlns="http://www.w3.org/2000/svg">
-
-<rect x="0" y="0" width="75" height="75" fill-opacity="0"/>
-<!--a=50, h=43.3, (75-43.3)/2=15.85-->
-<path d="M 0 59.15 L 50 59.15 L 25 15.85 L 0 59.15" fill="#7cc040" stroke="#7cc040"
-stroke-width="0" stroke-opacity="1" />
-<path d="M 50 58.28 L 74.13 16.72 L 25.87 16.72 L 50 58.28" fill="white" stroke="#7cc040"
-stroke-width="1" stroke-opacity="1"/>
-
+<svg
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   width="64"
+   height="64"
+   viewBox="0 0 63.999999 63.999999"
+   id="svg2"
+   version="1.1">
+  <g>
+    <circle
+       style="opacity:1;fill:#00bb00"
+       id="path4390"
+       cx="32.727058"
+       cy="31.1457"
+       r="25.950588" />
+    <circle
+       style="opacity:1;fill:#ffffff"
+       id="path4400"
+       cx="34.224396"
+       cy="29.4345"
+       r="20" />
+    <path
+       style="fill:#00ff00;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:0.1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+       d="m 25.0718,20 0,24 20.7846,-12 z"
+       transform="translate(4,-3)"
+       />
+  </g>
 </svg>

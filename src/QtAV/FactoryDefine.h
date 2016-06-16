@@ -1,6 +1,6 @@
 /******************************************************************************
     Some macros to create a factory and register functions
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -98,13 +98,18 @@
     FACTORY_REGISTER_ID_TYPE_MAN(BASE, BASE##Id_##_ID, BASE##_ID, NAME)
 
 #define FACTORY_REGISTER_ID_TYPE_MAN(BASE, ID, TYPE, NAME) \
-    BASE##Factory::registerCreator(ID, __create_##TYPE); \
+    BASE##Factory::register_<TYPE>(ID); \
     BASE##Factory::registerIdName(ID, NAME);
 
+/*
+ *  FIXME: __init_##TYPE (only if static) and xxx_Man() has the same content, and are both defined, construtor functions will not be called for gcc5.
+ * maybe also happens for ios
+ * Remove xxx_Man() is also a workaround
+ */
 #define FACTORY_REGISTER_ID_TYPE_AUTO(BASE, ID, TYPE, NAME) \
-    BASE* __create_##TYPE() { return new TYPE();} \
-    static void __init_##TYPE() { \
+    static int __init_##TYPE() { \
         FACTORY_REGISTER_ID_TYPE_MAN(BASE, ID, TYPE, NAME) \
+        return 0; \
     } \
     PRE_FUNC_ADD(__init_##TYPE)
 
@@ -118,6 +123,8 @@
     public: \
         typedef T* (*T##Creator)(); \
         static T* create(const ID& id); \
+        template<class C> \
+        static bool register_(const ID& id) { return registerCreator(id, create<C>); } \
         static bool registerCreator(const ID&, const T##Creator&); \
         static bool registerIdName(const ID& id, const std::string& name); \
         static bool unregisterCreator(const ID& id); \
@@ -127,6 +134,8 @@
         static std::vector<std::string> registeredNames(); \
         static size_t count(); \
         static T* getRandom(); \
+    private: \
+        template<class C> static T* create() { return new C(); } \
     };
 
 /*

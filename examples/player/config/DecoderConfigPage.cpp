@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -17,6 +17,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
+// scroll area code is from Xuno: https://github.com/Xuno/Xuno-QtAV/blob/master/examples/player/config/DecoderConfigPage.cpp
 
 #include "DecoderConfigPage.h"
 #include "common/Config.h"
@@ -28,9 +29,10 @@
 #include <QLayout>
 #include <QLabel>
 #include <QCheckBox>
+#include <QScrollArea>
 #include <QSpacerItem>
 
-#include <QtAV/VideoDecoderTypes.h>
+#include <QtAV/VideoDecoder.h>
 #include <QPainter>
 #include <QtDebug>
 using namespace QtAV;
@@ -41,7 +43,7 @@ static QVector<QtAV::VideoDecoderId> sPriorityUi;
 QStringList idsToNames(QVector<VideoDecoderId> ids) {
     QStringList decs;
     foreach (int id, ids) {
-        decs.append(VideoDecoderFactory::name(id).c_str());
+        decs.append(QString::fromLatin1(VideoDecoder::name(id)));
     }
     return decs;
 }
@@ -51,7 +53,7 @@ QVector<VideoDecoderId> idsFromNames(const QStringList& names) {
     foreach (QString name, names) {
         if (name.isEmpty())
             continue;
-        VideoDecoderId id = VideoDecoderFactory::id(name.toStdString(), false);
+        VideoDecoderId id = VideoDecoder::id(name.toLatin1().constData());
         if (id == 0)
             continue;
         decs.append(id);
@@ -83,7 +85,7 @@ public:
         QHBoxLayout *hb = new QHBoxLayout();
         hb->addWidget(mpCheck);
         QToolButton *expandBtn = new QToolButton();
-        expandBtn->setText("+");
+        expandBtn->setText(QString::fromLatin1("+"));
         hb->addWidget(expandBtn);
         connect(expandBtn, SIGNAL(clicked()), SLOT(toggleEditorVisible()));
         mpDesc = new QLabel();
@@ -131,6 +133,10 @@ private slots:
         if (!mpEditorWidget)
             return;
         mpEditorWidget->setVisible(!mpEditorWidget->isVisible());
+        QToolButton *b = qobject_cast<QToolButton*>(sender());
+        if (b) {
+            b->setText(mpEditorWidget->isVisible()?QString::fromLatin1("-"):QString::fromLatin1("+"));
+        }
         parentWidget()->adjustSize();
     }
 
@@ -159,19 +165,25 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
     ConfigPageBase(parent)
 {
     mpSelectedDec = 0;
-    setWindowTitle("Video decoder config page");
+    setWindowTitle(tr("Video decoder config page"));
+    QVBoxLayout *vbs = new QVBoxLayout(this);
+    QSpacerItem *horizontalSpacer = new QSpacerItem(320, 0, QSizePolicy::Minimum, QSizePolicy::Minimum);
+    vbs->addItem(horizontalSpacer);
+    QScrollArea *scrollArea = new QScrollArea(this);
+    scrollArea->setWidgetResizable(true);
+    QWidget *scrollAreaWidgetContents = new QWidget(this);
+    QVBoxLayout *vlsroll = new QVBoxLayout(scrollAreaWidgetContents);
+    vlsroll->setSpacing(0);
     QVBoxLayout *vb = new QVBoxLayout;
-    setLayout(vb);
+    vb->setSpacing(0);
 
-    QFrame *frame = new QFrame();
-    frame->setFrameShape(QFrame::HLine);
-    vb->addWidget(frame);
-    vb->addWidget(new QLabel(tr("Decoder") + " " + tr("Priorities")));
+    vb->addWidget(new QLabel(QString::fromLatin1("%1 %2 (%3)").arg(tr("Decoder")).arg(tr("Priorities")).arg(tr("reopen is required"))));
 
     sPriorityUi = idsFromNames(Config::instance().decoderPriorityNames());
     QStringList vds = Config::instance().decoderPriorityNames();
+    vds.removeDuplicates();
     QVector<VideoDecoderId> vids = idsFromNames(vds);
-    std::vector<QtAV::VideoDecoderId> vds_all = VideoDecoderFactory::registeredIds();
+    QVector<QtAV::VideoDecoderId> vds_all = VideoDecoder::registered();
     QVector<QtAV::VideoDecoderId> all = vids;
     foreach (QtAV::VideoDecoderId vid, vds_all) {
         if (!vids.contains(vid))
@@ -180,8 +192,8 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
     mpDecLayout = new QVBoxLayout;
 
     foreach (QtAV::VideoDecoderId vid, all) {
-        VideoDecoder *vd = VideoDecoderFactory::create(vid);
-        DecoderItemWidget *iw = new DecoderItemWidget();
+        VideoDecoder *vd = VideoDecoder::create(vid);
+        DecoderItemWidget *iw = new DecoderItemWidget(scrollAreaWidgetContents);
         iw->buildUiFor(vd);
         mDecItems.append(iw);
         iw->setName(vd->name());
@@ -193,7 +205,7 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
         delete vd;
     }/*
     for (int i = 0; i < vds_all.size(); ++i) {
-        VideoDecoder *vd = VideoDecoderFactory::create(vds_all.at(i));
+        VideoDecoder *vd = VideoDecoder::create(vds_all.at(i));
         DecoderItemWidget *iw = new DecoderItemWidget();
         iw->buildUiFor(vd);
         mDecItems.append(iw);
@@ -208,19 +220,22 @@ DecoderConfigPage::DecoderConfigPage(QWidget *parent) :
     vb->addLayout(mpDecLayout);
     vb->addSpacerItem(new QSpacerItem(width(), 10, QSizePolicy::Ignored, QSizePolicy::Expanding));
 
-    mpUp = new QToolButton;
-    mpUp->setText("Up");
+    mpUp = new QToolButton(scrollAreaWidgetContents);
+    mpUp->setText(tr("Up"));
     connect(mpUp, SIGNAL(clicked()), SLOT(priorityUp()));
-    mpDown = new QToolButton;
-    mpDown->setText("Down");
+    mpDown = new QToolButton(scrollAreaWidgetContents);
+    mpDown->setText(tr("Down"));
     connect(mpDown, SIGNAL(clicked()), SLOT(priorityDown()));
 
     QHBoxLayout *hb = new QHBoxLayout;
     hb->addWidget(mpUp);
     hb->addWidget(mpDown);
     vb->addLayout(hb);
+    vb->addSpacerItem(new QSpacerItem(width(), 10, QSizePolicy::Ignored, QSizePolicy::Expanding));
+    vlsroll->addLayout(vb);
+    scrollArea->setWidget(scrollAreaWidgetContents);
+    vbs->addWidget(scrollArea);
     connect(&Config::instance(), SIGNAL(decoderPriorityNamesChanged()), SLOT(onConfigChanged()));
-    updateDecodersUi();
 }
 
 QString DecoderConfigPage::name() const
@@ -242,7 +257,7 @@ QVariantHash DecoderConfigPage::videoDecoderOptions() const
     return options;
 }
 
-void DecoderConfigPage::apply()
+void DecoderConfigPage::applyFromUi()
 {
     QStringList decs_all;
     QStringList decs;
@@ -255,13 +270,9 @@ void DecoderConfigPage::apply()
     Config::instance().setDecoderPriorityNames(decs);
 }
 
-void DecoderConfigPage::cancel()
+void DecoderConfigPage::applyToUi()
 {
     updateDecodersUi();
-}
-
-void DecoderConfigPage::reset()
-{
 }
 
 void DecoderConfigPage::videoDecoderEnableChanged()
@@ -382,7 +393,7 @@ void DecoderConfigPage::updateDecodersUi()
 void DecoderConfigPage::onConfigChanged()
 {
     sPriorityUi = idsFromNames(Config::instance().decoderPriorityNames());
-    sDecodersUi = QVector<VideoDecoderId>::fromStdVector(VideoDecoderFactory::registeredIds());
+    sDecodersUi = VideoDecoder::registered();
     updateDecodersUi();
 }
 

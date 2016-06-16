@@ -1,6 +1,6 @@
 /******************************************************************************
     VideoCapture.h: description
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -43,6 +43,7 @@ class Q_AV_EXPORT VideoCapture : public QObject
     Q_PROPERTY(QString captureDir READ captureDir WRITE setCaptureDir NOTIFY captureDirChanged)
 public:
     explicit VideoCapture(QObject *parent = 0);
+    // TODO: if async is true, the cloned hw frame shares the same interop object with original frame, so interop obj may do 2 map() at the same time. It's not safe
     void setAsync(bool value = true);
     bool isAsync() const;
     /*!
@@ -85,7 +86,7 @@ public:
     void setCaptureDir(const QString& value);
     QString captureDir() const;
 public Q_SLOTS:
-    void request();
+    void capture();
 Q_SIGNALS:
     void requested();
     /*use it to popup a dialog for selecting dir, name etc. TODO: block avthread if not async*/

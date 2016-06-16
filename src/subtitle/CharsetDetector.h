@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -19,8 +19,8 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 
-#ifndef QTAV_CHARSETDETECTOR_H
-#define QTAV_CHARSETDETECTOR_H
+#ifndef QTAV_UCHARDET_H
+#define QTAV_UCHARDET_H
 
 #include <QtCore/QByteArray>
 
@@ -41,4 +41,4 @@ private:
     Private *priv;
 };
 
-#endif // QTAV_CHARSETDETECTOR_H
+#endif // QTAV_UCHARDET_H

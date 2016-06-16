@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -34,21 +34,23 @@ public:
     bool applyOnUiChange() const;
 
 public slots:
+    // deprecated. call applyFromUi()
+    void apply();
+    // deprecated. call applyToUi().
+    void cancel();
+    //call applyToUi() after Config::instance().reset();
+    void reset();
     /*!
-     * \brief apply
-     * store the values on ui. call Config::xxx(value)
+     * \brief applyToUi
+     * Apply configurations to UI. Call this in your page ctor when ui layout is ready.
      */
-    virtual void apply();
+    virtual void applyToUi() = 0;
+protected:
     /*!
-     * \brief cancel
-     * cancel the values change on ui and set to values from Config
+     * \brief applyFromUi
+     * Save configuration values from UI. Call Config::xxx(value) in your implementation
      */
-    virtual void cancel();
-    /*!
-     * \brief reset
-     * reset to default
-     */
-    virtual void reset();
+    virtual void applyFromUi() = 0;
 private:
     bool mApplyOnUiChange;
 };

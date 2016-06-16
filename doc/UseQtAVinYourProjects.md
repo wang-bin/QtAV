@@ -1,75 +1,39 @@
-For QtAV version >= 1.3.4, QtAV can be installed as a Qt5 module easily. Integrating QtAV in your project is very easy. 
 
-First, you have to build QtAV. Then go to building directory, you will find `sdk_install.sh` and `sdk_uninstall.sh` (`sdk_install.bat` and `sdk_uninstall.bat` on windows). Run `sdk_install.sh` or `sdk_install.bat` to install QtAV as a Qt module.
+For QtAV version >= 1.3.4, QtAV can be installed as Qt5 modules easily. Integrating QtAV in your project is very easy. 
 
-To use QtAV, just add the following line in your project
+- Install QtAV SDK
+ * Install without building QtAV https://github.com/wang-bin/QtAV/wiki/Deploy-SDK-Without-Building-QtAV
+ * Or use the latest code and build yourself. Then go to building directory, `sdk_install.sh` or `sdk_install.bat`.
+OSX is a little different because the shared library id must be modified but sdk_install.sh just simply copy files. you have to run QtAV/tools/sdk_osx.sh. Assume your Qt is installed in `$HOME/Qt5.3`, then run
+`qtav_src_dir/sdk_osx.sh  qtav_build_dir/lib_mac_x86_64/QtAV*.framework  ~/Qt5.3/5.3/clang_64/lib`
 
-    CONFIG += av
+- qmake Project
 
-For Qt5, use the following works too
+  To use QtAV, just add the following line in your Qt4 project
 
-    QT += av
+      CONFIG += avwidgets
 
-In your C++ files, add
+  or add the following line in your Qt5 project
 
-    #include <QtAV/QtAV.h>
+      QT += avwidgets
 
-In addition, you must copy ffmpeg and portaudio/openal libraries to Qt dir manually. Otherwise your application may not able to run in QtCreator. On windows, put the the dlls in QtDir/bin. On linux, put in QtDir/lib
+  (In Qt5, if QtWidgets module and QtAV widget based renderers are not required by your project, you can simply add `QT += av`)
 
-Since QtAV 1.5 QWidget based renderers are moved to a new module QtAVWidgets. If you want to use QWidget based renderers, for example `OpenGLWidgetRenderer`, in project file add
+- C++ Code
 
-    QT += avwidgets
+  add 
 
-In your C++ files, add 
+      #include <QtAV>
+      #include <QtAVWidgets>
 
-    #include <QtAV>
-    #include <QtAVWidgets>
+  Make sure `QtAV::Widgets::registerRenderers()` is called before creating a renderer.
 
-Make sure `QtAV::Widgets::registerRenderers()` is called before creating a renderer.
+### Try the Example
+
+In the latest code, `examples/simpleplayer_sdk` is a complete example to show how to use QtAV SDK to write an multimedia app. You can use `simpleplayer_sdk.pro` as a template.
  
-# For QtAV < 1.3.4
+### Link Error
 
-It's easy to include QtAV in your project. Because it's pro file are well designed. For more information about the pro file i use, see my another project: https://github.com/wang-bin/LibProjWizard4QtCreator
+Because qt automatically rename the module if it's name contains `Qt`, so you may get `cannot find -lQt5AVWidgets`. As a temporary workaround, please manually rename `libQtAVWidgets.so` to `libQt5AVWidgets.so` (windows is Qt5AV.lib or Qt5AV.a) in `$QTDIR/lib`. `-lQt5AV` error is the same.
 
-You can see examples in QtAV to know how to use QtAV, or follow the steps below
-
-## Steps
-###1. Create a subdirs type project and a player project
-
-myproject/myproject.pro
-
-    TEMPLATE = subdirs
-    SUBDIRS +=  libQtAV  myplayer
-    myplayer.depends += libQtAV
-    libQtAV.file = QtAV/QtAV.pro
-    include(QtAV/root.pri)
-
-###2. Put QtAV to myproject
-
-You can use `git clone git@github.com:wang-bin/QtAV.git` in myproject/, or copy QtAV to myproject/. It's recommend to use git so that you can checkout the latest code easily.
-
-the directory now is
-
-> myproject/myproject.pro  
-> myproject/myplayer/myplayer.pro  
-> myproject/QtAV/QtAV.pro  
-> myproject/QtAV/src/libQtAV.pro  
-> myproject/QtAV/src/libQtAV.pri
-
-###3. Add libQtAV.pri in you player project  
-in myproject/myplayer/myplayer.pro, add  
-
-    include(../QtAV/src/libQtAV.pri)
-
-###4. generate Makefile
-
-    qmake
-
-or
-
-    qmake -r
-
-###5. make  
-you player binary will be created in `bin` under build dir. If you are in windows, the QtAV dll also be there
-
-Note: for windows user, if you run `qmake`(command line build. QtCreator uses `qmake -r` by default) you may run `qmake` twice. otherwise make may fail.
+It should be fixed in 1.9.0

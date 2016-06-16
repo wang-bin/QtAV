@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,7 +22,6 @@
 #ifndef QAV_DEMUXER_H
 #define QAV_DEMUXER_H
 
-#include <QtAV/CommonTypes.h>
 #include <QtAV/AVError.h>
 #include <QtAV/Packet.h>
 #include <QtCore/QVariant>
@@ -31,20 +30,24 @@
 
 struct AVFormatContext;
 struct AVCodecContext;
+QT_BEGIN_NAMESPACE
 class QIODevice;
+QT_END_NAMESPACE
 // TODO: force codec name. clean code
 namespace QtAV {
 class AVError;
-class AVInput;
+class MediaIO;
 class Q_AV_EXPORT AVDemuxer : public QObject
 {
     Q_OBJECT
 public:
-    enum StreamType {
+    enum StreamType { //TODO: move to common MediaType
         AudioStream,
         VideoStream,
         SubtitleStream,
     };
+    static const QStringList& supportedFormats();
+    static const QStringList& supportedExtensions();
     /// Supported ffmpeg/libav input protocols(not complete). A static string list
     static const QStringList& supportedProtocols();
 
@@ -55,14 +58,24 @@ public:
     QString fileName() const;
     QIODevice* ioDevice() const;
     /// not null for QIODevice, custom protocols
-    AVInput* input() const;
+    MediaIO* mediaIO() const;
     /*!
      * \brief setMedia
      * \return whether the media source is changed
      */
     bool setMedia(const QString& fileName);
     bool setMedia(QIODevice* dev);
-    bool setMedia(AVInput* in);
+    bool setMedia(MediaIO* in);
+    /*!
+     * \brief setFormat
+     * Force the input format. Useful if input stream is a raw video stream(fmt="rawvideo).
+     * formatForced() is reset if media changed. So you have to call setFormat() for every media
+     * you want to force the format.
+     * If AVFormatContext.format_whitelist contains only 1 format, then that format will be forced.
+     * For example, setOptions({"format_whitelist": "rawvideo"})
+     */
+    void setFormat(const QString& fmt);
+    QString formatForced() const;
     bool load();
     bool unload();
     bool isLoaded() const;
@@ -71,7 +84,7 @@ public:
      * Read a packet from 1 of the streams. use packet() to get the result packet. packet() returns last valid packet.
      * So do not use packet() if readFrame() failed.
      * Call readFrame() and seek() in the same thread.
-     * \return true if no error or eof. false if error occurs, interrupted by user or time out(getInterruptTimeout())
+     * \return true if no error. false if error occurs, eof reaches, interrupted by user or time out(getInterruptTimeout())
      */
     bool readFrame(); // TODO: rename int readPacket(), return stream number
     /*!
@@ -90,8 +103,20 @@ public:
     SeekUnit seekUnit() const;
     void setSeekType(SeekType target);
     SeekType seekType() const;
+    /*!
+     * \brief seek
+     * seek to a given position. Only support timestamp seek now.
+     * Experiment: if pos is out of range (>duration()), do nothing unless a seekable and variableSize MediaIO is used.
+     * \return false if fail
+     */
     bool seek(qint64 pos); //pos: ms
-    void seek(qreal q); //q: [0,1]. TODO: what if duration() is not valid?
+    /*!
+     * \brief seek
+     * Percentage seek. duration() must be >0LL
+     * \param q [0, 1]
+     * TODO: what if duration() is not valid but size is known?
+     */
+    bool seek(qreal q);
     AVFormatContext* formatContext();
     QString formatName() const;
     QString formatLongName() const;
@@ -117,6 +142,7 @@ public:
     // current open stream
     int currentStream(StreamType st) const;
     QList<int> streams(StreamType st) const;
+    // TODO: stream(StreamType), streams(StreamType)
     // current open stream
     int audioStream() const;
     QList<int> audioStreams() const;
@@ -137,20 +163,27 @@ public:
      * @param timeout in ms
      */
     void setInterruptTimeout(qint64 timeout);
+    bool isInterruptOnTimeout() const;
+    void setInterruptOnTimeout(bool value);
     /**
-     * @brief getInterruptStatus return the interrupt status
+     * @brief getInterruptStatus return the interrupt status.
+     * \return -1: interrupted by user
+     *          0: not interrupted
+     *         >0: timeout value of AVError::ErrorCode
      */
-    bool getInterruptStatus() const;
+    int getInterruptStatus() const;
     /**
      * @brief setInterruptStatus set the interrupt status
-     * @param interrupt true: abort current operation like loading and reading packets. false: no interrupt
+     * @param interrupt <0: abort current operation like loading and reading packets.
+     *                   0: no interrupt
      */
-    void setInterruptStatus(bool interrupt);
+    void setInterruptStatus(int interrupt);
     /*!
      * \brief setOptions
      * libav's AVDictionary. we can ignore the flags used in av_dict_xxx because we can use hash api.
      * empty value does nothing to current context if it is open, but will change AVDictionary options to null in next open.
      * AVDictionary is used in avformat_open_input() and will not change unless user call setOptions()
+     * If an option is not found
      */
     void setOptions(const QVariantHash &dict);
     QVariantHash options() const;
@@ -172,6 +205,7 @@ private:
     class Private;
     QScopedPointer<Private> d;
     class InterruptHandler;
+    friend class InterruptHandler;
 };
 
 } //namespace QtAV

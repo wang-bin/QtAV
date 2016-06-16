@@ -13,6 +13,8 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   }
 }
 CONFIG *= qtavwidgets-buildlib
+staticlib: DEFINES += BUILD_QTAVWIDGETS_STATIC
+
 INCLUDEPATH += $$[QT_INSTALL_HEADERS]
 #release: DEFINES += QT_NO_DEBUG_OUTPUT
 #var with '_' can not pass to pri?
@@ -21,13 +23,11 @@ PROJECTROOT = $$PWD/..
 !include(libQtAVWidgets.pri): error("could not find libQtAVWidgets.pri")
 preparePaths($$OUT_PWD/../out)
 
-QTAVSRC=$$PROJECTROOT/src
-
 !rc_file {
     RC_ICONS = $$PROJECTROOT/src/QtAV.ico
     QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
-    QMAKE_TARGET_DESCRIPTION = "QtAVWidgets module. QtAV Multimedia playback framework. http://www.qtav.org"
-    QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2015 WangBin, wbsecg1@gmail.com"
+    QMAKE_TARGET_DESCRIPTION = "QtAVWidgets module. QtAV Multimedia framework. http://qtav.org"
+    QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2016 WangBin, wbsecg1@gmail.com"
     QMAKE_TARGET_PRODUCT = "QtAV Widgets"
 } else:win32 {
     RC_FILE = QtAVWidgets.rc
@@ -43,12 +43,11 @@ QTAVSRC=$$PROJECTROOT/src
     QMAKE_EXTRA_TARGETS += rc
 }
 
-OTHER_FILES += $$RC_FILE $$QTAVSRC/QtAV.svg
-#TRANSLATIONS = i18n/QtAV_zh_CN.ts
+OTHER_FILES += $$RC_FILE
 
 win32 {
 #dynamicgl: __impl__GetDC __impl_ReleaseDC
-    LIBS += -luser32
+  !winrt:LIBS *= -luser32
 }
 
 SDK_HEADERS *= \
@@ -60,19 +59,17 @@ SDK_HEADERS *= \
     QtAVWidgets/GraphicsItemRenderer.h \
     QtAVWidgets/WidgetRenderer.h
 
-HEADERS *= $$QTAVSRC/output/video/VideoOutputEventFilter.h
 
 SOURCES *= \
     global.cpp \
     VideoPreviewWidget.cpp \
-    $$QTAVSRC/output/video/VideoOutputEventFilter.cpp \
-    $$QTAVSRC/output/video/GraphicsItemRenderer.cpp \
-    $$QTAVSRC/output/video/WidgetRenderer.cpp
+    GraphicsItemRenderer.cpp \
+    WidgetRenderer.cpp
 
-greaterThan(QT_MAJOR_VERSION, 4) {
+contains(QT_CONFIG, opengl):greaterThan(QT_MAJOR_VERSION, 4) {
   SDK_HEADERS *= QtAVWidgets/OpenGLWidgetRenderer.h
-  SOURCES *= $$QTAVSRC/output/video/OpenGLWidgetRenderer.cpp
-  lessThan(QT_MINOR_VERSION, 4) {
+  SOURCES *= OpenGLWidgetRenderer.cpp
+  isEqual(QT_MAJOR_VERSION, 5):lessThan(QT_MINOR_VERSION, 4) {
     SDK_HEADERS *= QtAVWidgets/QOpenGLWidget.h
     SOURCES *= QOpenGLWidget.cpp
   }
@@ -80,30 +77,35 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 
 config_gl {
   DEFINES *= QTAV_HAVE_GL=1
-  SOURCES += $$QTAVSRC/output/video/GLWidgetRenderer2.cpp
+  SOURCES += GLWidgetRenderer2.cpp
   SDK_HEADERS += QtAVWidgets/GLWidgetRenderer2.h
   !contains(QT_CONFIG, dynamicgl) { #dynamicgl does not support old gl1 functions which used in GLWidgetRenderer
 #GLWidgetRenderer depends on internal functions of QtAV
     #DEFINES *= QTAV_HAVE_GL1
-    #SOURCES += $$QTAVSRC/output/video/GLWidgetRenderer.cpp
+    #SOURCES += GLWidgetRenderer.cpp
     #SDK_HEADERS += QtAVWidgets/GLWidgetRenderer.h
   }
 }
 config_gdiplus {
   DEFINES *= QTAV_HAVE_GDIPLUS=1
-  SOURCES += $$QTAVSRC/output/video/GDIRenderer.cpp
-  LIBS += -lgdiplus -lgdi32
+  SOURCES += GDIRenderer.cpp
+  LIBS *= -lgdiplus -lgdi32
 }
 config_direct2d {
   DEFINES *= QTAV_HAVE_DIRECT2D=1
   !*msvc*: INCLUDEPATH += $$PROJECTROOT/contrib/d2d1headers
-  SOURCES += $$QTAVSRC/output/video/Direct2DRenderer.cpp
+  SOURCES += Direct2DRenderer.cpp
   #LIBS += -lD2d1
 }
 config_xv {
   DEFINES *= QTAV_HAVE_XV=1
-  SOURCES += $$QTAVSRC/output/video/XVRenderer.cpp
-  LIBS += -lXv
+  SOURCES += XVRenderer.cpp
+  LIBS *= -lXv -lX11 -lXext
+}
+config_x11 {
+  DEFINES *= QTAV_HAVE_X11=1
+  SOURCES *= X11Renderer.cpp
+  LIBS *= -lX11
 }
 # QtAV/private/* may be used by developers to extend QtAV features without changing QtAV library
 # headers not in QtAV/ and it's subdirs are used only by QtAV internally
@@ -123,7 +125,7 @@ mac_framework { # from common.pri
         FRAMEWORK_HEADERS.path = Headers
 # 5.4(beta) workaround for wrong include path
 # TODO: why <QtCore/qglobal.h> can be found?
-        greaterThan(QT_MAJOR_VERSION, 4):greaterThan(QT_MINOR_VERSION, 3): FRAMEWORK_HEADERS.path = Headers/$$MODULE_INCNAME
+        qtAtLeast(5,3): FRAMEWORK_HEADERS.path = Headers/$$MODULE_INCNAME
         FRAMEWORK_PRIVATE_HEADERS.version = Versions
         FRAMEWORK_PRIVATE_HEADERS.files = $$SDK_PRIVATE_HEADERS
         FRAMEWORK_PRIVATE_HEADERS.path = Headers/$$VERSION/$$MODULE_INCNAME/private
@@ -138,7 +140,6 @@ mac {
        QMAKE_CXXFLAGS += -fconstant-cfstrings
    }
 }
-
 
 unix:!android:!mac {
 #debian
@@ -156,12 +157,12 @@ qtavwidgets_dev.commands = echo \"$$join(DEB_INSTALL_LIST, \\n)\" >>$$PROJECTROO
 QMAKE_EXTRA_TARGETS += qtavwidgets_dev
 target.depends *= $${qtavwidgets_dev.target}
 
-greaterThan(QT_MAJOR_VERSION, 4):lessThan(QT_MINOR_VERSION, 4) {
+greaterThan(QT_MAJOR_VERSION, 4) {
   qtavwidgets_dev_links.target = qtav-dev.links #like qtmultimedia5-dev, contains widgets .so
   qtavwidgets_dev_links.commands = echo \"$$[QT_INSTALL_LIBS]/libQtAVWidgets.so $$[QT_INSTALL_LIBS]/libQt$${QT_MAJOR_VERSION}AVWidgets.so\" >>$$PROJECTROOT/debian/$${qtavwidgets_dev_links.target}
   QMAKE_EXTRA_TARGETS *= qtavwidgets_dev_links
   target.depends *= $${qtavwidgets_dev_links.target}
-} #Qt<5.4
+} #Qt>=5
 } #debian
 
 MODULE_INCNAME = QtAVWidgets
@@ -169,8 +170,4 @@ MODULE_VERSION = $$VERSION
 #use Qt version. limited by qmake
 # windows: Qt5AV.dll, not Qt1AV.dll
 !mac_framework: MODULE_VERSION = $${QT_MAJOR_VERSION}.$${QT_MINOR_VERSION}.$${QT_PATCH_VERSION}
-include($$PROJECTROOT/deploy.pri)
-
-icon.files = $$PWD/$${TARGET}.svg
-icon.path = /usr/share/icons/hicolor/64x64/apps
-INSTALLS += icon
+!contains(QMAKE_HOST.os, Windows):include($$PROJECTROOT/deploy.pri)

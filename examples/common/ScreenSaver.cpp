@@ -20,7 +20,7 @@ static fXGetScreenSaver XGetScreenSaver = 0;
 static fXResetScreenSaver XResetScreenSaver = 0;
 static QLibrary xlib;
 #endif //Q_OS_LINUX
-#ifdef Q_OS_MAC
+#if defined(Q_OS_MAC) && !defined(Q_OS_IOS)
 //http://www.cocoachina.com/macdev/cocoa/2010/0201/453.html
 #include <CoreServices/CoreServices.h>
 #endif //Q_OS_MAC
@@ -126,23 +126,27 @@ ScreenSaver::ScreenSaver()
     interval = 0;
     preferBlanking = 0;
     allowExposures = 0;
-    xlib.setFileName("libX11.so");
-    isX11 = xlib.load();
-    // meego only has libX11.so.6, libX11.so.6.x.x
-    if (!isX11) {
-        xlib.setFileName("libX11.so.6");
-        isX11 = xlib.load();
-    }
-    if (!isX11) {
-        qDebug("open X11 so failed: %s", xlib.errorString().toUtf8().constData());
+    if (qgetenv("DISPLAY").isEmpty()) {
+        isX11 = false;
     } else {
-        XOpenDisplay = (fXOpenDisplay)xlib.resolve("XOpenDisplay");
-        XCloseDisplay = (fXCloseDisplay)xlib.resolve("XCloseDisplay");
-        XSetScreenSaver = (fXSetScreenSaver)xlib.resolve("XSetScreenSaver");
-        XGetScreenSaver = (fXGetScreenSaver)xlib.resolve("XGetScreenSaver");
-        XResetScreenSaver = (fXResetScreenSaver)xlib.resolve("XResetScreenSaver");
+        xlib.setFileName(QString::fromLatin1("libX11.so"));
+        isX11 = xlib.load();
+        // meego only has libX11.so.6, libX11.so.6.x.x
+        if (!isX11) {
+            xlib.setFileName(QString::fromLatin1("libX11.so.6"));
+            isX11 = xlib.load();
+        }
+        if (!isX11) {
+            qDebug("open X11 so failed: %s", xlib.errorString().toUtf8().constData());
+        } else {
+            XOpenDisplay = (fXOpenDisplay)xlib.resolve("XOpenDisplay");
+            XCloseDisplay = (fXCloseDisplay)xlib.resolve("XCloseDisplay");
+            XSetScreenSaver = (fXSetScreenSaver)xlib.resolve("XSetScreenSaver");
+            XGetScreenSaver = (fXGetScreenSaver)xlib.resolve("XGetScreenSaver");
+            XResetScreenSaver = (fXResetScreenSaver)xlib.resolve("XResetScreenSaver");
+        }
+        isX11 = XOpenDisplay && XCloseDisplay && XSetScreenSaver && XGetScreenSaver && XResetScreenSaver;
     }
-    isX11 = XOpenDisplay && XCloseDisplay && XSetScreenSaver && XGetScreenSaver && XResetScreenSaver;
 #endif //Q_OS_LINUX
     ssTimerId = 0;
     retrieveState();
@@ -167,7 +171,7 @@ ScreenSaver::~ScreenSaver()
 bool ScreenSaver::enable(bool yes)
 {
     bool rv = false;
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) && !defined(Q_OS_WINRT)
 #if USE_NATIVE_EVENT
     ScreenSaverEventFilter::instance().enable(yes);
     modified = true;
@@ -193,7 +197,7 @@ bool ScreenSaver::enable(bool yes)
     rv = sLastState != 0;
     modified = true;
 #endif //USE_NATIVE_EVENT
-#endif //Q_OS_WIN
+#endif //defined(Q_OS_WIN) && !defined(Q_OS_WINRT)
 #ifdef Q_OS_LINUX
     if (isX11) {
         Display *display = XOpenDisplay(0);
@@ -221,7 +225,7 @@ bool ScreenSaver::enable(bool yes)
     rv = true;
     modified = true;
 #endif //Q_OS_LINUX
-#ifdef Q_OS_MAC
+#if defined(Q_OS_MAC) && !defined(Q_OS_IOS)
     if (!yes) {
         if (ssTimerId <= 0) {
             ssTimerId = startTimer(1000 * 60);
@@ -278,14 +282,14 @@ bool ScreenSaver::restoreState() {
         return true;
     }
     if (state_saved) {
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) && !defined(Q_OS_WINRT)
 #if USE_NATIVE_EVENT
         ScreenSaverEventFilter::instance().enable();
         rv = true;
 #else
         SetThreadExecutionState(ES_CONTINUOUS);
 #endif //USE_NATIVE_EVENT
-#endif //Q_OS_WIN
+#endif //defined(Q_OS_WIN) && !defined(Q_OS_WINRT)
 #ifdef Q_OS_LINUX
         if (isX11) {
             Display *display = XOpenDisplay(0);
@@ -305,7 +309,7 @@ void ScreenSaver::timerEvent(QTimerEvent *e)
 {
     if (e->timerId() != ssTimerId)
         return;
-#ifdef Q_OS_MAC
+#if defined(Q_OS_MAC) && !defined(Q_OS_IOS)
     UpdateSystemActivity(OverallAct);
     return;
 #endif //Q_OS_MAC

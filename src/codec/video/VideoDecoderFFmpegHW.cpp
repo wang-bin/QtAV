@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -23,7 +23,9 @@
 #include "VideoDecoderFFmpegHW_p.h"
 #include <algorithm>
 #include "utils/Logger.h"
-
+#ifndef Q_UNLIKELY
+#define Q_UNLIKELY(x) (!!(x))
+#endif
 namespace QtAV {
 
 static AVPixelFormat ffmpeg_get_va_format(struct AVCodecContext *c, const AVPixelFormat * ff)
@@ -32,7 +34,7 @@ static AVPixelFormat ffmpeg_get_va_format(struct AVCodecContext *c, const AVPixe
     return va->getFormat(c, ff);
 }
 
-#if QTAV_VA_REF
+#if QTAV_HAVE(AVBUFREF)
 
 typedef struct ffmpeg_va_ref_t {
     VideoDecoderFFmpegHWPrivate *va;
@@ -55,13 +57,8 @@ static int ffmpeg_get_va_buffer2(struct AVCodecContext *ctx, AVFrame *frame, int
         frame->buf[i] = NULL;
     }
     //frame->reordered_opaque = ctx->reordered_opaque; //?? xbmc
+    // va must be available here
     VideoDecoderFFmpegHWPrivate *va = (VideoDecoderFFmpegHWPrivate*)ctx->opaque;
-    /* hwaccel_context is not present in old ffmpeg version */
-    // not coded_width. assume coded_width is 6 aligned of width. ??
-    if (!va->setup(ctx)) {
-        qWarning("va Setup failed");
-        return -1;
-    }
     if (!va->getBuffer(&frame->opaque, &frame->data[0])) {
         qWarning("va->getBuffer failed");
         return -1;
@@ -76,7 +73,7 @@ static int ffmpeg_get_va_buffer2(struct AVCodecContext *ctx, AVFrame *frame, int
         ffmpeg_release_va_buffer2(ref, frame->data[0]);
         return -1;
     }
-    Q_ASSERT(frame->data[0] != NULL); // FIXME: VDA may crash in debug mode
+    Q_ASSERT(frame->data[0] != NULL);
     return 0;
 }
 #else
@@ -86,18 +83,14 @@ static int ffmpeg_get_va_buffer(struct AVCodecContext *c, AVFrame *ff)//vlc_va_t
     VideoDecoderFFmpegHWPrivate *va = (VideoDecoderFFmpegHWPrivate*)c->opaque;
     //ff->reordered_opaque = c->reordered_opaque; //TODO: dxva?
     ff->opaque = 0;
-#if ! LIBAVCODEC_VERSION_CHECK(54, 34, 0, 79, 101)
+#if !AV_MODULE_CHECK(LIBAVCODEC, 54, 34, 0, 79, 101)
     ff->pkt_pts = c->pkt ? c->pkt->pts : AV_NOPTS_VALUE;
 #endif
 #if LIBAVCODEC_VERSION_MAJOR < 54
     ff->age = 256*256*256*64;
 #endif
     /* hwaccel_context is not present in old ffmpeg version */
-    // not coded_width. assume coded_width is 6 aligned of width. ??
-    if (!va->setup(c)) {
-        qWarning("va Setup failed");
-        return -1;
-    }
+    // va must be available here
     if (!va->getBuffer(&ff->opaque, &ff->data[0]))
         return -1;
 
@@ -114,9 +107,53 @@ static void ffmpeg_release_va_buffer(struct AVCodecContext *c, AVFrame *ff)
     memset(ff->data, 0, sizeof(ff->data));
     memset(ff->linesize, 0, sizeof(ff->linesize));
 }
-#endif //QTAV_VA_REF
+#endif //QTAV_HAVE(AVBUFREF)
 
-AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *p_context, const AVPixelFormat *pi_fmt)
+
+bool VideoDecoderFFmpegHWPrivate::prepare()
+{
+    //// From vlc begin
+    codec_ctx->thread_safe_callbacks = true; //?
+    codec_ctx->thread_count = threads;
+#ifdef _MSC_VER
+#pragma warning(disable:4065) //vc: switch has default but no case
+#endif //_MSC_VER
+    switch (codec_ctx->codec_id) {
+# if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 1, 0))
+        /// tested libav-9.x + va-api. If remove this code:  Bug detected, please report the issue. Context scratch buffers could not be allocated due to unknown size
+        case QTAV_CODEC_ID(H264):
+        case QTAV_CODEC_ID(VC1):
+        case QTAV_CODEC_ID(WMV3):
+            codec_ctx->thread_type &= ~FF_THREAD_FRAME;
+# endif
+        default:
+            break;
+    }
+    //// From vlc end
+    codec_ctx->opaque = this;
+
+    pixfmt = codec_ctx->pix_fmt;
+    get_format = codec_ctx->get_format;
+#if QTAV_HAVE(AVBUFREF)
+    get_buffer2 = codec_ctx->get_buffer2;
+#else
+    get_buffer = codec_ctx->get_buffer;
+    reget_buffer = codec_ctx->reget_buffer;
+    release_buffer = codec_ctx->release_buffer;
+#endif //QTAV_HAVE(AVBUFREF)
+    codec_ctx->get_format = ffmpeg_get_va_format;
+#if QTAV_HAVE(AVBUFREF)
+    codec_ctx->get_buffer2 = ffmpeg_get_va_buffer2;
+#else
+    // TODO: FF_API_GET_BUFFER
+    codec_ctx->get_buffer = ffmpeg_get_va_buffer;//ffmpeg_GetFrameBuf;
+    codec_ctx->reget_buffer = avcodec_default_reget_buffer;
+    codec_ctx->release_buffer = ffmpeg_release_va_buffer;//ffmpeg_ReleaseFrameBuf;
+#endif //QTAV_HAVE(AVBUFREF)
+    return true;
+}
+
+AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *avctx, const AVPixelFormat *pi_fmt)
 {
     bool can_hwaccel = false;
     for (size_t i = 0; pi_fmt[i] != QTAV_PIX_FMT_C(NONE); i++) {
@@ -130,46 +167,32 @@ AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *p_co
         if (hwaccel)
             can_hwaccel = true;
     }
-
     if (!can_hwaccel)
         goto end;
-
-    /* Profile and level information is needed now.
-     * TODO: avoid code duplication with avcodec.c */
-#if 0
-    if (p_context->profile != FF_PROFILE_UNKNOWN)
-        p_dec->fmt_in.i_profile = p_context->profile;
-    if (p_context->level != FF_LEVEL_UNKNOWN)
-        p_dec->fmt_in.i_level = p_context->level;
-#endif
-    for (size_t i = 0; pi_fmt[i] != PIX_FMT_NONE; i++) {
+    for (size_t i = 0; pi_fmt[i] != QTAV_PIX_FMT_C(NONE); i++) {
         if (vaPixelFormat() != pi_fmt[i])
             continue;
-
-        /* We try to call vlc_va_Setup when possible to detect errors when
-         * possible (later is too late) */
-        if (p_context->width > 0 && p_context->height > 0
-         && !setup(p_context)) {
+        if (hw_w == codedWidth((avctx)) && hw_h == codedHeight(avctx)
+                && hw_profile == avctx->profile // update decoder if profile changed. but now only surfaces are updated
+                && avctx->hwaccel_context)
+            return pi_fmt[i];
+        // TODO: manage uswc here for x86 (surface size is decoder dependent)
+        avctx->hwaccel_context = setup(avctx);
+        if (!avctx->hwaccel_context) {
             qWarning("acceleration setup failure");
             break;
         }
-
+        hw_w = codedWidth((avctx));
+        hw_h = codedHeight(avctx);
+        hw_profile = avctx->profile;
         qDebug("Using %s for hardware decoding.", qPrintable(description));
-
-        /* FIXME this will disable direct rendering
-         * even if a new pixel format is renegotiated
-         */
-        //p_sys->b_direct_rendering = false;
-        p_context->draw_horiz_band = NULL;
         return pi_fmt[i];
     }
-
     close();
-    //vlc_va_Delete(p_va);
 end:
-    qWarning("acceleration not available" );
+    qWarning("hardware acceleration is not available" );
     /* Fallback to default behaviour */
-    return avcodec_default_get_format(p_context, pi_fmt);
+    return avcodec_default_get_format(avctx, pi_fmt);
 }
 
 int VideoDecoderFFmpegHWPrivate::codedWidth(AVCodecContext *avctx) const
@@ -188,31 +211,67 @@ int VideoDecoderFFmpegHWPrivate::codedHeight(AVCodecContext *avctx) const
 
 bool VideoDecoderFFmpegHWPrivate::initUSWC(int lineSize)
 {
-    if (!copy_uswc)
+    if (copy_mode != VideoDecoderFFmpegHW::OptimizedCopy)
         return false;
     return gpu_mem.initCache(lineSize);
 }
 
 void VideoDecoderFFmpegHWPrivate::releaseUSWC()
 {
-    if (copy_uswc)
+    if (copy_mode == VideoDecoderFFmpegHW::OptimizedCopy)
         gpu_mem.cleanCache();
 }
 
 VideoDecoderFFmpegHW::VideoDecoderFFmpegHW(VideoDecoderFFmpegHWPrivate &d):
     VideoDecoderFFmpegBase(d)
 {
-    setProperty("detail_SSE4", tr("Optimized copy decoded data from USWC memory using SSE4.1 if possible"));
+    setProperty("detail_copyMode", QStringLiteral("%1. %2\n%3. %4\n%5\n%6")
+                .arg(tr("ZeroCopy: fastest. Direct rendering without data copy between CPU and GPU"))
+                .arg(tr("Not implemented for all codecs"))
+                .arg(tr("LazyCopy: no explicitly additional copy"))
+                .arg(tr("Not implemented for all codecs"))
+                .arg(tr("OptimizedCopy: copy from USWC memory optimized by SSE4.1"))
+                .arg(tr("GenericCopy: slowest. Generic cpu copy")));
+    setProperty("detail_threads", QString("%1\n%2\n%3\n%4")
+                .arg(tr("Number of decoding threads. Set before open. Maybe no effect for some decoders"))
+                .arg(tr("Multithread decoding may crash"))
+                .arg(tr("0: auto"))
+                .arg(tr("1: single thread decoding")));
+    Q_UNUSED(QObject::tr("ZeroCopy"));
+    Q_UNUSED(QObject::tr("OptimizedCopy"));
+    Q_UNUSED(QObject::tr("LazyCopy"));
+    Q_UNUSED(QObject::tr("GenericCopy"));
+    Q_UNUSED(QObject::tr("copyMode"));
 }
 
-void VideoDecoderFFmpegHW::setSSE4(bool y)
+void VideoDecoderFFmpegHW::setThreads(int value)
 {
-    d_func().copy_uswc = y;
+    DPTR_D(VideoDecoderFFmpegHW);
+    if (d.threads == value)
+        return;
+    d.threads = value;
+    if (d.codec_ctx)
+        av_opt_set_int(d.codec_ctx, "threads", (int64_t)value, 0);
+    Q_EMIT threadsChanged();
 }
 
-bool VideoDecoderFFmpegHW::isSSE4() const
+int VideoDecoderFFmpegHW::threads() const
 {
-    return d_func().copy_uswc;
+    return d_func().threads;
+}
+
+void VideoDecoderFFmpegHW::setCopyMode(CopyMode value)
+{
+    DPTR_D(VideoDecoderFFmpegHW);
+    if (d.copy_mode == value)
+        return;
+    d_func().copy_mode = value;
+    emit copyModeChanged();
+}
+
+VideoDecoderFFmpegHW::CopyMode VideoDecoderFFmpegHW::copyMode() const
+{
+    return d_func().copy_mode;
 }
 
 VideoFrame VideoDecoderFFmpegHW::copyToFrame(const VideoFormat& fmt, int surface_h, quint8 *src[], int pitch[], bool swapUV)
@@ -231,12 +290,12 @@ VideoFrame VideoDecoderFFmpegHW::copyToFrame(const VideoFormat& fmt, int surface
         if (!src[i])
             src[i] = src[i-1] + pitch[i-1]*h[i-1];
     }
-    if (swapUV) {
+    if (swapUV && nb_planes > 2) {
         std::swap(src[1], src[2]);
         std::swap(pitch[1], pitch[2]);
     }
     VideoFrame frame;
-    if (d.copy_uswc && d.gpu_mem.isReady()) {
+    if (copyMode() == VideoDecoderFFmpegHW::OptimizedCopy && d.gpu_mem.isReady()) {
         int yuv_size = 0;
         for (int i = 0; i < nb_planes; ++i) {
             yuv_size += pitch[i]*h[i];
@@ -254,88 +313,21 @@ VideoFrame VideoDecoderFFmpegHW::copyToFrame(const VideoFormat& fmt, int surface
             plane_ptr += pitch[i] * h[i];
             d.gpu_mem.copyFrame(src[i], dst[i], pitch[i], h[i], pitch[i]);
         }
-        frame = VideoFrame(buf, width(), height(), fmt);
+        frame = VideoFrame(d.width, d.height, fmt, buf);
         frame.setBits(dst);
         frame.setBytesPerLine(pitch);
     } else {
-        frame = VideoFrame(width(), height(), fmt);
+        frame = VideoFrame(d.width, d.height, fmt);
         frame.setBits(src);
         frame.setBytesPerLine(pitch);
         // TODO: why clone is faster()?
         // TODO: buffer pool and create VideoFrame when needed to avoid copy? also for other va
         frame = frame.clone();
     }
-    frame.setTimestamp(d.frame->pkt_pts);
+    frame.setTimestamp(double(d.frame->pkt_pts)/1000.0);
+    frame.setDisplayAspectRatio(d.getDAR(d.frame));
+    d.updateColorDetails(&frame);
     return frame;
-}
-
-bool VideoDecoderFFmpegHW::prepare()
-{
-    DPTR_D(VideoDecoderFFmpegHW);
-    if (!d.codec_ctx) {
-        qWarning("call this after AVCodecContext is set!");
-        return false;
-    }
-    //TODO: setup profile in open. vlc/modules/hw/vdpau/avcodec.c, xbmc/xbmc/cores/dvdplayer/DVDCodecs/Video/VDPAU.cpp
-    if (d.codec_ctx->codec_id == QTAV_CODEC_ID(H264)) {
-        // check Hi10p. NO HW support now
-        switch (d.codec_ctx->profile) {
-        //case FF_PROFILE_H264_HIGH: //VDP_DECODER_PROFILE_H264_HIGH
-        case FF_PROFILE_H264_HIGH_10:
-        case FF_PROFILE_H264_HIGH_10_INTRA:
-        case FF_PROFILE_H264_HIGH_422:
-        case FF_PROFILE_H264_HIGH_422_INTRA:
-        //case FF_PROFILE_H264_HIGH_444: //ignored by xbmc
-        case FF_PROFILE_H264_HIGH_444_PREDICTIVE:
-        case FF_PROFILE_H264_HIGH_444_INTRA:
-        case FF_PROFILE_H264_CAVLC_444:
-            return false;
-        default:
-            break;
-        }
-    }
-    //// From vlc begin
-    d.codec_ctx->thread_safe_callbacks = true; //?
-    switch (d.codec_ctx->codec_id) {
-# if (LIBAVCODEC_VERSION_INT < AV_VERSION_INT(55, 1, 0))
-        /// tested libav-9.x + va-api. If remove this code:  Bug detected, please report the issue. Context scratch buffers could not be allocated due to unknown size
-        case QTAV_CODEC_ID(H264):
-        case QTAV_CODEC_ID(VC1):
-        case QTAV_CODEC_ID(WMV3):
-            d.codec_ctx->thread_type &= ~FF_THREAD_FRAME;
-# endif
-        default:
-            break;
-    }
-    //// From vlc end
-    //TODO: neccesary?
-#if 0
-    if (!d.setup(d.codec_ctx)) {
-        qWarning("Setup va failed.");
-        return false;
-    }
-#endif
-    d.codec_ctx->opaque = &d; //is it ok?
-
-    d.pixfmt = d.codec_ctx->pix_fmt;
-    d.get_format = d.codec_ctx->get_format;
-#if QTAV_VA_REF
-    d.get_buffer2 = d.codec_ctx->get_buffer2;
-#else
-    d.get_buffer = d.codec_ctx->get_buffer;
-    d.reget_buffer = d.codec_ctx->reget_buffer;
-    d.release_buffer = d.codec_ctx->release_buffer;
-#endif //QTAV_VA_REF
-    d.codec_ctx->get_format = ffmpeg_get_va_format;
-#if QTAV_VA_REF
-    d.codec_ctx->get_buffer2 = ffmpeg_get_va_buffer2;
-#else
-    // TODO: FF_API_GET_BUFFER
-    d.codec_ctx->get_buffer = ffmpeg_get_va_buffer;//ffmpeg_GetFrameBuf;
-    d.codec_ctx->reget_buffer = avcodec_default_reget_buffer;
-    d.codec_ctx->release_buffer = ffmpeg_release_va_buffer;//ffmpeg_ReleaseFrameBuf;
-#endif //QTAV_VA_REF
-    return true;
 }
 
 } //namespace QtAV

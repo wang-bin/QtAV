@@ -26,10 +26,12 @@
 #include <QWidget>
 #include "ConfigPageBase.h"
 
+QT_BEGIN_NAMESPACE
 class QListWidget;
 class QToolButton;
 class QSpinBox;
 class QVBoxLayout;
+QT_END_NAMESPACE
 class DecoderConfigPage : public ConfigPageBase
 {
     Q_OBJECT
@@ -40,10 +42,9 @@ public:
     QVariantHash audioDecoderOptions() const;
     QVariantHash videoDecoderOptions() const;
 
-public slots:
-    virtual void apply();
-    virtual void cancel();
-    virtual void reset();
+protected:
+    virtual void applyToUi();
+    virtual void applyFromUi();
 
 private slots:
     void videoDecoderEnableChanged();

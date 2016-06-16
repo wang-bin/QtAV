@@ -1,4 +1,4 @@
-#include <QApplication>
+#include <QCoreApplication>
 #include <QtCore/QElapsedTimer>
 #include <QtCore/QStringList>
 #include <QtDebug>
@@ -22,7 +22,7 @@ private slots:
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
+    QCoreApplication a(argc, argv);
     qDebug() << "help: ./subtitle [-engine engine] [-f file] [-fuzzy] [-t sec] [-t1 sec] [-count n]";
     qDebug() << "-fuzzy: fuzzy match subtitle name";
     qDebug() << "-t: set subtitle begin time";
@@ -33,32 +33,32 @@ int main(int argc, char *argv[])
     QString file;
     bool fuzzy = false;
     int t = -1, t1 = -1, count = 1;
-    int i = a.arguments().indexOf("-f");
+    int i = a.arguments().indexOf(QLatin1String("-f"));
     if (i > 0) {
         file = a.arguments().at(i+1);
     }
-    i = a.arguments().indexOf("-fuzzy");
+    i = a.arguments().indexOf(QLatin1String("-fuzzy"));
     if (i > 0)
         fuzzy = true;
-    i = a.arguments().indexOf("-t");
+    i = a.arguments().indexOf(QLatin1String("-t"));
     if (i > 0)
         t = a.arguments().at(i+1).toInt();
-    i = a.arguments().indexOf("-t1");
+    i = a.arguments().indexOf(QLatin1String("-t1"));
     if (i > 0)
         t1 = a.arguments().at(i+1).toInt();
-    i = a.arguments().indexOf("-count");
+    i = a.arguments().indexOf(QLatin1String("-count"));
     if (i > 0)
         count = a.arguments().at(i+1).toInt();
     QString engine;
-    i = a.arguments().indexOf("-engine");
+    i = a.arguments().indexOf(QLatin1String("-engine"));
     if (i > 0)
         engine = a.arguments().at(i+1);
 
     QStringList dirs;
-    i = a.arguments().indexOf("-dir");
+    i = a.arguments().indexOf(QLatin1String("-dir"));
     while (i > 0) {
-        dirs += a.arguments().at(i+1).split(QChar(';'));
-        i = a.arguments().indexOf("-dir", i+2);
+        dirs += a.arguments().at(i+1).split(QLatin1Char(';'));
+        i = a.arguments().indexOf(QLatin1String("-dir"), i+2);
     }
 
     Subtitle sub;
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
             sub.setTimestamp(qreal(t));
             qDebug() << sub.timestamp() << "s: " << sub.getText();
             QImage img(sub.getImage(720, 400));
-            img.save(QString("sub-%1.png").arg(sub.timestamp(), 0, 'f', 2));
+            img.save(QString::fromLatin1("sub-%1.png").arg(sub.timestamp(), 0, 'f', 2));
         } else {
             if (count < 2)
                 count = 2;
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
                 sub.setTimestamp(qreal(t) + qreal(n)*kInterval);
                 qDebug() << sub.timestamp() << "s: " << sub.getText();
                 QImage img(sub.getImage(720, 400));
-                img.save(QString("sub-%1.png").arg(sub.timestamp(), 0, 'f', 2));
+                img.save(QString::fromLatin1("sub-%1.png").arg(sub.timestamp(), 0, 'f', 2));
             }
         }
     }

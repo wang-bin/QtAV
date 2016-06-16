@@ -1,6 +1,6 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,7 +22,6 @@
 #ifndef QAV_PACKET_H
 #define QAV_PACKET_H
 
-#include <QtCore/QByteArray>
 #include <QtCore/QSharedData>
 #include <QtAV/QtAV_Global.h>
 
@@ -36,6 +35,7 @@ class Q_AV_EXPORT Packet
 public:
     static Packet fromAVPacket(const AVPacket* avpkt, double time_base);
     static bool fromAVPacket(Packet *pkt, const AVPacket *avpkt, double time_base);
+    static Packet createEOF();
 
     Packet();
     ~Packet();
@@ -44,6 +44,7 @@ public:
     Packet(const Packet& other);
     Packet& operator =(const Packet& other);
 
+    bool isEOF()const;
     inline bool isValid() const;
     /*!
      * \brief asAVPacket
@@ -52,6 +53,12 @@ public:
      * Packet takes the owner ship. time unit is always ms even constructed from AVPacket.
      */
     const AVPacket* asAVPacket() const;
+    /*!
+     * \brief skip
+     * Skip bytes of packet data. User has to update pts, dts etc to new values.
+     * Useful for asAVPakcet(). When asAVPakcet() is called, AVPacket->pts/dts will be updated to new values.
+     */
+    void skip(int bytes);
 
     bool hasKeyFrame;
     bool isCorrupt;
@@ -69,9 +76,12 @@ private:
 
 bool Packet::isValid() const
 {
-    return !isCorrupt && !data.isNull() && pts >= 0 && duration >= 0; //!data.isEmpty()?
+    return !isCorrupt && !data.isEmpty() && pts >= 0 && duration >= 0; //!data.isEmpty()?
 }
 
+#ifndef QT_NO_DEBUG_STREAM
+Q_AV_EXPORT QDebug operator<<(QDebug debug, const Packet &pkt);
+#endif
 } //namespace QtAV
-
+Q_DECLARE_METATYPE(QtAV::Packet)
 #endif // QAV_PACKET_H

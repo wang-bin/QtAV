@@ -1,6 +1,6 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,26 +23,29 @@
 #include "QtAV/AudioFormat.h"
 #include "QtAV/private/AudioResampler_p.h"
 #include "QtAV/private/factory.h"
+#include "QtAV/private/mkid.h"
+#include "utils/Logger.h"
 
 namespace QtAV {
-
 FACTORY_DEFINE(AudioResampler)
 
-extern void RegisterAudioResamplerFF_Man();
-extern void RegisterAudioResamplerLibav_Man();
+AudioResamplerId AudioResamplerId_FF = mkid::id32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
+AudioResamplerId AudioResamplerId_Libav = mkid::id32base36_5<'L', 'i', 'b', 'a', 'v'>::value;
 
-void AudioResampler_RegisterAll()
+extern bool RegisterAudioResamplerFF_Man();
+extern bool RegisterAudioResamplerLibav_Man();
+void AudioResampler::registerAll()
 {
+    static bool done = false;
+    if (done)
+        return;
+    done = true;
 #if QTAV_HAVE(SWRESAMPLE)
     RegisterAudioResamplerFF_Man();
-#endif //QTAV_HAVE(SWRESAMPLE)
+#endif
 #if QTAV_HAVE(AVRESAMPLE)
     RegisterAudioResamplerLibav_Man();
-#endif //QTAV_HAVE(AVRESAMPLE)
-}
-
-AudioResampler::AudioResampler()
-{
+#endif
 }
 
 AudioResampler::AudioResampler(AudioResamplerPrivate& d):DPTR_INIT(&d)
@@ -109,7 +112,11 @@ const AudioFormat& AudioResampler::inAudioFormat() const
 
 void AudioResampler::setOutAudioFormat(const AudioFormat& format)
 {
-    d_func().out_format = format;
+    DPTR_D(AudioResampler);
+    if (d.out_format == format)
+        return;
+    d.out_format = format;
+    prepare();
 }
 
 AudioFormat& AudioResampler::outAudioFormat()
@@ -135,58 +142,58 @@ int AudioResampler::outSamplesPerChannel() const
 //channel count can be computed by av_get_channel_layout_nb_channels(chl)
 void AudioResampler::setInSampleRate(int isr)
 {
-    DPTR_D(AudioResampler);
-    d.in_format.setSampleRate(isr);
-    setInAudioFormat(d.in_format);
+    AudioFormat af(d_func().in_format);
+    af.setSampleRate(isr);
+    setInAudioFormat(af);
 }
 
 void AudioResampler::setOutSampleRate(int osr)
 {
-    DPTR_D(AudioResampler);
-    d.out_format.setSampleRate(osr);
-    setOutAudioFormat(d.out_format);
+    AudioFormat af(d_func().out_format);
+    af.setSampleRate(osr);
+    setOutAudioFormat(af);
 }
 
 void AudioResampler::setInSampleFormat(int isf)
 {
-    DPTR_D(AudioResampler);
-    d.in_format.setSampleFormatFFmpeg(isf);
-    setInAudioFormat(d.in_format);
+    AudioFormat af(d_func().in_format);
+    af.setSampleFormatFFmpeg(isf);
+    setInAudioFormat(af);
 }
 
 void AudioResampler::setOutSampleFormat(int osf)
 {
-    DPTR_D(AudioResampler);
-    d.out_format.setSampleFormatFFmpeg(osf);
-    setOutAudioFormat(d.out_format);
+    AudioFormat af(d_func().out_format);
+    af.setSampleFormatFFmpeg(osf);
+    setOutAudioFormat(af);
 }
 
 void AudioResampler::setInChannelLayout(qint64 icl)
 {
-    DPTR_D(AudioResampler);
-    d.in_format.setChannelLayoutFFmpeg(icl);
-    setInAudioFormat(d.in_format);
+    AudioFormat af(d_func().in_format);
+    af.setChannelLayoutFFmpeg(icl);
+    setInAudioFormat(af);
 }
 
 void AudioResampler::setOutChannelLayout(qint64 ocl)
 {
-    DPTR_D(AudioResampler);
-    d.out_format.setChannelLayoutFFmpeg(ocl);
-    setOutAudioFormat(d.out_format);
+    AudioFormat af(d_func().out_format);
+    af.setChannelLayoutFFmpeg(ocl);
+    setOutAudioFormat(af);
 }
 
 void AudioResampler::setInChannels(int channels)
 {
-    DPTR_D(AudioResampler);
-    d.in_format.setChannels(channels);
-    setInAudioFormat(d.in_format);
+    AudioFormat af(d_func().in_format);
+    af.setChannels(channels);
+    setInAudioFormat(af);
 }
 
 void AudioResampler::setOutChannels(int channels)
 {
-    DPTR_D(AudioResampler);
-    d.out_format.setChannels(channels);
-    setOutAudioFormat(d.out_format);
+    AudioFormat af(d_func().out_format);
+    af.setChannels(channels);
+    setOutAudioFormat(af);
 }
 
 } //namespace QtAV

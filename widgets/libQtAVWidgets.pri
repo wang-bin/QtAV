@@ -96,7 +96,6 @@ DEPENDPATH *= $$PROJECT_SRCPATH
     }
 } else {
 	#Add your additional configuration first. e.g.
-
 #	win32: LIBS += -lUser32
 # The following may not need to change
     !CONFIG(plugin) {
@@ -106,11 +105,11 @@ DEPENDPATH *= $$PROJECT_SRCPATH
     }
         TARGET = $$PROJECT_TARGETNAME ##I commented out this before, why?
         CONFIG *= create_prl #
-	isEqual(STATICLINK, 1) {
+        DEFINES += BUILD_$$upper($$NAME)_LIB #win32-msvc*
+        isEqual(STATICLINK, 1) {
 		CONFIG -= shared dll ##otherwise the following shared is true, why?
 		CONFIG *= staticlib
 	} else {
-                DEFINES += BUILD_$$upper($$NAME)_LIB #win32-msvc*
 		CONFIG *= shared #shared includes dll
 	}
 
@@ -139,11 +138,8 @@ DEPENDPATH *= $$PROJECT_SRCPATH
 		INSTALLS += target
 	}
 }
+!no_rpath:!cross_compile:set_rpath($$PROJECT_LIBDIR)
 
-!cross_compile: RPATHDIR *= $$PROJECT_LIBDIR
-set_rpath($$RPATHDIR)
-
-unset(RPATHDIR)
 unset(LIB_VERSION)
 unset(PROJECT_SRCPATH)
 unset(PROJECT_LIBDIR)

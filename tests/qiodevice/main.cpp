@@ -40,9 +40,9 @@ int main(int argc, char *argv[])
     AVPlayer player[2];
     WidgetRenderer renderer[2];
     renderer[0].show();
-    renderer[0].widget()->setWindowTitle("Test QFile");
+    renderer[0].widget()->setWindowTitle(QString::fromLatin1("Test QFile"));
     renderer[1].show();
-    renderer[1].widget()->setWindowTitle("Test QBuffer. Play <=1M video from memory");
+    renderer[1].widget()->setWindowTitle(QString::fromLatin1("Test QBuffer. Play <=1M video from memory"));
     player[0].addVideoRenderer(&renderer[0]);
     player[1].addVideoRenderer(&renderer[1]);
 

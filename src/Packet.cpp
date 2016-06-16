@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -24,9 +24,16 @@
 #include "utils/Logger.h"
 
 //ffmpeg2.1 libav10
-#define AVPACKET_REF AV_MODULE_CHECK(LIBAVCODEC, 55, 34, 1 ,39, 101)
+#define AVPACKET_REF AV_MODULE_CHECK(LIBAVCODEC, 55, 34, 1, 39, 101)
 
 namespace QtAV {
+namespace {
+static const struct RegisterMetaTypes {
+    inline RegisterMetaTypes() {
+        qRegisterMetaType<QtAV::Packet>();
+    }
+} _registerMetaTypes;
+} //namespace
 
 class PacketPrivate : public QSharedData
 {
@@ -57,6 +64,18 @@ public:
     AVPacket avpkt;
 };
 
+Packet Packet::createEOF()
+{
+    Packet pkt;
+    pkt.data = QByteArray("eof");
+    return pkt;
+}
+
+bool Packet::isEOF() const
+{
+    return data == "eof" && pts < 0.0 && dts < 0.0;
+}
+
 Packet Packet::fromAVPacket(const AVPacket *avpkt, double time_base)
 {
     Packet pkt;
@@ -80,35 +99,35 @@ bool Packet::fromAVPacket(Packet* pkt, const AVPacket *avpkt, double time_base)
 
     // from av_read_frame: pkt->pts can be AV_NOPTS_VALUE if the video format has B-frames, so it is better to rely on pkt->dts if you do not decompress the payload.
     // old code set pts as dts is valid
-    if (avpkt->pts != AV_NOPTS_VALUE)
+    if (avpkt->pts != (qint64)AV_NOPTS_VALUE)
         pkt->pts = avpkt->pts * time_base;
-    else if (avpkt->dts != AV_NOPTS_VALUE) // is it ok?
+    else if (avpkt->dts != (qint64)AV_NOPTS_VALUE) // is it ok?
         pkt->pts = avpkt->dts * time_base;
     else
         pkt->pts = 0; // TODO: init value
-    if (avpkt->dts != AV_NOPTS_VALUE) //has B-frames
+    if (avpkt->dts != (qint64)AV_NOPTS_VALUE) //has B-frames
         pkt->dts = avpkt->dts * time_base;
     else
         pkt->dts = pkt->pts;
-    //qDebug("pts %lld, dts: %lld ", avpkt->pts, avpkt->dts);
+    //qDebug("avpacket pts %lld, dts: %lld ", avpkt->pts, avpkt->dts);
     //TODO: pts must >= 0? look at ffplay
     pkt->pts = qMax<qreal>(0, pkt->pts);
     pkt->dts = qMax<qreal>(0, pkt->dts);
 
-
+    if (avpkt->duration > 0)
+        pkt->duration = avpkt->duration * time_base;
+    else
+        pkt->duration = 0;
+#if (LIBAVCODEC_VERSION_MAJOR < 57) //FF_API_CONVERGENCE_DURATION since 57
     // subtitle always has a key frame? convergence_duration may be 0
-    if (avpkt->convergence_duration > 0  // mpv demux_lavf only check this
+    if (avpkt->convergence_duration > 0
             && pkt->hasKeyFrame
 #if 0
             && codec->codec_type == AVMEDIA_TYPE_SUBTITLE
 #endif
             )
         pkt->duration = avpkt->convergence_duration * time_base;
-    else if (avpkt->duration > 0)
-        pkt->duration = avpkt->duration * time_base;
-    else
-        pkt->duration = 0;
-
+#endif
     //qDebug("AVPacket.pts=%f, duration=%f, dts=%lld", pkt->pts, pkt->duration, packet.dts);
     pkt->data.clear();
     // TODO: pkt->avpkt. data is not necessary now. see mpv new_demux_packet_from_avpacket
@@ -119,7 +138,7 @@ bool Packet::fromAVPacket(Packet* pkt, const AVPacket *avpkt, double time_base)
 #if AVPACKET_REF
     av_packet_ref(p, (AVPacket*)avpkt);  //properties are copied internally
     // add ref without copy, bytearray does not copy either. bytearray options linke remove() is safe. omit FF_INPUT_BUFFER_PADDING_SIZE
-    pkt->data =QByteArray::fromRawData((const char*)p->data, p->size);
+    pkt->data = QByteArray::fromRawData((const char*)p->data, p->size);
 #else
     if (avpkt->data) {
         // copy packet data. packet will be reset after AVDemuxer.readFrame() and in next av_read_frame
@@ -153,10 +172,10 @@ bool Packet::fromAVPacket(Packet* pkt, const AVPacket *avpkt, double time_base)
 Packet::Packet()
     : hasKeyFrame(false)
     , isCorrupt(false)
-    , pts(0)
-    , duration(0)
-    , dts(0)
-    , position(0)
+    , pts(-1)
+    , duration(-1)
+    , dts(-1)
+    , position(-1)
 {
 }
 
@@ -221,4 +240,30 @@ const AVPacket *Packet::asAVPacket() const
     return p;
 }
 
+void Packet::skip(int bytes)
+{
+    if (!d.constData()) { //not constructed from AVPacket
+        d = QSharedDataPointer<PacketPrivate>(new PacketPrivate());
+    }
+    d->initialized = false;
+    data = QByteArray::fromRawData(data.constData() + bytes, data.size() - bytes);
+    if (position >= 0)
+        position += bytes;
+    // TODO: if duration is valid, compute pts/dts and no manually update outside?
+}
+
+#ifndef QT_NO_DEBUG_STREAM
+QDebug operator<<(QDebug dbg, const Packet &pkt)
+{
+    dbg.nospace() << "QtAV::Packet.data " << hex << (qptrdiff)pkt.data.constData() << "+" << dec << pkt.data.size();
+    dbg.nospace() << ", dts: " << pkt.dts;
+    dbg.nospace() << ", pts: " << pkt.pts;
+    dbg.nospace() << ", duration: " << pkt.duration;
+    dbg.nospace() << ", position: " << pkt.position;
+    dbg.nospace() << ", hasKeyFrame: " << pkt.hasKeyFrame;
+    dbg.nospace() << ", isCorrupt: " << pkt.isCorrupt;
+    dbg.nospace() << ", eof: " << pkt.isEOF();
+    return dbg.space();
+}
+#endif //QT_NO_DEBUG_STREAM
 } //namespace QtAV

@@ -1,6 +1,6 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,14 +22,6 @@
 
 #include <stdio.h>
 
-#undef NV_CONFIG
-#define NV_CONFIG(FEATURE) (defined QTAV_HAVE_##FEATURE && QTAV_HAVE_##FEATURE)
-
-// high version will define cuXXX macro, so functions here will be not they look like
-#if !NV_CONFIG(DLLAPI_CUDA) && !defined(CUDA_LINK)
-#define CUDA_FORCE_API_VERSION 3010
-#endif
-
 #include "dllapi/nv_inc.h"
 #if NV_CONFIG(DLLAPI_CUDA)
 using namespace dllapi::cuda;
@@ -39,7 +31,7 @@ using namespace dllapi::cuda;
 #ifdef __cuda_cuda_h__
 
 // CUDA Driver API errors
-static const char *_cudaGetErrorEnum(CUresult error)
+inline const char *_cudaGetErrorEnum(CUresult error)
 {
     switch (error) {
         case CUDA_SUCCESS: return "CUDA_SUCCESS";
@@ -68,6 +60,9 @@ static const char *_cudaGetErrorEnum(CUresult error)
         case CUDA_ERROR_ECC_UNCORRECTABLE: return "CUDA_ERROR_ECC_UNCORRECTABLE";
         case CUDA_ERROR_UNSUPPORTED_LIMIT: return "CUDA_ERROR_UNSUPPORTED_LIMIT";
         case CUDA_ERROR_CONTEXT_ALREADY_IN_USE: return "CUDA_ERROR_CONTEXT_ALREADY_IN_USE";
+        case CUDA_ERROR_PEER_ACCESS_UNSUPPORTED: return "CUDA_ERROR_PEER_ACCESS_UNSUPPORTED";
+        case CUDA_ERROR_INVALID_PTX: return "CUDA_ERROR_INVALID_PTX";
+        case CUDA_ERROR_INVALID_GRAPHICS_CONTEXT: return "CUDA_ERROR_INVALID_GRAPHICS_CONTEXT";
         case CUDA_ERROR_INVALID_SOURCE: return "CUDA_ERROR_INVALID_SOURCE";
         case CUDA_ERROR_FILE_NOT_FOUND: return "CUDA_ERROR_FILE_NOT_FOUND";
         case CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND: return "CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND";
@@ -76,7 +71,7 @@ static const char *_cudaGetErrorEnum(CUresult error)
         case CUDA_ERROR_INVALID_HANDLE: return "CUDA_ERROR_INVALID_HANDLE";
         case CUDA_ERROR_NOT_FOUND: return "CUDA_ERROR_NOT_FOUND";
         case CUDA_ERROR_NOT_READY: return "CUDA_ERROR_NOT_READY";
-        case CUDA_ERROR_LAUNCH_FAILED: return "CUDA_ERROR_LAUNCH_FAILED";
+        case CUDA_ERROR_ILLEGAL_ADDRESS: return "CUDA_ERROR_ILLEGAL_ADDRESS";
         case CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES: return "CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES";
         case CUDA_ERROR_LAUNCH_TIMEOUT: return "CUDA_ERROR_LAUNCH_TIMEOUT";
         case CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING: return "CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING";
@@ -88,8 +83,15 @@ static const char *_cudaGetErrorEnum(CUresult error)
         case CUDA_ERROR_TOO_MANY_PEERS: return "CUDA_ERROR_TOO_MANY_PEERS";
         case CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED: return "CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED";
         case CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED: return "CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED";
-        case CUDA_ERROR_UNKNOWN:
-        //TODO: 6.0 enum support
+        case CUDA_ERROR_HARDWARE_STACK_ERROR: return "CUDA_ERROR_HARDWARE_STACK_ERROR";
+        case CUDA_ERROR_ILLEGAL_INSTRUCTION: return "CUDA_ERROR_ILLEGAL_INSTRUCTION";
+        case CUDA_ERROR_MISALIGNED_ADDRESS: return "CUDA_ERROR_MISALIGNED_ADDRESS";
+        case CUDA_ERROR_INVALID_ADDRESS_SPACE: return "CUDA_ERROR_INVALID_ADDRESS_SPACE";
+        case CUDA_ERROR_INVALID_PC: return "CUDA_ERROR_INVALID_PC";
+        case CUDA_ERROR_LAUNCH_FAILED: return "CUDA_ERROR_LAUNCH_FAILED";
+        case CUDA_ERROR_NOT_PERMITTED: return "CUDA_ERROR_NOT_PERMITTED";
+        case CUDA_ERROR_NOT_SUPPORTED: return "CUDA_ERROR_NOT_SUPPORTED";
+        case CUDA_ERROR_UNKNOWN: return "CUDA_ERROR_UNKNOWN";
         default:
             return "CUDA_ERROR_UNKNOWN";
     }
@@ -118,17 +120,23 @@ inline int _ConvertSMVer2Cores(int major, int minor)
         { 0x20, 32 }, // Fermi Generation (SM 2.0) GF100 class
         { 0x21, 48 }, // Fermi Generation (SM 2.1) GF10x class
         { 0x30, 192}, // Kepler Generation (SM 3.0) GK10x class
+        { 0x32, 192}, // Kepler Generation (SM 3.2) GK10x class
         { 0x35, 192}, // Kepler Generation (SM 3.5) GK11x class
+        { 0x37, 192}, // Kepler Generation (SM 3.7) GK21x class
+        { 0x50, 128}, // Maxwell Generation (SM 5.0) GM10x class
+        { 0x52, 128}, // Maxwell Generation (SM 5.2) GM20x class
         {   -1, -1 }
     };
-    for (int index = 0; nGpuArchCoresPerSM[index].SM != -1; ++index) {
+    int index = 0;
+    while (nGpuArchCoresPerSM[index].SM != -1) {
         if (nGpuArchCoresPerSM[index].SM == ((major << 4) + minor)) {
             return nGpuArchCoresPerSM[index].Cores;
         }
+        ++index;
     }
     // If we don't find the values, we default use the previous one to run properly
     printf("MapSMtoCores for SM %d.%d is undefined.  Default to use %d Cores/SM\n", major, minor, nGpuArchCoresPerSM[7].Cores);
-    return nGpuArchCoresPerSM[7].Cores;
+    return nGpuArchCoresPerSM[index - 1].Cores;
 }
 
 // end of GPU Architecture definitions

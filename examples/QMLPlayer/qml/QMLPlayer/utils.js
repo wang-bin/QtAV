@@ -12,6 +12,18 @@ function resurl(s) { //why called twice if in qrc?
     return resprefix + s
 }
 
+String.prototype.startsWith = function(s) {
+    return this.indexOf(s) === 0;
+};
+
+String.prototype.endsWith = function(suffix) {
+    return this.indexOf(suffix, this.length - suffix.length) !== -1;
+};
+
+function fileName(path) {
+    return path.substring(path.lastIndexOf("/") + 1)
+}
+
 function msec2string(t) {
     t = Math.floor(t/1000)
     var ss = t%60
@@ -69,4 +81,3 @@ function htmlEscaped(s) {
     }
     return escaped;
 }
-

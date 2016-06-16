@@ -4,7 +4,8 @@ if [ $# -lt 1 ]; then
   echo "${0##*/} QtAV_build_dir"
   exit 1
 fi
-#set -ev
+#set -v
+THIS_DIR=$PWD
 BUILD_DIR=$1
 QTBIN=`grep -m 1 QT_BIN $BUILD_DIR/.qmake.cache |cut -d "=" -f 2 | tr -d ' '`
 QTDIR=$QTBIN/..
@@ -30,13 +31,14 @@ fix_qt() {
     done
   done
 }
+#TODO: fix_av
 
 deploy() {
   cd $BUILD_DIR
   local APP=$1
   local FRAMEWORK_DIR=bin/${APP}.app/Contents/Frameworks
   local EXE=bin/${APP}.app/Contents/MacOS/$APP
-  [ -f sdk_osx.sh ] && cp -Lf sdk_osx.sh bin/${APP}.app/
+  [ -f $THIS_DIR/sdk_osx.sh ] && cp -Lf $THIS_DIR/sdk_osx.sh bin/${APP}.app/
   mkdir -p $FRAMEWORK_DIR
 
   local LIBCOMMON=`otool -L $EXE |awk '{print $1}' |grep libcommon`
@@ -52,8 +54,8 @@ deploy() {
   local QT_LIBS=`$QTBIN/qmake -query QT_INSTALL_LIBS`
   local QT_PLUGINS=`$QTBIN/qmake -query QT_INSTALL_PLUGINS`
   local QT_QML=`$QTBIN/qmake -query QT_INSTALL_QML`
-  #cocoa depends on QtPrintSupport, QtSVG & QtPrintSupport depends on QtWidgets
-  QTMODULES="QtCore QtGui QtSvg QtPrintSupport QtWidgets"
+  #cocoa depends on QtPrintSupport and DBus(5.5), QtSVG & QtPrintSupport depends on QtWidgets
+  QTMODULES="QtCore QtGui QtSvg QtPrintSupport QtWidgets QtDBus QtSql"
   otool -L $EXE |grep QtOpenGL && QTMODULES+=" QtOpenGL"
   otool -L $EXE |grep QtQuick && QML="Qt QtQml QtQuick QtQuick.2" && QTMODULES+=" QtQuick QtQml QtNetwork"
   for q in $QTMODULES; do
@@ -62,8 +64,8 @@ deploy() {
     local Q=$FRAMEWORK_DIR/${q}.framework/Versions/5/${q}
     test -f $Q && install_name_tool -id @executable_path/../Frameworks/${q}.framework/Versions/5/${q} $Q
   done
-  mkdir -p $FRAMEWORK_DIR/../PlugIns/{platforms,imageformats,iconengines}
-  for q in platforms/libqcocoa.dylib imageformats/libqsvg.dylib imageformats/libqjpeg.dylib iconengines/libqsvgicon.dylib; do
+  mkdir -p $FRAMEWORK_DIR/../PlugIns/{platforms,imageformats,iconengines,sqldrivers}
+  for q in platforms/libqcocoa.dylib imageformats/libqsvg.dylib imageformats/libqjpeg.dylib iconengines/libqsvgicon.dylib sqldrivers/libqsqlite.dylib; do
     cp -aLf $QT_PLUGINS/${q} $FRAMEWORK_DIR/../PlugIns/${q}
   done
   mkdir -p $FRAMEWORK_DIR/../Resources/qml
@@ -88,14 +90,20 @@ deploy() {
     local EXE_DEP=`otool -L $EXE |awk '{print $1}' |grep -v : |grep "${MODULE_LIB_REL}"`
     install_name_tool -change "$EXE_DEP" "@executable_path/../Frameworks/${MODULE_LIB_REL}" $EXE
   done
-:<<EOF
-  for ff in libportaudio libavutil libavcodec libavformat libavfilter libavdevice libavresample libswscale libswresample libpostproc
+:<<EOC
+  for ff in libavutil libavcodec libavformat libavfilter libavdevice libavresample libswscale libswresample libpostproc
   do
     local FFPATH=`otool -L $MODULE_LIB |awk '{print $1}' |grep -v : |grep $ff`
-    install_name_tool -change "$FFPATH" "@executable_path/../Frameworks/${FFPATH##*/}" $MODULE_LIB
+    if [ -f "$FRAMEWORK_DIR/${FFPATH##*/}" ]; then
+      install_name_tool -id "@executable_path/../Frameworks/${FFPATH##*/}" $FRAMEWORK_DIR/${FFPATH##*/}
+      install_name_tool -change "$FFPATH" "@executable_path/../Frameworks/${FFPATH##*/}" $MODULE_LIB
+    fi
   done
-EOF
+EOC
   find bin/${APP}.app -name "*_debug*" -delete
+  find bin/${APP}.app -name "log*.txt" -delete
+  find bin/${APP}.app -name "*.prl" -delete
+
   fix_qt $APP
 cat>bin/${APP}.app/Contents/Resources/qt.conf<<EOF
 [Paths]
@@ -103,7 +111,11 @@ Plugins = PlugIns
 Qml2Imports = Resources/qml
 EOF
   cd -
-  test -f ./yoursway-create-dmg/create-dmg && ./yoursway-create-dmg/create-dmg  --window-size 500 300  --icon-size 96 --volname "QtAV $APP"  --app-drop-link 240 200 QtAV-$APP.dmg $BUILD_DIR/bin/${APP}.app &
+  if [ -n "$TRAVIS_BUILD_DIR" ]; then
+    test -f ./create-dmg/create-dmg && ./create-dmg/create-dmg  --window-size 500 300  --icon-size 96 --volname "QtAV $APP"  --app-drop-link 240 200 QtAV-$APP.dmg $BUILD_DIR/bin/${APP}.app
+  else
+    test -f ./create-dmg/create-dmg && ./create-dmg/create-dmg  --window-size 500 300  --icon-size 96 --volname "QtAV $APP"  --app-drop-link 240 200 QtAV-$APP.dmg $BUILD_DIR/bin/${APP}.app &
+  fi
 }
 
 deploy player

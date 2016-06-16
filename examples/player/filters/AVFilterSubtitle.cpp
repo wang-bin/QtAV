@@ -5,11 +5,11 @@
 #include <QtCore/QTextStream>
 
 AVFilterSubtitle::AVFilterSubtitle(QObject *parent)
-    :  LibAVFilter(parent)
+    :  LibAVFilterVideo(parent)
     , m_auto(true)
     , m_player(0)
 {
-    connect(this, SIGNAL(statusChanged()), SLOT(onStatusChanged()));
+    //connect(this, SIGNAL(statusChanged()), SLOT(onStatusChanged()));
 }
 
 void AVFilterSubtitle::setPlayer(AVPlayer *player)
@@ -23,7 +23,7 @@ void AVFilterSubtitle::setPlayer(AVPlayer *player)
     m_player = player;
     if (!player)
         return;
-    player->installVideoFilter(this);
+    player->installFilter(this);
     if (m_auto) {
 //        connect(player, SIGNAL(fileChanged(QString)), SLOT(findAndSetFile(QString)));
         connect(player, SIGNAL(started()), SLOT(onPlayerStart()));
@@ -32,7 +32,7 @@ void AVFilterSubtitle::setPlayer(AVPlayer *player)
 
 bool AVFilterSubtitle::setFile(const QString &filePath)
 {
-    setOptions("");
+    setOptions(QString());
     if (m_file != filePath) {
         emit fileChanged(filePath);
         // DO NOT return here because option is null now
@@ -62,8 +62,8 @@ bool AVFilterSubtitle::setFile(const QString &filePath)
     if (u.isEmpty())
         u = filePath;
     // filter_name=argument. use ' to quote the argument, use \ to escaping chars within quoted text. on windows, path can be C:/a/b/c, ":" must be escaped
-    u.replace(":", "\\:");
-    setOptions("subtitles='" + u + "'");
+    u.replace(QLatin1String(":"), QLatin1String("\\:"));
+    setOptions(QString::fromLatin1("subtitles='%1'").arg(u));
     qDebug("subtitle loaded: %s", filePath.toUtf8().constData());
     return true;
 }
@@ -77,7 +77,7 @@ QString AVFilterSubtitle::setContent(const QString &doc)
 {
     QString name = QFileInfo(m_file).fileName();
     if (name.isEmpty())
-        name = "QtAV_u8_sub_cache";
+        name = QString::fromLatin1("QtAV_u8_sub_cache");
     QFile w(QDir::temp().absoluteFilePath(name));
     if (w.open(QIODevice::WriteOnly)) {
         w.write(doc.toUtf8());
@@ -109,8 +109,8 @@ void AVFilterSubtitle::findAndSetFile(const QString &path)
     QFileInfo fi(path);
     QDir dir(fi.dir());
     QString name = fi.completeBaseName(); // video suffix has only 1 dot
-    QStringList list = dir.entryList(QStringList() << name + "*.ass" << name + "*.ssa", QDir::Files);
-    list.append(dir.entryList(QStringList() << "*.srt", QDir::Files));
+    QStringList list = dir.entryList(QStringList() << name + QString::fromLatin1("*.ass") << name + QString::fromLatin1("*.ssa"), QDir::Files);
+    list.append(dir.entryList(QStringList() << QString::fromLatin1("*.srt"), QDir::Files));
     foreach (const QString& f, list) {
         // why it happens?
         if (!f.startsWith(name))
@@ -122,7 +122,7 @@ void AVFilterSubtitle::findAndSetFile(const QString &path)
 
 void AVFilterSubtitle::onPlayerStart()
 {
-    setOptions("");
+    setOptions(QString());
     if (!autoLoad())
         return;
     findAndSetFile(m_player->file());
@@ -130,7 +130,7 @@ void AVFilterSubtitle::onPlayerStart()
 
 void AVFilterSubtitle::onStatusChanged()
 {
-    if (status() == ConfigreOk) {
+    if (status() == ConfigureOk) {
         emit loaded();
     } else if (status() == ConfigureFailed) {
         if (options().isEmpty())

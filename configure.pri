@@ -42,7 +42,7 @@ defineTest(cache) {
     }
     #log("varstr: $$varstr")
 ##TODO: remove existing lines contain $$srcvar
-    #because write_file() will write 1 line for each value(seperated by space), so the value must be closed with "", then it's 1 value, not list
+    #because write_file() will write 1 line for each value(separated by space), so the value must be closed with "", then it's 1 value, not list
 #erase the existing var and value pair
     win32 {#:isEmpty(QMAKE_SH) { #windows sucks. can not access the cache
 
@@ -105,14 +105,22 @@ defineTest(qtCompileTest) {
     #system always call win32 cmd in windows, so we need "cd /d" to ensure success cd to a different partition
     contains(QMAKE_HOST.os,Windows):test_cmd_base = "cd /d $$system_quote($$system_path($$test_out_dir)) &&"
     else: test_cmd_base = "cd $$system_quote($$system_path($$test_out_dir)) &&"
+
+# On WinRT we need to change the entry point as we cannot create windows applications
+  winrt {
+     qmake_configs += " \"QMAKE_LFLAGS+=/ENTRY:main\""
+  }
     # Disable qmake features which are typically counterproductive for tests
     qmake_configs = "\"CONFIG -= qt debug_and_release app_bundle lib_bundle\""
-
+    iphoneos: qmake_configs += "\"CONFIG+=iphoneos\""
+    iphonesimulator: qmake_configs += "\"CONFIG+=iphonesimulator\""
     # Clean up after previous run
     exists($$test_out_dir/Makefile):qtRunLoggedCommand("$$test_cmd_base $$QMAKE_MAKE distclean")
 
     mkpath($$test_out_dir)#|error("Aborting.") #mkpath currently return false, do not know why
-    qtRunLoggedCommand("$$test_cmd_base $$system_quote($$system_path($$QMAKE_QMAKE)) $$qmake_configs $$system_path($$test_dir)") {
+    SPEC =
+    !isEmpty(QMAKESPEC): SPEC = "-spec $$QMAKESPEC"
+    qtRunLoggedCommand("$$test_cmd_base $$system_quote($$system_path($$QMAKE_QMAKE)) $$SPEC $$qmake_configs $$system_path($$test_dir)") {
         qtRunLoggedCommand("$$test_cmd_base $$QMAKE_MAKE") {
             log("yes$$escape_expand(\\n)")
             msg = "test $$1 succeeded"

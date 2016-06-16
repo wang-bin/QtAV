@@ -1,6 +1,6 @@
 /******************************************************************************
     ImageConverterFF: Image resizing & color model convertion using FFmpeg swscale
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,27 +23,21 @@
 #include "ImageConverter_p.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/mkid.h"
-#include "QtAV/private/prepost.h"
+#include "QtAV/private/factory.h"
 #include "utils/Logger.h"
 
 namespace QtAV {
-
 ImageConverterId ImageConverterId_FF = mkid::id32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
-FACTORY_REGISTER_ID_AUTO(ImageConverter, FF, "FFmpeg")
+FACTORY_REGISTER(ImageConverter, FF, "FFmpeg")
 
-void RegisterImageConverterFF_Man()
-{
-    FACTORY_REGISTER_ID_MAN(ImageConverter, FF, "FFmpeg")
-}
-
-class ImageConverterFFPrivate : public ImageConverterPrivate
+class ImageConverterFFPrivate Q_DECL_FINAL: public ImageConverterPrivate
 {
 public:
     ImageConverterFFPrivate()
         : sws_ctx(0)
         , update_eq(true)
     {}
-    ~ImageConverterFFPrivate() Q_DECL_FINAL {
+    ~ImageConverterFFPrivate() {
         if (sws_ctx) {
             sws_freeContext(sws_ctx);
             sws_ctx = 0;
@@ -76,7 +70,7 @@ bool ImageConverterFF::check() const
     return true;
 }
 
-bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStride[])
+bool ImageConverterFF::convert(const quint8 *const src[], const int srcStride[], quint8 *const dst[], const int dstStride[])
 {
     DPTR_D(ImageConverterFF);
     //Check out dimension. equals to in dimension if not setted. TODO: move to another common func
@@ -97,56 +91,16 @@ bool ImageConverterFF::convert(const quint8 *const srcSlice[], const int srcStri
     if (!d.sws_ctx)
         return false;
     d.setupColorspaceDetails(false);
-#if PREPAREDATA_NO_PICTURE //for YUV420 <=> RGB
-#if 0
-    struct
-    {
-        uint8_t *data[4]; //AV_NUM_DATA_POINTERS
-        int linesize[4];  //AV_NUM_DATA_POINTERS
-    }
-#else
-    AVPicture
-#endif
-            pic_in, pic_out;
-
-    if ((AVPixelFormat)fmt_in == PIX_FMT_YUV420P) {
-        pic_in.data[0] = (uint8_t*)in;
-        pic_in.data[2] = (uint8_t*)pic_in.data[0] + (w_in * h_in);
-        pic_in.data[1] = (uint8_t*)pic_in.data[2] + (w_in * h_in) / 4;
-        pic_in.linesize[0] = w_in;
-        pic_in.linesize[1] = w_in / 2;
-        pic_in.linesize[2] = w_in / 2;
-        //pic_in.linesize[3] = 0; //not used
-    } else {
-        pic_in.data[0] = (uint8_t*)in;
-        pic_in.linesize[0] = w_in * 4; //TODO: not 0
-    }
-    if ((AVPixelFormat)fmt_out == PIX_FMT_YUV420P) {
-        pic_out.data[0] = (uint8_t*)out;
-        pic_out.data[2] = (uint8_t*)pic_out.data[0] + (w_out * h_in);
-        pic_out.data[1] = (uint8_t*)pic_out.data[2] + (w_out * h_in) / 4;
-        //pic_out.data[3] = (uint8_t*)pic_out.data[0] - 1;
-        pic_out.linesize[0] = w_out;
-        pic_out.linesize[1] = w_out / 2;
-        pic_out.linesize[2] = w_out / 2;
-        //3 not used
-    } else {
-        pic_out.data[0] = (uint8_t*)out;
-        pic_out.linesize[0] = w_out * 4;
-    }
-#endif //PREPAREDATA_NO_PICTURE
-    int result_h = sws_scale(d.sws_ctx, srcSlice, srcStride, 0, d.h_in, d.picture.data, d.picture.linesize);
+    int result_h = sws_scale(d.sws_ctx, src, srcStride, 0, d.h_in, dst, dstStride);
     if (result_h != d.h_out) {
         qDebug("convert failed: %d, %d", result_h, d.h_out);
         return false;
     }
-#if 0
-    if (isInterlaced()) {
-        //deprecated
-        avpicture_deinterlace(&d.picture, &d.picture, (AVPixelFormat)d.fmt_out, d.w_out, d.h_out);
-    }
-#endif //0
     Q_UNUSED(result_h);
+    for (int i = 0; i < d.pitchs.size(); ++i) {
+        d.bits[i] = dst[i];
+        d.pitchs[i] = dstStride[i];
+    }
     return true;
 }
 
@@ -161,21 +115,19 @@ bool ImageConverterFFPrivate::setupColorspaceDetails(bool force)
     if (!update_eq) {
         return true;
     }
-    // FIXME: how to fill the ranges?
-    const int srcRange = 1;
-    const int dstRange = 0;
-    // TODO: SWS_CS_DEFAULT?
-    sws_setColorspaceDetails(sws_ctx, sws_getCoefficients(SWS_CS_DEFAULT)
+    const int srcRange = range_in == ColorRange_Limited ? 0 : 1;
+    int dstRange = range_out == ColorRange_Limited ? 0 : 1;
+    // TODO: color space
+    bool supported = sws_setColorspaceDetails(sws_ctx, sws_getCoefficients(SWS_CS_DEFAULT)
                              , srcRange, sws_getCoefficients(SWS_CS_DEFAULT)
                              , dstRange
                              , ((brightness << 16) + 50)/100
                              , (((contrast + 100) << 16) + 50)/100
                              , (((saturation + 100) << 16) + 50)/100
-                             );
-    // TODO: b, c, s map function?
+                             ) >= 0;
     //sws_init_context(d.sws_ctx, NULL, NULL);
     update_eq = false;
-    return true;
+    return supported;
 }
 
 } //namespace QtAV

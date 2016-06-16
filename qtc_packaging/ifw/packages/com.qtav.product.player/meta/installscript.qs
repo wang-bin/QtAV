@@ -61,14 +61,14 @@ Component.prototype.createOperations = function()
 
     if (installer.value("os") === "win") {
         component.addOperation("CreateShortcut", "@TargetDir@/bin/player.exe", "@StartMenuDir@/QtAV.Player.lnk",
-            "workingDirectory=@TargetDir@/bin", "iconPath=%SystemRoot%/system32/SHELL32.dll",
-            "iconId=2");
+            "workingDirectory=@TargetDir@/bin", "iconPath=@TargetDir@/bin/player.exe",
+            "iconId=0");
         component.addOperation("CreateShortcut", "@TargetDir@/bin/QMLPlayer.exe", "@StartMenuDir@/QtAV.Player.QML.lnk",
-            "workingDirectory=@TargetDir@/bin", "iconPath=%SystemRoot%/system32/SHELL32.dll",
-            "iconId=2");
-        component.addOperation("CreateShortcut", "@TargetDir@/uninstall.exe", "@StartMenuDir@/QtAV.Uninstall.lnk",
-            "workingDirectory=@TargetDir@", "iconPath=%SystemRoot%/system32/SHELL32.dll",
-            "iconId=2");
+            "workingDirectory=@TargetDir@/bin", "iconPath=@TargetDir@/bin/QMLPlayer.exe",
+            "iconId=0");
+        component.addOperation("CreateShortcut", "@TargetDir@/maintenancetool.exe", "@StartMenuDir@/QtAV.Uninstall.lnk",
+            "workingDirectory=@TargetDir@", "iconPath=@TargetDir@/maintenancetool.exe",
+            "iconId=0");
 
         //component.addOperation("Settings", "formate=native", //"path=HKEY_CURRENT_USER/SOFTWARE/Classes/*/shell/OpenWithQtAV/command", "method=set", "key=Default", "value=@TargetDir@/bin/player.exe -vo  gl -f %%1");
 

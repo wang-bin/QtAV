@@ -1,8 +1,8 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -24,11 +24,8 @@
 
 #include <QtAV/QtAV_Global.h>
 #include <QtCore/QString>
-#include <QtCore/QMetaType>
 
 namespace QtAV {
-
-
 class Q_AV_EXPORT AVError
 {
 public:
@@ -98,7 +95,9 @@ private:
 Q_DECLARE_METATYPE(QtAV::AVError)
 
 #ifndef QT_NO_DEBUG_STREAM
+QT_BEGIN_NAMESPACE
 class QDebug;
+QT_END_NAMESPACE
 Q_AV_EXPORT QDebug operator<<(QDebug debug, const QtAV::AVError &error);
 #endif
 

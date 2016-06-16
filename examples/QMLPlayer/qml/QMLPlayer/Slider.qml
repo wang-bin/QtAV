@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2013 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2016 Wang Bin <wbsecg1@gmail.com>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -19,80 +19,91 @@
 import QtQuick 2.0
 import "utils.js" as Utils
 
-Rectangle {
+Item {
     id: root
-    color: "transparent"
-    radius: Utils.scaled(5)
     property alias value: grip.value
     property color fillColor: "white"
     property color lineColor: "blue"
+    property real lineWidth: Utils.scaled(6)
     property color gripColor: "white"
-    property real gripSize: Utils.scaled(10)
+    property real gripSize: Utils.scaled(12)
     property real gripTolerance: Utils.scaled(3.0)
-    property real increment: 0.1
-    property bool enabled: true
-
+    property int orientation: Qt.Horizontal
+    property bool hovered: false //mouseArea.containsMouse || gripMouseArea.containsMouse
+    property real max: 1
+    property real min: 0
     Rectangle {
-        anchors { left: parent.left; right: parent.right
-            verticalCenter: parent.verticalCenter
-        }
-        height: Utils.scaled(3)
-        color: displayedColor(root.lineColor)
-
-        Rectangle {
-            anchors { fill: parent; margins: 1 }
-            color: root.fillColor
-        }
+        anchors.centerIn: parent
+        height: orientation === Qt.Horizontal ? lineWidth : parent.height
+        width: orientation === Qt.Horizontal ? parent.width : lineWidth
+        color: lineColor
     }
-
     MouseArea {
+        id: mouseArea
         anchors.fill: parent
-        enabled: root.enabled
+        hoverEnabled: true
+        onHoveredChanged: {
+            //console.log("slider.hover mouseX: " + mouseX)
+            if (mouseX > 65535) //qt5.6 touch screen release finger becomes very large e.g. 0x7fffffff
+                return
+            hovered = mouseArea.containsMouse
+        }
         onClicked: {
-            if (parent.width) {
-                var newValue = mouse.x / parent.width
-                if (Math.abs(newValue - parent.value) > parent.increment) {
-                    if (newValue > parent.value)
-                        parent.value = Math.min(1.0, parent.value + parent.increment)
-                    else
-                        parent.value = Math.max(0.0, parent.value - parent.increment)
-                }
+            var newValue = min + (mouse.x / parent.width)*(max-min)
+            if (orientation === Qt.Horizontal) {
+                newValue = min + (mouse.x / parent.width)*(max-min)
+            } else {
+                newValue = min + (mouse.y / parent.height)*(max-min)
+            }
+            var increment = 1.0/width
+            if (Math.abs(newValue - parent.value) > parent.increment*(max-min)) {
+                if (newValue > parent.value)
+                    parent.value = Math.min(max, parent.value + parent.increment*(max-min))
+                else
+                    parent.value = Math.max(min, parent.value - parent.increment*(max-min))
             }
         }
     }
 
-    Rectangle {
+    Item {
         id: grip
         property real value: 0.5
-        x: (value * parent.width - width/2)
-        anchors.verticalCenter: parent.verticalCenter
+        x: orientation === Qt.Horizontal ? ((value-min)/(max-min) * parent.width - width/2) : (parent.width - width)/2
+        y: orientation === Qt.Horizontal ? (parent.height - height)/2 : ((value-min)/(max-min) * parent.height - height/2)
         width: root.gripTolerance * root.gripSize
         height: width
-        radius: width/2
-        color: "transparent"
+        readonly property real radius: width/2
 
         MouseArea {
-            id: mouseArea
-            enabled: root.enabled
-            anchors.fill:  parent
+            id: gripMouseArea
+            anchors.fill: parent
+            hoverEnabled: true
+            onHoveredChanged: {
+                //console.log("slider.grip.hover mouseX: " + mouseX)
+                if (mouseX > 65535) //qt5.6 touch screen release finger becomes very large e.g. 0x7fffffff
+                    return
+                hovered = gripMouseArea.containsMouse
+            }
             drag {
                 target: grip
-                axis: Drag.XAxis
-                minimumX: -parent.width/2
-                maximumX: root.width - parent.width/2
+                axis: orientation === Qt.Horizontal ? Drag.XAxis : Drag.YAxis
+                minimumX: orientation === Qt.Horizontal ? -parent.radius : 0
+                maximumX: orientation === Qt.Horizontal ? root.width - parent.radius : 0
+                minimumY: orientation === Qt.Horizontal ? 0 : -parent.radius
+                maximumY: orientation === Qt.Horizontal ? 0 : root.height - parent.radius
             }
             onPositionChanged:  {
                 if (drag.active)
                     updatePosition()
             }
-            onReleased: {
-                updatePosition()
-            }
+            onReleased: updatePosition()
             function updatePosition() {
-                value = (grip.x + grip.width/2) / grip.parent.width
+                if (orientation === Qt.Horizontal)
+                    value = min + ((grip.x + grip.radius) / grip.parent.width)*(max-min)
+                else
+                    value = min + ((grip.y + grip.radius) / grip.parent.height)*(max-min)
             }
         }
-
         Rectangle {
             anchors.centerIn: parent
             width: root.gripSize
@@ -100,10 +111,5 @@ Rectangle {
             radius: width/2
             color: root.gripColor
         }
-    }
-
-    function displayedColor(c) {
-        var tint = Qt.rgba(c.r, c.g, c.b, 0.25)
-        return enabled ? c : Qt.tint(c, tint)
     }
 }

@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -59,10 +59,15 @@ void OutputSet::sendVideoFrame(const VideoFrame &frame)
 {
     if (mOutputs.isEmpty())
         return;
+    VideoFrame f(frame);
     foreach(AVOutput *output, mOutputs) {
         if (!output->isAvailable())
             continue;
-        ((VideoRenderer*)output)->receive(frame);
+        VideoRenderer *vo = static_cast<VideoRenderer*>(output);
+        // TODO: sort vo by supported formats when a new vo is added to reduce convertion
+        if (!vo->isSupported(frame.pixelFormat()))
+            f = frame.to(vo->preferredPixelFormat());
+        vo->receive(f);
     }
 }
 

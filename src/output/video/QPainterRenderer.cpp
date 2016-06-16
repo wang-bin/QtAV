@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -40,29 +40,56 @@ QPainterRenderer::QPainterRenderer(QPainterRendererPrivate &d)
 
 bool QPainterRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
-    return VideoFormat::isRGB(pixfmt);
+    return VideoFormat::imageFormatFromPixelFormat(pixfmt) != QImage::Format_Invalid;
 }
 
-bool QPainterRenderer::prepareFrame(const VideoFrame &frame)
+bool QPainterRenderer::preparePixmap(const VideoFrame &frame)
 {
     DPTR_D(QPainterRenderer);
-    /*
-     * QImage constructed from memory do not deep copy the data, data should be available throughout
-     * image's lifetime and not be modified. painting image happens in main thread, we must ensure the
-     * image data is not changed if not use the original frame size, so we need the lock.
-     * In addition, the data passed by ref, so even if we lock, the original data may changed in decoder
-     * (ImageConverter), so we need a copy of this data(not deep copy) to ensure the image's data not changes before it
-     * is painted.
-     * But if we use the fixed original frame size, the data address and size always the same, so we can
-     * avoid the lock and use the ref data directly and safely
-     */
     // already locked in a larger scope of receive()
-    //If use d.data.data() it will eat more cpu, deep copy?
-    d.video_frame = frame;
-    // DO NOT use frameData().data() because it's temp ptr while QImage does not deep copy the data
-    d.image = QImage((uchar*)frame.bits(), frame.width(), frame.height(), frame.bytesPerLine(), frame.imageFormat());
+    QImage::Format imgfmt = frame.imageFormat();
+    if (frame.constBits(0)) {
+        d.video_frame = frame;
+    } else {
+        if (imgfmt == QImage::Format_Invalid) {
+            d.video_frame = frame.to(VideoFormat::Format_RGB32);
+            imgfmt = d.video_frame.imageFormat();
+        } else {
+            d.video_frame = frame.to(frame.pixelFormat());
+        }
+    }
+    const bool swapRGB = (int)imgfmt < 0;
+    if (swapRGB) {
+        imgfmt = (QImage::Format)(-imgfmt);
+    }
+    // DO NOT use frameData().data() because it's temp ptr while d.image does not deep copy the data
+    QImage image = QImage((uchar*)d.video_frame.constBits(), d.video_frame.width(), d.video_frame.height(), d.video_frame.bytesPerLine(), imgfmt);
+    if (swapRGB)
+        image = image.rgbSwapped();
+    d.pixmap = QPixmap::fromImage(image);
     //Format_RGB32 is fast. see document
     return true;
+}
+
+void QPainterRenderer::drawBackground()
+{
+    DPTR_D(QPainterRenderer);
+    if (!d.painter)
+        return;
+    const QRegion bgRegion(backgroundRegion());
+    if (bgRegion.isEmpty())
+        return;
+#if 0
+    d.painter->save();
+    d.painter->setClipRegion(bgRegion);
+    d.painter->fillRect(QRect(QPoint(), rendererSize()), backgroundColor());
+    d.painter->restore();
+#else
+    const QVector<QRect> bg(bgRegion.rects());
+    foreach (const QRect& r, bg) {
+        d.painter->fillRect(r, backgroundColor());
+    }
+#endif
 }
 
 void QPainterRenderer::drawFrame()
@@ -70,19 +97,17 @@ void QPainterRenderer::drawFrame()
     DPTR_D(QPainterRenderer);
     if (!d.painter)
         return;
-    if (d.image.isNull()) {
-        d.image = QImage(rendererSize(), QImage::Format_RGB32);
-        d.image.fill(Qt::black); //maemo 4.7.0: QImage.fill(uint)
-    }
+    if (d.pixmap.isNull())
+        return;
     QRect roi = realROI();
     if (orientation() == 0) {
         //assume that the image data is already scaled to out_size(NOT renderer size!)
         if (roi.size() == d.out_rect.size()) {
-            d.painter->drawImage(d.out_rect.topLeft(), d.image, roi);
+            d.painter->drawPixmap(d.out_rect.topLeft(), d.pixmap, roi);
         } else {
-            d.painter->drawImage(d.out_rect, d.image, roi);
+            d.painter->drawPixmap(d.out_rect, d.pixmap, roi);
             //what's the difference?
-            //d.painter->drawImage(QPoint(), image.scaled(d.renderer_width, d.renderer_height));
+            //d.painter->drawPixmap(QPoint(), d.pixmap.scaled(d.renderer_width, d.renderer_height));
         }
         return;
     }
@@ -97,7 +122,7 @@ void QPainterRenderer::drawFrame()
         d.painter->scale((qreal)d.out_rect.width()/(qreal)rendererWidth(), (qreal)d.out_rect.height()/(qreal)rendererHeight());
     d.painter->rotate(orientation());
     d.painter->translate(-rendererWidth()/2, -rendererHeight()/2);
-    d.painter->drawImage(QRect(0, 0, rendererWidth(), rendererHeight()), d.image, roi);
+    d.painter->drawPixmap(QRect(0, 0, rendererWidth(), rendererHeight()), d.pixmap, roi);
     d.painter->restore();
 }
 

@@ -1,10 +1,16 @@
 <?xml version="1.0"?>
-<manifest package="org.qtav.qmlplayer" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="1.4" android:versionCode="1" android:installLocation="auto">
+<manifest package="org.qtav.qmlplayer" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="1.10.0" android:versionCode="5" android:installLocation="auto">
     <application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:label="QMLPlayer" android:icon="@drawable/icon">
-        <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|locale|fontScale|keyboard|keyboardHidden|navigation" android:name="org.qtproject.qt5.android.bindings.QtActivity" android:label="QtAV QMLPlayer" android:screenOrientation="unspecified" android:launchMode="singleTop">
+        <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|locale|fontScale|keyboard|keyboardHidden|navigation" android:name="org.qtav.qmlplayer.QMLPlayerActivity" android:label="QtAV QMLPlayer" android:screenOrientation="unspecified" android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="audio/*"/>
+                <data android:mimeType="video/*"/>
             </intent-filter>
             <meta-data android:name="android.app.lib_name" android:value="QMLPlayer"/>
             <meta-data android:name="android.app.qt_sources_resource_id" android:resource="@array/qt_sources"/>
@@ -54,4 +60,6 @@
 
 
 <!-- %%INSERT_FEATURES -->
+<uses-permission android:name="android.permission.INTERNET"/>
+<uses-permission android:name="android.permission.WAKE_LOCK"/>
 </manifest>

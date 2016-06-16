@@ -30,13 +30,14 @@ using namespace QtAV;
 
 PlayerWindow::PlayerWindow(QWidget *parent) : QWidget(parent)
 {
-    setWindowTitle("QtAV simple player example");
+    QtAV::Widgets::registerRenderers();
+    setWindowTitle(QString::fromLatin1("QtAV simple player example"));
     m_player = new AVPlayer(this);
     QVBoxLayout *vl = new QVBoxLayout();
     setLayout(vl);
-    m_vo = new VideoOutput(VideoRendererId_GLWidget2, this);
+    m_vo = new VideoOutput(this);
     if (!m_vo->widget()) {
-        QMessageBox::warning(0, "QtAV error", "Can not create video renderer");
+        QMessageBox::warning(0, QString::fromLatin1("QtAV error"), QString::fromLatin1("Can not create video renderer"));
         return;
     }
     m_player->setRenderer(m_vo);
@@ -50,12 +51,12 @@ PlayerWindow::PlayerWindow(QWidget *parent) : QWidget(parent)
     vl->addWidget(m_slider);
     QHBoxLayout *hb = new QHBoxLayout();
     vl->addLayout(hb);
-    m_openBtn = new QPushButton("Open");
-    m_captureBtn = new QPushButton("Capture video frame");
+    m_openBtn = new QPushButton(tr("Open"));
+    m_captureBtn = new QPushButton(tr("Capture video frame"));
     hb->addWidget(m_openBtn);
     hb->addWidget(m_captureBtn);
 
-    m_preview = new QLabel("Capture preview");
+    m_preview = new QLabel(tr("Capture preview"));
     m_preview->setFixedSize(200, 150);
     hb->addWidget(m_preview);
     connect(m_openBtn, SIGNAL(clicked()), SLOT(openMedia()));
@@ -67,7 +68,7 @@ PlayerWindow::PlayerWindow(QWidget *parent) : QWidget(parent)
 
 void PlayerWindow::openMedia()
 {
-    QString file = QFileDialog::getOpenFileName(0, "Open a video");
+    QString file = QFileDialog::getOpenFileName(0, tr( "Open a video"));
     if (file.isEmpty())
         return;
     m_player->play(file);
@@ -94,15 +95,15 @@ void PlayerWindow::updatePreview(const QImage &image)
 void PlayerWindow::capture()
 {
     //m_player->captureVideo();
-    m_player->videoCapture()->request();
+    m_player->videoCapture()->capture();
 }
 
 void PlayerWindow::onCaptureSaved(const QString &path)
 {
-    setWindowTitle("saved to: " + path);
+    setWindowTitle(tr("saved to: ") + path);
 }
 
 void PlayerWindow::onCaptureError()
 {
-    QMessageBox::warning(0, "QtAV video capture", "Failed to capture video frame");
+    QMessageBox::warning(0, QString::fromLatin1("QtAV video capture"), tr("Failed to capture video frame"));
 }

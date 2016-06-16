@@ -1,9 +1,9 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
     theoribeiro <theo@fictix.com.br>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,7 @@
 
 #include <QtAV/VideoRenderer.h>
 #include <QtQuick/QQuickItem>
+#include <QmlAV/QuickFilter.h>
 
 namespace QtAV {
 class QQuickItemRendererPrivate;
@@ -37,8 +38,15 @@ class QQuickItemRenderer : public QQuickItem, public VideoRenderer
     Q_PROPERTY(QObject* source READ source WRITE setSource NOTIFY sourceChanged)
     Q_PROPERTY(FillMode fillMode READ fillMode WRITE setFillMode NOTIFY fillModeChanged)
     Q_PROPERTY(int orientation READ orientation WRITE setOrientation NOTIFY orientationChanged)
+    Q_PROPERTY(QRectF contentRect READ contentRect NOTIFY contentRectChanged)
+    Q_PROPERTY(QRectF sourceRect READ sourceRect NOTIFY videoFrameSizeChanged)
     // regionOfInterest > sourceRect
     Q_PROPERTY(QRectF regionOfInterest READ regionOfInterest WRITE setRegionOfInterest NOTIFY regionOfInterestChanged)
+    Q_PROPERTY(qreal sourceAspectRatio READ sourceAspectRatio NOTIFY sourceAspectRatioChanged)
+    Q_PROPERTY(QSize videoFrameSize READ videoFrameSize NOTIFY videoFrameSizeChanged)
+    Q_PROPERTY(QSize frameSize READ videoFrameSize NOTIFY videoFrameSizeChanged)
+    Q_PROPERTY(QColor backgroundColor READ backgroundColor WRITE setBackgroundColor NOTIFY backgroundColorChanged)
+    Q_PROPERTY(QQmlListProperty<QuickVideoFilter> filters READ filters)
     Q_ENUMS(FillMode)
 public:
     enum FillMode {
@@ -48,8 +56,8 @@ public:
     };
 
     explicit QQuickItemRenderer(QQuickItem *parent = 0);
-    virtual VideoRendererId id() const;
-    virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const;
+    VideoRendererId id() const Q_DECL_OVERRIDE;
+    bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
 
     QObject *source() const;
     void setSource(QObject *source);
@@ -57,34 +65,51 @@ public:
     FillMode fillMode() const;
     void setFillMode(FillMode mode);
 
+    QRectF contentRect() const;
+    QRectF sourceRect() const;
+
+    Q_INVOKABLE QPointF mapPointToItem(const QPointF &point) const;
+    Q_INVOKABLE QRectF mapRectToItem(const QRectF &rectangle) const;
+    Q_INVOKABLE QPointF mapNormalizedPointToItem(const QPointF &point) const;
+    Q_INVOKABLE QRectF mapNormalizedRectToItem(const QRectF &rectangle) const;
+    Q_INVOKABLE QPointF mapPointToSource(const QPointF &point) const;
+    Q_INVOKABLE QRectF mapRectToSource(const QRectF &rectangle) const;
+    Q_INVOKABLE QPointF mapPointToSourceNormalized(const QPointF &point) const;
+    Q_INVOKABLE QRectF mapRectToSourceNormalized(const QRectF &rectangle) const;
+
     bool isOpenGL() const;
     void setOpenGL(bool o);
 
+    QQmlListProperty<QuickVideoFilter> filters();
 Q_SIGNALS:
     void sourceChanged();
     void fillModeChanged(QQuickItemRenderer::FillMode);
-    void orientationChanged();
-    void regionOfInterestChanged();
+    void orientationChanged() Q_DECL_OVERRIDE;
+    void contentRectChanged() Q_DECL_OVERRIDE;
+    void regionOfInterestChanged() Q_DECL_OVERRIDE;
     void openGLChanged();
-
+    void sourceAspectRatioChanged(qreal value) Q_DECL_OVERRIDE;
+    void videoFrameSizeChanged() Q_DECL_OVERRIDE;
+    void backgroundColorChanged() Q_DECL_OVERRIDE;
 protected:
-    virtual bool event(QEvent *e);
-    virtual void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry);
+    bool event(QEvent *e) Q_DECL_OVERRIDE;
+    void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry) Q_DECL_OVERRIDE;
 
-    virtual bool receiveFrame(const VideoFrame &frame);
-    virtual bool needUpdateBackground() const;
-    virtual bool needDrawFrame() const;
-    virtual void drawFrame();
-
+    bool receiveFrame(const VideoFrame &frame) Q_DECL_OVERRIDE;
+    void drawFrame() Q_DECL_OVERRIDE;
     // QQuickItem interface
-    virtual QSGNode *updatePaintNode(QSGNode *node, UpdatePaintNodeData *data);
+    QSGNode *updatePaintNode(QSGNode *node, UpdatePaintNodeData *data) Q_DECL_OVERRIDE;
 private slots:
     void handleWindowChange(QQuickWindow *win);
     void beforeRendering();
     void afterRendering();
 private:
-    virtual bool onSetRegionOfInterest(const QRectF& roi);
-    virtual bool onSetOrientation(int value);
+    bool onSetOrientation(int value) Q_DECL_OVERRIDE;
+
+    static void vf_append(QQmlListProperty<QuickVideoFilter> *property, QuickVideoFilter *value);
+    static int vf_count(QQmlListProperty<QuickVideoFilter> *property);
+    static QuickVideoFilter *vf_at(QQmlListProperty<QuickVideoFilter> *property, int index);
+    static void vf_clear(QQmlListProperty<QuickVideoFilter> *property);
 };
 typedef QQuickItemRenderer VideoRendererQQuickItem;
 }

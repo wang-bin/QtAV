@@ -1,6 +1,6 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,7 +23,7 @@
 #define QTAV_VERSION_H
 
 #define QTAV_MAJOR 1    //((QTAV_VERSION&0xff0000)>>16)
-#define QTAV_MINOR 5    //((QTAV_VERSION&0xff00)>>8)
+#define QTAV_MINOR 10    //((QTAV_VERSION&0xff00)>>8)
 #define QTAV_PATCH 0    //(QTAV_VERSION&0xff)
 
 

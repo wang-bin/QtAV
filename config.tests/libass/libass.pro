@@ -1,7 +1,9 @@
-CONFIG -= qt
-CONFIG += console
+include(../paths.pri)
 
 SOURCES += main.cpp
 
-LIBS += -lass
-include(../paths.pri)
+exists(../../contrib/capi/capi.pri) {
+  CONFIG = staticlib
+} else {
+  LIBS += -lass
+}

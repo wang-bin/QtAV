@@ -4,8 +4,10 @@ import "utils.js" as Utils
 Page {
     id: root
     title: qsTr("Media Information")
-    property var information
-    Item {
+    height: Math.min(maxHeight, scroll.contentHeight)
+    property var information: "unknow" //let it be defined
+    Flickable {
+        id: scroll
         anchors.fill: content
         Text {
             id: info
@@ -14,7 +16,7 @@ Page {
             font.pixelSize: Utils.kFontSize
             anchors.fill: parent
             onContentSizeChanged: {
-                root.height = contentHeight + Utils.scaled(64)
+                scroll.contentHeight = contentHeight + Utils.scaled(32)
             }
         }
     }
@@ -22,8 +24,12 @@ Page {
         console.log(information)
         var metaData = information.metaData
         var text = "<p>" + information.source + "</p>"
-        if (typeof metaData.duration != "undefined")
-            text += "<p>" + qsTr("Duration: ") + metaData.duration + " ms</p>"
+        if (typeof metaData.duration != "undefined") {
+            text += "<p>" + qsTr("Duration: ")
+            if (metaData.startTime > 0)
+                text += metaData.startTime + "+"
+            text += metaData.duration + " ms</p>"
+        }
         if (typeof metaData.size != "undefined")
             text += "<p>" + qsTr("Size: ") + Math.round(metaData.size/1024/1024*100)/100 + " M</p>"
         if (typeof metaData.title != "undefined")
@@ -49,17 +55,20 @@ Page {
 
         if (information.hasVideo) {
             text += "<h4>" + qsTr("Video") + "</h4>"
-                    + "<p>" + qsTr("Resolution") + ": " + metaData.resolution.width + "x" +  + metaData.resolution.height + "</p>"
-                    + "<p>" + qsTr("Codec") + ": " + metaData.videoCodec + "</p>"
-                    + "<p>" + qsTr("Frame rate") + ": " + Math.round(100*metaData.videoFrameRate)/100 + "</p>"
-                    + "<p>" + qsTr("Bit rate") + ": " + metaData.videoBitRate + "</p>"
+                    + "<p>" + qsTr("Resolution") + ": " + metaData.resolution.width + "x" +  + metaData.resolution.height
+                    + "</p><p>" + qsTr("Bit rate") + ": " + metaData.videoBitRate
+                    + "</p><p>" + qsTr("Codec") + ": " + metaData.videoCodec
+                    + "</p><p>" + qsTr("Pixel format") + ": " + metaData.pixelFormat
+                    + "</p><p>" + qsTr("Frames") + ": " + metaData.videoFrames + ", " + qsTr("Frame rate") + ": " + Math.round(100*metaData.videoFrameRate)/100 + "</p>"
         }
         if (information.hasAudio) {
             text += "<h4>" + qsTr("Audio") + "</h4>"
-                    + "<p>" + qsTr("Codec") + ": " + metaData.audioCodec + "</p>"
-                    + "<p>" + qsTr("Bit rate") + ": " + metaData.audioBitRate + "</p>"
-                    + "<p>" + qsTr("Sample rate") + ": " + metaData.sampleRate + "</p>"
-                    + "<p>" + qsTr("Channels") + ": " + metaData.channelCount + "</p>"
+                    + "<p>" + qsTr("Codec") + ": " + metaData.audioCodec
+                    + "</p><p>" + qsTr("Sample format") + ": " + metaData.sampleFormat
+                    + "</p><p>" + qsTr("Sample rate") + ": " + metaData.sampleRate
+                    + "</p><p>" + qsTr("Channels") + ": " + metaData.channelCount + " (" + metaData.channelLayout + ")"
+                    + "</p><p>" + qsTr("Bit rate") + ": " + metaData.audioBitRate
+            + "</p>"
         }
         info.text = text
     }

@@ -1,6 +1,6 @@
 /******************************************************************************
     QOptions: make command line options easy. https://github.com/wang-bin/qoptions
-    Copyright (C) 2011-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2011-2015 Wang Bin <wbsecg1@gmail.com>
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@ QOption::QOption()
 QOption::QOption(const char *name, const QVariant &defaultValue, Type type, const QString &description)
 :mType(type),mDescription(description),mDefaultValue(defaultValue)
 {
-	setName(name);
+    setName(QLatin1String(name));
 }
 
 QOption::QOption(const char *name, Type type, const QString &description)
@@ -35,7 +35,7 @@ QOption::QOption(const char *name, Type type, const QString &description)
 {
     //if (mType==QOption::NoToken)
       //  mValue = false;
-	setName(name);
+    setName(QLatin1String(name));
 }
 /*
 QOption::QOption(const char *name, const QVariant& value, Type type, const QString &description)
@@ -58,10 +58,10 @@ QString QOption::longName() const
 QString QOption::formatName() const
 {
     if (mLongName.isEmpty())
-        return "-" + mShortName;
+        return QLatin1String("-") + mShortName;
     if (mShortName.isEmpty())
-        return "--" + mLongName;
-    return "-" + mShortName + " [--" + mLongName + "]";
+        return QLatin1String("--") + mLongName;
+    return QString::fromLatin1("-%1 [--%2]").arg(mShortName).arg(mLongName);
 }
 
 QString QOption::description() const
@@ -107,14 +107,14 @@ QString QOption::help() const
 {
 	QString message = formatName();
 	if (type()==QOption::SingleToken)
-        message.append(" value");
+        message.append(QLatin1String(" value"));
 	else if (type()==QOption::MultiToken)
-        message.append(" value1 ... valueN");
+        message.append(QLatin1String(" value1 ... valueN"));
 
-	message = QString("%1").arg(message, -33);
+    message = QString::fromLatin1("%1").arg(message, -33);
 	message.append(mDescription);
     if (mDefaultValue.isValid() && !mDefaultValue.toString().isEmpty())
-        message.append(" (default: " + mDefaultValue.toString() + ")");
+        message.append(QLatin1String(" (default: ") + mDefaultValue.toString() + QLatin1String(")"));
     return message;
 }
 
@@ -125,39 +125,39 @@ bool QOption::operator <(const QOption& o) const
 
 static QString get_short(const QString& name)
 {
-    if (name.startsWith("--"))
+    if (name.startsWith(QLatin1String("--")))
         return QString();
-    if (name.startsWith("-"))
+    if (name.startsWith(QLatin1String("-")))
         return name.mid(1);
     return name;
 }
 
 static QString get_long(const QString& name)
 {
-    if (name.startsWith("--"))
+    if (name.startsWith(QLatin1String("--")))
         return name.mid(2);
-    if (name.startsWith("-"))
+    if (name.startsWith(QLatin1String("-")))
         return QString();
     return name;
 }
 
 void QOption::setName(const QString &name)
 {
-	int comma = name.indexOf(',');
+    int comma = name.indexOf(QLatin1Char(','));
 	if (comma>0) {
         QString name1 = name.left(comma);
         QString name2 = name.mid(comma+1);
-        if (name1.startsWith("--")) {
+        if (name1.startsWith(QLatin1String("--"))) {
             mLongName = name1.mid(2);
             mShortName = get_short(name2);
-        } else if (name1.startsWith("-")) {
+        } else if (name1.startsWith(QLatin1String("-"))) {
             mShortName = name1.mid(1);
             mLongName = get_long(name2);
         } else {
-            if (name2.startsWith("--")) {
+            if (name2.startsWith(QLatin1String("--"))) {
                 mLongName = name2.mid(2);
                 mShortName = name1;
-            } else if (name2.startsWith("-")) {
+            } else if (name2.startsWith(QLatin1String("-"))) {
                 mShortName = name2.mid(1);
                 mLongName = name1;
             } else {
@@ -166,9 +166,9 @@ void QOption::setName(const QString &name)
             }
         }
 	} else {
-        if (name.startsWith("--"))
+        if (name.startsWith(QLatin1String("--")))
             mLongName = name.mid(2);
-        else if (name.startsWith("-"))
+        else if (name.startsWith(QLatin1String("-")))
             mShortName = name.mid(1);
         else
             mShortName = name;
@@ -206,8 +206,8 @@ bool QOptions::parse(int argc, const char *const*argv)
     mOptions = mOptionGroupMap.keys();
 
     while (it != args.end()) {
-        if (it->startsWith("--")) {
-            int e = it->indexOf('=');
+        if (it->startsWith(QLatin1String("--"))) {
+            int e = it->indexOf(QLatin1Char('='));
             for (it_list = mOptions.begin(); it_list != mOptions.end(); ++it_list) {
                 if (it_list->longName() == it->mid(2,e-2)) {
                     if (it_list->type()==QOption::NoToken) {
@@ -231,12 +231,12 @@ bool QOptions::parse(int argc, const char *const*argv)
 				}
 			}
             if (it_list == mOptions.end()) {
-                qWarning() << "unknow option: " << *it;
+                qWarning() << "unknown option: " << *it;
                 result = false;
 				++it;
             }
-			//handle unknow option
-        } else if (it->startsWith('-')) {
+			//handle unknown option
+        } else if (it->startsWith(QLatin1Char('-'))) {
             for (it_list = mOptions.begin(); it_list != mOptions.end(); ++it_list) {
                 QString sname = it_list->shortName();
 				int sname_len = sname.length(); //usally is 1
@@ -262,13 +262,13 @@ bool QOptions::parse(int argc, const char *const*argv)
 				}
 			}
             if (it_list==mOptions.end()) {
-                qWarning() << "unknow option: " << *it;
+                qWarning() << "unknown option: " << *it;
                 result = false;
 				++it;
             }
-			//handle unknow option
+			//handle unknown option
         } else {
-            qWarning() << "unknow option: " << *it;
+            qWarning() << "unknown option: " << *it;
             ++it;
         }
 	}
@@ -364,15 +364,15 @@ QString QOptions::help() const
 
     QList<QOption>::ConstIterator it_op;
     for (it=groups.constBegin(); it!=groups.constEnd(); ++it) {
-        message.append("\n").append(*it);
+        message.append(QLatin1String("\n")).append(*it);
         QList<QOption> options = mOptionGroupMap.keys(*it);
         for (it_op=options.constBegin();it_op!=options.constEnd();++it_op)
-            message.append("\n  ").append(it_op->help());
+            message.append(QLatin1String("\n  ")).append(it_op->help());
 	}
     return message;
 }
 
 void QOptions::print() const
 {
-    qDebug() << help();
+    qDebug("%s", help().toUtf8().constData());
 }

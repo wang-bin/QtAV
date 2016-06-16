@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -21,33 +21,18 @@
 
 #include "OSDFilter.h"
 #include <QtAV/Statistics.h>
-#include <QtAV/private/Filter_p.h>
 #include <QtGui/QPainter>
 
-class OSDFilterPrivate : public VideoFilterPrivate
-{
-public:
-};
+OSDFilter::OSDFilter(QObject *parent)
+    : VideoFilter(parent)
+    , OSD()
+{}
 
-OSDFilter::OSDFilter(OSDFilterPrivate &d, QObject *parent):
-    VideoFilter(d, parent)
-{
-}
-
-OSDFilterQPainter::OSDFilterQPainter(QObject *parent):
-    OSDFilter(*new OSDFilterPrivate(), parent)
-{
-}
-
-void OSDFilterQPainter::process(Statistics *statistics, VideoFrame *frame)
+void OSDFilter::process(Statistics *statistics, VideoFrame *frame)
 {
     Q_UNUSED(frame);
     if (mShowType == ShowNone)
         return;
-    DPTR_D(VideoFilter);
-    QPainterFilterContext* ctx = static_cast<QPainterFilterContext*>(d.context);
-    if (!ctx)
-        return;
     //qDebug("ctx=%p tid=%p main tid=%p", ctx, QThread::currentThread(), qApp->thread());
-    ctx->drawPlainText(ctx->rect, Qt::AlignCenter, text(statistics));
+    context()->drawPlainText(context()->rect, Qt::AlignCenter, text(statistics));
 }

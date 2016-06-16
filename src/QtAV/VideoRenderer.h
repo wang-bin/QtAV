@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -25,32 +25,27 @@
 #include <QtCore/QByteArray>
 #include <QtCore/QSize>
 #include <QtCore/QRectF>
+#include <QtGui/QColor>
 #include <QtAV/AVOutput.h>
 #include <QtAV/VideoFrame.h>
-#include <QtAV/FactoryDefine.h>
 
 /*!
  * A bridge for VideoOutput(QObject based) and video renderer backend classes
  * Every public setter call it's virtual onSetXXX(...) which has default behavior.
  * While VideoOutput.onSetXXX(...) simply calls backend's setXXX(...) and return whether the result is desired.
  */
-struct AVCodecContext;
-struct AVFrame;
-class QImage;
-class QObject;
-class QPaintEvent;
-class QRect;
+QT_BEGIN_NAMESPACE
 class QWidget;
 class QWindow;
 class QGraphicsItem;
+QT_END_NAMESPACE
 
 namespace QtAV {
 
 typedef int VideoRendererId;
-class VideoRenderer;
-FACTORY_DECLARE(VideoRenderer)
-
+extern Q_AV_EXPORT VideoRendererId VideoRendererId_OpenGLWindow;
 class Filter;
+class OpenGLVideo;
 class VideoFormat;
 class VideoRendererPrivate;
 class Q_AV_EXPORT VideoRenderer : public AVOutput
@@ -65,20 +60,30 @@ public:
       , CustomAspectRation  //Use the ratio set by setOutAspectRatio(qreal). Mode will be set to this if that function is called
       //, AspectRatio4_3, AspectRatio16_9
     };
-    enum Quality {
+    enum Quality { //TODO: deprecated. simpily use int 0~100
         QualityDefault, //good
         QualityBest,
         QualityFastest
     };
 
+    template<class C>
+    static bool Register(VideoRendererId id, const char* name) { return Register(id, create<C>, name);}
+    static VideoRenderer* create(VideoRendererId id);
+    static VideoRenderer* create(const char* name);
+    /*!
+     * \brief next
+     * \param id NULL to get the first id address
+     * \return address of id or NULL if not found/end
+     */
+    static VideoRendererId* next(VideoRendererId* id = 0);
+    static const char* name(VideoRendererId id);
+    static VideoRendererId id(const char* name);
+
     VideoRenderer();
     virtual ~VideoRenderer();
     virtual VideoRendererId id() const = 0;
 
-    virtual bool receive(const VideoFrame& frame); //has default
-    //virtual void setVideoFormat(const VideoFormat& format); //has default
-    //VideoFormat& videoFormat();
-    //const VideoFormat& videoFormat() const;
+    bool receive(const VideoFrame& frame);
     /*!
      * \brief setPreferredPixelFormat
      * \param pixfmt
@@ -100,6 +105,13 @@ public:
     bool isPreferredPixelFormatForced() const;
     virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const = 0;
 
+    /*!
+     * \brief sourceAspectRatio
+     * The display aspect ratio of received video frame. 0 for an invalid frame.
+     * sourceAspectRatioChanged() (a signal for QObject renderers) will be called if the new frame has a different DAR.
+     */
+    qreal sourceAspectRatio() const;
+
     void setOutAspectRatioMode(OutAspectRatioMode mode);
     OutAspectRatioMode outAspectRatioMode() const;
     //If setOutAspectRatio(qreal) is used, then OutAspectRatioMode is CustomAspectRation
@@ -114,8 +126,8 @@ public:
     QSize rendererSize() const;
     int rendererWidth() const;
     int rendererHeight() const;
-    //geometry size of current video frame
-    QSize frameSize() const;
+    //geometry size of current video frame. can not use frameSize because qwidget use it
+    QSize videoFrameSize() const;
 
     /*!
      * \brief orientation
@@ -169,16 +181,12 @@ public:
      * \return default is 0. A QGraphicsItem subclass can return \a this
      */
     virtual QGraphicsItem* graphicsItem() { return 0; }
-
-    void enableDefaultEventFilter(bool e);
-    bool isDefaultEventFilterEnabled() const;
-
     /*!
      * \brief brightness, contrast, hue, saturation
      *  values range between -1.0 and 1.0, the default is 0.
      *  value is not changed if does not implementd and onChangingXXX() returns false.
      *  video widget/item will update after if onChangingXXX/setXXX returns true
-     * \return \a false if failed (may be onChangingXXX not implemented or return false)
+     * \return \a false if failed to set (may be onChangingXXX not implemented or return false)
      */
     qreal brightness() const;
     bool setBrightness(qreal brightness);
@@ -188,29 +196,42 @@ public:
     bool setHue(qreal hue);
     qreal saturation() const;
     bool setSaturation(qreal saturation);
+    QColor backgroundColor() const;
+    void setBackgroundColor(const QColor& c);
 
+    /*!
+     * \brief opengl
+     * Currently you can only use it to set custom shader OpenGLVideo.setUserShader()
+     */
+    virtual OpenGLVideo* opengl() const { return NULL;}
 protected:
     VideoRenderer(VideoRendererPrivate &d);
+    //TODO: batch drawBackground(color, region)=>loop drawBackground(color,rect)
     virtual bool receiveFrame(const VideoFrame& frame) = 0;
-    virtual bool needUpdateBackground() const;
-    //TODO: drawXXX() is pure virtual
-    //called in paintEvent before drawFrame() when required
+    QRegion backgroundRegion() const;
     virtual void drawBackground();
-    virtual bool needDrawFrame() const; //TODO: no virtual func. it's a solution for temporary
     //draw the current frame using the current paint engine. called by paintEvent()
+    // TODO: parameter VideoFrame
     virtual void drawFrame() = 0; //You MUST reimplement this to display a frame. Other draw functions are not essential
-    /*!
-     * This function is called whenever resizeRenderer() is called or aspect ratio is changed?
-     * You can reimplement it to recreate the offscreen surface.
-     * The default does nothing.
-     * NOTE: usually it is thread safe, because it is called in main thread resizeEvent,
-     * and the surface is only used by painting, which is usually in main thread too.
-     * If you are doing offscreen painting in other threads, pay attention to thread safe
-     */
-    virtual void resizeFrame(int width, int height);
     virtual void handlePaintEvent(); //has default. User don't have to implement it
+    virtual void updateUi(); // by default post an UpdateRequest event for window and UpdateLater event for widget to ensure ui update
 
-private: //used by VideoOutput class
+private: // property change. used as signals in subclasses. implemented by moc
+    virtual void sourceAspectRatioChanged(qreal) {}
+    virtual void outAspectRatioChanged() {}
+    virtual void outAspectRatioModeChanged() {}
+    virtual void orientationChanged() {}
+    virtual void videoRectChanged() {}
+    virtual void contentRectChanged() {}
+    virtual void regionOfInterestChanged() {}
+    virtual void videoFrameSizeChanged() {}
+    virtual void rendererSizeChanged() {}
+    virtual void brightnessChanged(qreal) {}
+    virtual void contrastChanged(qreal) {}
+    virtual void hueChanged(qreal) {}
+    virtual void saturationChanged(qreal) {}
+    virtual void backgroundColorChanged() {}
+private: // mainly used by VideoOutput class
     /*!
      * return false if value not changed. default is true
      */
@@ -235,8 +256,14 @@ private: //used by VideoOutput class
     virtual bool onSetContrast(qreal contrast);
     virtual bool onSetHue(qreal hue);
     virtual bool onSetSaturation(qreal saturation);
-    void updateUi();
+    virtual void onSetBackgroundColor(const QColor& color);
 private:
+    template<class C>
+    static VideoRenderer* create() {
+        return new C();
+    }
+    typedef VideoRenderer* (*VideoRendererCreator)();
+    static bool Register(VideoRendererId id, VideoRendererCreator, const char *name);
     friend class VideoOutput;
     //the size of decoded frame. get called in receiveFrame(). internal use only
     void setInSize(const QSize& s);

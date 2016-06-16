@@ -1,6 +1,6 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,7 +22,6 @@
 #ifndef QTAV_AVPLAYER_PRIVATE_H
 #define QTAV_AVPLAYER_PRIVATE_H
 
-#include <limits>
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/AVPlayer.h"
 #include "AudioThread.h"
@@ -39,6 +38,7 @@ public:
     Private();
     ~Private();
 
+    bool checkSourceChange();
     void updateNotifyInterval();
     void initStatistics();
     void initBaseStatistics();
@@ -46,10 +46,15 @@ public:
     void initAudioStatistics(int s);
     void initVideoStatistics(int s);
     void initSubtitleStatistics(int s);
+    QVariantList getTracksInfo(AVDemuxer* demuxer, AVDemuxer::StreamType st);
 
+    bool applySubtitleStream(int n, AVPlayer *player);
     bool setupAudioThread(AVPlayer *player);
     bool setupVideoThread(AVPlayer *player);
-
+    bool tryApplyDecoderPriority(AVPlayer *player);
+    // TODO: what if buffer mode changed during playback?
+    void updateBufferValue(PacketBuffer *buf);
+    void updateBufferValue();
     //TODO: addAVOutput()
     template<class Out>
     void setAVOutput(Out *&pOut, Out *pNew, AVThread *thread) {
@@ -94,29 +99,27 @@ public:
         }
     }
 
-
     bool auto_load;
     bool async_load;
     // can be QString, QIODevice*
     QVariant current_source, pendding_source;
     bool loaded; // for current source
     bool relative_time_mode;
-    AVFormatContext	*fmt_ctx; //changed when reading a packet
     qint64 media_start_pts; // read from media stream
     qint64 media_end;
-    /*
-     * unit: s. 0~1. stream's start time/duration(). or last position/duration() if change to new stream
-     * auto set to 0 if stop(). to stream start time if load()
-     *
-     * -1: used by play() to get current playing position
-     */
-    qint64 last_position; //last_pos
     bool reset_state;
     qint64 start_position, stop_position;
+    qint64 start_position_norm, stop_position_norm; // real position
     int repeat_max, repeat_current;
     int timer_id; //notify position change and check AB repeat range. active when playing
 
     int audio_track, video_track, subtitle_track;
+    QVariantList subtitle_tracks;
+    QString external_audio;
+    AVDemuxer audio_demuxer;
+    QVariantList audio_tracks, external_audio_tracks;
+    BufferMode buffer_mode;
+    qint64 buffer_value;
     //the following things are required and must be set not null
     AVDemuxer demuxer;
     AVDemuxThread *read_thread;
@@ -131,23 +134,24 @@ public:
     VideoCapture *vcapture;
     Statistics statistics;
     qreal speed;
-    bool ao_enabled;
     OutputSet *vos, *aos;
     QVector<VideoDecoderId> vc_ids;
-    QVector<AudioOutputId> ao_ids;
     int brightness, contrast, saturation;
 
     QVariantHash ac_opt, vc_opt;
 
     bool seeking;
     SeekType seek_type;
-    qint64 seek_target; // relative time if relativeTimeMode is true
     qint64 interrupt_timeout;
-    bool mute;
 
+    qreal force_fps;
     // timerEvent interval in ms. can divide 1000. depends on media duration, fps etc.
     // <0: auto compute internally, |notify_interval| is the real interval
     int notify_interval;
+    MediaStatus status; // status changes can be from demuxer or demux thread
+    AVPlayer::State state;
+    MediaEndAction end_action;
+    QMutex load_mutex;
 };
 
 } //namespace QtAV

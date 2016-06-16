@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -18,13 +18,13 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
-
 #ifndef QTAVWIDGETS_GLOBAL_H
 #define QTAVWIDGETS_GLOBAL_H
 
-#include <QtAV/VideoRendererTypes.h>
-
+#include <QtAV/VideoRenderer.h>
+#ifdef BUILD_QTAVWIDGETS_STATIC
+#define Q_AVWIDGETS_EXPORT
+#else
 #if defined(BUILD_QTAVWIDGETS_LIB)
 #  undef Q_AVWIDGETS_EXPORT
 #  define Q_AVWIDGETS_EXPORT Q_DECL_EXPORT
@@ -32,8 +32,13 @@
 #  undef Q_AVWIDGETS_EXPORT
 #  define Q_AVWIDGETS_EXPORT Q_DECL_IMPORT //only for vc?
 #endif
+#endif //BUILD_QTAVWIDGETS_STATIC
 #define Q_AVWIDGETS_PRIVATE_EXPORT Q_AVWIDGETS_EXPORT
-
+#if defined(BUILD_QTAVWIDGETS_LIB)
+#define QTAVWIDGETS_DEPRECATED
+#else
+#define QTAVWIDGETS_DEPRECATED Q_DECL_DEPRECATED
+#endif
 namespace QtAV {
 namespace Widgets {
 /*!
@@ -52,6 +57,7 @@ extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_GLWidget;
 extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_GDI;
 extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_Direct2D;
 extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_XV;
+extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_X11;
 extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_GLWidget2;
 extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_OpenGLWidget;
 //popup a dialog

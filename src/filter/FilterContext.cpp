@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/FilterContext.h"
+#include <QtGui/QFontMetrics>
 #include <QtGui/QImage>
 #include <QtGui/QPainter>
 #include <QtGui/QTextDocument>
@@ -35,6 +36,11 @@ VideoFilterContext *VideoFilterContext::create(Type t)
     case QtPainter:
         ctx = new QPainterFilterContext();
         break;
+#if QTAV_HAVE(X11)
+    case X11:
+        ctx = new X11FilterContext();
+        break;
+#endif
     default:
         break;
     }
@@ -58,7 +64,7 @@ VideoFilterContext::VideoFilterContext():
     font.setBold(true);
     font.setPixelSize(26);
     pen.setColor(Qt::white);
-    rect = QRect(32, 32, 0, 0); //TODO: why painting will above the visible area if the draw at (0, 0)?
+    rect = QRect(32, 32, 0, 0); //TODO: why painting will above the visible area if the draw at (0, 0)? ascent
 }
 
 VideoFilterContext::~VideoFilterContext()
@@ -132,8 +138,8 @@ void VideoFilterContext::shareFrom(VideoFilterContext *vctx)
     video_height = vctx->video_height;
 }
 
-QPainterFilterContext::QPainterFilterContext()
-    : doc(0)
+QPainterFilterContext::QPainterFilterContext() : VideoFilterContext()
+    , doc(0)
     , cvt(0)
 {}
 
@@ -149,11 +155,7 @@ QPainterFilterContext::~QPainterFilterContext()
     }
 }
 
-VideoFilterContext::Type QPainterFilterContext::type() const
-{
-    return VideoFilterContext::QtPainter;
-}
-
+// TODO: use drawPixmap?
 void QPainterFilterContext::drawImage(const QPointF &pos, const QImage &image, const QRectF& source, Qt::ImageConversionFlags flags)
 {
     if (!prepare())
@@ -180,7 +182,8 @@ void QPainterFilterContext::drawPlainText(const QPointF &pos, const QString &tex
 {
     if (!prepare())
         return;
-    painter->drawText(pos, text);
+    QFontMetrics fm(font);
+    painter->drawText(pos + QPoint(0, fm.ascent()), text);
     painter->restore();
 }
 
@@ -271,13 +274,12 @@ void QPainterFilterContext::initializeOnFrame(VideoFrame *vframe)
         paint_device = 0;
     }
     Q_ASSERT(video_width > 0 && video_height > 0);
-    // direct draw on frame data, so use VideoFrame::bits()
-    paint_device = new QImage((uchar*)vframe->bits(0), video_width, video_height, vframe->bytesPerLine(0), format.imageFormat());
+    // direct draw on frame data, so use VideoFrame::constBits()
+    paint_device = new QImage((uchar*)vframe->constBits(0), video_width, video_height, vframe->bytesPerLine(0), format.imageFormat());
     if (!painter)
         painter = new QPainter();
     own_painter = true;
     own_paint_device = true; //TODO: what about renderer is not a widget?
     painter->begin((QImage*)paint_device);
 }
-
 } //namespace QtAV

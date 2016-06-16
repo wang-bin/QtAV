@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2013-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -25,13 +25,7 @@
 #include <QtAV/QtAV_Global.h>
 #include <QtCore/QHash>
 #include <QtCore/QTime>
-#include <QtCore/QQueue>
 #include <QtCore/QSharedData>
-
-/*
- * time unit is s
- * TODO: frame counter, frame droped. see VLC
- */
 
 /*!
  * values from functions are dynamically calculated
@@ -57,19 +51,17 @@ public:
         bool available;
         QString codec, codec_long;
         QString decoder;
+        QString decoder_detail;
         QTime current_time, total_time, start_time;
         int bit_rate;
         qint64 frames;
+        qreal frame_rate; // average fps stored in media stream information
         //union member with ctor, dtor, copy ctor only works in c++11
         /*union {
             audio_only audio;
             video_only video;
         } only;*/
         QHash<QString, QString> metadata;
-    private:
-        class Private : public QSharedData {
-        };
-        QExplicitlySharedDataPointer<Private> d;
     } audio, video; //init them
 
     //from AVCodecContext
@@ -90,20 +82,18 @@ public:
          * Used by some WAV based audio codecs.
          */
         int block_align;
-    private:
-        class Private : public QSharedData {
-        };
-        QExplicitlySharedDataPointer<Private> d;
     } audio_only;
     //from AVCodecContext
     class Q_AV_EXPORT VideoOnly {
     public:
         //union member with ctor, dtor, copy ctor only works in c++11
         VideoOnly();
+        VideoOnly(const VideoOnly&);
+        VideoOnly& operator =(const VideoOnly&);
+        ~VideoOnly();
         // compute from pts history
         qreal currentDisplayFPS() const;
         qreal pts() const; // last pts
-        qreal frame_rate; // average fps stored in media stream information
 
         int width, height;
         /**
@@ -116,14 +106,10 @@ public:
          */
         int gop_size;
         QString pix_fmt;
-        void frameDisplayed(qreal pts); // used to compute currentDisplayFPS()
+        /// return current absolute time (seconds since epcho
+        qint64 frameDisplayed(qreal pts); // used to compute currentDisplayFPS()
     private:
-        class Private : public QSharedData {
-        public:
-            Private();
-            QQueue<qreal> history;
-            qreal pts;
-        };
+        class Private;
         QExplicitlySharedDataPointer<Private> d;
     } video_only;
 };
