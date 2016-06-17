@@ -1,9 +1,9 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
     Initial QAVIOContext.cpp code is from Stefan Ladage <sladage@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -193,10 +193,8 @@ void MediaIO::release()
     DPTR_D(MediaIO);
     if (!d.ctx)
         return;
-    d.ctx->opaque = 0; //in avio_close() opaque is URLContext* and will call ffurl_close()
-    //d.ctx->buffer = 0; //already released by ffio_rewind_with_probe_data; may be another context was freed
-    avio_close(d.ctx); //avio_closep defined since ffmpeg1.1
-    d.ctx = 0;
+    // avio_close is called by avformat_close_input. here we only allocate but no open
+    av_freep(&d.ctx->buffer);
+    av_freep(&d.ctx);
 }
-
 } //namespace QtAV
