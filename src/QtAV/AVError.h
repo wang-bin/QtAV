@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2013)
@@ -18,7 +18,6 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
 #ifndef QTAV_AVERROR_H
 #define QTAV_AVERROR_H
 
@@ -37,8 +36,10 @@ public:
 
         OpenTimedout,
         OpenError,
-        FindStreamInfoTimedout,
-        FindStreamInfoError,
+        ParseStreamTimedOut,
+        FindStreamInfoTimedout = ParseStreamTimedOut,
+        ParseStreamError,
+        FindStreamInfoError = ParseStreamError,
         StreamNotFound, //a,v,s?
         ReadTimedout,
         ReadError,

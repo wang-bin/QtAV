@@ -18,7 +18,6 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/MediaIO.h"
 #include "QtAV/private/AVCompat.h"
@@ -161,7 +160,7 @@ public:
             if (handler->mAction == Open) {
                 ec = AVError::OpenTimedout;
             } else if (handler->mAction == FindStreamInfo) {
-                ec = AVError::FindStreamInfoTimedout;
+                ec = AVError::ParseStreamTimedOut;
             } else if (handler->mAction == Read) {
                 ec = AVError::ReadTimedout;
             }
@@ -313,7 +312,7 @@ public:
     StreamInfo astream, vstream, sstream;
 
     AVDemuxer::InterruptHandler *interrupt_hanlder;
-    QMutex mutex;
+    QMutex mutex; //TODO: remove?
 };
 
 AVDemuxer::AVDemuxer(QObject *parent)
@@ -469,8 +468,9 @@ bool AVDemuxer::readFrame()
         //qWarning("[AVDemuxer] unknown stream index: %d", stream);
         return false;
     }
+    // TODO: v4l2 copy
     d->pkt = Packet::fromAVPacket(&packet, av_q2d(d->format_ctx->streams[d->stream]->time_base));
-    av_free_packet(&packet); //important!
+    av_packet_unref(&packet); //important!
     d->eof = false;
     if (d->pkt.pts > qreal(duration())/1000.0) {
         d->max_pts = d->pkt.pts;
@@ -806,7 +806,7 @@ bool AVDemuxer::load()
 
     if (ret < 0) {
         setMediaStatus(InvalidMedia);
-        AVError::ErrorCode ec(AVError::FindStreamInfoError);
+        AVError::ErrorCode ec(AVError::ParseStreamError);
         QString msg(tr("failed to find stream info"));
         handleError(ret, &ec, msg);
         qWarning() << "Can't find stream info: " << msg;

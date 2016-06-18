@@ -1,6 +1,8 @@
 /******************************************************************************
-    AVError.cpp: description
-    Copyright (C) 2013-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+
+*   This file is part of QtAV (from 2013)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -15,16 +17,7 @@
     You should have received a copy of the GNU Lesser General Public
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
-
-    Alternatively, this file may be used under the terms of the GNU
-    General Public License version 3.0 as published by the Free Software
-    Foundation and appearing in the file LICENSE.GPL included in the
-    packaging of this file.  Please review the following information to
-    ensure the GNU General Public License version 3.0 requirements will be
-    met: http://www.gnu.org/copyleft/gpl.html.
 ******************************************************************************/
-
-
 #include "QtAV/AVError.h"
 #include "QtAV/private/AVCompat.h"
 #ifndef QT_NO_DEBUG_STREAM
@@ -148,8 +141,11 @@ QString AVError::string() const
         case OpenTimedout:
             errStr = QObject::tr("Open timed out");
             break;
-        case FindStreamInfoError:
-            errStr = QObject::tr("Could not find stream info");
+        case ParseStreamTimedOut:
+            errStr = QObject::tr("Parse stream timed out");
+            break;
+        case ParseStreamError:
+            errStr = QObject::tr("Parse stream error");
             break;
         case StreamNotFound:
             errStr = QObject::tr("Stream not found");
