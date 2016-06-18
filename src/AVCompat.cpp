@@ -320,7 +320,56 @@ void av_packet_free_side_data(AVPacket *pkt)
     pkt->side_data_elems = 0;
 }
 #endif
+#if !AV_MODULE_CHECK(LIBAVCODEC, 55, 34, 1, 39, 101)
+int av_packet_ref(AVPacket *dst, const AVPacket *src)
+{
+#if QTAV_USE_FFMPEG(LIBAVCODEC)
+    return av_copy_packet(dst, src);
+#else // libav <=11 has no av_copy_packet
+#define DUP_DATA(dst, src, size, padding)                               \
+    do {                                                                \
+        void *data;                                                     \
+        if (padding) {                                                  \
+            if ((unsigned)(size) >                                      \
+                (unsigned)(size) + FF_INPUT_BUFFER_PADDING_SIZE)        \
+                goto failed_alloc;                                      \
+            data = av_malloc(size + FF_INPUT_BUFFER_PADDING_SIZE);      \
+        } else {                                                        \
+            data = av_malloc(size);                                     \
+        }                                                               \
+        if (!data)                                                      \
+            goto failed_alloc;                                          \
+        memcpy(data, src, size);                                        \
+        if (padding)                                                    \
+            memset((uint8_t *)data + size, 0,                           \
+                   FF_INPUT_BUFFER_PADDING_SIZE);                       \
+        dst = data;                                                     \
+    } while (0)
 
+    *dst = *src;
+    dst->data      = NULL;
+    dst->side_data = NULL;
+    DUP_DATA(dst->data, src->data, dst->size, 1);
+    dst->destruct = av_destruct_packet;
+    if (dst->side_data_elems) {
+        int i;
+        DUP_DATA(dst->side_data, src->side_data,
+                dst->side_data_elems * sizeof(*dst->side_data), 0);
+        memset(dst->side_data, 0,
+                dst->side_data_elems * sizeof(*dst->side_data));
+        for (i = 0; i < dst->side_data_elems; i++) {
+            DUP_DATA(dst->side_data[i].data, src->side_data[i].data, src->side_data[i].size, 1);
+            dst->side_data[i].size = src->side_data[i].size;
+            dst->side_data[i].type = src->side_data[i].type;
+        }
+    }
+    return 0;
+failed_alloc:
+    av_destruct_packet(dst);
+    return AVERROR(ENOMEM);
+#endif
+}
+#endif
 #if !AV_MODULE_CHECK(LIBAVCODEC, 55, 52, 0, 63, 100)
 void avcodec_free_context(AVCodecContext **avctx)
 {

@@ -1,5 +1,5 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
+    QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
@@ -23,9 +23,6 @@
 #include "QtAV/private/AVCompat.h"
 #include "utils/Logger.h"
 
-//ffmpeg2.1 libav10
-#define AVPACKET_REF AV_MODULE_CHECK(LIBAVCODEC, 55, 34, 1, 39, 101)
-
 namespace QtAV {
 namespace {
 static const struct RegisterMetaTypes {
@@ -44,7 +41,6 @@ public:
     {
         av_init_packet(&avpkt);
     }
-#if AVPACKET_REF
     PacketPrivate(const PacketPrivate& o)
         : QSharedData(o)
         , initialized(o.initialized)
@@ -55,11 +51,6 @@ public:
      ~PacketPrivate() {
         av_packet_unref(&avpkt);
     }
-#else
-    ~PacketPrivate() {
-        av_free_packet(&avpkt); // free old side data and ref
-    }
-#endif
     bool initialized;
     AVPacket avpkt;
 };
@@ -135,33 +126,9 @@ bool Packet::fromAVPacket(Packet* pkt, const AVPacket *avpkt, double time_base)
     pkt->d = QSharedDataPointer<PacketPrivate>(new PacketPrivate());
     pkt->d->initialized = true;
     AVPacket *p = &pkt->d->avpkt;
-#if AVPACKET_REF
     av_packet_ref(p, (AVPacket*)avpkt);  //properties are copied internally
     // add ref without copy, bytearray does not copy either. bytearray options linke remove() is safe. omit FF_INPUT_BUFFER_PADDING_SIZE
     pkt->data = QByteArray::fromRawData((const char*)p->data, p->size);
-#else
-    if (avpkt->data) {
-        // copy packet data. packet will be reset after AVDemuxer.readFrame() and in next av_read_frame
-#if NO_PADDING_DATA
-        pkt->data = QByteArray((const char*)avpkt->data, avpkt->size);
-#else
-    /*!
-      larger than the actual read bytes because some optimized bitstream readers read 32 or 64 bits at once and could read over the end.
-      The end of the input buffer avpkt->data should be set to 0 to ensure that no overreading happens for damaged MPEG streams
-     */
-        pkt->data.reserve(avpkt->size + FF_INPUT_BUFFER_PADDING_SIZE);
-        pkt->data.resize(avpkt->size);
-        // code in ffmpe & mpv copy avpkt->size and set padding data to 0
-        memcpy(pkt->data.data(), avpkt->data, avpkt->size);
-        memset((char*)pkt->data.constData() + avpkt->size, 0, FF_INPUT_BUFFER_PADDING_SIZE);
-#endif //NO_PADDING_DATA
-    }
-    av_packet_copy_props(p, avpkt);
-    if (!pkt->data.isEmpty()) {
-        p->data = (uint8_t*)pkt->data.constData();
-        p->size = pkt->data.size();
-    }
-#endif //AVPACKET_REF
     // QtAV always use ms (1/1000s) and s. As a result no time_base is required in Packet
     p->pts = pkt->pts * 1000.0;
     p->dts = pkt->dts * 1000.0;

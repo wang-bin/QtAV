@@ -388,6 +388,11 @@ int av_packet_copy_props(AVPacket *dst, const AVPacket *src);
 #if !LIBAV_MODULE_CHECK(LIBAVCODEC, 55, 34, 1) && !FFMPEG_MODULE_CHECK(LIBAVCODEC, 55, 39, 100)
 void av_packet_free_side_data(AVPacket *pkt);
 #endif
+//ffmpeg2.1 libav10
+#if !AV_MODULE_CHECK(LIBAVCODEC, 55, 34, 1, 39, 101)
+int av_packet_ref(AVPacket *dst, const AVPacket *src);
+#define av_packet_unref(pkt) av_free_packet(pkt)
+#endif
 
 #if !AV_MODULE_CHECK(LIBAVCODEC, 55, 52, 0, 63, 100)
 void avcodec_free_context(AVCodecContext **avctx);
