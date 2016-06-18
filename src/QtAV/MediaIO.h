@@ -21,6 +21,7 @@
 #ifndef QTAV_MediaIO_H
 #define QTAV_MediaIO_H
 
+#include <stdio.h> //SEEK_SET
 #include <QtAV/QtAV_Global.h>
 #include <QtCore/QStringList>
 #include <QtCore/QObject>
