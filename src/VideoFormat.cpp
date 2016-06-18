@@ -36,10 +36,13 @@ extern "C" {
 #else
 #define PIXFMT_NE(B, L) VideoFormat::Format_##L
 #endif
-
+// ffmpeg3.0 151aa2e/ libav>11 2268db2
+#if AV_MODULE_CHECK(LIBAVUTIL, 55, 0, 0, 0, 100)
+#define DESC_VAL(X) (X)
+#else
+#define DESC_VAL(X) (X##_minus1 + 1)
+#endif
 namespace QtAV {
-
-// TODO: default ctor, dtor, copy ctor required by implicit sharing?
 class VideoFormatPrivate : public QSharedData
 {
 public:
@@ -149,18 +152,18 @@ private:
         bpp = 0;
         bpp_pad = 0;
         //libavutil55: depth, step, offset
-        bpc = pixdesc->comp[0].depth_minus1+1;
+        bpc = DESC_VAL(pixdesc->comp[0].depth);
         const int log2_pixels = pixdesc->log2_chroma_w + pixdesc->log2_chroma_h;
         int steps[4];
         memset(steps, 0, sizeof(steps));
         for (int c = 0; c < pixdesc->nb_components; c++) {
             const AVComponentDescriptor *comp = &pixdesc->comp[c];
             int s = c == 1 || c == 2 ? 0 : log2_pixels; //?
-            bpps[comp->plane] += (comp->depth_minus1 + 1);
-            steps[comp->plane] = (comp->step_minus1 + 1) << s;
+            bpps[comp->plane] += DESC_VAL(comp->depth);
+            steps[comp->plane] = DESC_VAL(comp->step) << s;
             channels[comp->plane] += 1;
-            bpp += (comp->depth_minus1 + 1) << s;
-            if (comp->depth_minus1+1 != bpc)
+            bpp += DESC_VAL(comp->depth) << s;
+            if (DESC_VAL(comp->depth) != bpc)
                 bpc = 0;
         }
         for (int i = 0; i < planes; ++i) {
