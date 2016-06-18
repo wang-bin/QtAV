@@ -324,7 +324,7 @@ void av_packet_free_side_data(AVPacket *pkt)
 int av_packet_ref(AVPacket *dst, const AVPacket *src)
 {
 #if QTAV_USE_FFMPEG(LIBAVCODEC)
-    return av_copy_packet(dst, src);
+    return av_copy_packet(dst, const_cast<AVPacket*>(src)); // not const in these versions
 #else // libav <=11 has no av_copy_packet
 #define DUP_DATA(dst, src, size, padding)                               \
     do {                                                                \

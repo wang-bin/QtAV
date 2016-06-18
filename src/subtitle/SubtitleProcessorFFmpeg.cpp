@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -306,7 +306,7 @@ SubtitleFrame SubtitleProcessorFFmpeg::processLine(const QByteArray &data, qreal
     int got_subtitle = 0;
     int ret = avcodec_decode_subtitle2(codec_ctx, &sub, &got_subtitle, &packet);
     if (ret < 0 || !got_subtitle) {
-        av_free_packet(&packet);
+        av_packet_unref(&packet);
         avsubtitle_free(&sub);
         return SubtitleFrame();
     }
@@ -335,7 +335,7 @@ SubtitleFrame SubtitleProcessorFFmpeg::processLine(const QByteArray &data, qreal
             break;
         }
     }
-    av_free_packet(&packet);
+    av_packet_unref(&packet);
     avsubtitle_free(&sub);
     return frame;
 }
