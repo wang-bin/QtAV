@@ -22,6 +22,7 @@
 #include "opengl/OpenGLHelper.h"
 #include <QtCore/QRegExp>
 #include <QtCore/QStringList>
+#include <QtCore/QVariant>
 #include "utils/Logger.h"
 namespace QtAV {
 struct uniform_type_name {
