@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2015)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -48,7 +48,7 @@ void AVEncoder::setCodecName(const QString &name)
     if (d.codec_name == name)
         return;
     d.codec_name = name;
-    emit codecNameChanged();
+    Q_EMIT codecNameChanged();
 }
 
 QString AVEncoder::codecName() const

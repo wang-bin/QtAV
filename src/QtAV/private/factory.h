@@ -1,6 +1,6 @@
 /******************************************************************************
     Factory: factory template
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -66,13 +66,12 @@ Class& Loki::Singleton<Class>::Instance()
     T* T::create(const char* name) { return T::create(T::id(name));} \
     T##Id* T::next(T##Id *id) { \
         const std::vector<T##Id>& ids = T##Factory::Instance().registeredIds(); \
-        if (!id) return (T##Id*)&ids[0];  DBG(#T "::next(%p)\n", id);\
+        if (!id) return (T##Id*)&ids[0]; \
         T##Id *id0 = (T##Id*)&ids[0], *id1 = (T##Id*)&ids[ids.size() - 1]; \
         if (id >= id0 && id < id1) return id + 1; \
         if (id == id1) return NULL; \
         std::vector<T##Id>::const_iterator it = std::find(ids.begin(), ids.end(), *id); \
         if (it == ids.end()) return NULL; \
-    DBG(#T "::next(%p) found\n", id); \
         return (T##Id*)&*(it++); \
     } \
     T##Id T::id(const char* name) { DBG(#T "::id(\"%s\")\n", name); return T##Factory::Instance().id(name, false);} \

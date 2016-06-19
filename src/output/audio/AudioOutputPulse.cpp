@@ -1,8 +1,8 @@
 /******************************************************************************
-    QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2014-2015 Wang Bin <wbsecg1@gmail.com>
+    QtAV:  Multimedia framework based on Qt and FFmpeg
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
-*   This file is part of QtAV
+*   This file is part of QtAV (from 2014)
 
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -322,7 +322,7 @@ bool AudioOutputPulse::init(const AudioFormat &format)
     ba.tlength = PA_STREAM_ADJUST_LATENCY;//(uint32_t)-1; // ?
     ba.prebuf = 1;//(uint32_t)-1; // play as soon as possible
     ba.minreq = (uint32_t)-1;
-    //ba.fragsize = (uint32_t)-1;
+    //ba.fragsize = (uint32_t)-1; //latency
     // PA_STREAM_NOT_MONOTONIC?
     pa_stream_flags_t flags = pa_stream_flags_t(PA_STREAM_NOT_MONOTONIC|PA_STREAM_INTERPOLATE_TIMING|PA_STREAM_AUTO_TIMING_UPDATE);
     if (pa_stream_connect_playback(stream, NULL /*sink*/, &ba, flags, NULL, NULL) < 0) {

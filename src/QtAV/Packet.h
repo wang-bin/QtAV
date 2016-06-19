@@ -69,7 +69,6 @@ public:
     qint64 position; // position in source file byte stream
 
 private:
-    // TODO: implicity shared. can not use QSharedData
     // we must define  default/copy ctor, dtor and operator= so that we can provide only forward declaration of PacketPrivate
     mutable QSharedDataPointer<PacketPrivate> d;
 };
