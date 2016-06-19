@@ -10,7 +10,7 @@
   <Identity
     Name=\"org.qtav.qmlplayer\"
     Publisher=\"CN=930FB10A-C50C-4801-84BA-255229D27D44\"
-    Version=\"1.10.0.0\"
+    Version=\"1.11.0.0\"
     ProcessorArchitecture=\"$$lower($$VCPROJ_ARCH)\" /> <!--replaced by qmake-->
   <mp:PhoneIdentity
     PhoneProductId=\"e556656c-d8e8-49f9-8148-26506e94575a\"
@@ -48,7 +48,7 @@
           <uap:FileTypeAssociation Name=\"qmlplayer\"> <!-- lower case-->
             <uap:DisplayName>QtAV QMLPlayer</uap:DisplayName>
             <uap:InfoTip>QtAV media player</uap:InfoTip>
-            <uap:Logo>assets\logo_store.png</uap:Logo>
+            <uap:Logo>assets/logo_store.png</uap:Logo>
             <uap:EditFlags AlwaysUnsafe=\"true\" />
             <uap:SupportedFileTypes>
               <uap:FileType>.3gp</uap:FileType>

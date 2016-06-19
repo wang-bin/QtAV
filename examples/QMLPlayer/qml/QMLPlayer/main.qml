@@ -105,6 +105,8 @@ Rectangle {
             }
         }
         onSourceChanged: {
+            videoOut.zoom = 1
+            videoOut.regionOfInterest = Qt.rect(0, 0, 0, 0)
             msg.info("url: " + source)
         }
 
