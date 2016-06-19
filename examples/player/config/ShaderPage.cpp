@@ -43,9 +43,9 @@ ShaderPage::ShaderPage(QWidget *parent)
     m_sample = new QTextEdit();
     //m_sample->setMaximumWidth(mw);
     m_sample->setMaximumHeight(mw/6);
-    m_sample->setToolTip(tr("vec4 sample2d(sampler2D tex, vec2 pos, int p)"));
+    m_sample->setToolTip(QLatin1String("vec4 sample2d(sampler2D tex, vec2 pos, int p)"));
     gl->addWidget(m_sample);
-    gl->addWidget(new QLabel(tr("Fragment shader RGB post process code")));
+    gl->addWidget(new QLabel(QLatin1String("Fragment shader RGB post process code")));
     m_pp = new QTextEdit();
     //m_pp->setMaximumWidth(mw);
     m_pp->setMaximumHeight(mw/6);

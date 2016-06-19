@@ -589,12 +589,12 @@
 <context>
     <name>main</name>
     <message>
-        <location filename="../qml/QMLPlayer/main.qml" line="190"/>
+        <location filename="../qml/QMLPlayer/main.qml" line="192"/>
         <source>Subtitle</source>
         <translation>字幕</translation>
     </message>
     <message>
-        <location filename="../qml/QMLPlayer/main.qml" line="559"/>
+        <location filename="../qml/QMLPlayer/main.qml" line="561"/>
         <source>Open a URL</source>
         <translation>打开URL</translation>
     </message>

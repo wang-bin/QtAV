@@ -93,7 +93,7 @@
     </message>
     <message>
         <source>Could not find stream info</source>
-        <translation>无法获得视频信息</translation>
+        <translation type="vanished">无法获得视频信息</translation>
     </message>
     <message>
         <source>Stream not found</source>
@@ -176,10 +176,6 @@
         <translation>优化拷贝</translation>
     </message>
     <message>
-        <source>LazyCopy</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>codecName</source>
         <translation>编码</translation>
     </message>
@@ -199,6 +195,14 @@
     <message>
         <source>format</source>
         <translation>格式</translation>
+    </message>
+    <message>
+        <source>Parse stream timed out</source>
+        <translation>分析流超时</translation>
+    </message>
+    <message>
+        <source>Parse stream error</source>
+        <translation>分析流错误</translation>
     </message>
 </context>
 <context>
@@ -250,10 +254,6 @@
         <translation>零拷贝: 无GPU到系统内存的拷贝. 直接渲染GPU上已解码的数据</translation>
     </message>
     <message>
-        <source>DirectCopy: copy back to host memory but video frames use the same host memory address and maybe not safe</source>
-        <translation>直接拷贝: 拷贝至系统内存但是可能不安全</translation>
-    </message>
-    <message>
         <source>GenericCopy: copy back to host memory and each video frame</source>
         <translation>普通拷贝: 每帧拷贝至系统内存</translation>
     </message>
@@ -261,27 +261,42 @@
         <source>Decoding surfaces</source>
         <translation>解码表面</translation>
     </message>
+    <message>
+        <source>DirectCopy: copy back to host memory but video frames and map to GL texture</source>
+        <translation>直接拷贝: 拷贝到主存后立即上传为OpenGL纹理</translation>
+    </message>
+</context>
+<context>
+    <name>QtAV::VideoDecoderD3D</name>
+    <message>
+        <source>Decoding surfaces</source>
+        <translation>解码表面</translation>
+    </message>
+    <message>
+        <source>0: auto</source>
+        <translation>0: 自动</translation>
+    </message>
 </context>
 <context>
     <name>QtAV::VideoDecoderDXVA</name>
     <message>
         <source>0: auto</source>
-        <translation>0: 自动</translation>
+        <translation type="vanished">0: 自动</translation>
     </message>
     <message>
         <source>Decoding surfaces</source>
-        <translation>解码表面</translation>
+        <translation type="vanished">解码表面</translation>
     </message>
 </context>
 <context>
     <name>QtAV::VideoDecoderFFmpeg</name>
     <message>
         <source>Skipping the loop filter (aka deblocking) usually has determinal effect on quality. However it provides a big speedup for hi definition streams</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Force skipping of idct to speed up decoding for frame types (-1=None, 0=Default, 1=B-frames, 2=P-frames, 3=B+P frames, 4=all frames)</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Force skipping frames for speed up decoding.</source>
@@ -311,10 +326,6 @@
         <translation>未对所有编解码实现</translation>
     </message>
     <message>
-        <source>LazyCopy: no explicitly additional copy</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>OptimizedCopy: copy from USWC memory optimized by SSE4.1</source>
         <translation>优化拷贝: 使用SSE4.1进行USWC拷贝</translation>
     </message>
@@ -333,6 +344,10 @@
     <message>
         <source>1: single thread decoding</source>
         <translation>1: 单线程解码</translation>
+    </message>
+    <message>
+        <source>Multithread decoding may crash</source>
+        <translation>多线程解码可能会崩溃</translation>
     </message>
 </context>
 <context>
@@ -372,20 +387,24 @@ OSX &lt; 10.7只支持UYVY, BGRA and YUV420p</translation>
         <translation>与OpenGL交互</translation>
     </message>
     <message>
-        <source>CVPixelBuffer: OSX+iOS</source>
-        <translation></translation>
-    </message>
-    <message>
         <source>CVOpenGLES: iOS, no copy, fast</source>
         <translation>CVOpenGLES: iOS, 无拷贝, 快</translation>
     </message>
     <message>
         <source>IOSurface: OSX, no copy, fast</source>
-        <translation>IOSurface: OSX, 无拷贝, 快</translation>
+        <translation type="vanished">IOSurface: OSX, 无拷贝, 快</translation>
     </message>
     <message>
         <source>Auto: choose the fastest</source>
         <translation>Auto: 选择最快的</translation>
+    </message>
+    <message>
+        <source>CVPixelBuffer: macOS+iOS</source>
+        <translation></translation>
+    </message>
+    <message>
+        <source>IOSurface: macOS, no copy, fast</source>
+        <translation></translation>
     </message>
 </context>
 </TS>
