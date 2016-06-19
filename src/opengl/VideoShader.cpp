@@ -485,6 +485,7 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
     if (t == QByteArrayLiteral("rect"))
         new_target = GL_TEXTURE_RECTANGLE;
     if (new_target != d.target) {
+        qDebug("texture target: %#x=>%#x", d.target, new_target);
         // FIXME: not thread safe (in qml)
         d.target = new_target;
         d.init_textures_required = true;
@@ -1048,7 +1049,7 @@ bool VideoMaterialPrivate::ensureResources()
     // effective size may change even if plane size not changed
     bool effective_tex_width_ratio_changed = true;
     for (int i = 0; i < nb_planes; ++i) {
-        if ((qreal)frame.effectiveBytesPerLine(0)/(qreal)frame.bytesPerLine(0) == effective_tex_width_ratio) {
+        if ((qreal)frame.effectiveBytesPerLine(i)/(qreal)frame.bytesPerLine(i) == effective_tex_width_ratio) {
             effective_tex_width_ratio_changed = false;
             break;
         }
