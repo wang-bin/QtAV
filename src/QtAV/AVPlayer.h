@@ -84,6 +84,10 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(QtAV::MediaEndAction mediaEndAction READ mediaEndAction WRITE setMediaEndAction NOTIFY mediaEndActionChanged)
     Q_ENUMS(State)
 public:
+    /*!
+     * \brief The State enum
+     * The playback state. It's different from MediaStatus. MediaStatus indicates media stream state
+     */
     enum State {
         StoppedState,
         PlayingState, /// Start to play if it was stopped, or resume if it was paused
@@ -525,6 +529,10 @@ Q_SIGNALS:
     void durationChanged(qint64);
     void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
     void paused(bool p);
+    /*!
+     * \brief started
+     * Emitted when playback is started. Some functions that control playback should be called after playback is started, otherwise they won't work, e.g. setPosition(), pause(). stop() can be called at any time.
+     */
     void started();
     void stopped();
     void stoppedAt(qint64 position);
