@@ -1,5 +1,7 @@
 ***Uninstall QtAV SDK before building to avoid header files confliction. Run sdk_uninstall.bat/sh under your build dir***
 
+Shadow build is recommended (required for mac build).
+
 ## 0. Prerequisites
 
 - Get QtAV source code
@@ -23,7 +25,7 @@ Other requirements are:
 
   OpenAL(Optional). OpenAL is not required since QtAV1.8.0. XAudio2 is always used. XAudio2 supports XP~windows 10 and Windows Store apps. Windows 8 and later natively supports XAudio2. For Windows 7 and older, you have to install [the driver from DirectX](http://sourceforge.net/projects/qtav/files/depends/DXSDK2010_XAudio2_redist.7z/download) to run.
 
-- ***OS X, iOS*** None. System OpenAL is used
+- ***OS X, iOS*** None. AudioToolbox and System OpenAL is used
 - ***Android***
 
   On Windows you must put `mingw32-make.exe` in one of `%PATH%` to avoid qmake error.
@@ -147,3 +149,10 @@ to .qmake.conf or .qmake.cache
 - [appveyor for mingw and vs2013(msbuild+nmake)](https://ci.appveyor.com/project/wang-bin/qtav)
 
 You can read the build log to see how they work.
+
+
+### Build Error
+
+- qmake error `Checking for avutil... no`
+
+Make sure ffmpeg headers and libs can be found by compiler. Read config.log in build dir for details.

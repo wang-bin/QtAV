@@ -1,3 +1,39 @@
+qtav (1.11.0) unstable; urgency=low
+
+  * Dynamic load QtAVWidgets in VideoOutput. avwidgets module is not requred now.
+  * D3D11 decoder support. Not stable on Windows phone.
+  * DXVA refactor and bug fix.
+  * VA-API: fix memory leak when seeking
+  * Fix PBO binding
+  * Custom shader support (WIP)
+  * Edit and apply custom shader when playing. Based on Qt property system.
+  * Optimize uniform update
+  * GLSL filter support
+  * Add `OpenGLVideo.beforeRendering/afterRendering`
+  * CUDA: Direct copy is default on windows. CUDA rendering is faster than any other players
+  * CUDA: 0-copy is default for linux.
+  * CUDA: Use new API (4.0)
+  * Add `AVPlayer.stoppedAt` signal
+  * Add `AVPlayer.setTimeRange()`
+  * AVPlayer.setStart/StopPosition can be called at any time with any value
+  * Ensure all threads are running when `AVPlayer.started` is emitted
+  * Support preload using `AVPlayer.load()`. Now no reload in `play()`
+  * Fix build with QT_NAMESPACE
+  * Fix swscale color range
+  * Fix linux install destinations
+  * Add AVTranscoder.async, encoders are in individual threads
+  * Add FrameReader class
+  * Use FFmpeg 3.0 API
+  * QML: Support filters, including sw filters from libavfilter, and GLSL filter
+  * QML: Add `MediaPlayer/Video.audioBackends` property
+  * QML: Support autoLoad
+  * QML: Add `VideoOutput.mapTo/FromXXX` between source frame and item
+  * QML: Video EQ in VideoOutput/Video
+  * QML: Add `MediaPlayer.startPosition/stopPotion`
+  * QMLPlayer: Open video and subtitle at the same time. History view. Zoom. Video EQ
+
+ -- Wang Bin (Lucas) <wbsecg1@gmail.com>  Sun, 19 Jun 2016 21:13:08 +0800
+
 qtav (1.10.0) unstable; urgency=low
 
   * Improve seek speed, fix drop too much frames after seek
