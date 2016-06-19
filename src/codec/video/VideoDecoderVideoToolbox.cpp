@@ -203,8 +203,7 @@ VideoFrame VideoDecoderVideoToolbox::frame()
     CVPixelBufferUnlockBaseAddress(cv_buffer, kCVPixelBufferLock_ReadOnly);
     //CVPixelBufferRelease(cv_buffer); // release when video frame is destroyed
     VideoFrame f;
-    // TODO: remove LazyCopy?
-    if (zero_copy || copyMode() == VideoDecoderFFmpegHW::LazyCopy) {
+    if (zero_copy) {
         if (d.interop_res) {
             // make sure VideoMaterial can correctly setup parameters
             VideoFormat::PixelFormat opixfmt = pixfmt;

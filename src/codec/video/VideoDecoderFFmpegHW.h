@@ -38,7 +38,6 @@ class VideoDecoderFFmpegHW : public VideoDecoderFFmpegBase
 public:
     enum CopyMode {
         ZeroCopy,
-        LazyCopy,
         OptimizedCopy,
         GenericCopy
     };

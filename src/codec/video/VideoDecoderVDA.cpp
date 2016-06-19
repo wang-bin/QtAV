@@ -310,7 +310,7 @@ VideoFrame VideoDecoderVDA::frame()
         //CVPixelBufferRelease(cv_buffer); // release when video frame is destroyed
     }
     VideoFrame f;
-    if (zero_copy || copyMode() == VideoDecoderFFmpegHW::LazyCopy) {
+    if (zero_copy) {
         f = VideoFrame(d.width, d.height, fmt);
         f.setBytesPerLine(pitch);
         f.setTimestamp(double(d.frame->pkt_pts)/1000.0);
