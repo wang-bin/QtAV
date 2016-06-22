@@ -34,7 +34,7 @@ class Q_AV_PRIVATE_EXPORT MediaIOPrivate : public DPtrPrivate<MediaIO>
 {
 public:
     MediaIOPrivate()
-        : ctx(0)
+        : ctx(NULL)
         , mode(MediaIO::Read)
     {}
     // TODO: how to manage ctx?
