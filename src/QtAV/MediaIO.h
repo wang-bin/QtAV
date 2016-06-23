@@ -130,6 +130,12 @@ public:
      * Demuxer seeking should work for this case.
      */
     virtual bool isVariableSize() const { return false;}
+    /*!
+     * \brief setBufferSize
+     * \param value <0: use default value
+     */
+    void setBufferSize(int value = -1);
+    int bufferSize() const;
     // The followings are for internal use. used by AVDemuxer, AVMuxer
     //struct AVIOContext; //anonymous struct in FFmpeg1.0.x
     void* avioContext(); //const?

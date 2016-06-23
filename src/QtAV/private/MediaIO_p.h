@@ -35,10 +35,11 @@ class Q_AV_PRIVATE_EXPORT MediaIOPrivate : public DPtrPrivate<MediaIO>
 public:
     MediaIOPrivate()
         : ctx(NULL)
+        , buffer_size(-1)
         , mode(MediaIO::Read)
     {}
-    // TODO: how to manage ctx?
     AVIOContext *ctx;
+    int buffer_size;
     MediaIO::AccessMode mode;
     QString url;
 };

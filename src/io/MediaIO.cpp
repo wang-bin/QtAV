@@ -172,6 +172,20 @@ const QStringList& MediaIO::protocols() const
 }
 
 #define IODATA_BUFFER_SIZE 32768 // TODO: user configurable
+static const int kBufferSizeDefault = 32768;
+
+void MediaIO::setBufferSize(int value)
+{
+    DPTR_D(MediaIO);
+    if (d.buffer_size == value)
+        return;
+    d.buffer_size = value;
+}
+
+int MediaIO::bufferSize() const
+{
+    return d_func().buffer_size;
+}
 
 void* MediaIO::avioContext()
 {
@@ -182,7 +196,7 @@ void* MediaIO::avioContext()
     unsigned char* buf = (unsigned char*)av_malloc(IODATA_BUFFER_SIZE);
     // open for write if 1. SET 0 if open for read otherwise data ptr in av_read(data, ...) does not change
     const int write_flag = (accessMode() == Write) && isWritable();
-    d.ctx = avio_alloc_context(buf, IODATA_BUFFER_SIZE, write_flag, this, &av_read, write_flag ? &av_write : NULL, &av_seek);
+    d.ctx = avio_alloc_context(buf, bufferSize() > 0 ? bufferSize() : kBufferSizeDefault, write_flag, this, &av_read, write_flag ? &av_write : NULL, &av_seek);
     // if seekable==false, containers that estimate duration from pts(or bit rate) will not seek to the last frame when computing duration
     // but it's still seekable if call seek outside(e.g. from demuxer)
     // TODO: isVariableSize: size = -real_size
