@@ -1232,12 +1232,7 @@ void AVPlayer::playInternal()
         qDebug("Starting video thread...");
         d->vthread->start();
     }
-    if (d->start_position_norm > 0) {
-        if (relativeTimeMode())
-            d->demuxer.seek(qint64((d->start_position_norm + absoluteMediaStartPosition())));
-        else
-            d->demuxer.seek((qint64)(d->start_position_norm));
-    }
+
     d->read_thread->setMediaEndAction(mediaEndAction());
     d->read_thread->start();
 
@@ -1253,6 +1248,12 @@ void AVPlayer::playInternal()
     }
     d->state = PlayingState;
     } //end lock scoped here to avoid dead lock if connect started() to a slot that call unload()/play()
+    if (d->start_position_norm > 0) {
+        if (relativeTimeMode())
+            setPosition(qint64((d->start_position_norm + absoluteMediaStartPosition())));
+        else
+            setPosition((qint64)(d->start_position_norm));
+    }
     Q_EMIT stateChanged(PlayingState);
     Q_EMIT started(); //we called stop(), so must emit started()
 }
