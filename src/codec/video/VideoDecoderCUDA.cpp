@@ -33,7 +33,6 @@
  * TODO: VC1, HEVC bsf
  */
 #define COPY_ON_DECODE 1
-#define FILTER_ANNEXB_CUVID 0
 /*
  * avc1, ccv1 => h264 + sps, pps, nal. use filter or lavcudiv
  * http://blog.csdn.net/gavinr/article/details/7183499
@@ -165,7 +164,7 @@ public:
         can_load = dllapi::testLoad("nvcuvid");
 #endif //QTAV_HAVE(DLLAPI_CUDA)
         available = false;
-        bitstream_filter_ctx = 0;
+        bsf = 0;
         cuctx = 0;
         cudev = 0;
         dec = 0;
@@ -184,8 +183,8 @@ public:
         interop_res = cuda::InteropResourcePtr();
     }
     ~VideoDecoderCUDAPrivate() {
-        if (bitstream_filter_ctx)
-            av_bitstream_filter_close(bitstream_filter_ctx);
+        if (bsf)
+            av_bitstream_filter_close(bsf);
         if (!can_load)
             return;
         if (!isLoaded()) //cuda_api
@@ -321,7 +320,7 @@ public:
     int nb_dec_surface;
     QString description;
 
-    AVBitStreamFilterContext *bitstream_filter_ctx; //TODO: rename bsf_ctx
+    AVBitStreamFilterContext *bsf; //TODO: rename bsf_ctx
 
     VideoDecoderCUDA::CopyMode copy_mode;
     cuda::InteropResourcePtr interop_res; //may be still used in video frames when decoder is destroyed
@@ -389,10 +388,10 @@ bool VideoDecoderCUDA::decode(const Packet &packet)
     uint8_t *outBuf = 0;
     int outBufSize = 0;
     int filtered = 0;
-    if (d.bitstream_filter_ctx) {
+    if (d.bsf) {
         // h264_mp4toannexb_filter does not use last parameter 'keyFrame', so just set 0
         //return: 0: not changed, no outBuf allocated. >0: ok. <0: fail
-        filtered = av_bitstream_filter_filter(d.bitstream_filter_ctx, d.codec_ctx, NULL, &outBuf, &outBufSize
+        filtered = av_bitstream_filter_filter(d.bsf, d.codec_ctx, NULL, &outBuf, &outBufSize
                                                   , (const uint8_t*)packet.data.constData(), packet.data.size()
                                                   , 0);//d.is_keyframe);
         //qDebug("%s @%d filtered=%d outBuf=%p, outBufSize=%d", __FUNCTION__, __LINE__, filtered, outBuf, outBufSize);
@@ -662,27 +661,24 @@ bool VideoDecoderCUDAPrivate::createCUVIDParser()
     //parser_params.pExtVideoInfo
 
     qDebug("~~~~~~~~~~~~~~~~extradata: %p %d", codec_ctx->extradata, codec_ctx->extradata_size);
-    /*!
-     * NOTE: DO NOT call h264_extradata_to_annexb here if use av_bitstream_filter_filter
-     * because av_bitstream_filter_filter will call h264_extradata_to_annexb and marks H264BSFContext has parsed
-     * h264_extradata_to_annexb will not mark it
-     * LAVFilter's
-     */
-#if FILTER_ANNEXB_CUVID
     memset(&extra_parser_info, 0, sizeof(CUVIDEOFORMATEX));
     // nalu
-    // TODO: check mpeg, avc1, ccv1? (lavf)
-    if (codec_ctx->extradata && codec_ctx->extradata_size >= 6) {
-        int ret = h264_extradata_to_annexb(codec_ctx, FF_INPUT_BUFFER_PADDING_SIZE);
-        if (ret >= 0) {
-            qDebug("%s @%d ret %d, size %d", __FUNCTION__, __LINE__, ret, codec_ctx->extradata_size);
-            memcpy(extra_parser_info.raw_seqhdr_data, codec_ctx->extradata, codec_ctx->extradata_size);
+    extra_parser_info.format.seqhdr_data_length = 0;
+    if (codec_ctx->codec_id != QTAV_CODEC_ID(H264) && codec_ctx->codec_id != QTAV_CODEC_ID(HEVC)) {
+        if (codec_ctx->extradata_size > 0) {
             extra_parser_info.format.seqhdr_data_length = codec_ctx->extradata_size;
+            memcpy(extra_parser_info.raw_seqhdr_data, codec_ctx->extradata, FFMIN(sizeof(extra_parser_info.raw_seqhdr_data), codec_ctx->extradata_size));
         }
     }
     parser_params.pExtVideoInfo = &extra_parser_info;
-#endif
+
     CUDA_ENSURE(cuvidCreateVideoParser(&parser, &parser_params), false);
+    CUVIDSOURCEDATAPACKET seq_pkt;
+    seq_pkt.payload = extra_parser_info.raw_seqhdr_data;
+    seq_pkt.payload_size = extra_parser_info.format.seqhdr_data_length;
+    if (seq_pkt.payload_size > 0) {
+        CUDA_ENSURE(cuvidParseVideoData(parser, &seq_pkt), false);
+    }
     //lavfilter: cuStreamCreate
     force_sequence_update = true;
     //DecodeSequenceData()
@@ -783,14 +779,17 @@ bool VideoDecoderCUDAPrivate::processDecodedData(CUVIDPARSERDISPINFO *cuviddisp,
 void VideoDecoderCUDAPrivate::setBSF(AVCodecID codec)
 {
     if (codec == QTAV_CODEC_ID(H264)) {
-        if (!bitstream_filter_ctx) {
-            bitstream_filter_ctx = av_bitstream_filter_init("h264_mp4toannexb");
-            Q_ASSERT(bitstream_filter_ctx && "av_bitstream_filter_init error");
-        }
+        if (!bsf)
+            bsf = av_bitstream_filter_init("h264_mp4toannexb");
+        Q_ASSERT(bsf && "h264_mp4toannexb bsf not found");
+    } else if (codec == QTAV_CODEC_ID(HEVC)) {
+        if (!bsf)
+            bsf = av_bitstream_filter_init("hevc_mp4toannexb");
+        Q_ASSERT(bsf && "hevc_mp4toannexb bsf not found");
     } else {
-        if (bitstream_filter_ctx) {
-            av_bitstream_filter_close(bitstream_filter_ctx);
-            bitstream_filter_ctx = 0;
+        if (bsf) {
+            av_bitstream_filter_close(bsf);
+            bsf = 0;
         }
     }
 }

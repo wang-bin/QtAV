@@ -290,10 +290,12 @@ CUresult cuda_api::cuCtxCreate(CUcontext *pctx, unsigned int flags, CUdevice dev
     if (!ctx->api.cuCtxCreate) {
 #if __CUDA_API_VERSION >= 3020
         ctx->api.cuCtxCreate = (context::api_t::tcuCtxCreate*)ctx->cuda_dll.resolve("cuCtxCreate_v2");
-        qDebug("fallback to old driver api: %p", ctx->api.cuCtxCreate);
         if (!ctx->api.cuCtxCreate)
 #endif
+        {
+            qDebug("fallback to old driver api: %p", ctx->api.cuCtxCreate);
             ctx->api.cuCtxCreate = (context::api_t::tcuCtxCreate*)ctx->cuda_dll.resolve("cuCtxCreate");
+        }
         assert(ctx->api.cuCtxCreate);
     }
     return ctx->api.cuCtxCreate(pctx, flags, dev);
