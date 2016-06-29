@@ -102,6 +102,7 @@ private slots:
     void onStopPlay();
     void onPaused(bool p);
     void onSpeedChange(qreal speed);
+    void setFrameRate();
     void seek();
     void seek(int);
     void showHideVolumeBar();

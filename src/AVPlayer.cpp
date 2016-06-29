@@ -184,6 +184,7 @@ void AVPlayer::setSpeed(qreal speed)
 {
     if (speed == d->speed)
         return;
+    setFrameRate(0); // will set clock to default
     d->speed = speed;
     //TODO: check clock type?
     if (d->ao && d->ao->isAvailable()) {
@@ -233,6 +234,9 @@ void AVPlayer::setFrameRate(qreal value)
     d->force_fps = value;
     // clock set here will be reset in playInternal()
     // also we can't change user's setting of ClockType and autoClock here if force frame rate is disabled.
+    if (!isPlaying())
+        return;
+    d->applyFrameRate();
 }
 
 qreal AVPlayer::forcedFrameRate() const
@@ -706,7 +710,7 @@ void AVPlayer::unload()
         d->vdec = 0;
     }
     d->demuxer.unload();
-    Q_EMIT durationChanged(0LL);
+    Q_EMIT durationChanged(0LL); // for ui, slider is invalid. use stopped instead, and remove this signal here?
     // ??
     d->audio_tracks = d->getTracksInfo(&d->demuxer, AVDemuxer::AudioStream);
     Q_EMIT internalAudioTracksChanged(d->audio_tracks);
@@ -1191,27 +1195,6 @@ void AVPlayer::playInternal()
     // setup clock before avthread.start() becuase avthreads use clock. after avthreads setup because of ao check
     masterClock()->reset();
     // TODO: add isVideo() or hasVideo()?
-    qreal vfps = d->force_fps;
-    bool force_fps = vfps > 0;
-    const bool ao_null = d->ao && d->ao->backend().toLower() == QLatin1String("null");
-    if (d->athread && !ao_null) { // TODO: no null ao check. null ao block internally
-        force_fps = vfps > 0 && !!d->vthread;
-    } else if (!force_fps) {
-        force_fps = !!d->vthread;
-        vfps = d->statistics.video.frame_rate > 0 ? d->statistics.video.frame_rate : 25;
-        // vfps<0: try to use pts (ExternalClock). if no pts (raw codec), try the default fps(VideoClock)
-        vfps = -vfps;
-    }
-    if (force_fps) {
-        masterClock()->setClockAuto(false);
-        // vfps>0: force video fps to vfps. clock must be external
-        masterClock()->setClockType(vfps > 0 ? AVClock::VideoClock : AVClock::ExternalClock);
-        d->vthread->setFrameRate(vfps);
-    } else {
-        masterClock()->setClockAuto(true);
-        if (d->vthread)
-            d->vthread->setFrameRate(0.0);
-    }
     if (masterClock()->isClockAuto()) {
         qDebug("auto select clock: audio > external");
         if (!d->demuxer.audioCodecContext() || !d->ao || !d->ao->isOpen() || !d->athread) {
@@ -1343,11 +1326,15 @@ void AVPlayer::stopNotifyTimer()
 
 void AVPlayer::onStarted()
 {
-    //TODO: check clock type?
-    if (d->ao && d->ao->isAvailable()) {
-        d->ao->setSpeed(d->speed);
+    if (d->speed != 1.0) {
+        //TODO: check clock type?
+        if (d->ao && d->ao->isAvailable()) {
+            d->ao->setSpeed(d->speed);
+        }
+        masterClock()->setSpeed(d->speed);
+    } else {
+        d->applyFrameRate();
     }
-    masterClock()->setSpeed(d->speed);
 }
 
 void AVPlayer::updateMediaStatus(QtAV::MediaStatus status)

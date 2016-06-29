@@ -40,6 +40,7 @@ public:
 
     bool checkSourceChange();
     void updateNotifyInterval();
+    void applyFrameRate();
     void initStatistics();
     void initBaseStatistics();
     void initCommonStatistics(int s, Statistics::Common* st, AVCodecContext* avctx);

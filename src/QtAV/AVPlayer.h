@@ -278,7 +278,8 @@ public:
      */
     AudioOutput* audio();
     /*!
-     * \brief setSpeed set playback speed.
+     * \brief setSpeed
+     * Set playback speed.
      * \param speed  speed > 0. 1.0: normal speed
      * TODO: playbackRate
      */
@@ -303,10 +304,8 @@ public:
     /*!
      * \brief setFrameRate
      * Force the (video) frame rate to a given value.
-     * Call it before playback start.
-     * If frame rate is set to a valid value(>0), the clock type will be set to
-     * User configuration of AVClock::ClockType and autoClock will be ignored.
-     * \param value <=0: ignore the value. normal playback ClockType and AVCloc
+     * AVClock::ClockType and autoClock will be changed internally.
+     * \param value <=0: use previous playback speed.
      * >0: force to a given (video) frame rate
      */
     void setFrameRate(qreal value);

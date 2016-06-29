@@ -181,6 +181,39 @@ void AVPlayer::Private::updateNotifyInterval()
     qDebug("notify_interval: %d", qAbs(notify_interval));
 }
 
+void AVPlayer::Private::applyFrameRate()
+{
+    qreal vfps = force_fps;
+    bool force = vfps > 0;
+    const bool ao_null = ao && ao->backend().toLower() == QLatin1String("null");
+    if (athread && !ao_null) { // TODO: no null ao check. null ao block internally
+        force = vfps > 0 && !!vthread;
+    } else if (!force) {
+        force = !!vthread;
+        vfps = statistics.video.frame_rate > 0 ? statistics.video.frame_rate : 25;
+        // vfps<0: try to use pts (ExternalClock). if no pts (raw codec), try the default fps(VideoClock)
+        vfps = -vfps;
+    }
+    qreal r = speed;
+    if (force) {
+        clock->setClockAuto(false);
+        // vfps>0: force video fps to vfps. clock must be external
+        clock->setClockType(vfps > 0 ? AVClock::VideoClock : AVClock::ExternalClock);
+        vthread->setFrameRate(vfps);
+        if (statistics.video.frame_rate > 0)
+            r = qAbs(qreal(vfps))/statistics.video.frame_rate;
+    } else {
+        clock->setClockAuto(true);
+        clock->setClockType(athread && ao->isOpen() ? AVClock::AudioClock : AVClock::ExternalClock);
+        if (vthread)
+            vthread->setFrameRate(0.0);
+        ao->setSpeed(1);
+        clock->setSpeed(1);
+    }
+    ao->setSpeed(r);
+    clock->setSpeed(r);
+}
+
 void AVPlayer::Private::initStatistics()
 {
     initBaseStatistics();

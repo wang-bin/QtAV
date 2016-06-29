@@ -164,6 +164,7 @@ void MainWindow::initPlayer()
     onCaptureConfigChanged();
     onAVFilterVideoConfigChanged();
     onAVFilterAudioConfigChanged();
+    connect(&Config::instance(), SIGNAL(forceFrameRateChanged()), SLOT(setFrameRate()));
     connect(&Config::instance(), SIGNAL(captureDirChanged(QString)), SLOT(onCaptureConfigChanged()));
     connect(&Config::instance(), SIGNAL(captureFormatChanged(QString)), SLOT(onCaptureConfigChanged()));
     connect(&Config::instance(), SIGNAL(captureQualityChanged(int)), SLOT(onCaptureConfigChanged()));
@@ -890,6 +891,13 @@ void MainWindow::onStopPlay()
 void MainWindow::onSpeedChange(qreal speed)
 {
     mpSpeed->setText(QString::fromLatin1("%1").arg(speed, 4, 'f', 2, QLatin1Char('0')));
+}
+
+void MainWindow::setFrameRate()
+{
+    if (!mpPlayer)
+        return;
+    mpPlayer->setFrameRate(Config::instance().forceFrameRate());
 }
 
 void MainWindow::seek(int value)
