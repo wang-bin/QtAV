@@ -328,20 +328,20 @@ int av_packet_ref(AVPacket *dst, const AVPacket *src)
 #else // libav <=11 has no av_copy_packet
 #define DUP_DATA(dst, src, size, padding)                               \
     do {                                                                \
-        void *data;                                                     \
+        uint8_t *data;                                                     \
         if (padding) {                                                  \
             if ((unsigned)(size) >                                      \
                 (unsigned)(size) + FF_INPUT_BUFFER_PADDING_SIZE)        \
                 goto failed_alloc;                                      \
-            data = av_malloc(size + FF_INPUT_BUFFER_PADDING_SIZE);      \
+            data = (uint8_t*)av_malloc(size + FF_INPUT_BUFFER_PADDING_SIZE);      \
         } else {                                                        \
-            data = av_malloc(size);                                     \
+            data = (uint8_t*)av_malloc(size);                                     \
         }                                                               \
         if (!data)                                                      \
             goto failed_alloc;                                          \
         memcpy(data, src, size);                                        \
         if (padding)                                                    \
-            memset((uint8_t *)data + size, 0,                           \
+            memset(data + size, 0,                           \
                    FF_INPUT_BUFFER_PADDING_SIZE);                       \
         dst = data;                                                     \
     } while (0)
@@ -373,6 +373,7 @@ failed_alloc:
 #if !AV_MODULE_CHECK(LIBAVCODEC, 55, 52, 0, 63, 100)
 void avcodec_free_context(AVCodecContext **avctx)
 {
+    av_freep(avctx->extradata);
     av_freep(avctx);
 }
 #endif
