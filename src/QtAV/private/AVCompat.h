@@ -395,7 +395,7 @@ int av_packet_ref(AVPacket *dst, const AVPacket *src);
 #endif
 
 #if !AV_MODULE_CHECK(LIBAVCODEC, 55, 52, 0, 63, 100)
-void avcodec_free_context(AVCodecContext **avctx);
+void avcodec_free_context(AVCodecContext **pavctx);
 #endif
 
 #if QTAV_HAVE(AVFILTER)
