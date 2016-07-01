@@ -21,7 +21,9 @@
 
 #include "QtAVWidgets/OpenGLWidgetRenderer.h"
 #include "QtAV/private/OpenGLRendererBase_p.h"
-#include <QResizeEvent>
+#include <QtGui/QGuiApplication>
+#include <QtGui/QResizeEvent>
+#include <QtGui/QScreen>
 
 namespace QtAV {
 
@@ -58,7 +60,13 @@ void OpenGLWidgetRenderer::paintGL()
 
 void OpenGLWidgetRenderer::resizeGL(int w, int h)
 {
-    onResizeGL(w, h);
+    // QGLWidget uses window()->windowHandle()->devicePixelRatio() for resizeGL(), while QOpenGLWidget does not, so scale here
+#if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
+    const qreal dpr = context()->screen()->devicePixelRatio();
+#else
+    const qreal dpr = qApp->devicePixelRatio(); //TODO: window()->devicePixelRatio() is the window screen's
+#endif
+    onResizeGL(w*dpr, h*dpr);
 }
 
 void OpenGLWidgetRenderer::resizeEvent(QResizeEvent *e)
