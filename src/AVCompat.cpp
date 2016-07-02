@@ -339,22 +339,22 @@ int av_packet_ref(AVPacket *dst, const AVPacket *src)
         if (padding)                                                    \
             memset((uint8_t*)data + size, 0,                           \
                    FF_INPUT_BUFFER_PADDING_SIZE);                       \
-        dst = data;                                                     \
+        *((void**)&dst) = data;                                                     \
     } while (0)
 
     *dst = *src;
     dst->data      = NULL;
     dst->side_data = NULL;
-    DUP_DATA((void*)dst->data, src->data, dst->size, 1);
+    DUP_DATA(dst->data, src->data, dst->size, 1);
     dst->destruct = av_destruct_packet;
     if (dst->side_data_elems) {
         int i;
-        DUP_DATA((void*)dst->side_data, src->side_data,
+        DUP_DATA(dst->side_data, src->side_data,
                 dst->side_data_elems * sizeof(*dst->side_data), 0);
         memset(dst->side_data, 0,
                 dst->side_data_elems * sizeof(*dst->side_data));
         for (i = 0; i < dst->side_data_elems; i++) {
-            DUP_DATA((void*)dst->side_data[i].data, src->side_data[i].data, src->side_data[i].size, 1);
+            DUP_DATA(dst->side_data[i].data, src->side_data[i].data, src->side_data[i].size, 1);
             dst->side_data[i].size = src->side_data[i].size;
             dst->side_data[i].type = src->side_data[i].type;
         }
