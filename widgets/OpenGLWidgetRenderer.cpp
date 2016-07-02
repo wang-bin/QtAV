@@ -21,7 +21,6 @@
 
 #include "QtAVWidgets/OpenGLWidgetRenderer.h"
 #include "QtAV/private/OpenGLRendererBase_p.h"
-#include <QtGui/QGuiApplication>
 #include <QtGui/QResizeEvent>
 #include <QtGui/QScreen>
 
@@ -64,7 +63,9 @@ void OpenGLWidgetRenderer::resizeGL(int w, int h)
 #if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
     const qreal dpr = context()->screen()->devicePixelRatio();
 #else
-    const qreal dpr = qApp->devicePixelRatio(); //TODO: window()->devicePixelRatio() is the window screen's
+    // qApp->devicePixelRatio() is global, window()->windowHandle()->devicePixelRatio() depends on screen, check window() and windowHandle() is required.
+    // QWidget.devicePixelRatio() is int, but float value is not implemented in old qt, so just use int is fine.
+    const qreal dpr = devicePixelRatio();
 #endif
     onResizeGL(w*dpr, h*dpr);
 }
