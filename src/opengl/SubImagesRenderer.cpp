@@ -45,7 +45,7 @@ void SubImagesRenderer::render(const SubImageSet &ass, const QRect &target, cons
 {
     if (m_geometry->setSubImages(ass) || m_rect != target) {
         m_rect = target;
-        if (!m_geometry->generateVertexData(m_rect))
+        if (!m_geometry->generateVertexData(m_rect, true))
             return;
 
         uploadTexture(m_geometry);

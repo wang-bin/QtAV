@@ -168,10 +168,10 @@ bool SubImagesGeometry::generateVertexData(const QRect &rect, bool useIndecies, 
         // we use w instead of stride even if we must upload stride. when maping texture coordinates and view port coordinates, we can use the visual rects instead of stride, i.e. the geometry vertices are (x, y, w, h), not (x, y, stride, h)
         m_rects_upload.append(QRect(x, H, i.stride, i.h));
         vd = SetUnnormalizedVertexData(vd, x, H, i.w, i.h, i.color, useIndecies);
-        if (useIndecies) {
+        if (useIndecies) { // TODO: set only once because it never changes, use IBO
             const int v0 = index*4/6;
-            setIndexValue(index, v0, v0+1, v0+2); // 0, 1, 2
-            setIndexValue(index, v0+3, v0+1, v0+2); // 3, 1, 2
+            setIndexValue(index, v0, v0+1, v0+2);
+            setIndexValue(index+3, v0+1, v0+2, v0+3);
             index += 6;
         }
         x += i.w;

@@ -70,16 +70,20 @@ bool GeometryRenderer::updateBuffers(Geometry *g)
             return false;
         }
     }
-    qDebug("updating vbo...");
+    //qDebug("updating vbo...");
     vbo.bind(); //check here
     vbo.allocate(g->vertexData(), g->vertexCount()*g->stride());
+    //qDebug("allocate(%p, %d*%d)", g->vertexData(), g->vertexCount(), g->stride());
 #if QT_VAO
     if (try_vao) {
         for (int an = 0; an < g->attributes().size(); ++an) {
             // FIXME: assume bind order is 0,1,2...
             const Attribute& a = g->attributes().at(an);
-            program->setAttributeBuffer(an, a.type(), a.offset(), a.tupleSize(), g->stride());
-            program->enableAttributeArray(an); //TODO: in setActiveShader
+            DYGL(glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), reinterpret_cast<const void *>(qptrdiff(a.offset()))));
+            /// FIXME: why qopengl function crash?
+            //program->setAttributeBuffer(an, a.type(), a.offset(), a.tupleSize(), g->stride());
+            //program->enableAttributeArray(an); //TODO: in setActiveShader
+            DYGL(glEnableVertexAttribArray(an));
         }
     }
 #endif
@@ -100,14 +104,18 @@ void GeometryRenderer::bindBuffers(Geometry *g)
         // normalized
         for (int an = 0; an < g->attributes().size(); ++an) {
             const Attribute& a = g->attributes().at(an);
-            program->setAttributeBuffer(an, a.type(), a.offset(), a.tupleSize(), g->stride());
-            program->enableAttributeArray(an); //TODO: in setActiveShader
+            DYGL(glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), reinterpret_cast<const void *>(qptrdiff(a.offset()))));
+            //program->setAttributeBuffer(an, a.type(), a.offset(), a.tupleSize(), g->stride());
+            //program->enableAttributeArray(an); //TODO: in setActiveShader
+            DYGL(glEnableVertexAttribArray(an));
         }
     } else {
         for (int an = 0; an < g->attributes().size(); ++an) {
             const Attribute& a = g->attributes().at(an);
-            program->setAttributeArray(an, a.type(), (const char*)g->vertexData() + a.offset(), a.tupleSize(), g->stride());
-            program->enableAttributeArray(an); //TODO: in setActiveShader
+            //program->setAttributeArray(an, a.type(), (const char*)g->vertexData() + a.offset(), a.tupleSize(), g->stride());
+            DYGL(glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), (const char*)g->vertexData() + a.offset()));
+            //program->enableAttributeArray(an); //TODO: in setActiveShader
+            DYGL(glEnableVertexAttribArray(an));
         }
     }
 }
@@ -133,7 +141,7 @@ void GeometryRenderer::render(Geometry *g)
 {
     if (g->indexCount() > 0) {
         // IBO
-
+        glDrawElements(g->primitiveType(), g->indexCount(), g->indexType(), g->indexData());
     } else {
         DYGL(glDrawArrays(g->primitiveType(), 0, g->vertexCount()));
     }
