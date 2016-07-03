@@ -45,6 +45,7 @@ QDebug operator<<(QDebug dbg, const Attribute &a) {
     dbg.nospace() << ", offset " << a.offset();
     dbg.nospace() << ", tupleSize " << a.tupleSize();
     dbg.nospace() << ", dataType " << a.type();
+    dbg.nospace() << ", normalize " << a.normalize();
     return dbg.space();
 }
 #endif
@@ -55,6 +56,58 @@ Geometry::Geometry(int vertexCount, int indexCount, DataType indexType)
     , m_vcount(vertexCount)
     , m_icount(indexCount)
 {}
+
+void Geometry::setIndexValue(int index, int value)
+{
+    switch (indexType()) {
+    case GL_UNSIGNED_BYTE: {
+        quint8* d = (quint8*)m_idata.data();
+        *(d+index) = value;
+    }
+        break;
+    case GL_UNSIGNED_SHORT: {
+        quint16* d = (quint16*)m_idata.data();
+        *(d+index) = value;
+    }
+        break;
+    case GL_UNSIGNED_INT: {
+        quint32* d = (quint32*)m_idata.data();
+        *(d+index) = value;
+    }
+        break;
+    default:
+        break;
+    }
+}
+
+void Geometry::setIndexValue(int index, int v1, int v2, int v3)
+{
+    switch (indexType()) {
+    case GL_UNSIGNED_BYTE: {
+        quint8* d = (quint8*)m_idata.data();
+        *(d+index++) = v1;
+        *(d+index++) = v2;
+        *(d+index++) = v2;
+    }
+        break;
+    case GL_UNSIGNED_SHORT: {
+        quint16* d = (quint16*)m_idata.data();
+        *(d+index++) = v1;
+        *(d+index++) = v2;
+        *(d+index++) = v3;
+    }
+        break;
+    case GL_UNSIGNED_INT: {
+        quint32* d = (quint32*)m_idata.data();
+        *(d+index++) = v1;
+        *(d+index++) = v2;
+        *(d+index++) = v3;
+    }
+        break;
+    default:
+        break;
+    }
+}
 
 void Geometry::allocate(int nbVertex, int nbIndex)
 {
@@ -73,7 +126,7 @@ void Geometry::allocate(int nbVertex, int nbIndex)
         m_idata.resize(nbIndex*sizeof(quint16));
         break;
     case GL_UNSIGNED_INT:
-        m_idata.resize(nbIndex*sizeof(quint16));
+        m_idata.resize(nbIndex*sizeof(quint32));
         break;
     default:
         break;
@@ -86,8 +139,8 @@ TexturedGeometry::TexturedGeometry()
 {
     setVertexCount(4);
     a = QVector<Attribute>()
-            << Attribute(TypeFloat, 2, 0)
-            << Attribute(TypeFloat, 2, 2*sizeof(float))
+            << Attribute(TypeF32, 2, 0)
+            << Attribute(TypeF32, 2, 2*sizeof(float))
                ;
     setTextureCount(1);
 }
@@ -102,7 +155,7 @@ void TexturedGeometry::setTextureCount(int value)
     allocate(vertexCount());
     if (a.size()-1 < value) { // the first is position
         for (int i = a.size()-1; i < value; ++i)
-            a << Attribute(TypeFloat, 2, (i+1)* 2*sizeof(float));
+            a << Attribute(TypeF32, 2, (i+1)* 2*sizeof(float));
     } else {
         a.resize(value + 1);
     }

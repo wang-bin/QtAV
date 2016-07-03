@@ -28,13 +28,13 @@
 namespace QtAV {
 
 enum DataType { //equals to GL_BYTE etc.
-    TypeByte = 0x1400,
-    TypeUnsignedByte = 0x1401,
-    TypeShort = 0x1402,
-    TypeUnsignedShort = 0x1403,
-    TypeInt = 0x1404,
-    TypeUnsignedInt = 0x1405,
-    TypeFloat = 0x1406
+    TypeS8 = 0x1400, //S8
+    TypeU8 = 0x1401, //U8
+    TypeS16 = 0x1402, //S16
+    TypeU16 = 0x1403, //U16
+    TypeS32 = 0x1404, //S32
+    TypeU32 = 0x1405, //U32
+    TypeF32 = 0x1406 //F32
 };
 
 class Attribute {
@@ -43,8 +43,8 @@ class Attribute {
     int m_tupleSize, m_offset;
     QByteArray m_name;
 public:
-    Attribute(DataType type = TypeFloat, int tupleSize = 0, int offset = 0, bool normalize = true);
-    Attribute(const QByteArray& name, DataType type = TypeFloat, int tupleSize = 0, int offset = 0, bool normalize = true);
+    Attribute(DataType type = TypeF32, int tupleSize = 0, int offset = 0, bool normalize = false);
+    Attribute(const QByteArray& name, DataType type = TypeF32, int tupleSize = 0, int offset = 0, bool normalize = false);
     QByteArray name() const {return m_name;}
     DataType type() const {return m_type;}
     int tupleSize() const {return m_tupleSize;}
@@ -71,7 +71,7 @@ public:
         TriangleStrip = 0x0005, //default
         TriangleFan = 0x0006, // Not recommended
     };
-    Geometry(int vertexCount = 0, int indexCount = 0, DataType indexType = TypeUnsignedShort);
+    Geometry(int vertexCount = 0, int indexCount = 0, DataType indexType = TypeU16);
     virtual ~Geometry() {}
     PrimitiveType primitiveType() const {return m_primitive;}
     void setPrimitiveType(PrimitiveType value) {  m_primitive = value;}
@@ -89,6 +89,8 @@ public:
     // GL_UNSIGNED_BYTE/SHORT/INT
     DataType indexType() const {return m_itype;}
     void setIndexType(DataType value) { m_itype = value;}
+    void setIndexValue(int index, int value);
+    void setIndexValue(int index, int v1, int v2, int v3);
     /*!
      * \brief allocate
      * Call allocate() when all parameters are set. vertexData() may change

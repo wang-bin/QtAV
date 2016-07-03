@@ -121,12 +121,12 @@ SubImagesGeometry::SubImagesGeometry()
     , m_h(0)
 {
     setPrimitiveType(Geometry::Triangles);
-    m_attributes << Attribute(TypeFloat, 2)
-                 << Attribute(TypeFloat, 2, 2*sizeof(float))
+    m_attributes << Attribute(TypeF32, 2)
+                 << Attribute(TypeF32, 2, 2*sizeof(float))
 #if U8COLOR
-                 << Attribute(TypeUnsignedByte, 4, 4*sizeof(float), true);
+                 << Attribute(TypeU8, 4, 4*sizeof(float), true);
 #else
-                 << Attribute(TypeFloat, 4, 4*sizeof(float));
+                 << Attribute(TypeF32, 4, 4*sizeof(float));
 #endif
 }
 
@@ -141,6 +141,8 @@ bool SubImagesGeometry::setSubImages(const SubImageSet &images)
 
 bool SubImagesGeometry::generateVertexData(const QRect &rect, bool useIndecies, int maxWidth)
 {
+    if (maxWidth < 0)
+        maxWidth = kMaxTexWidth;
     if (useIndecies)
         allocate(4*m_images.images.size(), 6*m_images.images.size());
     else
@@ -155,6 +157,7 @@ bool SubImagesGeometry::generateVertexData(const QRect &rect, bool useIndecies, 
     int W = 0, H = 0;
     int x = 0, h = 0;
     VertexData* vd = (VertexData*)vertexData();
+    int index = 0;
     foreach (const SubImage& i, m_images.images) {
         if (x + i.stride > maxWidth && maxWidth > 0) {
             W = qMax(W, x);
@@ -165,6 +168,12 @@ bool SubImagesGeometry::generateVertexData(const QRect &rect, bool useIndecies, 
         // we use w instead of stride even if we must upload stride. when maping texture coordinates and view port coordinates, we can use the visual rects instead of stride, i.e. the geometry vertices are (x, y, w, h), not (x, y, stride, h)
         m_rects_upload.append(QRect(x, H, i.stride, i.h));
         vd = SetUnnormalizedVertexData(vd, x, H, i.w, i.h, i.color, useIndecies);
+        if (useIndecies) {
+            const int v0 = index*4/6;
+            setIndexValue(index, v0, v0+1, v0+2); // 0, 1, 2
+            setIndexValue(index, v0+3, v0+1, v0+2); // 3, 1, 2
+            index += 6;
+        }
         x += i.w;
         h = qMax(h, i.h);
     }
