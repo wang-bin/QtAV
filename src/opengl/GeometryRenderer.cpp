@@ -26,6 +26,8 @@ GeometryRenderer::GeometryRenderer()
     : program(NULL)
     , try_vbo(true)
     , try_vao(true)
+    , try_ibo(true)
+    , ibo(QOpenGLBuffer::IndexBuffer)
 {
     static bool disable_vbo = qgetenv("QTAV_NO_VBO").toInt() > 0;
     try_vbo = !disable_vbo;
@@ -45,7 +47,20 @@ bool GeometryRenderer::updateBuffers(Geometry *g)
 #if QT_VAO
         vao.destroy();
 #endif
+        ibo.destroy();
         return true;
+    }
+    if (try_ibo) {
+        if (!ibo.isCreated()) {
+            if (!ibo.create()) {
+                try_ibo = false;
+                qDebug("IBO is not supported");
+            }
+        }
+        if (ibo.isCreated()) {
+            ibo.bind();
+            ibo.allocate(g->indexData(), g->indexDataSize());
+        }
     }
     if (!try_vbo)
         return false;
@@ -79,11 +94,11 @@ bool GeometryRenderer::updateBuffers(Geometry *g)
         for (int an = 0; an < g->attributes().size(); ++an) {
             // FIXME: assume bind order is 0,1,2...
             const Attribute& a = g->attributes().at(an);
-            DYGL(glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), reinterpret_cast<const void *>(qptrdiff(a.offset()))));
+            //DYGL(glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), reinterpret_cast<const void *>(qptrdiff(a.offset()))));
             /// FIXME: why qopengl function crash?
-            //program->setAttributeBuffer(an, a.type(), a.offset(), a.tupleSize(), g->stride());
-            //program->enableAttributeArray(an); //TODO: in setActiveShader
-            DYGL(glEnableVertexAttribArray(an));
+            program->enableAttributeArray(an); //TODO: in setActiveShader
+            program->setAttributeBuffer(an, a.type(), a.offset(), a.tupleSize(), g->stride());
+            //DYGL(glEnableVertexAttribArray(an));
         }
     }
 #endif
@@ -93,6 +108,8 @@ bool GeometryRenderer::updateBuffers(Geometry *g)
 
 void GeometryRenderer::bindBuffers(Geometry *g)
 {
+    if (try_ibo && ibo.isCreated())
+        ibo.bind();
 #if QT_VAO
     if (try_vao && vao.isCreated()) {
         vao.bind();
@@ -104,24 +121,26 @@ void GeometryRenderer::bindBuffers(Geometry *g)
         // normalized
         for (int an = 0; an < g->attributes().size(); ++an) {
             const Attribute& a = g->attributes().at(an);
-            DYGL(glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), reinterpret_cast<const void *>(qptrdiff(a.offset()))));
-            //program->setAttributeBuffer(an, a.type(), a.offset(), a.tupleSize(), g->stride());
-            //program->enableAttributeArray(an); //TODO: in setActiveShader
-            DYGL(glEnableVertexAttribArray(an));
+            //DYGL(glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), reinterpret_cast<const void *>(qptrdiff(a.offset()))));
+            program->setAttributeBuffer(an, a.type(), a.offset(), a.tupleSize(), g->stride());
+            program->enableAttributeArray(an); //TODO: in setActiveShader
+            //DYGL(glEnableVertexAttribArray(an));
         }
     } else {
         for (int an = 0; an < g->attributes().size(); ++an) {
             const Attribute& a = g->attributes().at(an);
-            //program->setAttributeArray(an, a.type(), (const char*)g->vertexData() + a.offset(), a.tupleSize(), g->stride());
-            DYGL(glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), (const char*)g->vertexData() + a.offset()));
-            //program->enableAttributeArray(an); //TODO: in setActiveShader
-            DYGL(glEnableVertexAttribArray(an));
+            program->setAttributeArray(an, a.type(), (const char*)g->vertexData() + a.offset(), a.tupleSize(), g->stride());
+            //DYGL(glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), (const char*)g->vertexData() + a.offset()));
+            program->enableAttributeArray(an); //TODO: in setActiveShader
+            //DYGL(glEnableVertexAttribArray(an));
         }
     }
 }
 
 void GeometryRenderer::unbindBuffers(Geometry *g)
 {
+    if (try_ibo && ibo.isCreated())
+        ibo.release();
 #if QT_VAO
     if (try_vao && vao.isCreated()) {
         vao.release();
@@ -140,8 +159,7 @@ void GeometryRenderer::unbindBuffers(Geometry *g)
 void GeometryRenderer::render(Geometry *g)
 {
     if (g->indexCount() > 0) {
-        // IBO
-        glDrawElements(g->primitiveType(), g->indexCount(), g->indexType(), g->indexData());
+        DYGL(glDrawElements(g->primitiveType(), g->indexCount(), g->indexType(), g->indexData()));
     } else {
         DYGL(glDrawArrays(g->primitiveType(), 0, g->vertexCount()));
     }

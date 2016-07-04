@@ -48,10 +48,12 @@ private:
     // TODO: setFeatures(VAO|VBO)
     bool try_vbo; // check environment var and opengl support
     bool try_vao;
+    bool try_ibo;
     QOpenGLBuffer vbo; //VertexBuffer
 #if QT_VAO
     QOpenGLVertexArrayObject vao;
 #endif //QT_VAO
+    QOpenGLBuffer ibo;
 };
 
 } //namespace QtAV

@@ -86,6 +86,7 @@ public:
     void* indexData() { return m_icount > 0 ? m_idata.data() : NULL;}
     const void* indexData() const { return m_icount > 0 ? m_idata.constData() : NULL;}
     int indexCount() const { return m_icount;}
+    int indexDataSize() const;
     // GL_UNSIGNED_BYTE/SHORT/INT
     DataType indexType() const {return m_itype;}
     void setIndexType(DataType value) { m_itype = value;}

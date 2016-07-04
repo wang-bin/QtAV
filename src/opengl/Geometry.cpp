@@ -57,6 +57,15 @@ Geometry::Geometry(int vertexCount, int indexCount, DataType indexType)
     , m_icount(indexCount)
 {}
 
+int Geometry::indexDataSize() const
+{
+    switch (indexType()) {
+    case GL_UNSIGNED_SHORT: return indexCount()*2;
+    case GL_UNSIGNED_INT: return indexCount()*4;
+    default: return indexCount();
+    }
+}
+
 void Geometry::setIndexValue(int index, int value)
 {
     switch (indexType()) {
