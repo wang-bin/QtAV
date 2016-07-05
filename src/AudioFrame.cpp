@@ -76,11 +76,11 @@ AudioFrame::AudioFrame(const AudioFormat &format, const QByteArray& data)
     Q_D(AudioFrame);
     d->format = format;
     d->data = data;
-    d->samples_per_ch = data.size() / d->format.channels() / d->format.bytesPerSample();
     if (!d->format.isValid())
         return;
     if (d->data.isEmpty())
         return;
+    d->samples_per_ch = data.size() / d->format.channels() / d->format.bytesPerSample();
     const int nb_planes(d->format.planeCount());
     const int bpl(d->data.size()/nb_planes);
     for (int i = 0; i < nb_planes; ++i) {
