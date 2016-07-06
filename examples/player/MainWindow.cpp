@@ -697,6 +697,7 @@ bool MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
     mpOSD->installTo(mpRenderer);
     mpSubtitle->installTo(mpRenderer);
     onUserShaderChanged();
+#define GL_ASS 0
 #if GL_ASS
     GLSLFilter* glsl = new GLSLFilter(this);
     glsl->setOutputSize(QSize(4096, 2160));
@@ -861,7 +862,7 @@ void MainWindow::onStartPlay()
 void MainWindow::onStopPlay()
 {
     mpPlayer->setPriority(idsFromNames(Config::instance().decoderPriorityNames()));
-    if (mpPlayer->currentRepeat() < mpPlayer->repeat())
+    if (mpPlayer->currentRepeat() >= 0 && mpPlayer->currentRepeat() < mpPlayer->repeat())
         return;
     // use shortcut to replay in EventFilter, the options will not be set, so set here
     mpPlayer->setFrameRate(Config::instance().forceFrameRate());

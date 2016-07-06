@@ -1230,6 +1230,8 @@ void AVPlayer::playInternal()
         QMetaObject::invokeMethod(this, "startNotifyTimer", Qt::AutoConnection);
     }
     d->state = PlayingState;
+    if (d->repeat_current < 0)
+        d->repeat_current = 0;
     } //end lock scoped here to avoid dead lock if connect started() to a slot that call unload()/play()
     if (d->start_position_norm > 0) {
         if (relativeTimeMode())
@@ -1243,15 +1245,16 @@ void AVPlayer::playInternal()
 
 void AVPlayer::stopFromDemuxerThread()
 {
-    qDebug("demuxer thread emit finished.");
+    qDebug("demuxer thread emit finished. repeat: %d/%d", currentRepeat(), repeat());
     d->seeking = false;
-    if (currentRepeat() >= repeat() && repeat() >= 0) {
+    if (currentRepeat() < 0 || (currentRepeat() >= repeat() && repeat() >= 0)) {
         qreal stop_pts = masterClock()->videoTime();
         if (stop_pts <= 0)
             stop_pts = masterClock()->value();
         masterClock()->reset();
         stopNotifyTimer();
         // vars not set by user can be reset
+        d->repeat_current = -1;
         d->start_position_norm = 0;
         d->stop_position_norm = kInvalidPosition; // already stopped. so not 0 but invalid. 0 can stop the playback in timerEvent
         d->media_end = kInvalidPosition;
@@ -1396,7 +1399,7 @@ void AVPlayer::stop()
     }
     d->seeking = false;
     d->reset_state = true;
-
+    d->repeat_current = -1;
     if (!isPlaying()) {
         qDebug("Not playing~");
         if (mediaStatus() == LoadingMedia || mediaStatus() == LoadedMedia) {

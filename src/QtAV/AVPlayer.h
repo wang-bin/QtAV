@@ -179,6 +179,10 @@ public:
     qint64 position() const; //unit: ms
     //0: play once. N: play N+1 times. <0: infinity
     int repeat() const; //or repeatMax()?
+    /*!
+     * \brief currentRepeat
+     * \return -1 if not playback is stopped, otherwise (Playback times - 1)
+     */
     int currentRepeat() const;
     /*!
      * \brief setExternalAudio
