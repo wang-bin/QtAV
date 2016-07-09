@@ -103,7 +103,6 @@ void QmlAVPlayer::componentComplete()
 {
     // TODO: set player parameters
     if (mSource.isValid() && (mAutoLoad || mAutoPlay)) {
-        mpPlayer->setFile(QUrl::fromPercentEncoding(mSource.toEncoded()));
         if (mAutoLoad)
             mpPlayer->load();
         if (mAutoPlay)
@@ -137,7 +136,10 @@ void QmlAVPlayer::setSource(const QUrl &url)
     if (mSource == url)
         return;
     mSource = url;
-    mpPlayer->setFile(QUrl::fromPercentEncoding(mSource.toEncoded()));
+    if (url.isLocalFile() || url.scheme().isEmpty() || url.scheme().startsWith("qrc"))
+        mpPlayer->setFile(QUrl::fromPercentEncoding(mSource.toEncoded()));
+    else
+        mpPlayer->setFile(url.toEncoded());
     Q_EMIT sourceChanged(); //TODO: Q_EMIT only when player loaded a new source
 
     if (mHasAudio) {
