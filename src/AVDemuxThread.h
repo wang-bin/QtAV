@@ -50,6 +50,7 @@ public:
     //AVDemuxer* demuxer
     bool isPaused() const;
     bool isEnd() const;
+    bool atEndOfMedia() const;
     PacketBuffer* buffer();
     void updateBufferState();
     void stop(); //TODO: remove it?
@@ -70,6 +71,7 @@ private slots:
     void frameDeliveredOnStepForward();
     void eofDecodedOnStepForward();
     void onAVThreadQuit();
+    void eofDecoded();
 
 protected:
     virtual void run();

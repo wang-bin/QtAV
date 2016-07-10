@@ -53,6 +53,8 @@ public:
             return;
         if (mDemuxThread->isEnd())
             return;
+        if (mDemuxThread->atEndOfMedia())
+            return;
         mDemuxThread->updateBufferState(); // ensure detect buffering immediately
         AVThread *thread = mDemuxThread->videoThread();
         //qDebug("try wake up video queue");
@@ -319,6 +321,11 @@ bool AVDemuxThread::isEnd() const
     return end;
 }
 
+bool AVDemuxThread::atEndOfMedia() const
+{
+    return demuxer->atEnd();
+}
+
 PacketBuffer* AVDemuxThread::buffer()
 {
     return m_buffer;
@@ -502,6 +509,11 @@ bool AVDemuxThread::waitForStarted(int msec)
     return true;
 }
 
+void AVDemuxThread::eofDecoded()
+{
+    Q_EMIT mediaStatusChanged(QtAV::EndOfMedia);
+}
+
 void AVDemuxThread::run()
 {
     m_buffering = false;
@@ -530,6 +542,7 @@ void AVDemuxThread::run()
         vqueue->setBlocking(true);
     }
     connect(thread, SIGNAL(seekFinished(qint64)), this, SIGNAL(seekFinished(qint64)), Qt::DirectConnection);
+    connect(thread, SIGNAL(eofDecoded()), this, SLOT(eofDecoded()));
     seek_tasks.clear();
     int was_end = 0;
     if (ademuxer) {
@@ -568,6 +581,7 @@ void AVDemuxThread::run()
             if (m_buffering) {
                 m_buffering = false;
                 Q_EMIT mediaStatusChanged(QtAV::BufferedMedia);
+                Q_EMIT mediaStatusChanged(QtAV::EndOfMedia);
             }
             was_end = qMin(was_end + 1, kMaxEof);
             bool exit_thread = !user_paused;
@@ -699,9 +713,9 @@ void AVDemuxThread::run()
         video_thread->pause(false);
         video_thread->wait(500);
     }
+    thread->disconnect(this, SIGNAL(eofDecoded()));
     thread->disconnect(this, SIGNAL(seekFinished(qint64)));
     qDebug("Demux thread stops running....");
-    Q_EMIT mediaStatusChanged(QtAV::EndOfMedia);
 }
 
 bool AVDemuxThread::tryPause(unsigned long timeout)
