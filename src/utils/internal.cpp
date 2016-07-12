@@ -228,11 +228,11 @@ void setOptionsToFFmpegObj(const QVariant& opt, void* obj)
             qDebug("%s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
             if (vt == QVariant::Int || vt == QVariant::UInt || vt == QVariant::Bool) {
                 // QVariant.toByteArray(): "true" or "false", can not recognized by avcodec
-                av_opt_set_int(obj, key.constData(), i.value().toInt(), 0);
+                av_opt_set_int(obj, key.constData(), i.value().toInt(), AV_OPT_SEARCH_CHILDREN);
             } else if (vt == QVariant::LongLong || vt == QVariant::ULongLong) {
-                av_opt_set_int(obj, key.constData(), i.value().toLongLong(), 0);
+                av_opt_set_int(obj, key.constData(), i.value().toLongLong(), AV_OPT_SEARCH_CHILDREN);
             } else if (vt == QVariant::Double) {
-                av_opt_set_double(obj, key.constData(), i.value().toDouble(), 0);
+                av_opt_set_double(obj, key.constData(), i.value().toDouble(), AV_OPT_SEARCH_CHILDREN);
             }
         }
         return;
@@ -249,9 +249,9 @@ void setOptionsToFFmpegObj(const QVariant& opt, void* obj)
         const QByteArray key(i.key().toUtf8());
         qDebug("%s=>%s", i.key().toUtf8().constData(), i.value().toByteArray().constData());
         if (vt == QVariant::Int || vt == QVariant::UInt || vt == QVariant::Bool) {
-            av_opt_set_int(obj, key.constData(), i.value().toInt(), 0);
+            av_opt_set_int(obj, key.constData(), i.value().toInt(), AV_OPT_SEARCH_CHILDREN);
         } else if (vt == QVariant::LongLong || vt == QVariant::ULongLong) {
-            av_opt_set_int(obj, key.constData(), i.value().toLongLong(), 0);
+            av_opt_set_int(obj, key.constData(), i.value().toLongLong(), AV_OPT_SEARCH_CHILDREN);
         }
     }
 }
