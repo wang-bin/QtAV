@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 #include "Geometry.h"
-#include "opengl/OpenGLHelper.h"
+#include <QtDebug>
 
 namespace QtAV {
 
@@ -60,8 +60,8 @@ Geometry::Geometry(int vertexCount, int indexCount, DataType indexType)
 int Geometry::indexDataSize() const
 {
     switch (indexType()) {
-    case GL_UNSIGNED_SHORT: return indexCount()*2;
-    case GL_UNSIGNED_INT: return indexCount()*4;
+    case TypeU16: return indexCount()*2;
+    case TypeU32: return indexCount()*4;
     default: return indexCount();
     }
 }
@@ -69,17 +69,17 @@ int Geometry::indexDataSize() const
 void Geometry::setIndexValue(int index, int value)
 {
     switch (indexType()) {
-    case GL_UNSIGNED_BYTE: {
+    case TypeU8: {
         quint8* d = (quint8*)m_idata.data();
         *(d+index) = value;
     }
         break;
-    case GL_UNSIGNED_SHORT: {
+    case TypeU16: {
         quint16* d = (quint16*)m_idata.data();
         *(d+index) = value;
     }
         break;
-    case GL_UNSIGNED_INT: {
+    case TypeU32: {
         quint32* d = (quint32*)m_idata.data();
         *(d+index) = value;
     }
@@ -92,21 +92,21 @@ void Geometry::setIndexValue(int index, int value)
 void Geometry::setIndexValue(int index, int v1, int v2, int v3)
 {
     switch (indexType()) {
-    case GL_UNSIGNED_BYTE: {
+    case TypeU8: {
         quint8* d = (quint8*)m_idata.data();
         *(d+index++) = v1;
         *(d+index++) = v2;
         *(d+index++) = v2;
     }
         break;
-    case GL_UNSIGNED_SHORT: {
+    case TypeU16: {
         quint16* d = (quint16*)m_idata.data();
         *(d+index++) = v1;
         *(d+index++) = v2;
         *(d+index++) = v3;
     }
         break;
-    case GL_UNSIGNED_INT: {
+    case TypeU32: {
         quint32* d = (quint32*)m_idata.data();
         *(d+index++) = v1;
         *(d+index++) = v2;
@@ -128,13 +128,13 @@ void Geometry::allocate(int nbVertex, int nbIndex)
         return;
     }
     switch (indexType()) {
-    case GL_UNSIGNED_BYTE:
+    case TypeU8:
         m_idata.resize(nbIndex*sizeof(quint8));
         break;
-    case GL_UNSIGNED_SHORT:
+    case TypeU16:
         m_idata.resize(nbIndex*sizeof(quint16));
         break;
-    case GL_UNSIGNED_INT:
+    case TypeU32:
         m_idata.resize(nbIndex*sizeof(quint32));
         break;
     default:
@@ -199,7 +199,7 @@ void TexturedGeometry::setRect(const QRectF &r, const QRectF &tr, int texIndex)
 {
     setPoint(0, r.topLeft(), tr.topLeft(), texIndex);
     setPoint(1, r.bottomLeft(), tr.bottomLeft(), texIndex);
-    switch (primitiveType()) {
+    switch (primitive()) {
     case TriangleStrip:
         setPoint(2, r.topRight(), tr.topRight(), texIndex);
         setPoint(3, r.bottomRight(), tr.bottomRight(), texIndex);
@@ -219,7 +219,7 @@ void TexturedGeometry::setGeometryRect(const QRectF &r)
 {
     setGeometryPoint(0, r.topLeft());
     setGeometryPoint(1, r.bottomLeft());
-    switch (primitiveType()) {
+    switch (primitive()) {
     case TriangleStrip:
         setGeometryPoint(2, r.topRight());
         setGeometryPoint(3, r.bottomRight());
@@ -239,7 +239,7 @@ void TexturedGeometry::setTextureRect(const QRectF &tr, int texIndex)
 {
     setTexturePoint(0, tr.topLeft(), texIndex);
     setTexturePoint(1, tr.bottomLeft(), texIndex);
-    switch (primitiveType()) {
+    switch (primitive()) {
     case TriangleStrip:
         setTexturePoint(2, tr.topRight(), texIndex);
         setTexturePoint(3, tr.bottomRight(), texIndex);

@@ -66,15 +66,15 @@ Q_AV_EXPORT QDebug operator<<(QDebug debug, const Attribute &a);
 class Geometry {
 public:
     /// Strip or Triangles is preferred by ANGLE. The values are equal to opengl
-    enum PrimitiveType {
+    enum Primitive {
         Triangles = 0x0004,
         TriangleStrip = 0x0005, //default
         TriangleFan = 0x0006, // Not recommended
     };
     Geometry(int vertexCount = 0, int indexCount = 0, DataType indexType = TypeU16);
     virtual ~Geometry() {}
-    PrimitiveType primitiveType() const {return m_primitive;}
-    void setPrimitiveType(PrimitiveType value) {  m_primitive = value;}
+    Primitive primitive() const {return m_primitive;}
+    void setPrimitive(Primitive value) {  m_primitive = value;}
     int vertexCount() const {return m_vcount;}
     void setVertexCount(int value) {m_vcount = value;} // TODO: remove, or allocate data here
     // TODO: setStride and no virtual
@@ -98,7 +98,7 @@ public:
      */
     void allocate(int nbVertex, int nbIndex = 0);
 protected:
-    PrimitiveType m_primitive;
+    Primitive m_primitive;
     DataType m_itype;
     int m_vcount;
     int m_icount;

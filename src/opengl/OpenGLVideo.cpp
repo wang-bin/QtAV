@@ -73,7 +73,7 @@ public:
     // update geometry(vertex array) set attributes or bind VAO/VBO.
     void bindAttributes(VideoShader* shader, const QRectF& t, const QRectF& r);
     void unbindAttributes(VideoShader*) {
-        gr.unbindBuffers(&geometry);
+        gr.unbindBuffers();
     }
 public:
     QOpenGLContext *ctx;
@@ -120,7 +120,7 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
         }
     }
     if (!update_geo) {
-        gr.bindBuffers(&geometry);
+        gr.bindBuffers();
         return;
     }
     //qDebug("updating geometry...");
@@ -135,7 +135,7 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
     }
     update_geo = false;
     gr.updateBuffers(&geometry);
-    gr.bindBuffers(&geometry);
+    gr.bindBuffers();
 }
 
 OpenGLVideo::OpenGLVideo() {}
@@ -305,7 +305,7 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
         DYGL(glEnable(GL_BLEND));
         DYGL(glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA));
     }
-    d.gr.render(&d.geometry);
+    d.gr.render();
     if (blending)
         DYGL(glDisable(GL_BLEND));
     // d.shader->program()->release(); //glUseProgram(0)

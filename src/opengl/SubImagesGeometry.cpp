@@ -120,7 +120,7 @@ SubImagesGeometry::SubImagesGeometry()
     , m_w(0)
     , m_h(0)
 {
-    setPrimitiveType(Geometry::Triangles);
+    setPrimitive(Geometry::Triangles);
     m_attributes << Attribute(TypeF32, 2)
                  << Attribute(TypeF32, 2, 2*sizeof(float))
 #if U8COLOR

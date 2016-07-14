@@ -24,6 +24,7 @@ namespace QtAV {
 
 GeometryRenderer::GeometryRenderer()
     : program(NULL)
+    , g(NULL)
     , try_vbo(true)
     , try_vao(true)
     , try_ibo(true)
@@ -40,8 +41,9 @@ void GeometryRenderer::setShaderProgram(QOpenGLShaderProgram *sp)
     program = sp;
 }
 
-bool GeometryRenderer::updateBuffers(Geometry *g)
+bool GeometryRenderer::updateBuffers(Geometry *geo)
 {
+    g = geo;
     if (!g) {
         vbo.destroy();
 #if QT_VAO
@@ -106,8 +108,10 @@ bool GeometryRenderer::updateBuffers(Geometry *g)
     return true;
 }
 
-void GeometryRenderer::bindBuffers(Geometry *g)
+void GeometryRenderer::bindBuffers()
 {
+    if (!g)
+        return;
     if (try_ibo && ibo.isCreated())
         ibo.bind();
 #if QT_VAO
@@ -137,8 +141,10 @@ void GeometryRenderer::bindBuffers(Geometry *g)
     }
 }
 
-void GeometryRenderer::unbindBuffers(Geometry *g)
+void GeometryRenderer::unbindBuffers()
 {
+    if (!g)
+        return;
     if (try_ibo && ibo.isCreated())
         ibo.release();
 #if QT_VAO
@@ -147,21 +153,23 @@ void GeometryRenderer::unbindBuffers(Geometry *g)
         return;
     }
 #endif //QT_VAO
-    for (int an = 0; an < g->attributes().size(); ++an) {
-        program->disableAttributeArray(an); //TODO: in setActiveShader
-    }
     // release vbo. qpainter is affected if vbo is bound
     if (try_vbo && vbo.isCreated()) {
         vbo.release();
     }
+    for (int an = 0; an < g->attributes().size(); ++an) {
+        program->disableAttributeArray(an); //TODO: in setActiveShader
+    }
 }
 
-void GeometryRenderer::render(Geometry *g)
+void GeometryRenderer::render()
 {
+    if (!g)
+        return;
     if (g->indexCount() > 0) {
-        DYGL(glDrawElements(g->primitiveType(), g->indexCount(), g->indexType(), g->indexData()));
+        DYGL(glDrawElements(g->primitive(), g->indexCount(), g->indexType(), g->indexData()));
     } else {
-        DYGL(glDrawArrays(g->primitiveType(), 0, g->vertexCount()));
+        DYGL(glDrawArrays(g->primitive(), 0, g->vertexCount()));
     }
 }
 } //namespace QtAV

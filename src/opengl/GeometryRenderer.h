@@ -36,15 +36,16 @@ class GeometryRenderer
 {
 public:
     GeometryRenderer();
-    void setShaderProgram(QOpenGLShaderProgram *sp);
+    void setShaderProgram(QOpenGLShaderProgram *sp); // TODO: remove this if use gl api directly
     /// assume attributes are bound in the order 0, 1, 2,....
     /// null geometry: release vao/vbo
-    bool updateBuffers(Geometry* g = NULL);
-    void bindBuffers(Geometry* g);
-    void render(Geometry* g);
-    void unbindBuffers(Geometry *g);
+    bool updateBuffers(Geometry* geo = NULL);
+    void bindBuffers();
+    void render();
+    void unbindBuffers();
 private:
     QOpenGLShaderProgram *program;
+    Geometry *g;
     // TODO: setFeatures(VAO|VBO)
     bool try_vbo; // check environment var and opengl support
     bool try_vao;
