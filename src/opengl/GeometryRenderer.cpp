@@ -52,7 +52,7 @@ bool GeometryRenderer::updateBuffers(Geometry *geo)
         ibo.destroy();
         return true;
     }
-    if (try_ibo) {
+    if (try_ibo && g->indexCount() > 0) {
         if (!ibo.isCreated()) {
             if (!ibo.create()) {
                 try_ibo = false;
@@ -62,6 +62,7 @@ bool GeometryRenderer::updateBuffers(Geometry *geo)
         if (ibo.isCreated()) {
             ibo.bind();
             ibo.allocate(g->indexData(), g->indexDataSize());
+            ibo.release();
         }
     }
     if (!try_vbo)
