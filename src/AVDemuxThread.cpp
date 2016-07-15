@@ -175,7 +175,7 @@ void AVDemuxThread::stepBackward()
             AVThread *avt = demux_thread->videoThread();
             avt->packetQueue()->clear(); // clear here
             if (pts <= 0) {
-                demux_thread->demuxer->seek(qint64(-pts*1000.0) - 1000LL);
+                demux_thread->demuxer->seek(qint64(-pts*1000.0) - 500LL);
                 QVector<qreal> ts;
                 qreal t = -1.0;
                 while (t < -pts) {
@@ -185,9 +185,12 @@ void AVDemuxThread::stepBackward()
                     t = demux_thread->demuxer->packet().pts;
                     ts.push_back(t);
                 }
+                const qreal t0 = ts.back();
                 ts.pop_back();
+                const qreal dt = t0 - ts.back();
                 pts = ts.back();
-                // FIXME: sometimes can not seek to the previous pts, the result pts is always current pts
+                // FIXME: sometimes can not seek to the previous pts, the result pts is always current pts, so let the target pts a little earlier
+                pts -= dt/2.0;
             }
             qDebug("step backward: %lld, %f", qint64(pts*1000.0), pts);
             demux_thread->video_thread->setDropFrameOnSeek(false);
