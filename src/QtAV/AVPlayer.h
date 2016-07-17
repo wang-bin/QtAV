@@ -391,7 +391,7 @@ public:
     MediaEndAction mediaEndAction() const;
     void setMediaEndAction(MediaEndAction value);
 
-public slots:
+public Q_SLOTS:
     /*!
      * \brief load
      * Load the current media set by setFile(); Can be used to reload a media and call play() later. If already loaded, does nothing and return true.

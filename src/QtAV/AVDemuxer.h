@@ -187,7 +187,7 @@ public:
      */
     void setOptions(const QVariantHash &dict);
     QVariantHash options() const;
-signals:
+Q_SIGNALS:
     void unloaded();
     void userInterrupted(); //NO direct connection because it's emit before interrupted happens
     void loaded();

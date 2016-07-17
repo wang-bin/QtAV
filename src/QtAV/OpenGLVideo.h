@@ -102,7 +102,7 @@ Q_SIGNALS:
 protected:
     DPTR_DECLARE(OpenGLVideo)
 
-private slots:
+private Q_SLOTS:
     /* used by Qt5 whose QOpenGLContext is QObject and we can call this when context is about to destroy.
      * shader manager and material will be reset
      */
