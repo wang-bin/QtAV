@@ -140,14 +140,14 @@ AudioFrame AudioFrame::clone() const
     if (d->samples_per_ch <= 0 || bytesPerLine(0) <= 0)
         return AudioFrame(format());
     QByteArray buf(bytesPerLine()*planeCount(), 0);
-    AudioFrame f(d->format, buf);
-    f.setSamplesPerChannel(samplesPerChannel());
     char *dst = buf.data(); //must before buf is shared, otherwise data will be detached.
-    for (int i = 0; i < f.planeCount(); ++i) {
-        const int plane_size = f.bytesPerLine(i);
-        memcpy(dst, f.constBits(i), plane_size);
+    for (int i = 0; i < planeCount(); ++i) {
+        const int plane_size = bytesPerLine(i);
+        memcpy(dst, constBits(i), plane_size);
         dst += plane_size;
     }
+    AudioFrame f(d->format, buf);
+    f.setSamplesPerChannel(samplesPerChannel());
     f.setTimestamp(timestamp());
     // meta data?
     return f;
