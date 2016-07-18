@@ -110,13 +110,13 @@ public:
      */
     bool syncEndOnce(int id);
 
-signals:
+Q_SIGNALS:
     void paused(bool);
     void paused(); //equals to paused(true)
     void resumed();//equals to paused(false)
     void started();
     void resetted();
-public slots:
+public Q_SLOTS:
     //these slots are not frequently used. so not inline
     /*start the external clock*/
     void start();

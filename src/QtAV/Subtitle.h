@@ -179,7 +179,7 @@ public:
     void setFontsDir(const QString& value);
     bool isFontFileForced() const;
     void setFontFileForced(bool value);
-public slots:
+public Q_SLOTS:
     /*!
      * \brief start
      * start to process the whole subtitle content in a thread
@@ -187,7 +187,7 @@ public slots:
     void load();
     void loadAsync();
     void setTimestamp(qreal t);
-signals:
+Q_SIGNALS:
     // TODO: also add to AVPlayer?
     /// empty path if load from raw data
     void loaded(const QString& path = QString());

@@ -116,7 +116,7 @@ Q_SIGNALS:
     void qualityChanged();
     void captureNameChanged();
     void captureDirChanged();
-private slots:
+private Q_SLOTS:
     void handleAppQuit();
 private:
     void setVideoFrame(const VideoFrame& frame);

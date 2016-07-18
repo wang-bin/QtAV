@@ -62,7 +62,7 @@ public:
     bool uninstall();
 public Q_SLOTS:
     void setEnabled(bool enabled = true);
-signals:
+Q_SIGNALS:
     void enabledChanged(bool);
 protected:
     /*

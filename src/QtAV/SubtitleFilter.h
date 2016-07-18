@@ -83,15 +83,15 @@ public:
     QFont font() const;
     void setColor(const QColor& c);
     QColor color() const;
-public slots:
+public Q_SLOTS:
     // TODO: enable changed & autoload=> load
     void setAutoLoad(bool value);
-signals:
+Q_SIGNALS:
     void rectChanged();
     void fontChanged();
     void colorChanged();
     void autoLoadChanged(bool value);
-signals:
+Q_SIGNALS:
     void fileChanged();
     void canRenderChanged();
     void loaded(const QString& path);
