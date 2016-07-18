@@ -173,10 +173,6 @@ double AVClock::value() const
         }
         return pts_ + value0;
     } else {
-        if (timer.isValid()) {
-            ++nb_restarted;
-            pts_v += (double(timer.restart()) * kThousandth + avg_err)* speed();
-        }
         return pts_v; // value0 is 1st video pts_v already
     }
 }
