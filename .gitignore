@@ -8,6 +8,9 @@ CVS
 !/.qmake.conf
 !/.travis.yml
 
+# .install files in debian/ are generated and ignored
+debian/*.install
+
 obj
 TestResults
 *.pbxuser
@@ -67,5 +70,4 @@ Release
 *qrc_res.cpp
 
 #cache
-*.pyc
 *.swp
