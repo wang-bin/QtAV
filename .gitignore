@@ -1,14 +1,17 @@
 CVS
 .#*
 
-.hg
-.hgignore
+# Hidden files are ignored by default with exceptions
+.*
+!/.gitignore
+!/.gitmodules
+!/.qmake.conf
+!/.travis.yml
 
 obj
 TestResults
 *.pbxuser
 *.perspectivev3
-.DS_Store
 
 *.old
 *.log
@@ -47,9 +50,6 @@ Makefile*
 *.ilk
 
 #dirs
-.moc
-.rcc
-.obj
 /bin*
 /lib*
 build
