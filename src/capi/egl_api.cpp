@@ -20,8 +20,6 @@
 ******************************************************************************/
 #define CAPI_LINKAGE EGLAPIENTRY // for functions defined in namespace egl::capi
 #define EGL_CAPI_BUILD
-#define DEBUG_RESOLVE
-#define DEBUG_LOAD
 //#define CAPI_IS_LAZY_RESOLVE 0
 #ifndef CAPI_LINK_EGL
 #include "capi.h"

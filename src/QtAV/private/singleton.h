@@ -1,6 +1,6 @@
 /******************************************************************************
     singleton.h: singleton template
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
     
     This library is free software; you can redistribute it and/or
     modify it under the terms of the GNU Lesser General Public
@@ -28,8 +28,8 @@
 #if USE_EXCEPTION
 #include <stdexcept> // std::string breaks abi
 #endif
-#define DEBUG 1
-#if DEBUG
+
+#ifdef DEBUG
 #define DBG(fmt, ...) \
     fprintf(stderr, fmt, ##__VA_ARGS__); \
     fflush(0);

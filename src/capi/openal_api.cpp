@@ -22,7 +22,7 @@
 
 #define OPENAL_CAPI_BUILD
 //#define DEBUG_RESOLVE
-#define DEBUG_LOAD
+//#define DEBUG_LOAD // why affects other xxx_api.cpp?
 //#define CAPI_IS_LAZY_RESOLVE 0
 #ifndef CAPI_LINK_OPENAL
 #include "capi.h"

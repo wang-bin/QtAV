@@ -21,8 +21,6 @@
 //%DEFS%
 
 #define ASS_CAPI_BUILD
-#define DEBUG_RESOLVE
-#define DEBUG_LOAD
 //#define CAPI_IS_LAZY_RESOLVE 0
 #ifndef CAPI_LINK_ASS
 #include "capi.h"

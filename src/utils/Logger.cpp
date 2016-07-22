@@ -229,7 +229,7 @@ QtAVDebug::QtAVDebug(QtMsgType t, QDebug *d)
     if (!sFirstRun)
         return;
     sFirstRun = false;
-    //printf("Qt Logging first run........\n");
+    printf("%s\n", aboutQtAV_PlainText().toUtf8().constData());
     // check environment var and call other functions at first Qt logging call
     // always override setLogLevel()
     QByteArray env = qgetenv("QTAV_LOG_LEVEL");

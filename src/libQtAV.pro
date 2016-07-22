@@ -26,12 +26,16 @@ config_libcedarv: CONFIG *= neon config_simd #need by qt4 addSimdCompiler(). neo
 ## sse2 sse4_1 may be defined in Qt5 qmodule.pri but is not included. Qt4 defines sse and sse2
 sse4_1|config_sse4_1|contains(TARGET_ARCH_SUB, sse4.1): CONFIG *= sse4_1 config_simd
 sse2|config_sse2|contains(TARGET_ARCH_SUB, sse2): CONFIG *= sse2 config_simd
-
+CONFIG(debug, debug|release): DEFINES += DEBUG
 #release: DEFINES += QT_NO_DEBUG_OUTPUT
 #var with '_' can not pass to pri?
 PROJECTROOT = $$PWD/..
 !include(libQtAV.pri): error("could not find libQtAV.pri")
 preparePaths($$OUT_PWD/../out)
+exists($$PROJECTROOT/extra/qtLongName(include)): INCLUDEPATH += $$PROJECTROOT/extra/qtLongName(include)
+exists($$PROJECTROOT/extra/qtLongName(lib)): LIBS += -L$$PROJECTROOT/extra/qtLongName(lib)
+
+
 config_uchardet {
   DEFINES += LINK_UCHARDET
   LIBS *= -luchardet
@@ -412,8 +416,8 @@ winrt {
 # use old libva.so to link against
 glibc_compat: *linux*: LIBS += -lrt  # do not use clock_gettime in libc, GLIBC_2.17 is not available on old system
 static_ffmpeg {
-# libs needed by mac static ffmpeg. corefoundation: vda, avdevice
-  mac|ios: LIBS += -liconv -lbz2 -llzma -lz -framework CoreFoundation  -Wl,-framework,Security
+# libs needed by mac static ffmpeg. corefoundation: vda, avdevice. coca: vf_coreimage
+  mac|ios: LIBS += -liconv -lbz2 -llzma -lz -framework CoreFoundation -framework Security -framework Cocoa
   win32: LIBS *= -lws2_32 -lstrmiids -lvfw32 -luuid
   !mac:*g++* {
     LIBS *= -lz
