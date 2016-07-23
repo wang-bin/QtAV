@@ -45,10 +45,11 @@ public:
     void setFeature(int f, bool on);
     void setFeatures(int value);
     int features() const;
+    int actualFeatures() const;
     bool testFeatures(int value) const;
     /// assume attributes are bound in the order 0, 1, 2,....
     /// null geometry: release vao/vbo
-    bool updateGeometry(Geometry* geo = NULL);
+    void updateGeometry(Geometry* geo = NULL);
     void render();
 protected:
     void bindBuffers();

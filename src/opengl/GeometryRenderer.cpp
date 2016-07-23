@@ -51,91 +51,117 @@ int GeometryRenderer::features() const
     return features_;
 }
 
+int GeometryRenderer::actualFeatures() const
+{
+    int f = 0;
+    if (vbo.isCreated())
+        f |= kVBO;
+    if (ibo.isCreated())
+        f |= kIBO;
+#if QT_VAO
+    if (vao.isCreated())
+        f |= kVAO;
+#endif
+    return f;
+}
+
 bool GeometryRenderer::testFeatures(int value) const
 {
     return !!(features() & value);
 }
 
-bool GeometryRenderer::updateGeometry(Geometry *geo)
+void GeometryRenderer::updateGeometry(Geometry *geo)
 {
     g = geo;
     if (!g) {
+        ibo.destroy();
         vbo.destroy();
 #if QT_VAO
         vao.destroy();
 #endif
-        ibo.destroy();
-        return true;
+        return;
     }
-    if (testFeatures(kIBO) && g->indexCount() > 0) {
-        if (!ibo.isCreated()) {
-            if (!ibo.create()) {
-                setFeature(kIBO, false);
-                qDebug("IBO is not supported");
-            }
-        }
-        if (ibo.isCreated()) {
-            ibo.bind();
-            ibo.allocate(g->indexData(), g->indexDataSize());
-            ibo.release();
+    if (testFeatures(kIBO) && !ibo.isCreated()) {
+        if (g->indexCount() > 0) {
+            qDebug("creating IBO...");
+            if (!ibo.create())
+                qDebug("IBO create error");
         }
     }
-    if (!testFeatures(kVBO))
-        return false;
+    if (ibo.isCreated()) {
+        ibo.bind();
+        ibo.allocate(g->indexData(), g->indexDataSize());
+        ibo.release();
+    }
+    if (testFeatures(kVBO) && !vbo.isCreated()) {
+        qDebug("creating VBO...");
+        if (!vbo.create())
+            qWarning("VBO create error");
+    }
+    if (vbo.isCreated()) {
+        vbo.bind();
+        vbo.allocate(g->vertexData(), g->vertexCount()*g->stride());
+        vbo.release();
+    }
 #if QT_VAO
-    if (testFeatures(kVAO)) {
-        //qDebug("updating vao...");
-        if (!vao.isCreated()) {
-            if (!vao.create()) {
-                setFeature(kVAO, false);
-                qDebug("VAO is not supported");
-            }
-        }
+    if (testFeatures(kVAO) && !vao.isCreated()) {
+        qDebug("creating VAO...");
+        if (!vao.create())
+            qDebug("VAO create error");
     }
-    QOpenGLVertexArrayObject::Binder vao_bind(&vao);
-    Q_UNUSED(vao_bind);
+    if (vao.isCreated()) // can not use vao binder because it will create a vao if necessary
+        vao.bind();
 #endif
-    if (!vbo.isCreated()) {
-        if (!vbo.create()) {
-            setFeature(kVBO, false);
-            setFeature(kVAO, false);// also disable Vao_. destroy?
-            qWarning("VBO is not supported");
-            return false;
-        }
-    }
-    //qDebug("updating vbo...");
-    vbo.bind(); //check here
-    vbo.allocate(g->vertexData(), g->vertexCount()*g->stride());
+// can set data before vao bind
     //qDebug("allocate(%p, %d*%d)", g->vertexData(), g->vertexCount(), g->stride());
 #if QT_VAO
-    if (testFeatures(kVAO)) {
+    if (!vao.isCreated())
+        return;
+    // TODO: call once is enough if no feature and no geometry attribute is changed
+    if (vbo.isCreated()) {
+        vbo.bind();
         for (int an = 0; an < g->attributes().size(); ++an) {
             // FIXME: assume bind order is 0,1,2...
             const Attribute& a = g->attributes().at(an);
             DYGL(glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), reinterpret_cast<const void *>(qptrdiff(a.offset())))); //TODO: in setActiveShader
-            /// FIXME: why QOpenGLShaderProgram function crash?
             DYGL(glEnableVertexAttribArray(an));
         }
+        vbo.release(); // unbind after vao unbind?
     }
+    // bind ibo to vao thus no bind is required later
+    if (ibo.isCreated())// if not bind here, glDrawElements(...,NULL) crashes and must use ibo data ptr, why?
+        ibo.bind();
+    vao.release();
+    if (ibo.isCreated())
+        ibo.release();
 #endif
-    vbo.release();
-    return true;
 }
 
 void GeometryRenderer::bindBuffers()
 {
-    if (!g)
-        return;
-    if (testFeatures(kIBO) && ibo.isCreated())
-        ibo.bind();
+    bool bind_vbo = vbo.isCreated();
+    bool bind_ibo = ibo.isCreated();
+    bool setv_skip = false;
 #if QT_VAO
-    if (testFeatures(kVAO) && vao.isCreated()) {
-        vao.bind();
-        return;
+    if (vao.isCreated()) {
+        vao.bind(); // vbo, ibo is ok now
+        setv_skip = bind_vbo;
+        bind_vbo = false;
+        bind_ibo = false;
     }
 #endif
+    //qDebug("bind ibo: %d vbo: %d; set v: %d", bind_ibo, bind_vbo, !setv_skip);
+    if (bind_ibo)
+        ibo.bind();
+    // no vbo: set vertex attributes
+    // has vbo, no vao: bind vbo & set vertex attributes
+    // has vbo, has vao: skip
+    if (setv_skip)
+        return;
+    if (!g)
+        return;
     const char* vdata = static_cast<const char*>(g->vertexData());
-    if (testFeatures(kVBO) && vbo.isCreated()) {
+    if (bind_vbo) {
         vbo.bind();
         vdata = NULL;
     }
@@ -148,22 +174,32 @@ void GeometryRenderer::bindBuffers()
 
 void GeometryRenderer::unbindBuffers()
 {
-    if (!g)
-        return;
-    if (testFeatures(kIBO) && ibo.isCreated())
-        ibo.release();
+    bool unbind_vbo = vbo.isCreated();
+    bool unbind_ibo = ibo.isCreated();
+    bool unsetv_skip = false;
 #if QT_VAO
-    if (testFeatures(kVAO) && vao.isCreated()) {
+    if (vao.isCreated()) {
         vao.release();
-        return;
+        unsetv_skip = unbind_vbo;
+        unbind_vbo = false;
+        unbind_ibo = false;
     }
 #endif //QT_VAO
+    //qDebug("unbind ibo: %d vbo: %d; unset v: %d", unbind_ibo, unbind_vbo, !unsetv_skip);
+    if (unbind_ibo)
+        ibo.release();
+    // release vbo. qpainter is affected if vbo is bound
+    if (unbind_vbo)
+        vbo.release();
+    // no vbo: disable vertex attributes
+    // has vbo, no vao: unbind vbo & set vertex attributes
+    // has vbo, has vao: skip
+    if (unsetv_skip)
+        return;
+    if (!g)
+        return;
     for (int an = 0; an < g->attributes().size(); ++an) {
         DYGL(glDisableVertexAttribArray(an));
-    }
-    // release vbo. qpainter is affected if vbo is bound
-    if (testFeatures(kVBO) && vbo.isCreated()) {
-        vbo.release();
     }
 }
 
@@ -173,7 +209,7 @@ void GeometryRenderer::render()
         return;
     bindBuffers();
     if (g->indexCount() > 0) {
-        DYGL(glDrawElements(g->primitive(), g->indexCount(), g->indexType(), g->indexData()));
+        DYGL(glDrawElements(g->primitive(), g->indexCount(), g->indexType(), ibo.isCreated() ? NULL : g->indexData()));
     } else {
         DYGL(glDrawArrays(g->primitive(), 0, g->vertexCount()));
     }

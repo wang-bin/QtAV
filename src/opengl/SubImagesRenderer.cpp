@@ -45,9 +45,8 @@ void SubImagesRenderer::render(const SubImageSet &ass, const QRect &target, cons
 {
     if (m_geometry->setSubImages(ass) || m_rect != target) {
         m_rect = target;
-        if (!m_geometry->generateVertexData(m_rect, true)) // FIXME: IBO + VAO works, IBO only crash, IBO +VBO nothing
+        if (!m_geometry->generateVertexData(m_rect, true))
             return;
-
         uploadTexture(m_geometry);
         m_renderer->updateGeometry(m_geometry);
     }
