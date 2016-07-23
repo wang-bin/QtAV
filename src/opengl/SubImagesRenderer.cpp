@@ -45,11 +45,11 @@ void SubImagesRenderer::render(const SubImageSet &ass, const QRect &target, cons
 {
     if (m_geometry->setSubImages(ass) || m_rect != target) {
         m_rect = target;
-        if (!m_geometry->generateVertexData(m_rect, true))
+        if (!m_geometry->generateVertexData(m_rect, true)) // FIXME: IBO + VAO works, IBO only crash, IBO +VBO nothing
             return;
 
         uploadTexture(m_geometry);
-        m_renderer->updateBuffers(m_geometry);
+        m_renderer->updateGeometry(m_geometry);
     }
     if (!m_program.isLinked()) {
         m_program.removeAllShaders();
@@ -71,8 +71,6 @@ void SubImagesRenderer::render(const SubImageSet &ass, const QRect &target, cons
     DYGL(glBindTexture(GL_TEXTURE_2D, m_tex));
     m_program.setUniformValue("u_Texture", 0);
     m_program.setUniformValue("u_Matrix", transform*m_mat);
-    m_renderer->setShaderProgram(&m_program);
-    m_renderer->bindBuffers();
     DYGL(glEnable(GL_BLEND));
     if (m_geometry->images().format() == SubImageSet::ASS)
         gl().BlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -82,7 +80,6 @@ void SubImagesRenderer::render(const SubImageSet &ass, const QRect &target, cons
     m_renderer->render();
 
     DYGL(glDisable(GL_BLEND));
-    m_renderer->unbindBuffers();
 }
 
 void SubImagesRenderer::setProjectionMatrixToRect(const QRectF &v)

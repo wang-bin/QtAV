@@ -59,7 +59,7 @@ public:
 
     void resetGL() {
         ctx = 0;
-        gr.updateBuffers(NULL);
+        gr.updateGeometry(NULL);
         if (!manager)
             return;
         manager->setParent(0);
@@ -71,10 +71,7 @@ public:
         }
     }
     // update geometry(vertex array) set attributes or bind VAO/VBO.
-    void bindAttributes(VideoShader* shader, const QRectF& t, const QRectF& r);
-    void unbindAttributes(VideoShader*) {
-        gr.unbindBuffers();
-    }
+    void updateGeometry(VideoShader* shader, const QRectF& t, const QRectF& r);
 public:
     QOpenGLContext *ctx;
     ShaderManager *manager;
@@ -93,7 +90,7 @@ public:
     VideoShader *user_shader;
 };
 
-void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, const QRectF &r)
+void OpenGLVideoPrivate::updateGeometry(VideoShader* shader, const QRectF &t, const QRectF &r)
 {
     // also check size change for normalizedROI computation if roi is not normalized
     const bool roi_changed = valiad_tex_width != material->validTextureWidth() || roi != r || video_size != material->frameSize();
@@ -119,10 +116,8 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
             update_geo = true;
         }
     }
-    if (!update_geo) {
-        gr.bindBuffers();
+    if (!update_geo)
         return;
-    }
     //qDebug("updating geometry...");
     // setTextureCount may change the vertex data. Call it before setRect()
     geometry.setTextureCount(shader->textureTarget() == GL_TEXTURE_RECTANGLE ? tc : 1);
@@ -134,8 +129,7 @@ void OpenGLVideoPrivate::bindAttributes(VideoShader* shader, const QRectF &t, co
         }
     }
     update_geo = false;
-    gr.updateBuffers(&geometry);
-    gr.bindBuffers();
+    gr.updateGeometry(&geometry);
 }
 
 OpenGLVideo::OpenGLVideo() {}
@@ -296,9 +290,8 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     shader->update(d.material);
     d.material->setDirty(false); //
     shader->program()->setUniformValue(shader->matrixLocation(), transform*d.matrix);
-    d.gr.setShaderProgram(shader->program());
     // uniform end. attribute begin
-    d.bindAttributes(shader, target, roi);
+    d.updateGeometry(shader, target, roi);
     // normalize?
     const bool blending = d.material->hasAlpha();
     if (blending) {
@@ -309,7 +302,6 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     if (blending)
         DYGL(glDisable(GL_BLEND));
     // d.shader->program()->release(); //glUseProgram(0)
-    d.unbindAttributes(shader);
     d.material->unbind();
 
     Q_EMIT afterRendering();

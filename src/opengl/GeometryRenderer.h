@@ -35,21 +35,27 @@ namespace QtAV {
 class GeometryRenderer
 {
 public:
+    // rendering features. Use all possible features as the default.
+    static const int kVBO = 0x01;
+    static const int kIBO = 0x02;
+    static const int kVAO = 0x04;
+
     GeometryRenderer();
-    void setShaderProgram(QOpenGLShaderProgram *sp); // TODO: remove this if use gl api directly
+    // call updateBuffer internally in bindBuffer if feature is changed
+    void setFeature(int f, bool on);
+    void setFeatures(int value);
+    int features() const;
+    bool testFeatures(int value) const;
     /// assume attributes are bound in the order 0, 1, 2,....
     /// null geometry: release vao/vbo
-    bool updateBuffers(Geometry* geo = NULL);
-    void bindBuffers();
+    bool updateGeometry(Geometry* geo = NULL);
     void render();
+protected:
+    void bindBuffers();
     void unbindBuffers();
 private:
-    QOpenGLShaderProgram *program;
     Geometry *g;
-    // TODO: setFeatures(VAO|VBO)
-    bool try_vbo; // check environment var and opengl support
-    bool try_vao;
-    bool try_ibo;
+    int features_;
     QOpenGLBuffer vbo; //VertexBuffer
 #if QT_VAO
     QOpenGLVertexArrayObject vao;
