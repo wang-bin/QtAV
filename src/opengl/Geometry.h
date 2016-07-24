@@ -50,9 +50,15 @@ public:
     int tupleSize() const {return m_tupleSize;}
     int offset() const {return m_offset;}
     bool normalize() const {return m_normalize;}
+    bool operator==(const Attribute& other) const {
+        return tupleSize() == other.tupleSize()
+                && offset() == other.offset()
+                && type() == other.type()
+                && normalize() == other.normalize();
+    }
 };
 #ifndef QT_NO_DEBUG_STREAM
-Q_AV_EXPORT QDebug operator<<(QDebug debug, const Attribute &a);
+QDebug operator<<(QDebug debug, const Attribute &a);
 #endif
 
 /*!
@@ -83,6 +89,7 @@ public:
     virtual const QVector<Attribute>& attributes() const = 0;
     void* vertexData() { return m_vdata.data();}
     const void* vertexData() const { return m_vdata.constData();}
+    const void* constVertexData() const { return m_vdata.constData();}
     void* indexData() { return m_icount > 0 ? m_idata.data() : NULL;}
     const void* indexData() const { return m_icount > 0 ? m_idata.constData() : NULL;}
     int indexCount() const { return m_icount;}
@@ -97,6 +104,12 @@ public:
      * Call allocate() when all parameters are set. vertexData() may change
      */
     void allocate(int nbVertex, int nbIndex = 0);
+    /*!
+     * \brief compare
+     * Compare each attribute and stride that used in glVertexAttribPointer
+     * \return true if equal
+     */
+    bool compare(const Geometry *other) const;
 protected:
     Primitive m_primitive;
     DataType m_itype;

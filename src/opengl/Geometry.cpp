@@ -70,17 +70,17 @@ void Geometry::setIndexValue(int index, int value)
 {
     switch (indexType()) {
     case TypeU8: {
-        quint8* d = (quint8*)m_idata.data();
+        quint8* d = (quint8*)m_idata.constData();
         *(d+index) = value;
     }
         break;
     case TypeU16: {
-        quint16* d = (quint16*)m_idata.data();
+        quint16* d = (quint16*)m_idata.constData();
         *(d+index) = value;
     }
         break;
     case TypeU32: {
-        quint32* d = (quint32*)m_idata.data();
+        quint32* d = (quint32*)m_idata.constData();
         *(d+index) = value;
     }
         break;
@@ -93,21 +93,21 @@ void Geometry::setIndexValue(int index, int v1, int v2, int v3)
 {
     switch (indexType()) {
     case TypeU8: {
-        quint8* d = (quint8*)m_idata.data();
+        quint8* d = (quint8*)m_idata.constData();
         *(d+index++) = v1;
         *(d+index++) = v2;
         *(d+index++) = v2;
     }
         break;
     case TypeU16: {
-        quint16* d = (quint16*)m_idata.data();
+        quint16* d = (quint16*)m_idata.constData();
         *(d+index++) = v1;
         *(d+index++) = v2;
         *(d+index++) = v3;
     }
         break;
     case TypeU32: {
-        quint32* d = (quint32*)m_idata.data();
+        quint32* d = (quint32*)m_idata.constData();
         *(d+index++) = v1;
         *(d+index++) = v2;
         *(d+index++) = v3;
@@ -140,6 +140,17 @@ void Geometry::allocate(int nbVertex, int nbIndex)
     default:
         break;
     }
+}
+
+bool Geometry::compare(const Geometry *other) const
+{
+    if (this == other)
+        return true;
+    if (!other)
+        return false;
+    if (stride() != other->stride())
+        return false;
+    return attributes() == other->attributes();
 }
 
 TexturedGeometry::TexturedGeometry()
@@ -183,14 +194,14 @@ void TexturedGeometry::setPoint(int index, const QPointF &p, const QPointF &tp, 
 
 void TexturedGeometry::setGeometryPoint(int index, const QPointF &p)
 {
-    float *v = (float*)(m_vdata.data() + index*stride());
+    float *v = (float*)(m_vdata.constData() + index*stride());
     *v = p.x();
     *(v+1) = p.y();
 }
 
 void TexturedGeometry::setTexturePoint(int index, const QPointF &tp, int texIndex)
 {
-    float *v = (float*)(m_vdata.data() + index*stride() + (texIndex+1)*2*sizeof(float));
+    float *v = (float*)(m_vdata.constData() + index*stride() + (texIndex+1)*2*sizeof(float));
     *v = tp.x();
     *(v+1) = tp.y();
 }

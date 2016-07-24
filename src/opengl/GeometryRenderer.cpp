@@ -27,6 +27,8 @@ GeometryRenderer::GeometryRenderer()
     , features_(kVBO|kIBO|kVAO)
     , ibo(QOpenGLBuffer::IndexBuffer)
 {
+    static bool disable_ibo = qgetenv("QTAV_NO_IBO").toInt() > 0;
+    setFeature(kIBO, !disable_ibo);
     static bool disable_vbo = qgetenv("QTAV_NO_VBO").toInt() > 0;
     setFeature(kVBO, !disable_vbo);
     static bool disable_vao = qgetenv("QTAV_NO_VAO").toInt() > 0;
@@ -72,6 +74,7 @@ bool GeometryRenderer::testFeatures(int value) const
 
 void GeometryRenderer::updateGeometry(Geometry *geo)
 {
+    const Geometry* old = g; // old geometry will be compared later, so make sure destroy old after updateGeometry
     g = geo;
     if (!g) {
         ibo.destroy();
@@ -117,14 +120,17 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
 #if QT_VAO
     if (!vao.isCreated())
         return;
+    if (g->compare(old))
+        return;
+    //qDebug("geometry attributes changed, rebind vao...");
     // TODO: call once is enough if no feature and no geometry attribute is changed
     if (vbo.isCreated()) {
         vbo.bind();
         for (int an = 0; an < g->attributes().size(); ++an) {
             // FIXME: assume bind order is 0,1,2...
             const Attribute& a = g->attributes().at(an);
-            DYGL(glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), reinterpret_cast<const void *>(qptrdiff(a.offset())))); //TODO: in setActiveShader
-            DYGL(glEnableVertexAttribArray(an));
+            QOpenGLContext::currentContext()->functions()->glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), reinterpret_cast<const void *>(qptrdiff(a.offset()))); //TODO: in setActiveShader
+            QOpenGLContext::currentContext()->functions()->glEnableVertexAttribArray(an);
         }
         vbo.release(); // unbind after vao unbind?
     }
@@ -167,8 +173,8 @@ void GeometryRenderer::bindBuffers()
     }
     for (int an = 0; an < g->attributes().size(); ++an) {
         const Attribute& a = g->attributes().at(an);
-        DYGL(glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), vdata + a.offset()));
-        DYGL(glEnableVertexAttribArray(an)); //TODO: in setActiveShader
+        QOpenGLContext::currentContext()->functions()->glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), vdata + a.offset());
+        QOpenGLContext::currentContext()->functions()->glEnableVertexAttribArray(an); //TODO: in setActiveShader
     }
 }
 
@@ -199,7 +205,7 @@ void GeometryRenderer::unbindBuffers()
     if (!g)
         return;
     for (int an = 0; an < g->attributes().size(); ++an) {
-        DYGL(glDisableVertexAttribArray(an));
+        QOpenGLContext::currentContext()->functions()->glDisableVertexAttribArray(an);
     }
 }
 
