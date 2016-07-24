@@ -19,7 +19,11 @@
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
 #include "GeometryRenderer.h"
-
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#define QGLF(f) QOpenGLContext::currentContext()->functions()->f
+#else
+#define QGLF(f) QGLFunctions(NULL).f
+#endif
 namespace QtAV {
 
 GeometryRenderer::GeometryRenderer()
@@ -129,8 +133,8 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
         for (int an = 0; an < g->attributes().size(); ++an) {
             // FIXME: assume bind order is 0,1,2...
             const Attribute& a = g->attributes().at(an);
-            QOpenGLContext::currentContext()->functions()->glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), reinterpret_cast<const void *>(qptrdiff(a.offset()))); //TODO: in setActiveShader
-            QOpenGLContext::currentContext()->functions()->glEnableVertexAttribArray(an);
+            QGLF(glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), reinterpret_cast<const void *>(qptrdiff(a.offset())))); //TODO: in setActiveShader
+            QGLF(glEnableVertexAttribArray(an));
         }
         vbo.release(); // unbind after vao unbind?
     }
@@ -173,8 +177,8 @@ void GeometryRenderer::bindBuffers()
     }
     for (int an = 0; an < g->attributes().size(); ++an) {
         const Attribute& a = g->attributes().at(an);
-        QOpenGLContext::currentContext()->functions()->glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), vdata + a.offset());
-        QOpenGLContext::currentContext()->functions()->glEnableVertexAttribArray(an); //TODO: in setActiveShader
+        QGLF(glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), vdata + a.offset()));
+        QGLF(glEnableVertexAttribArray(an)); //TODO: in setActiveShader
     }
 }
 
@@ -205,7 +209,7 @@ void GeometryRenderer::unbindBuffers()
     if (!g)
         return;
     for (int an = 0; an < g->attributes().size(); ++an) {
-        QOpenGLContext::currentContext()->functions()->glDisableVertexAttribArray(an);
+        QGLF(glDisableVertexAttribArray(an));
     }
 }
 
