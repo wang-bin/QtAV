@@ -39,7 +39,6 @@ public:
 
     QString name() const Q_DECL_FINAL { return QString::fromLatin1(kName);}
     bool isSupported(AudioFormat::SampleFormat sampleFormat) const Q_DECL_FINAL;
-    bool isSupported(AudioFormat::ChannelLayout channelLayout) const Q_DECL_FINAL;
     bool open() Q_DECL_FINAL;
     bool close() Q_DECL_FINAL;
 
@@ -367,12 +366,6 @@ bool AudioOutputPulse::isSupported(AudioFormat::SampleFormat spformat) const
             return true;
     }
     return false;
-}
-
-bool AudioOutputPulse::isSupported(AudioFormat::ChannelLayout channelLayout) const
-{
-    Q_UNUSED(channelLayout);
-    return true;
 }
 
 bool AudioOutputPulse::open()

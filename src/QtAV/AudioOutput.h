@@ -59,8 +59,8 @@ public:
      */
     enum DeviceFeature {
         NoFeature = 0,
-        SetVolume = 1, /// NOT IMPLEMENTED. Use backend volume control api rather than software scale. Ignore if backend does not support.
-        SetMute = 1 << 1, /// NOT IMPLEMENTED
+        SetVolume = 1, /// Use backend volume control api rather than software scale. Ignore if backend does not support.
+        SetMute = 1 << 1,
         SetSampleRate = 1 << 2, /// NOT IMPLEMENTED
     };
     Q_DECLARE_FLAGS(DeviceFeatures, DeviceFeature)
@@ -75,7 +75,7 @@ public:
      * Audio format set to preferred sample format and channel layout
      */
     AudioOutput(QObject *parent = 0);
-    virtual ~AudioOutput();
+    ~AudioOutput();
     /*!
      * \brief setBackends
      * set the given backends. Old backend instance and backend() is updated soon if backendsChanged.
@@ -111,15 +111,19 @@ public:
      * \return true if play successfully
      */
     bool play(const QByteArray& data, qreal pts = 0.0);
-    /// TODO: requestAudioFormat(): check support after open, use the nearest format if not supported. Or use suitableFormat(AudioFormat requestedFmt) if requestedFmt is not supported.
-    void setAudioFormat(const AudioFormat& format);
-    AudioFormat& audioFormat();
+    /*!
+     * \brief setAudioFormat
+     * Set/Request to use the given \l format. If it's not supported, an prefered format (TODO: best and nearest) will be used
+     * \param format requested format
+     * \return actual format to use
+     */
+    AudioFormat setAudioFormat(const AudioFormat& format);
+    const AudioFormat& requestedFormat() const;
+    /*!
+     * \brief audioFormat
+     * \return actual format for requested format
+     */
     const AudioFormat& audioFormat() const;
-
-    void setSampleRate(int rate); //deprecated
-    int sampleRate() const; //deprecated
-    void setChannels(int channels); //deprecated
-    int channels() const; //deprecated
     /*!
      * \brief setVolume
      * Set volume level.
@@ -154,19 +158,6 @@ public:
      * \return true if \a format is supported. default is true
      */
     bool isSupported(const AudioFormat& format) const;
-    bool isSupported(AudioFormat::SampleFormat sampleFormat) const;
-    bool isSupported(AudioFormat::ChannelLayout channelLayout) const;
-    /*!
-     * \brief preferredSampleFormat
-     * \return the preferred sample format. default is signed16 packed
-     *  If the specified format is not supported, resample to preffered format
-     */
-    AudioFormat::SampleFormat preferredSampleFormat() const;
-    /*!
-     * \brief preferredChannelLayout
-     * \return the preferred channel layout. default is stereo
-     */
-    AudioFormat::ChannelLayout preferredChannelLayout() const;
     /*!
      * \brief bufferSamples
      * Number of samples that audio output accept in 1 buffer. Feed the audio output this size of data every time.

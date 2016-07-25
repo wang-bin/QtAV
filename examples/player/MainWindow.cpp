@@ -568,7 +568,9 @@ void MainWindow::changeChannel(QAction *action)
         qWarning("close audio failed");
         return;
     }
-    ao->audioFormat().setChannelLayout(cl);
+    AudioFormat af(ao->audioFormat());
+    af.setChannelLayout(cl);
+    ao->setAudioFormat(af);
     if (!ao->open()) {
         qWarning("open audio failed");
         return;

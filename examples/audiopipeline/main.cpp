@@ -63,16 +63,12 @@ int main(int argc, char *argv[])
         if (ao->isOpen()) {
             af = ao->audioFormat();
         } else {
-            dec->resampler()->setOutAudioFormat(af);
-            // if decoded format is not supported by audio renderer, change decoder output format
-            if (!ao->isSupported(af)) {
-                af.setSampleFormat(ao->preferredSampleFormat());
-                af.setChannelLayout(ao->preferredChannelLayout());
-                dec->resampler()->setOutAudioFormat(af);
-                dec->resampler()->prepare();
-            }
-            // now af is supported by audio renderer. it's safe to open
             ao->setAudioFormat(af);
+            dec->resampler()->setOutAudioFormat(ao->audioFormat());
+            // if decoded format is not supported by audio renderer, change decoder output format
+            if (af != ao->audioFormat())
+                dec->resampler()->prepare();
+            // now af is supported by audio renderer. it's safe to open
             if (!ao->open())
                 qFatal("Open audio output error");
 #if 0 // always resample ONCE due to QtAV bug

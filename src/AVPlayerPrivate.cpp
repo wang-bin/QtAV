@@ -372,34 +372,17 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     af.setSampleRate(avctx->sample_rate);
     af.setSampleFormatFFmpeg(avctx->sample_fmt);
     af.setChannelLayoutFFmpeg(avctx->channel_layout);
-    qDebug() << "audio format from codec: " << af;
     if (!af.isValid()) {
         qWarning("invalid audio format. audio stream will be disabled");
         return false;
     }
-    // 5, 6, 7 channels may not play
-    if (avctx->channels > 2)
-        af.setChannelLayout(ao->preferredChannelLayout());
     //af.setChannels(avctx->channels);
-    // FIXME: workaround. planar convertion crash now!
-    if (af.isPlanar()) {
-        af.setSampleFormat(AudioFormat::packedSampleFormat(af.sampleFormat()));
-    }
-    if (!ao->isSupported(af)) {
-        if (!ao->isSupported(af.sampleFormat())) {
-            af.setSampleFormat(ao->preferredSampleFormat());
-        }
-        if (!ao->isSupported(af.channelLayout())) {
-            af.setChannelLayout(ao->preferredChannelLayout());
-        }
-    }
     // always reopen to ensure internal buffer queue inside audio backend(openal) is clear. also make it possible to change backend when replay.
     //if (ao->audioFormat() != af) {
         //qDebug("ao audio format is changed. reopen ao");
         ao->close();
-        if (ao->audioFormat() != af)
-            ao->setAudioFormat(af);
-        qDebug() << "AudioOutput format: " <<ao->audioFormat();
+        ao->setAudioFormat(af);
+        qDebug() << "AudioOutput format: " << ao->audioFormat() << "; requested: " << ao->requestedFormat();
         if (!ao->open()) {
             return false;
         }

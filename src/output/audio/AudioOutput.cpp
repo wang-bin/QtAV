@@ -177,6 +177,7 @@ public:
     qreal vol;
     qreal speed;
     AudioFormat format;
+    AudioFormat requested;
     QByteArray data;
     //AudioFrame audio_frame;
     quint32 nb_buffers;
@@ -257,8 +258,6 @@ AudioOutput::AudioOutput(QObject* parent)
     , AVOutput(*new AudioOutputPrivate())
 {
     qDebug() << "Registered audio backends: " << AudioOutput::backendsAvailable(); // call this to register
-    d_func().format.setSampleFormat(AudioFormat::SampleFormat_Signed16);
-    d_func().format.setChannelLayout(AudioFormat::ChannelLayout_Stereo);
     setBackends(AudioOutputBackend::defaultPriority()); //ensure a backend is available
 }
 
@@ -317,7 +316,7 @@ void AudioOutput::setBackends(const QStringList &backendNames)
         connect(d.backend, SIGNAL(muteReported(bool)), SLOT(reportMute(bool)));
     }
 
-    emit backendsChanged();
+    Q_EMIT backendsChanged();
 }
 
 QStringList AudioOutput::backends() const
@@ -436,46 +435,37 @@ bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
     return d.backend->write(d.data);
 }
 
-void AudioOutput::setAudioFormat(const AudioFormat& format)
+AudioFormat AudioOutput::setAudioFormat(const AudioFormat& format)
 {
     DPTR_D(AudioOutput);
     // no support check because that may require an open device(AL) while this function is called before ao.open()
     if (d.format == format)
-        return;
+        return format;
+    d.requested = format;
+    AudioFormat af(format);
+    if (d.backend) {
+        if (!d.backend->isSupported(format)) {
+            if (!d.backend->isSupported(format.sampleFormat())) {
+                af.setSampleFormat(d.backend->preferredSampleFormat());
+            }
+            if (!d.backend->isSupported(format.channelLayout())) {
+                af.setChannelLayout(d.backend->preferredChannelLayout());
+            }
+        }
+    }
+    d.format = af;
     d.updateSampleScaleFunc();
-    d.format = format;
+    return af;
 }
 
-AudioFormat& AudioOutput::audioFormat()
+const AudioFormat& AudioOutput::requestedFormat() const
 {
-    return d_func().format;
+    return d_func().requested;
 }
 
 const AudioFormat& AudioOutput::audioFormat() const
 {
     return d_func().format;
-}
-
-void AudioOutput::setSampleRate(int rate)
-{
-    d_func().format.setSampleRate(rate);
-}
-
-int AudioOutput::sampleRate() const
-{
-    return d_func().format.sampleRate();
-}
-
-// TODO: check isSupported
-void AudioOutput::setChannels(int channels)
-{
-    DPTR_D(AudioOutput);
-    d.format.setChannels(channels);
-}
-
-int AudioOutput::channels() const
-{
-    return d_func().format.channels();
 }
 
 void AudioOutput::setVolume(qreal value)
@@ -527,38 +517,6 @@ bool AudioOutput::isSupported(const AudioFormat &format) const
     if (!d.backend)
         return false;
     return d.backend->isSupported(format);
-}
-
-bool AudioOutput::isSupported(AudioFormat::SampleFormat sampleFormat) const
-{
-    DPTR_D(const AudioOutput);
-    if (!d.backend)
-        return false;
-    return d.backend->isSupported(sampleFormat);
-}
-
-bool AudioOutput::isSupported(AudioFormat::ChannelLayout channelLayout) const
-{
-    DPTR_D(const AudioOutput);
-    if (!d.backend)
-        return false;
-    return d.backend->isSupported(channelLayout);
-}
-
-AudioFormat::SampleFormat AudioOutput::preferredSampleFormat() const
-{
-    DPTR_D(const AudioOutput);
-    if (!d.backend)
-        return AudioFormat::SampleFormat_Signed16;
-    return d.backend->preferredSampleFormat();
-}
-
-AudioFormat::ChannelLayout AudioOutput::preferredChannelLayout() const
-{
-    DPTR_D(const AudioOutput);
-    if (!d.backend)
-        return AudioFormat::ChannelLayout_Stereo;
-    return d.backend->preferredChannelLayout();
 }
 
 int AudioOutput::bufferSize() const
@@ -641,16 +599,16 @@ bool AudioOutput::waitForNextBuffer()
         qint64 last_wait = 0LL;
         while (d.processed_remain - processed < next || d.processed_remain < d.data.size()) { //implies next > 0
             const qint64 us = d.format.durationForBytes(next - (d.processed_remain - processed));
-            QMutexLocker lock(&d.mutex);
-            Q_UNUSED(lock);
-            d.cond.wait(&d.mutex, us/1000LL);
+            d.uwait(us);
             d.processed_remain = d.backend->getWritableBytes();
             if (d.processed_remain < 0)
                 return false;
+#if AO_USE_TIMER
             if (!d.timer.isValid()) {
                 qWarning("invalid timer. closed in another thread");
                 return false;
             }
+#endif
             if (us >= last_wait
 #if AO_USE_TIMER
                     && d.timer.elapsed() > 1000

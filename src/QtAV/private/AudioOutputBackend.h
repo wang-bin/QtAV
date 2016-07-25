@@ -53,8 +53,10 @@ public:
     virtual bool flush() { return false;}
     virtual bool clear() { return false;}
     virtual bool isSupported(const AudioFormat& format) const { return isSupported(format.sampleFormat()) && isSupported(format.channelLayout());}
-    virtual bool isSupported(AudioFormat::SampleFormat) const { return true;}
-    virtual bool isSupported(AudioFormat::ChannelLayout) const { return true;}
+    // FIXME: workaround. planar convertion crash now!
+    virtual bool isSupported(AudioFormat::SampleFormat f) const { return !AudioFormat::isPlanar(f);}
+    // 5, 6, 7 channels may not play
+    virtual bool isSupported(AudioFormat::ChannelLayout cl) const { return int(cl) < int(AudioFormat::ChannelLayout_Unsupported);}
     /*!
      * \brief preferredSampleFormat
      * \return the preferred sample format. default is signed16 packed
