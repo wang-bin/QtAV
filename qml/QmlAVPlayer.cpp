@@ -264,6 +264,29 @@ void QmlAVPlayer::setVideoCodecOptions(const QVariantMap &value)
     mpPlayer->setVideoDecoderPriority(videoCodecPriority());
 }
 
+QVariantMap QmlAVPlayer::avFormatOptions() const
+{
+    return avfmt_opt;
+}
+
+void QmlAVPlayer::setAVFormatOptions(const QVariantMap &value)
+{
+    if (value == avfmt_opt)
+        return;
+    avfmt_opt = value;
+    Q_EMIT avFormatOptionsChanged();
+    if (!mpPlayer) {
+        qWarning("player not ready");
+        return;
+    }
+    QVariantHash avfopt;
+    for (QVariantMap::const_iterator cit = avfmt_opt.cbegin(); cit != avfmt_opt.cend(); ++cit) {
+        avfopt[cit.key()] = cit.value();
+    }
+    if (!avfopt.isEmpty())
+        mpPlayer->setOptionsForFormat(avfopt);
+}
+
 bool QmlAVPlayer::useWallclockAsTimestamps() const
 {
     return mUseWallclockAsTimestamps;
@@ -668,6 +691,15 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
                 if (!vcopt.isEmpty())
                     mpPlayer->setOptionsForVideoCodec(vcopt);
             }
+            if (!avfmt_opt.isEmpty()) {
+                QVariantHash avfopt;
+                for (QVariantMap::const_iterator cit = avfmt_opt.cbegin(); cit != avfmt_opt.cend(); ++cit) {
+                    avfopt[cit.key()] = cit.value();
+                }
+                if (!avfopt.isEmpty())
+                    mpPlayer->setOptionsForFormat(avfopt);
+            }
+
             mpPlayer->setStartPosition(startPosition());
             if (stopPosition() == PositionMax)
                 mpPlayer->setStopPosition();

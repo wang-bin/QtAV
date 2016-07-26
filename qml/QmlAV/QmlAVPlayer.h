@@ -74,6 +74,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(QStringList videoCodecs READ videoCodecs)
     Q_PROPERTY(QStringList videoCodecPriority READ videoCodecPriority WRITE setVideoCodecPriority NOTIFY videoCodecPriorityChanged)
     Q_PROPERTY(QVariantMap videoCodecOptions READ videoCodecOptions WRITE setVideoCodecOptions NOTIFY videoCodecOptionsChanged)
+    Q_PROPERTY(QVariantMap avFormatOptions READ avFormatOptions WRITE setAVFormatOptions NOTIFY avFormatOptionsChanged)
     Q_PROPERTY(bool useWallclockAsTimestamps READ useWallclockAsTimestamps WRITE setWallclockAsTimestamps NOTIFY useWallclockAsTimestampsChanged)
     Q_PROPERTY(QtAV::VideoCapture *videoCapture READ videoCapture CONSTANT)
     Q_PROPERTY(int audioTrack READ audioTrack WRITE setAudioTrack NOTIFY audioTrackChanged)
@@ -196,6 +197,8 @@ public:
     void setVideoCodecPriority(const QStringList& p);
     QVariantMap videoCodecOptions() const;
     void setVideoCodecOptions(const QVariantMap& value);
+    QVariantMap avFormatOptions() const;
+    void setAVFormatOptions(const QVariantMap& value);
 
     bool useWallclockAsTimestamps() const;
     void setWallclockAsTimestamps(bool use_wallclock_as_timestamps);
@@ -275,6 +278,7 @@ Q_SIGNALS:
     void bufferProgressChanged();
     void videoCodecPriorityChanged();
     void videoCodecOptionsChanged();
+    void avFormatOptionsChanged();
     void useWallclockAsTimestampsChanged();
     void channelLayoutChanged();
     void timeoutChanged();
@@ -342,6 +346,7 @@ private:
 
     QScopedPointer<MediaMetaData> m_metaData;
     QVariantMap vcodec_opt;
+    QVariantMap avfmt_opt;
 
     QList<QuickAudioFilter*> m_afilters;
     QList<QuickVideoFilter*> m_vfilters;
