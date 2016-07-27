@@ -57,8 +57,6 @@ public:
     bool isSupported(const AudioFormat& format) const Q_DECL_FINAL;
     bool isSupported(AudioFormat::SampleFormat sampleFormat) const Q_DECL_FINAL;
     bool isSupported(AudioFormat::ChannelLayout channelLayout) const Q_DECL_FINAL;
-    AudioFormat::SampleFormat preferredSampleFormat() const Q_DECL_FINAL;
-    AudioFormat::ChannelLayout preferredChannelLayout() const Q_DECL_FINAL;
 protected:
     BufferControl bufferControl() const Q_DECL_FINAL;
     bool write(const QByteArray& data) Q_DECL_FINAL;
@@ -101,7 +99,7 @@ typedef AudioOutputOpenAL AudioOutputBackendOpenAL;
 static const AudioOutputBackendId AudioOutputBackendId_OpenAL = mkid::id32base36_6<'O', 'p', 'e', 'n', 'A', 'L'>::value;
 FACTORY_REGISTER(AudioOutputBackend, OpenAL, kName)
 
-#define AL_ENSURE_OK(expr, ...) \
+#define AL_ENSURE(expr, ...) \
     do { \
         expr; \
         const ALenum err = alGetError(); \
@@ -365,16 +363,6 @@ bool AudioOutputOpenAL::isSupported(AudioFormat::ChannelLayout channelLayout) co
     return channelLayout == AudioFormat::ChannelLayout_Mono || channelLayout == AudioFormat::ChannelLayout_Stereo;
 }
 
-AudioFormat::SampleFormat AudioOutputOpenAL::preferredSampleFormat() const
-{
-    return AudioFormat::SampleFormat_Signed16;
-}
-
-AudioFormat::ChannelLayout AudioOutputOpenAL::preferredChannelLayout() const
-{
-    return AudioFormat::ChannelLayout_Stereo;
-}
-
 QString AudioOutputOpenAL::deviceName() const
 {
     if (!device)
@@ -399,10 +387,10 @@ bool AudioOutputOpenAL::write(const QByteArray& data)
         buf = buffer[(-state)%buffer_count];
         --state;
     } else {
-        AL_ENSURE_OK(alSourceUnqueueBuffers(source, 1, &buf), false);
+        AL_ENSURE(alSourceUnqueueBuffers(source, 1, &buf), false);
     }
-    AL_ENSURE_OK(alBufferData(buf, format_al, data.constData(), data.size(), format.sampleRate()), false);
-    AL_ENSURE_OK(alSourceQueueBuffers(source, 1, &buf), false);
+    AL_ENSURE(alBufferData(buf, format_al, data.constData(), data.size(), format.sampleRate()), false);
+    AL_ENSURE(alSourceQueueBuffers(source, 1, &buf), false);
     return true;
 }
 
@@ -428,7 +416,7 @@ int AudioOutputOpenAL::getPlayedCount()
 bool AudioOutputOpenAL::setVolume(qreal value)
 {
     SCOPE_LOCK_CONTEXT();
-    AL_ENSURE_OK(alListenerf(AL_GAIN, value), false);
+    AL_ENSURE(alListenerf(AL_GAIN, value), false);
     return true;
 }
 

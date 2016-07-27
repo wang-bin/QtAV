@@ -58,17 +58,6 @@ public:
     // 5, 6, 7 channels may not play
     virtual bool isSupported(AudioFormat::ChannelLayout cl) const { return int(cl) < int(AudioFormat::ChannelLayout_Unsupported);}
     /*!
-     * \brief preferredSampleFormat
-     * \return the preferred sample format. default is signed16 packed
-     *  If the specified format is not supported, resample to preffered format
-     */
-    virtual AudioFormat::SampleFormat preferredSampleFormat() const { return AudioFormat::SampleFormat_Signed16;}
-    /*!
-     * \brief preferredChannelLayout
-     * \return the preferred channel layout. default is stereo
-     */
-    virtual AudioFormat::ChannelLayout preferredChannelLayout() const { return AudioFormat::ChannelLayout_Stereo;}
-    /*!
      * \brief The BufferControl enum
      * Used to adapt to different audio playback backend. Usually you don't need this in application level development.
     */
