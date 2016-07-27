@@ -77,7 +77,7 @@ public:
     static bool isPlanar(SampleFormat format);
     static SampleFormat planarSampleFormat(SampleFormat fmt);
     static SampleFormat packedSampleFormat(SampleFormat fmt);
-
+    static SampleFormat make(int bytesPerSample, bool isFloat, bool isUnsigned, bool isPlanar);
     AudioFormat();
     AudioFormat(const AudioFormat &other);
     ~AudioFormat();

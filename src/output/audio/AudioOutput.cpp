@@ -356,6 +356,7 @@ bool AudioOutput::open()
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
     d.available = false;
+    d.paused = false;
     d.resetStatus();
     if (!d.backend)
         return false;
@@ -379,6 +380,7 @@ bool AudioOutput::close()
     QMutexLocker lock(&d.mutex);
     Q_UNUSED(lock);
     d.available = false;
+    d.paused = false;
     d.resetStatus();
     if (!d.backend)
         return false;
@@ -417,7 +419,7 @@ bool AudioOutput::isPaused() const
 bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
 {
     DPTR_D(AudioOutput);
-    if (d.paused)
+    if (isPaused())
         return false;
     d.data = data;
     if (isMute() && d.sw_mute) {
@@ -458,11 +460,32 @@ AudioFormat AudioOutput::setAudioFormat(const AudioFormat& format)
     AudioFormat af(format);
     if (d.backend) {
         if (!d.backend->isSupported(format)) {
-            if (!d.backend->isSupported(format.sampleFormat())) {
-                af.setSampleFormat(d.backend->preferredSampleFormat());
+            int ss = af.bytesPerSample();
+            while (!d.backend->isSupported(af.sampleFormat())) {
+                if (af.bytesPerSample() < 1) {
+                    if (ss > 1) {
+                        qWarning("No sample format found");
+                        break;
+                    }
+                    af.setSampleFormat(AudioFormat::SampleFormat_Float);
+                    ss = af.bytesPerSample();
+                    continue;
+                }
+                if (af.isPlanar()) {
+                    af.setSampleFormat(AudioFormat::packedSampleFormat(af.sampleFormat()));
+                    continue;
+                }
+                if (af.isFloat()) {
+                    if (af.bytesPerSample() == 8)
+                        af.setSampleFormat(AudioFormat::SampleFormat_Float);
+                    else
+                        af.setSampleFormat(AudioFormat::SampleFormat_Signed32);
+                } else {
+                    af.setSampleFormat(AudioFormat::make(af.bytesPerSample()/2, false, af.bytesPerSample() == 2 | af.isUnsigned() /* U8, no S8 */, false));
+                }
             }
             if (!d.backend->isSupported(format.channelLayout())) {
-                af.setChannelLayout(d.backend->preferredChannelLayout());
+                af.setChannelLayout(AudioFormat::ChannelLayout_Stereo); // assume stereo is supported
             }
         }
     }

@@ -147,6 +147,18 @@ AudioFormat::SampleFormat AudioFormat::packedSampleFormat(SampleFormat fmt)
     return fmt;
 }
 
+AudioFormat::SampleFormat AudioFormat::make(int bytesPerSample, bool isFloat, bool isUnsigned, bool isPlanar)
+{
+    int f = bytesPerSample;
+    if (isFloat)
+        f |= kFloat;
+    if (isUnsigned)
+        f |= kUnsigned;
+    if (isPlanar)
+        f |= kPlanar;
+    return SampleFormat(f);
+}
+
 AudioFormat::SampleFormat AudioFormat::planarSampleFormat(SampleFormat fmt)
 {
     if (isPlanar(fmt))
