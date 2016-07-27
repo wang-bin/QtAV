@@ -45,6 +45,7 @@ public:
     void onCallback() Q_DECL_OVERRIDE;
     bool write(const QByteArray& data) Q_DECL_OVERRIDE;
     bool play() Q_DECL_OVERRIDE;
+    bool setVolume(qreal value) override;
 private:
     static void outCallback(void* inUserData, AudioQueueRef inAQ, AudioQueueBufferRef inBuffer);
     void tryPauseTimeline();
@@ -123,6 +124,7 @@ void AudioOutputAudioToolbox::outCallback(void* inUserData, AudioQueueRef inAQ, 
 
 AudioOutputAudioToolbox::AudioOutputAudioToolbox(QObject *parent)
     : AudioOutputBackend(AudioOutput::DeviceFeatures()
+                         |AudioOutput::SetVolume
                          , parent)
     , m_queue(NULL)
     , m_waiting(false)
@@ -222,6 +224,13 @@ bool AudioOutputAudioToolbox::play()
 {
     // no running check is fine
     AT_ENSURE(AudioQueueStart(m_queue, NULL), false);
+    return true;
+}
+
+bool AudioOutputAudioToolbox::setVolume(qreal value)
+{
+    // iOS document says the range is [0,1]. But >1.0 works on macOS. So no manually check range here
+    AT_ENSURE(AudioQueueSetParameter(m_queue, kAudioQueueParam_Volume, value), false);
     return true;
 }
 } //namespace QtAV
