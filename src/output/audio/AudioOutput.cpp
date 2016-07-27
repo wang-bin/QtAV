@@ -409,7 +409,7 @@ void AudioOutput::pause(bool value)
     // backend pause? Without backend pause, the buffered data will be played
 }
 
-bool AudioOutput::isPaused()
+bool AudioOutput::isPaused() const
 {
     return d_func().paused;
 }

@@ -55,7 +55,8 @@ class Q_AV_EXPORT AudioOutput : public QObject, public AVOutput
 public:
     /*!
      * \brief DeviceFeature Feature enum
-     * features supported by the audio playback api (we call device or backend here)
+     * Features supported by the audio playback api (we call device or backend here)
+     * If a feature is not supported, e.g. SetVolume, then a software implemention is used.
      */
     enum DeviceFeature {
         NoFeature = 0,
