@@ -580,6 +580,7 @@ void AVPlayer::pause(bool p)
         return;
     if (isPaused() == p)
         return;
+    audio()->pause(p);
     //pause thread. check pause state?
     d->read_thread->pause(p);
     if (d->athread)

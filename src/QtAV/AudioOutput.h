@@ -62,6 +62,7 @@ public:
         SetVolume = 1, /// Use backend volume control api rather than software scale. Ignore if backend does not support.
         SetMute = 1 << 1,
         SetSampleRate = 1 << 2, /// NOT IMPLEMENTED
+        SetSpeed = 1 << 3,  /// NOT IMPLEMENTED
     };
     Q_DECLARE_FLAGS(DeviceFeatures, DeviceFeature)
     /*!
@@ -108,9 +109,15 @@ public:
      * for async playback backend, or until the data is completely played for blocking playback backend.
      * \param data Audio data to play
      * \param pts Timestamp for this data. Useful if need A/V sync. Ignore it if only play audio
-     * \return true if play successfully
+     * \return false if currently isPaused(), no backend is available or backend failed to play
      */
     bool play(const QByteArray& data, qreal pts = 0.0);
+    /*!
+     * \brief pause
+     * Pause audio rendering. play() will fail.
+     */
+    void pause(bool value);
+    bool isPaused() const;
     /*!
      * \brief setAudioFormat
      * Set/Request to use the given \l format. If it's not supported, an prefered format (TODO: best and nearest) will be used

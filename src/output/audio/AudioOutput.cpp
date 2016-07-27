@@ -154,7 +154,7 @@ public:
     struct FrameInfo {
         FrameInfo(qreal t = 0, int s = 0) : timestamp(t), data_size(s) {}
         qreal timestamp;
-        int data_size;
+        int data_size; // TODO: size_t
     };
 
     void resetStatus() {
@@ -397,8 +397,21 @@ bool AudioOutput::play(const QByteArray &data, qreal pts)
     DPTR_D(AudioOutput);
     if (!d.backend)
         return false;
-    receiveData(data, pts);
+    if (!receiveData(data, pts))
+        return false;
     return d.backend->play();
+}
+
+void AudioOutput::pause(bool value)
+{
+    DPTR_D(AudioOutput);
+    d.paused = value;
+    // backend pause? Without backend pause, the buffered data will be played
+}
+
+bool AudioOutput::isPaused()
+{
+    return d_func().paused;
 }
 
 bool AudioOutput::receiveData(const QByteArray &data, qreal pts)
