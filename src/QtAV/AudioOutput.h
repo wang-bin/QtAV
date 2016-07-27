@@ -123,7 +123,7 @@ public:
      * \brief setAudioFormat
      * Set/Request to use the given \l format. If it's not supported, an preferred format will be used.
      * \param format requested format
-     * \return actual format to use
+     * \return actual format to use. Invalid format if backend is not available
      * NOTE: Check format support may fail for some backends (OpenAL) if it's closed.
      */
     AudioFormat setAudioFormat(const AudioFormat& format);

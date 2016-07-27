@@ -457,37 +457,42 @@ AudioFormat AudioOutput::setAudioFormat(const AudioFormat& format)
     if (d.format == format)
         return format;
     d.requested = format;
+    if (!d.backend) {
+        d.format = AudioFormat();
+        d.scale_samples = NULL;
+        return AudioFormat();
+    }
+    if (d.backend->isSupported(format)) {
+        d.format = format;
+        d.updateSampleScaleFunc();
+        return format;
+    }
     AudioFormat af(format);
-    if (d.backend) {
-        if (!d.backend->isSupported(format)) {
-            // set channel layout first so that isSupported(AudioFormat) will not always false
-            if (!d.backend->isSupported(format.channelLayout())) {
-                af.setChannelLayout(AudioFormat::ChannelLayout_Stereo); // assume stereo is supported
+    // set channel layout first so that isSupported(AudioFormat) will not always false
+    if (!d.backend->isSupported(format.channelLayout()))
+        af.setChannelLayout(AudioFormat::ChannelLayout_Stereo); // assume stereo is supported
+    bool check_up = af.bytesPerSample() == 1;
+    while (!d.backend->isSupported(af) && !d.backend->isSupported(af.sampleFormat())) {
+        if (af.isPlanar()) {
+            af.setSampleFormat(AudioFormat::packedSampleFormat(af.sampleFormat()));
+            continue;
+        }
+        if (af.isFloat()) {
+            if (af.bytesPerSample() == 8)
+                af.setSampleFormat(AudioFormat::SampleFormat_Float);
+            else
+                af.setSampleFormat(AudioFormat::SampleFormat_Signed32);
+        } else {
+            af.setSampleFormat(AudioFormat::make(af.bytesPerSample()/2, false, af.bytesPerSample() == 2 | af.isUnsigned() /* U8, no S8 */, false));
+        }
+        if (af.bytesPerSample() < 1) {
+            if (!check_up) {
+                qWarning("No sample format found");
+                break;
             }
-            int ss = af.bytesPerSample();
-            while (!d.backend->isSupported(af) && !d.backend->isSupported(af.sampleFormat())) {
-                if (af.bytesPerSample() < 1) {
-                    if (ss > 1) {
-                        qWarning("No sample format found");
-                        break;
-                    }
-                    af.setSampleFormat(AudioFormat::SampleFormat_Float);
-                    ss = af.bytesPerSample();
-                    continue;
-                }
-                if (af.isPlanar()) {
-                    af.setSampleFormat(AudioFormat::packedSampleFormat(af.sampleFormat()));
-                    continue;
-                }
-                if (af.isFloat()) {
-                    if (af.bytesPerSample() == 8)
-                        af.setSampleFormat(AudioFormat::SampleFormat_Float);
-                    else
-                        af.setSampleFormat(AudioFormat::SampleFormat_Signed32);
-                } else {
-                    af.setSampleFormat(AudioFormat::make(af.bytesPerSample()/2, false, af.bytesPerSample() == 2 | af.isUnsigned() /* U8, no S8 */, false));
-                }
-            }
+            af.setSampleFormat(AudioFormat::SampleFormat_Float);
+            check_up = false;
+            continue;
         }
     }
     d.format = af;
