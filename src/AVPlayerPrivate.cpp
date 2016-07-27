@@ -380,8 +380,8 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
     // always reopen to ensure internal buffer queue inside audio backend(openal) is clear. also make it possible to change backend when replay.
     //if (ao->audioFormat() != af) {
         //qDebug("ao audio format is changed. reopen ao");
+        ao->setAudioFormat(af); /// set before close to workaround OpenAL context lost
         ao->close();
-        ao->setAudioFormat(af);
         qDebug() << "AudioOutput format: " << ao->audioFormat() << "; requested: " << ao->requestedFormat();
         if (!ao->open()) {
             return false;

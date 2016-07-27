@@ -460,8 +460,12 @@ AudioFormat AudioOutput::setAudioFormat(const AudioFormat& format)
     AudioFormat af(format);
     if (d.backend) {
         if (!d.backend->isSupported(format)) {
+            // set channel layout first so that isSupported(AudioFormat) will not always false
+            if (!d.backend->isSupported(format.channelLayout())) {
+                af.setChannelLayout(AudioFormat::ChannelLayout_Stereo); // assume stereo is supported
+            }
             int ss = af.bytesPerSample();
-            while (!d.backend->isSupported(af.sampleFormat())) {
+            while (!d.backend->isSupported(af) && !d.backend->isSupported(af.sampleFormat())) {
                 if (af.bytesPerSample() < 1) {
                     if (ss > 1) {
                         qWarning("No sample format found");
@@ -483,9 +487,6 @@ AudioFormat AudioOutput::setAudioFormat(const AudioFormat& format)
                 } else {
                     af.setSampleFormat(AudioFormat::make(af.bytesPerSample()/2, false, af.bytesPerSample() == 2 | af.isUnsigned() /* U8, no S8 */, false));
                 }
-            }
-            if (!d.backend->isSupported(format.channelLayout())) {
-                af.setChannelLayout(AudioFormat::ChannelLayout_Stereo); // assume stereo is supported
             }
         }
     }

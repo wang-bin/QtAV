@@ -121,9 +121,10 @@ public:
     bool isPaused() const;
     /*!
      * \brief setAudioFormat
-     * Set/Request to use the given \l format. If it's not supported, an prefered format (TODO: best and nearest) will be used
+     * Set/Request to use the given \l format. If it's not supported, an preferred format will be used.
      * \param format requested format
      * \return actual format to use
+     * NOTE: Check format support may fail for some backends (OpenAL) if it's closed.
      */
     AudioFormat setAudioFormat(const AudioFormat& format);
     const AudioFormat& requestedFormat() const;
@@ -164,6 +165,7 @@ public:
      *  check \a isSupported(format.sampleFormat()) and \a isSupported(format.channelLayout())
      * \param format
      * \return true if \a format is supported. default is true
+     * NOTE: may fail for some backends if it's closed, for example OpenAL
      */
     bool isSupported(const AudioFormat& format) const;
     /*!

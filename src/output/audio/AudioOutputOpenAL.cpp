@@ -347,8 +347,6 @@ bool AudioOutputOpenAL::isSupported(AudioFormat::SampleFormat sampleFormat) cons
         return true;
     if (AudioFormat::isPlanar(sampleFormat))
         return false;
-    if (!context)
-        return false;
     SCOPE_LOCK_CONTEXT();
     if (sampleFormat == AudioFormat::SampleFormat_Float)
         return alIsExtensionPresent("AL_EXT_float32");
