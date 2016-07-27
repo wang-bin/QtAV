@@ -225,6 +225,7 @@ Module {
         Property { name: "videoCodecs"; type: "QStringList"; isReadonly: true }
         Property { name: "videoCodecPriority"; type: "QStringList" }
         Property { name: "videoCodecOptions"; type: "QVariantMap" }
+        Property { name: "avFormatOptions"; type: "QVariantMap" }
         Property { name: "useWallclockAsTimestamps"; type: "bool" }
         Property { name: "videoCapture"; type: "QtAV::VideoCapture"; isReadonly: true; isPointer: true }
         Property { name: "audioTrack"; type: "int" }
