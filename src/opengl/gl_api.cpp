@@ -41,6 +41,37 @@ void* GetProcAddress_Qt(const char *name)
     return p;
 }
 
+static void* GetProcAddressWithExt(GetProcAddress_t get, const char *name)
+{
+    void* fp = get(name);
+    if (fp)
+        return fp;
+    static const char *ext[] = {
+        "ARB", "OES", "EXT", "ANGLE", "NV" //TODO: MESA, INTEL?
+#ifdef __APPLE__
+        , "APPLE"
+#endif
+        , NULL
+    };
+    char f[512];
+    memcpy(f, name, strlen(name));
+    char* const p = f + strlen(name);
+    for (int i = 0; ext[i]; ++i) {
+        memcpy(p, ext[i], sizeof(ext[i]) + 1); //copy trail '\0'
+        fp = get(f);
+        if (fp) {
+            printf("extension resolved: %s", f);
+            return fp;
+        }
+    }
+    return nullptr;
+}
+
+static void* GetProcAddressDefault(const char *name)
+{
+    return GetProcAddressWithExt(GetProcAddress_Qt, name);
+}
+
 #ifdef QT_OPENGL_DYNAMIC
 #define GETPROCADDRESS_RESOLVE
 // GL_RESOLVE_ES_X_X will link to lib or use getProcAddress
@@ -50,12 +81,12 @@ void* GetProcAddress_Qt(const char *name)
 #else
 #ifdef GL_ES_VERSION_2_0
 #define GL_RESOLVE_ES_2_0(name) GL_RESOLVE(name)
-#define GL_RESOLVE_ES_3_0(name) GL_RESOLVE_NONE(name)
-#define GL_RESOLVE_ES_3_1(name) GL_RESOLVE_NONE(name)
+#define GL_RESOLVE_ES_3_0(name) GL_RESOLVE_EXT(name)
+#define GL_RESOLVE_ES_3_1(name) GL_RESOLVE_EXT(name)
 #elif GL_ES_VERSION_3_0
 #define GL_RESOLVE_ES_2_0(name) GL_RESOLVE(name)
 #define GL_RESOLVE_ES_3_0(name) GL_RESOLVE(name)
-#define GL_RESOLVE_ES_3_1(name) GL_RESOLVE_NONE(name)
+#define GL_RESOLVE_ES_3_1(name) GL_RESOLVE_NONE(name) //gl3ext is empty
 #elif GL_ES_VERSION_3_1
 #define GL_RESOLVE_ES_2_0(name) GL_RESOLVE(name)
 #define GL_RESOLVE_ES_3_0(name) GL_RESOLVE(name)
@@ -69,14 +100,14 @@ void* GetProcAddress_Qt(const char *name)
 #endif
 #endif //QT_OPENGL_DYNAMIC
 
-#define GL_RESOLVE_NONE(name) do { name = NULL;}while(0)
-#ifdef GETPROCADDRESS_RESOLVE
-#define GL_RESOLVE(name) do {\
+
+#define GL_RESOLVE_NONE(name) do { name = nullptr;}while(0)
+#define GL_RESOLVE_EXT(name) do {\
     void** fp = (void**)(&name); \
-    *fp = sGetProcAddress("gl" # name); \
-    if (!*fp) \
-        *fp = sGetProcAddress("gl" # name "ARB"); \
+    *fp = GetProcAddressDefault("gl" # name); \
 } while(0)
+#ifdef GETPROCADDRESS_RESOLVE
+#define GL_RESOLVE(name) GL_RESOLVE_EXT(name)
 #else
 #define GL_RESOLVE(name)  do {\
     name = ::gl##name; \
@@ -91,7 +122,7 @@ void* GetProcAddress_Qt(const char *name)
 void api::resolve()
 {
     //memset(g, 0, sizeof(g));
-    sGetProcAddress = GetProcAddress_Qt;
+    sGetProcAddress = GetProcAddressDefault;
     GL_RESOLVE(GetString);
     GL_RESOLVE(GetError);
     GL_RESOLVE(ActiveTexture);
