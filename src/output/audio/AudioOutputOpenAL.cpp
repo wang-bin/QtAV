@@ -163,28 +163,20 @@ static ALenum audioFormatToAL(const AudioFormat& fmt)
                 format = alGetEnumValue(s16fmt[c-1].ext);
         }
     } else if (ctx) {
-        if (AudioFormat::SampleFormat_Signed32 == spfmt) {
-            if (c > 3 && c <= 8) {
-                if (alIsExtensionPresent("AL_EXT_MCFORMATS")) {
-                    static const al_fmt_t s32fmt[] = {
-                        {"AL_FORMAT_QUAD32"},
-                        {"AL_FORMAT_REAR32"},
-                        {"AL_FORMAT_51CHN32"},
-                        {"AL_FORMAT_61CHN32"},
-                        {"AL_FORMAT_71CHN32"}
-                    };
-                    format = alGetEnumValue(s32fmt[c-4].ext);
-                }
-            }
-        } else if (AudioFormat::SampleFormat_Float == spfmt) {
-            if (c < 3) {
-                if (alIsExtensionPresent("AL_EXT_float32")) {
-                    static const al_fmt_t f32fmt[] = {
-                        {"AL_FORMAT_MONO_FLOAT32"},
-                        {"AL_FORMAT_STEREO_FLOAT32"}
-                    };
-                    format = alGetEnumValue(f32fmt[c-1].ext);
-                }
+        if (AudioFormat::SampleFormat_Float == spfmt) {
+            static const al_fmt_t f32fmt[] = {
+                {"AL_FORMAT_MONO_FLOAT32"},
+                {"AL_FORMAT_STEREO_FLOAT32"},
+                {0},
+                // AL_EXT_MCFORMATS
+                {"AL_FORMAT_QUAD32"},
+                {"AL_FORMAT_REAR32"},
+                {"AL_FORMAT_51CHN32"},
+                {"AL_FORMAT_61CHN32"},
+                {"AL_FORMAT_71CHN32"}
+            };
+            if (c <=8 && f32fmt[c-1].ext) {
+                format = alGetEnumValue(f32fmt[c-1].ext);
             }
         } else if (AudioFormat::SampleFormat_Double == spfmt) {
             if (c < 3) {
@@ -356,7 +348,7 @@ bool AudioOutputOpenAL::isSupported(AudioFormat::SampleFormat sampleFormat) cons
     return false;
 }
 
-bool AudioOutputOpenAL::isSupported(AudioFormat::ChannelLayout channelLayout) const
+bool AudioOutputOpenAL::isSupported(AudioFormat::ChannelLayout channelLayout) const // FIXME: check
 {
     return channelLayout == AudioFormat::ChannelLayout_Mono || channelLayout == AudioFormat::ChannelLayout_Stereo;
 }
