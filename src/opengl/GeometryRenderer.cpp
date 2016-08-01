@@ -30,6 +30,7 @@ GeometryRenderer::GeometryRenderer()
     : g(NULL)
     , features_(kVBO|kIBO|kVAO)
     , ibo(QOpenGLBuffer::IndexBuffer)
+    , stride(0)
 {
     static bool disable_ibo = qgetenv("QTAV_NO_IBO").toInt() > 0;
     setFeature(kIBO, !disable_ibo);
@@ -78,7 +79,6 @@ bool GeometryRenderer::testFeatures(int value) const
 
 void GeometryRenderer::updateGeometry(Geometry *geo)
 {
-    const Geometry* old = g; // old geometry will be compared later, so make sure destroy old after updateGeometry
     g = geo;
     if (!g) {
         ibo.destroy();
@@ -124,8 +124,10 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
 #if QT_VAO
     if (!vao.isCreated())
         return;
-    if (g->compare(old))
+    if (stride == g->stride() && attrib == g->attributes())
         return;
+    stride = g->stride();
+    attrib = g->attributes();
     //qDebug("geometry attributes changed, rebind vao...");
     // TODO: call once is enough if no feature and no geometry attribute is changed
     if (vbo.isCreated()) {
@@ -136,7 +138,7 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
             QGLF(glVertexAttribPointer(an, a.tupleSize(), a.type(), a.normalize(), g->stride(), reinterpret_cast<const void *>(qptrdiff(a.offset())))); //TODO: in setActiveShader
             QGLF(glEnableVertexAttribArray(an));
         }
-        vbo.release(); // unbind after vao unbind?
+        vbo.release(); // unbind after vao unbind? http://www.zwqxin.com/archives/opengl/vao-and-vbo-stuff.html
     }
     // bind ibo to vao thus no bind is required later
     if (ibo.isCreated())// if not bind here, glDrawElements(...,NULL) crashes and must use ibo data ptr, why?

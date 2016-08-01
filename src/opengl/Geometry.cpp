@@ -144,8 +144,7 @@ void Geometry::allocate(int nbVertex, int nbIndex)
 
 bool Geometry::compare(const Geometry *other) const
 {
-    if (this == other)
-        return true;
+    // this == other: attributes and stride can be different
     if (!other)
         return false;
     if (stride() != other->stride())
@@ -175,7 +174,7 @@ void TexturedGeometry::setTextureCount(int value)
     allocate(vertexCount());
     if (a.size()-1 < value) { // the first is position
         for (int i = a.size()-1; i < value; ++i)
-            a << Attribute(TypeF32, 2, (i+1)* 2*sizeof(float));
+            a << Attribute(TypeF32, 2, int((i+1)* 2*sizeof(float)));
     } else {
         a.resize(value + 1);
     }

@@ -43,7 +43,7 @@ public:
     static const int kVBO = 0x01;
     static const int kIBO = 0x02;
     static const int kVAO = 0x04;
-
+    // TODO: VAB, VBUM etc.
     GeometryRenderer();
     // call updateBuffer internally in bindBuffer if feature is changed
     void setFeature(int f, bool on);
@@ -59,7 +59,7 @@ public:
      * \param geo null: release vao/vbo
      */
     void updateGeometry(Geometry* geo = NULL);
-    void render();
+    virtual void render();
 protected:
     void bindBuffers();
     void unbindBuffers();
@@ -71,6 +71,10 @@ private:
     QOpenGLVertexArrayObject vao;
 #endif //QT_VAO
     QOpenGLBuffer ibo;
+
+    // geometry characteristic
+    int stride;
+    QVector<Attribute> attrib;
 };
 
 } //namespace QtAV
