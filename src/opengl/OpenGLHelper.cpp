@@ -87,6 +87,8 @@ static QByteArray commonShaderHeader(QOpenGLShader::ShaderType type)
         // we can't check GLSLVersion() here because it the actually version used can be defined by "#version"
         h += "#if __VERSION__ < 130\n"
              "#define texture texture2D\n"
+             "#else\n"
+             "#define texture2D texture\n"
              "#endif // < 130\n"
         ;
     }
@@ -296,11 +298,11 @@ static const gl_param_t gl_param_compat[] = { // it's legacy
     { GL_LUMINANCE_ALPHA, GL_LUMINANCE_ALPHA, GL_UNSIGNED_BYTE}, //2 x 8 fallback to ra
     {0,0,0},
 };
-static const gl_param_t gl_param_desktop[] = {
+static const gl_param_t gl_param_3r16[] = {
     {GL_R8,     GL_RED,     GL_UNSIGNED_BYTE},      // 1 x 8
-    {GL_RG,      GL_RG,      GL_UNSIGNED_BYTE},      // 2 x 8 //FIXME: OSX error in hasRG(), internal format GL_RG8 is ok
-    {GL_RGB,     GL_RGB,     GL_UNSIGNED_BYTE},      // 3 x 8
-    {GL_RGBA,    GL_RGBA,    GL_UNSIGNED_BYTE},      // 4 x 8
+    {GL_RG8,      GL_RG,      GL_UNSIGNED_BYTE},      // 2 x 8
+    {GL_RGB8,     GL_RGB,     GL_UNSIGNED_BYTE},      // 3 x 8
+    {GL_RGBA8,    GL_RGBA,    GL_UNSIGNED_BYTE},      // 4 x 8
     {GL_R16,     GL_RED,     GL_UNSIGNED_SHORT},     // 1 x 16
     {GL_RG16,    GL_RG,      GL_UNSIGNED_SHORT},     // 2 x 16
     {GL_RGB16,   GL_RGB,     GL_UNSIGNED_SHORT},     // 3 x 16
@@ -315,7 +317,7 @@ static const gl_param_t gl_param_desktop_fallback[] = {
     {GL_RG,      GL_RG,      GL_UNSIGNED_BYTE},     // 2 x 8
     {0,0,0},
 };
-static const gl_param_t gl_param_es3[] = {
+static const gl_param_t gl_param_es3rg8[] = {
     {GL_R8,       GL_RED,    GL_UNSIGNED_BYTE},      // 1 x 8
     {GL_RG8,      GL_RG,     GL_UNSIGNED_BYTE},      // 2 x 8
     {GL_RGB8,     GL_RGB,    GL_UNSIGNED_BYTE},      // 3 x 8
@@ -392,13 +394,13 @@ bool hasRG()
     static int has_rg = -1;
     if (has_rg >= 0)
         return !!has_rg;
-    qDebug("check desktop rg: %#X", gl_param_desktop[1].internal_format);
-    if (test_gl_param(gl_param_desktop[1])) {
+    qDebug("check gl3 rg: %#X", gl_param_3r16[1].internal_format);
+    if (test_gl_param(gl_param_3r16[1])) {
         has_rg = 1;
         return true;
     }
-    qDebug("check es3 rg: %#X", gl_param_es3[1].internal_format);
-    if (test_gl_param(gl_param_es3[1])) {
+    qDebug("check es3 rg: %#X", gl_param_es3rg8[1].internal_format);
+    if (test_gl_param(gl_param_es3rg8[1])) {
         has_rg = 1;
         return true;
     }
@@ -427,31 +429,31 @@ static const gl_param_t* get_gl_param()
         return gp;
     bool has_16 = false;
     // [4] is always available
-    if (test_gl_param(gl_param_desktop[4], &has_16)) {
+    if (test_gl_param(gl_param_3r16[4], &has_16)) {
         if (has_16 && depth16BitTexture() == 16)
-            gp = (gl_param_t*)gl_param_desktop;
+            gp = (gl_param_t*)gl_param_3r16;
         else
             gp = (gl_param_t*)gl_param_desktop_fallback;
         has_16_tex = has_16;
         if (!useDeprecatedFormats()) {
-            qDebug("using gl_param_desktop%s", gp == gl_param_desktop? "" : "_fallback");
+            qDebug("using gl_param_%s", gp == gl_param_3r16? "3r16" : "desktop_fallback");
             return gp;
         }
-    } else if (test_gl_param(gl_param_es3[4], &has_16)) { //3.0 will fail because no glGetTexLevelParameteriv
-        gp = (gl_param_t*)gl_param_es3;
+    } else if (test_gl_param(gl_param_es3rg8[4], &has_16)) { //3.0 will fail because no glGetTexLevelParameteriv
+        gp = (gl_param_t*)gl_param_es3rg8;
         has_16_tex = has_16;
         if (!useDeprecatedFormats()) {
-            qDebug("using gl_param_es3");
+            qDebug("using gl_param_es3rg8");
             return gp;
         }
     } else if (isOpenGLES()) {
         if (QOpenGLContext::currentContext()->format().majorVersion() > 2)
-            gp = (gl_param_t*)gl_param_es3; //for 3.0
+            gp = (gl_param_t*)gl_param_es3rg8; //for 3.0
         else if (hasRG())
             gp = (gl_param_t*)gl_param_es2rg;
         has_16_tex = has_16;
         if (gp && !useDeprecatedFormats()) {
-            qDebug("using gl_param_%s", gp == gl_param_es3 ? "es3" : "es2rg");
+            qDebug("using gl_param_%s", gp == gl_param_es3rg8 ? "es3rg8" : "es2rg");
             return gp;
         }
     }
@@ -562,19 +564,19 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
     };
     Q_UNUSED(pixfmt_to_gles);
     static const fmt_entry pixfmt_to_desktop[] = {
-        {VideoFormat::Format_BGRA32, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE }, //bgra bgra works on win but not osx
+        {VideoFormat::Format_BGRA32, GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE }, //bgra bgra works on win but not macOS
         {VideoFormat::Format_RGB32,  GL_RGBA, GL_BGRA, GL_UNSIGNED_BYTE }, //FIXMEL endian check
         //{VideoFormat::Format_BGRA32,  GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE }, //{2,1,0,3}
         //{VideoFormat::Format_BGR24,   GL_RGB,  GL_BGR,  GL_UNSIGNED_BYTE }, //{0,1,2,3}
-    #ifdef GL_UNSIGNED_SHORT_5_6_5_REV
+#ifdef GL_UNSIGNED_SHORT_5_6_5_REV
         {VideoFormat::Format_BGR565, GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5_REV}, // es error, use channel map
-    #endif
-    #ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
+#endif
+#ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
         {VideoFormat::Format_RGB555, GL_RGBA, GL_BGRA, GL_UNSIGNED_SHORT_1_5_5_5_REV},
-    #endif
-    #ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
+#endif
+#ifdef GL_UNSIGNED_SHORT_1_5_5_5_REV
         {VideoFormat::Format_BGR555, GL_RGBA, GL_RGBA, GL_UNSIGNED_SHORT_1_5_5_5_REV},
-    #endif
+#endif
         // TODO: BE formats not implemeted
         {VideoFormat::Format_RGB48, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT }, //TODO: they are not work for ANGLE, and rgb16 works on desktop gl, so remove these lines to use rgb16?
         {VideoFormat::Format_RGB48LE, GL_RGB, GL_RGB, GL_UNSIGNED_SHORT },
@@ -594,7 +596,7 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
         pixfmt_gl_entry = pixfmt_to_gles;
     // Very special formats, for which OpenGL happens to have direct support
     static const fmt_entry pixfmt_gl_base[] = {
-        {VideoFormat::Format_RGBA32, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE }, // only tested for osx, win, angle
+        {VideoFormat::Format_RGBA32, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE }, // only tested for macOS, win, angle
         {VideoFormat::Format_RGB24,  GL_RGB,  GL_RGB,  GL_UNSIGNED_BYTE },
         {VideoFormat::Format_RGB565, GL_RGB,  GL_RGB,  GL_UNSIGNED_SHORT_5_6_5},
         {VideoFormat::Format_BGR32,  GL_BGRA, GL_BGRA, GL_UNSIGNED_BYTE }, //rgba(tested) or abgr, depending on endian
@@ -648,9 +650,9 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
     GLenum *d_t = data_type;
     gl_param_t* gp = (gl_param_t*)get_gl_param();
     const int nb_planes = fmt.planeCount();
-    if (gp == gl_param_desktop && (
-                nb_planes == 2 // nv12 UV plane is 16bit, but we use rg
-                || (OpenGLHelper::depth16BitTexture() == 16 && OpenGLHelper::has16BitTexture() && fmt.isBigEndian() && fmt.bitsPerComponent() > 8) // 16bit texture does not support be channel now
+    if (gp == gl_param_3r16 && (
+                //nb_planes == 2 || // nv12 UV plane is 16bit, but we use rg
+                (OpenGLHelper::depth16BitTexture() == 16 && OpenGLHelper::has16BitTexture() && fmt.isBigEndian() && fmt.bitsPerComponent() > 8) // 16bit texture does not support be channel now
                 )) {
         gp = (gl_param_t*)gl_param_desktop_fallback;
         qDebug("desktop_fallback for %s", nb_planes == 2 ? "bi-plane format" : "16bit big endian channel");
@@ -677,6 +679,7 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
 
 // TODO: format + datatype? internal format == format?
 //https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_format_BGRA8888.txt
+// TODO: special format size, or componentsize(dataType)*components(format)
 int bytesOfGLFormat(GLenum format, GLenum dataType)
 {
     int component_size = 0;
