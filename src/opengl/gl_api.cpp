@@ -64,7 +64,7 @@ static void* GetProcAddressWithExt(GetProcAddress_t get, const char *name)
             return fp;
         }
     }
-    return nullptr;
+    return NULL;
 }
 
 static void* GetProcAddressDefault(const char *name)
@@ -101,7 +101,7 @@ static void* GetProcAddressDefault(const char *name)
 #endif //QT_OPENGL_DYNAMIC
 
 
-#define GL_RESOLVE_NONE(name) do { name = nullptr;}while(0)
+#define GL_RESOLVE_NONE(name) do { name = NULL;}while(0)
 #define GL_RESOLVE_EXT(name) do {\
     void** fp = (void**)(&name); \
     *fp = GetProcAddressDefault("gl" # name); \

@@ -342,21 +342,26 @@ bool test_gl_param(const gl_param_t& gp, bool* has_16 = 0)
         qWarning("%s: current context is null", __FUNCTION__);
         return false;
     }
-    if (!gl().GetTexLevelParameteriv) {
-        qDebug("Do not support glGetTexLevelParameteriv. test_gl_param returns false");
-        return false;
-    }
     GLuint tex;
     DYGL(glGenTextures(1, &tex));
     DYGL(glBindTexture(GL_TEXTURE_2D, tex));
+    while (DYGL(glGetError()) != GL_NO_ERROR) {}
     DYGL(glTexImage2D(GL_TEXTURE_2D, 0, gp.internal_format, 64, 64, 0, gp.format, gp.type, NULL));
+    if (DYGL(glGetError()) != GL_NO_ERROR) {
+        DYGL(glDeleteTextures(1, &tex));
+        return false;
+    }
+    if (!gl().GetTexLevelParameteriv) {
+        qDebug("Do not support glGetTexLevelParameteriv. test_gl_param returns false");
+        DYGL(glDeleteTextures(1, &tex));
+        return false;
+    }
     GLint param = 0;
     //GL_PROXY_TEXTURE_2D and no glGenTextures?
 #ifndef GL_TEXTURE_INTERNAL_FORMAT //only in desktop
 #define GL_TEXTURE_INTERNAL_FORMAT 0x1003
 #endif
     gl().GetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT, &param);
-    // TODO: check glGetError()?
     if (param != gp.internal_format) {
         qDebug("Do not support texture internal format: %#x (result %#x)", gp.internal_format, param);
         DYGL(glDeleteTextures(1, &tex));
