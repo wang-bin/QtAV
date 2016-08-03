@@ -55,7 +55,7 @@ int depth16BitTexture()
 
 bool useDeprecatedFormats()
 {
-    static int v = qgetenv("QTAV_GL_DEPRECATED").toInt() == 1;
+    static bool v = qgetenv("QTAV_GL_DEPRECATED").toInt() == 1;
     return v;
 }
 
@@ -685,7 +685,7 @@ bool videoFormatToGL(const VideoFormat& fmt, GLint* internal_format, GLenum* dat
 // TODO: format + datatype? internal format == format?
 //https://www.khronos.org/registry/gles/extensions/EXT/EXT_texture_format_BGRA8888.txt
 // TODO: special format size, or componentsize(dataType)*components(format)
-int bytesOfGLFormat(GLenum format, GLenum dataType)
+int bytesOfGLFormat(GLenum format, GLenum dataType) // TODO: rename bytesOfTexel
 {
     int component_size = 0;
     switch (dataType) {
@@ -729,49 +729,30 @@ int bytesOfGLFormat(GLenum format, GLenum dataType)
     }
     switch (format) {
     case GL_RED:
-    case GL_R8:
-    case GL_R16: //?
+    case GL_LUMINANCE:
+    case GL_ALPHA:
         return component_size;
     case GL_RG:
-    case GL_RG8:
-    case GL_RG16: //?
+    case GL_LUMINANCE_ALPHA:
         return 2*component_size;
 #ifdef GL_YCBCR_422_APPLE
-      case GL_YCBCR_422_APPLE:
+    case GL_YCBCR_422_APPLE:
         return 2;
 #endif
 #ifdef GL_RGB_422_APPLE
-      case GL_RGB_422_APPLE:
+    case GL_RGB_422_APPLE:
         return 2;
 #endif
+#ifdef GL_BGR //ifndef GL_ES
+    case GL_BGR:
+#endif
+    case GL_RGB:
+        return 3*component_size;
 #ifdef GL_BGRA //ifndef GL_ES
       case GL_BGRA:
 #endif
     case GL_RGBA:
-    case GL_RGBA8:
-    case GL_RGBA16:
         return 4*component_size;
-#ifdef GL_BGR //ifndef GL_ES
-      case GL_BGR:
-#endif
-    case GL_RGB:
-    case GL_RGB8:
-    case GL_RGB16:
-        return 3*component_size;
-      case GL_LUMINANCE_ALPHA:
-        // mpv returns 2
-        return 2*component_size;
-      case GL_LUMINANCE:
-      case GL_ALPHA:
-        return 1*component_size;
-#ifdef GL_LUMINANCE16
-    case GL_LUMINANCE16:
-        return 2*component_size;
-#endif //GL_LUMINANCE16
-#ifdef GL_ALPHA16
-    case GL_ALPHA16:
-        return 2*component_size;
-#endif //GL_ALPHA16
       default:
         qWarning("bytesOfGLFormat - Unknown format %u", format);
         return 1;
