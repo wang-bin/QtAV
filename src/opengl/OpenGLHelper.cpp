@@ -196,9 +196,13 @@ bool isOpenGLES()
 {
 #ifdef QT_OPENGL_DYNAMIC
     QOpenGLContext *ctx = QOpenGLContext::currentContext();
+    if (ctx)
+        return ctx->isOpenGLES();
+    if (qstrcmp(qApp->metaObject()->className(), "QCoreApplication") == 0) // QGuiApplication is required by QOpenGLContext::openGLModuleType
+        return false;
     // desktop openGLModuleType() can create es compatible context, so prefer QOpenGLContext::isOpenGLES().
     // qApp->testAttribute(Qt::AA_UseOpenGLES) is what user requested, but not  the result can be different. reproduce: dygl set AA_ShareOpenGLContexts|AA_UseOpenGLES, fallback to desktop (why?)
-    return ctx ? ctx->isOpenGLES() : QOpenGLContext::openGLModuleType() != QOpenGLContext::LibGL;
+    return QOpenGLContext::openGLModuleType() != QOpenGLContext::LibGL;
 #endif //QT_OPENGL_DYNAMIC
 #ifdef QT_OPENGL_ES_2
     return true;
