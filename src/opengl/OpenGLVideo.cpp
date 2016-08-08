@@ -269,7 +269,7 @@ VideoShader* OpenGLVideo::userShader() const
 
 void OpenGLVideo::fill(const QColor &color)
 {
-    DYGL(glClearColor(color.red(), color.green(), color.blue(), color.alpha()));
+    DYGL(glClearColor(color.redF(), color.greenF(), color.blueF(), color.alphaF()));
     DYGL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 }
 
