@@ -148,7 +148,7 @@ void BlockingQueue<T, Container>::put(const T& t)
     queue.enqueue(t);
     onPut(t); // emit bufferProgressChanged here if buffering
     if (checkEnough()) {
-        cond_empty.wakeAll(); //emit buffering finished here
+        cond_empty.wakeOne(); //emit buffering finished here
         //qDebug("queue is enough: %d/%d~%d", queue.size(), thres, cap);
     } else {
         //qDebug("buffering: %d/%d~%d", queue.size(), thres, cap);
@@ -176,8 +176,7 @@ T BlockingQueue<T, Container>::take()
         return T();
     }
     T t(queue.dequeue());
-    if (!checkEnough())
-        cond_full.wakeAll();
+    cond_full.wakeOne();
     onTake(t); // emit start buffering here if empty
     return t;
 }
