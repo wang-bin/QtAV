@@ -483,7 +483,7 @@ AudioFormat AudioOutput::setAudioFormat(const AudioFormat& format)
             else
                 af.setSampleFormat(AudioFormat::SampleFormat_Signed32);
         } else {
-            af.setSampleFormat(AudioFormat::make(af.bytesPerSample()/2, false, af.bytesPerSample() == 2 | af.isUnsigned() /* U8, no S8 */, false));
+            af.setSampleFormat(AudioFormat::make(af.bytesPerSample()/2, false, (af.bytesPerSample() == 2) | af.isUnsigned() /* U8, no S8 */, false));
         }
         if (af.bytesPerSample() < 1) {
             if (!check_up) {
