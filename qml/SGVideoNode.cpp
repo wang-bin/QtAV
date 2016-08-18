@@ -78,7 +78,7 @@ public:
 */
     void setCurrentFrame(const VideoFrame &frame) {
         m_material.setCurrentFrame(frame);
-        setFlag(Blending, m_material.hasAlpha());
+        setFlag(Blending, frame.format().hasAlpha());
     }
 
     VideoMaterial* videoMaterial() { return &m_material;}
