@@ -119,12 +119,10 @@ public:
         v_texel_size.reserve(4);
         textures.reserve(4);
         texture_size.reserve(4);
-        texture_upload_size.reserve(4);
         effective_tex_width.reserve(4);
         internal_format.reserve(4);
         data_format.reserve(4);
         data_type.reserve(4);
-        texture_coords.reserve(4);
         static bool enable_pbo = qgetenv("QTAV_PBO").toInt() > 0;
         if (try_pbo)
             try_pbo = enable_pbo;
@@ -135,6 +133,7 @@ public:
     bool initPBO(int plane, int size);
     bool initTexture(GLuint tex, GLint internal_format, GLenum format, GLenum dataType, int width, int height);
     bool updateTextureParameters(const VideoFormat& fmt);
+    void uploadPlane(int p, bool updateTexture = true);
     bool ensureResources();
     bool ensureTextures();
     void setupQuality();
@@ -158,14 +157,6 @@ public:
     QVector<GLuint> textures; //texture ids. size is plane count
     QHash<GLuint, bool> owns_texture;
     QVector<QSize> texture_size;
-    /*
-     * actually if render a full frame, only plane 0 is enough. other planes are the same as texture size.
-     * because linesize[0]>=linesize[1]
-     * uploade size is required when
-     * 1. y/u is not an integer because of alignment. then padding size of y < padding size of u, and effective size y/u != texture size y/u
-     * 2. odd size. enlarge y
-     */
-    QVector<QSize> texture_upload_size;
 
     QVector<int> effective_tex_width; //without additional width for alignment
     qreal effective_tex_width_ratio;
@@ -174,7 +165,6 @@ public:
     QVector<GLenum> data_format;
     QVector<GLenum> data_type;
 
-    QVector<GLfloat> texture_coords;
     bool dirty;
     ColorTransform colorTransform;
     bool try_pbo;

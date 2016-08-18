@@ -77,6 +77,7 @@ public:
     ShaderManager *manager;
     VideoMaterial *material;
     qint64 material_type;
+    bool has_a;
     bool update_geo;
     int tex_target;
     qreal valiad_tex_width;
@@ -221,6 +222,7 @@ QOpenGLContext* OpenGLVideo::openGLContext()
 void OpenGLVideo::setCurrentFrame(const VideoFrame &frame)
 {
     d_func().material->setCurrentFrame(frame);
+    d_func().has_a = frame.format().hasAlpha();
 }
 
 void OpenGLVideo::setProjectionMatrixToRect(const QRectF &v)
@@ -284,19 +286,20 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
         qDebug() << "material changed: " << VideoMaterial::typeName(d.material_type) << " => " << VideoMaterial::typeName(mt);
         d.material_type = mt;
     }
+    if (!d.material->bind()) // bind first because texture parameters(target) mapped from native buffer is unknown before it
+        return;
     VideoShader *shader = d.user_shader;
     if (!shader)
         shader = d.manager->prepareMaterial(d.material, mt); //TODO: print shader type name if changed. prepareMaterial(,sample_code, pp_code)
     shader->update(d.material);
-    d.material->setDirty(false); //
     shader->program()->setUniformValue(shader->matrixLocation(), transform*d.matrix);
     // uniform end. attribute begin
     d.updateGeometry(shader, target, roi);
     // normalize?
-    const bool blending = d.material->hasAlpha();
+    const bool blending = d.has_a;
     if (blending) {
         DYGL(glEnable(GL_BLEND));
-        DYGL(glBlendFunc(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA));
+        gl().BlendFuncSeparate(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA); //
     }
     d.gr.render();
     if (blending)

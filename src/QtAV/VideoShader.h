@@ -185,7 +185,6 @@ public:
     void setCurrentFrame(const VideoFrame& frame);
     VideoFormat currentFormat() const;
     VideoShader* createShader() const;
-    void initializeShader(VideoShader* shader) const;
     virtual qint32 type() const;
     static QString typeName(qint32 value);
 
@@ -193,7 +192,7 @@ public:
     void unbind();
     int compare(const VideoMaterial* other) const;
 
-    bool hasAlpha() const;
+    int textureTarget() const;
     /*!
      * \brief isDirty
      * \return true if material type changed, or other properties changed, e.g. 8bit=>10bit (the same material type) and eq
@@ -252,7 +251,7 @@ public:
      */
     QRectF normalizedROI(const QRectF& roi) const;
     /*!
-     * \brief mapToFrame
+     * \brief mapToTexture
      * map a point p or a rect r to video texture in a given plane and scaled to valid width.
      * p or r is in video frame's rect coordinates, no matter which plane is
      * \param normalize -1: auto(do not normalize for rectangle texture). 0: no. 1: yes
@@ -270,9 +269,6 @@ public:
     qreal saturation() const;
     void setSaturation(qreal value);
 protected:
-    // TODO: roi
-    // whether to update texture is set internal
-    void bindPlane(int p, bool updateTexture = true);
     VideoMaterial(VideoMaterialPrivate &d);
     DPTR_DECLARE(VideoMaterial)
 };

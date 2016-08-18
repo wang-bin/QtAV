@@ -165,9 +165,8 @@ const char* VideoShader::fragmentShader() const
             frag.prepend("#undef texture\n"
                         "#define texture texture2DRect\n"
                         );
-    }
-    if (textureTarget() == GL_TEXTURE_RECTANGLE)
         frag.prepend("#define MULTI_COORD\n");
+    }
     frag.prepend(OpenGLHelper::compatibleShaderHeader(QOpenGLShader::Fragment));
 
     QByteArray header("*/");
@@ -347,19 +346,20 @@ QOpenGLShaderProgram* VideoShader::program()
 
 bool VideoShader::update(VideoMaterial *material)
 {
-    if (!material)
-        return false;
+    Q_ASSERT(material && "null material");
     DPTR_D(VideoShader);
     const qint32 mt = material->type();
     if (mt != d.material_type || d.rebuild_program) {
         // TODO: use shader program cache (per shader), check shader type
         qDebug("Rebuild shader program requested: %d. Material type %d=>%d", d.rebuild_program, d.material_type, mt);
         program()->removeAllShaders(); //not linked
-        material->initializeShader(this);
+        // initialize shader, the same as VideoMaterial::createShader
+        setVideoFormat(material->currentFormat());
+        setTextureTarget(material->textureTarget());
+        setMaterialType(material->type());
+
         initialize();
     }
-    if (!material->bind())
-        return false;
     //material->unbind();
     const VideoFormat fmt(material->currentFormat()); //FIXME: maybe changed in setCurrentFrame(
     //format is out of date because we may use the same shader for different formats
@@ -554,17 +554,12 @@ VideoFormat VideoMaterial::currentFormat() const
 VideoShader* VideoMaterial::createShader() const
 {
     VideoShader *shader = new VideoShader();
-    initializeShader(shader);
+    // initialize shader
+    shader->setVideoFormat(currentFormat());
+    shader->setTextureTarget(textureTarget());
+    shader->setMaterialType(type());
     //resize texture locations to avoid access format later
     return shader;
-}
-
-void VideoMaterial::initializeShader(VideoShader *shader) const
-{
-    DPTR_D(const VideoMaterial);
-    shader->setVideoFormat(d.video_format);
-    shader->setTextureTarget(d.target);
-    shader->setMaterialType(type());
 }
 
 QString VideoMaterial::typeName(qint32 value)
@@ -585,9 +580,7 @@ qint32 VideoMaterial::type() const
     const bool tex_2d = d.target == GL_TEXTURE_2D;
     // 2d,alpha,planar,8bit
     const int rg_biplane = fmt.planeCount()==2 && !OpenGLHelper::useDeprecatedFormats() && OpenGLHelper::hasRG();
-    // nv21 bpc=1?
-    const int bpc = fmt.bitsPerComponent();
-    const int channel16_to8 = bpc > 8 && (OpenGLHelper::depth16BitTexture() < 16 || !OpenGLHelper::has16BitTexture() || fmt.isBigEndian());
+    const int channel16_to8 = d.bpc > 8 && (OpenGLHelper::depth16BitTexture() < 16 || !OpenGLHelper::has16BitTexture() || fmt.isBigEndian());
     return (rg_biplane<<4)|(tex_2d<<3)|(fmt.hasAlpha()<<2)|(fmt.isPlanar()<<1)|(channel16_to8);
 }
 
@@ -604,7 +597,7 @@ bool VideoMaterial::bind()
     d.ensureTextures();
     for (int i = 0; i < nb_planes; ++i) {
         const int p = (i + 1) % nb_planes; //0 must active at last?
-        bindPlane(p, d.update_texure); // why? i: quick items display wrong textures
+        d.uploadPlane(p, d.update_texure);
     }
 #if 0 //move to unbind should be fine
     if (d.update_texure) {
@@ -616,38 +609,36 @@ bool VideoMaterial::bind()
 }
 
 // TODO: move bindPlane to d.uploadPlane
-void VideoMaterial::bindPlane(int p, bool updateTexture)
+void VideoMaterialPrivate::uploadPlane(int p, bool updateTexture)
 {
-    DPTR_D(VideoMaterial);
-    GLuint &tex = d.textures[p];
+    GLuint &tex = textures[p];
     gl().ActiveTexture(GL_TEXTURE0 + p); //0 must active?
     if (!updateTexture) {
-        DYGL(glBindTexture(d.target, tex));
+        DYGL(glBindTexture(target, tex));
         return;
     }
-    // try_pbo ? pbo_id : 0. 0= > interop.createHandle
-    GLuint tex0 = tex;
-    if (d.frame.map(GLTextureSurface, &tex, p)) {
-        if (tex0 != tex) {
-            if (d.owns_texture[tex0])
-                DYGL(glDeleteTextures(1, &tex0));
-            d.owns_texture.remove(tex0);
-            d.owns_texture[tex] = false;
+    if (!frame.constBits(0)) {
+        // try_pbo ? pbo_id : 0. 0= > interop.createHandle
+        GLuint tex0 = tex;
+        if (frame.map(GLTextureSurface, &tex, p)) {
+            if (tex0 != tex) {
+                if (owns_texture[tex0])
+                    DYGL(glDeleteTextures(1, &tex0));
+                owns_texture.remove(tex0);
+                owns_texture[tex] = false;
+            }
+            DYGL(glBindTexture(target, tex)); // glActiveTexture was called, but maybe bind to 0 in map
+            return;
         }
-        DYGL(glBindTexture(d.target, tex)); // glActiveTexture was called, but maybe bind to 0 in map
-        return;
-    }
-    if (!d.frame.constBits(0)) {
         qWarning("map hw surface error");
         return;
     }
-    // TODO if a hw frame map() failed, do not upload. upload only for host memory surfaces
     // FIXME: why happens on win?
-    if (d.frame.bytesPerLine(p) <= 0)
+    if (frame.bytesPerLine(p) <= 0)
         return;
-    if (d.try_pbo) {
+    if (try_pbo) {
         //qDebug("bind PBO %d", p);
-        QOpenGLBuffer &pb = d.pbo[p];
+        QOpenGLBuffer &pb = pbo[p];
         pb.bind();
         // glMapBuffer() causes sync issue.
         // Call glBufferData() with NULL pointer before glMapBuffer(), the previous data in PBO will be discarded and
@@ -656,43 +647,27 @@ void VideoMaterial::bindPlane(int p, bool updateTexture)
         pb.allocate(pb.size());
         GLubyte* ptr = (GLubyte*)pb.map(QOpenGLBuffer::WriteOnly);
         if (ptr) {
-            memcpy(ptr, d.frame.constBits(p), pb.size());
+            memcpy(ptr, frame.constBits(p), pb.size());
             pb.unmap();
         }
     }
     //qDebug("bpl[%d]=%d width=%d", p, frame.bytesPerLine(p), frame.planeWidth(p));
-    DYGL(glBindTexture(d.target, tex));
-    //d.setupQuality();
-    //DYGL(glTexParameteri(d.target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
-    //DYGL(glTexParameteri(d.target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
+    DYGL(glBindTexture(target, tex));
+    //setupQuality();
+    //DYGL(glTexParameteri(target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
+    //DYGL(glTexParameteri(target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
     // This is necessary for non-power-of-two textures
     //glPixelStorei(GL_UNPACK_ALIGNMENT, get_alignment(stride)); 8, 4, 2, 1
     // glPixelStorei(GL_UNPACK_ROW_LENGTH, stride/glbpp); // for stride%glbpp > 0?
-    DYGL(glTexSubImage2D(d.target, 0, 0, 0, d.texture_upload_size[p].width(), d.texture_upload_size[p].height(), d.data_format[p], d.data_type[p], d.try_pbo ? 0 : d.frame.constBits(p)));
-    if (false) { //texture_upload_size[].width()*gl_bpp != bytesPerLine[]
-        for (int y = 0; y < d.plane0Size.height(); ++y)
-            DYGL(glTexSubImage2D(d.target, 0, 0, y, d.texture_upload_size[p].width(), 1, d.data_format[p], d.data_type[p], d.try_pbo ? 0 : d.frame.constBits(p)+y*d.plane0Size.width()));
+    DYGL(glTexSubImage2D(target, 0, 0, 0, texture_size[p].width(), texture_size[p].height(), data_format[p], data_type[p], try_pbo ? 0 : frame.constBits(p)));
+    if (false) { //texture_size[].width()*gl_bpp != bytesPerLine[]
+        for (int y = 0; y < plane0Size.height(); ++y)
+            DYGL(glTexSubImage2D(target, 0, 0, y, texture_size[p].width(), 1, data_format[p], data_type[p], try_pbo ? 0 : frame.constBits(p)+y*plane0Size.width()));
     }
-    //DYGL(glBindTexture(d.target, 0)); // no bind 0 because glActiveTexture was called
-    if (d.try_pbo) {
-        d.pbo[p].release();
+    //DYGL(glBindTexture(target, 0)); // no bind 0 because glActiveTexture was called
+    if (try_pbo) {
+        pbo[p].release();
     }
-}
-
-int VideoMaterial::compare(const VideoMaterial *other) const
-{
-    DPTR_D(const VideoMaterial);
-    for (int i = 0; i < d.textures.size(); ++i) {
-        const int diff = d.textures[i] - other->d_func().textures[i]; //TODO
-        if (diff)
-            return diff;
-    }
-    return d.bpc - other->bitsPerComponent();
-}
-
-bool VideoMaterial::hasAlpha() const
-{
-    return d_func().video_format.hasAlpha();
 }
 
 void VideoMaterial::unbind()
@@ -708,6 +683,23 @@ void VideoMaterial::unbind()
         d.update_texure = false;
         d.frame = VideoFrame(); //FIXME: why need this? we must unmap correctly before frame is reset.
     }
+    setDirty(false);
+}
+
+int VideoMaterial::compare(const VideoMaterial *other) const
+{
+    DPTR_D(const VideoMaterial);
+    for (int i = 0; i < d.textures.size(); ++i) {
+        const int diff = d.textures[i] - other->d_func().textures[i]; //TODO
+        if (diff)
+            return diff;
+    }
+    return d.bpc - other->bitsPerComponent();
+}
+
+int VideoMaterial::textureTarget() const
+{
+    return d_func().target;
 }
 
 bool VideoMaterial::isDirty() const
@@ -997,7 +989,6 @@ bool VideoMaterialPrivate::updateTextureParameters(const VideoFormat& fmt)
         const int bpp_gl = OpenGLHelper::bytesOfGLFormat(data_format[i], data_type[i]);
         const int pad = std::ceil((qreal)(texture_size[i].width() - effective_tex_width[i])/(qreal)bpp_gl);
         texture_size[i].setWidth(std::ceil((qreal)texture_size[i].width()/(qreal)bpp_gl));
-        texture_upload_size[i].setWidth(std::ceil((qreal)texture_upload_size[i].width()/(qreal)bpp_gl));
         effective_tex_width[i] /= bpp_gl; //fmt.bytesPerPixel(i);
         v_texture_size[i] = QVector2D(texture_size[i].width(), texture_size[i].height());
         //effective_tex_width_ratio =
@@ -1064,14 +1055,12 @@ bool VideoMaterialPrivate::ensureResources()
         v_texel_size.resize(nb_planes);
         v_texture_size.resize(nb_planes);
         texture_size.resize(nb_planes);
-        texture_upload_size.resize(nb_planes);
         effective_tex_width.resize(nb_planes);
         effective_tex_width_ratio = 1.0;
         for (int i = 0; i < nb_planes; ++i) {
             qDebug("plane linesize %d: padded = %d, effective = %d. theoretical plane size: %dx%d", i, frame.bytesPerLine(i), frame.effectiveBytesPerLine(i), frame.planeWidth(i), frame.planeHeight(i));
             // we have to consider size of opengl format. set bytesPerLine here and change to width later
             texture_size[i] = QSize(frame.bytesPerLine(i), frame.planeHeight(i));
-            texture_upload_size[i] = texture_size[i];
             effective_tex_width[i] = frame.effectiveBytesPerLine(i); //store bytes here, modify as width later
             // usually they are the same. If not, the difference is small. min value can avoid rendering the invalid data.
             effective_tex_width_ratio = qMin(effective_tex_width_ratio, (qreal)frame.effectiveBytesPerLine(i)/(qreal)frame.bytesPerLine(i));
