@@ -6,7 +6,7 @@ if "%cc%" == "MinGW" (
 ) else (
   if "%mode%" == "debug" (
     qmake %APPVEYOR_BUILD_FOLDER% -r -tp vc "CONFIG+=debug"
-    msbuild /m /p:Configuration=DEBUG
+    msbuild /p:Configuration=DEBUG
   ) else (
     qmake %APPVEYOR_BUILD_FOLDER%
     where jom

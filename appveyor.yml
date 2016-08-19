@@ -24,6 +24,13 @@ environment:
 
   - arch: 32
     cc: MinGW
+    qt: 5.7
+    toolchain_version: 530
+    mode: debug
+    QTDIR: C:\Qt\5.7\mingw53_32
+
+  - arch: 32
+    cc: MinGW
     qt: 5.4
     toolchain_version: 491
     mode: release
