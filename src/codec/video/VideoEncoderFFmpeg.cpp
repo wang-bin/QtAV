@@ -29,7 +29,9 @@
 
 #if AV_MODULE_CHECK(LIBAVUTIL, 55, 13, 0, 27, 100)
 #define HAVE_AVHWCTX
+extern "C" {
 #include <libavutil/hwcontext.h>
+}
 #endif
 
 /*!
@@ -64,8 +66,9 @@ AVHWDeviceType fromHWAName(const char* name)
 class VideoEncoderFFmpegPrivate;
 class VideoEncoderFFmpeg Q_DECL_FINAL: public VideoEncoder
 {
+    Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoEncoderFFmpeg)
-    Q_PROPERTY(QString hwdevice READ hwDevice WRITE setHWDevice)
+    Q_PROPERTY(QString hwdevice READ hwDevice WRITE setHWDevice NOTIFY hwDeviceChanged)
 public:
     VideoEncoderFFmpeg();
     VideoEncoderId id() const Q_DECL_OVERRIDE;
@@ -73,6 +76,8 @@ public:
 
     void setHWDevice(const QString& name);
     QString hwDevice() const;
+Q_SIGNALS:
+    void hwDeviceChanged();
 };
 
 static const VideoEncoderId VideoEncoderId_FFmpeg = mkid::id32base36_6<'F', 'F', 'm', 'p', 'e', 'g'>::value;
@@ -138,16 +143,16 @@ bool VideoEncoderFFmpegPrivate::open()
         if (codec->pix_fmts) {
             qDebug("use first supported pixel format: %d", codec->pix_fmts[0]);
             format_used = VideoFormat::pixelFormatFromFFmpeg((int)codec->pix_fmts[0]);
-            if (av_pix_fmt_desc_get(codec->pix_fmts[0])->flags & AV_PIX_FMT_FLAG_HWACCEL) {
-                hwfmt = codec->pix_fmts[0];
-            }
         } else {
             qWarning("pixel format and supported pixel format are not set. use yuv420p");
             format_used = VideoFormat::Format_YUV420P;
         }
     }
     //avctx->sample_aspect_ratio =
+    if (av_pix_fmt_desc_get(codec->pix_fmts[0])->flags & AV_PIX_FMT_FLAG_HWACCEL)
+        hwfmt = codec->pix_fmts[0];
     if (hwfmt != AVPixelFormat(-1)) {
+#ifdef HAVE_AVHWCTX
         avctx->pix_fmt = hwfmt;
         hw_device_ctx = NULL;
         AV_ENSURE(av_hwdevice_ctx_create(&hw_device_ctx, fromHWAName(codec_name.section(QChar('_'), -1).toUtf8().constData()), hwdev.toLatin1().constData(), NULL, 0), false);
@@ -156,29 +161,30 @@ bool VideoEncoderFFmpegPrivate::open()
             qWarning("Failed to create hw frame context for '%s'", codec_name.toLatin1().constData());
             return false;
         }
+        // get sw formats
+        const void *hwcfg = NULL;
+        AVHWFramesConstraints *constraints = av_hwdevice_get_hwframe_constraints(hw_device_ctx, hwcfg);
+        const AVPixelFormat* in_fmts = constraints->valid_sw_formats;
+        if (in_fmts) {
+            while (*in_fmts != AVPixelFormat(-1)) {
+                sw_fmts.append(*in_fmts);
+                ++in_fmts;
+            }
+        }
+        av_hwframe_constraints_free(&constraints);
+        if (format_used == AVPixelFormat(-1))
+            format_used = VideoFormat::pixelFormatFromFFmpeg(sw_fmts[0]);
+        // encoder surface pool parameters
         AVHWFramesContext* hwfs = (AVHWFramesContext*)avctx->hw_frames_ctx->data;
-        // encoder surface parameters
-        hwfs->format = hwfmt;
-        //hwframes->sw_format = ;// default is use the first constraints.valid_sw_formats
-
+        hwfs->format = hwfmt; // must the same as avctx->pix_fmt
+        hwfs->sw_format = sw_fmts[0]; // if it's not set, vaapi will choose the last valid_sw_formats, but that's wrong for vaGetImage/DeriveImage. nvenc always need sw_format
         // hw upload parameters. encoder's hwframes is just for parameter checking, will never be intialized, so we allocate an individual one.
         hwframes_ref = av_hwframe_ctx_alloc(hw_device_ctx);
         if (!hwframes_ref) {
-#ifdef HAVE_AVHWCTX
             qWarning("Failed to create hw frame context for uploading '%s'", codec_name.toLatin1().constData());
         } else {
             hwframes = (AVHWFramesContext*)hwframes_ref->data;
             hwframes->format = hwfmt;
-            const void *hwcfg = NULL;
-            AVHWFramesConstraints *constraints = av_hwdevice_get_hwframe_constraints(hw_device_ctx, hwcfg);
-            const AVPixelFormat* in_fmts = constraints->valid_sw_formats;
-            if (in_fmts) {
-                while (*in_fmts != AVPixelFormat(-1)) {
-                    sw_fmts.append(*in_fmts);
-                    ++in_fmts;
-                }
-            }
-            av_hwframe_constraints_free(&constraints);
         }
 #endif //HAVE_AVHWCTX
     } else {
@@ -190,20 +196,18 @@ bool VideoEncoderFFmpegPrivate::open()
         avctx->time_base = av_d2q(1.0/VideoEncoder::defaultFrameRate(), VideoEncoder::defaultFrameRate()*1001.0+2);
     qDebug("size: %dx%d tbc: %f=%d/%d", width, height, av_q2d(avctx->time_base), avctx->time_base.num, avctx->time_base.den);
     avctx->bit_rate = bit_rate;
-#if 1
     //AVDictionary *dict = 0;
     if(avctx->codec_id == QTAV_CODEC_ID(H264)) {
         avctx->gop_size = 10;
         //avctx->max_b_frames = 3;//h264
         av_dict_set(&dict, "preset", "fast", 0);
         av_dict_set(&dict, "tune", "zerolatency", 0);
-        av_dict_set(&dict, "profile", "main", 0);
+        //av_dict_set(&dict, "profile", "main", 0); // conflict with vaapi (int values)
     }
     if(avctx->codec_id == AV_CODEC_ID_HEVC){
         av_dict_set(&dict, "preset", "ultrafast", 0);
         av_dict_set(&dict, "tune", "zero-latency", 0);
     }
-#endif
     applyOptionsForContext();
     AV_ENSURE_OK(avcodec_open2(avctx, codec, &dict), false);
     // from mpv ao_lavc
@@ -227,6 +231,20 @@ VideoEncoderFFmpeg::VideoEncoderFFmpeg()
 VideoEncoderId VideoEncoderFFmpeg::id() const
 {
     return VideoEncoderId_FFmpeg;
+}
+
+void VideoEncoderFFmpeg::setHWDevice(const QString &name)
+{
+    DPTR_D(VideoEncoderFFmpeg);
+    if (d.hwdev == name)
+        return;
+    d.hwdev = name;
+    Q_EMIT hwDeviceChanged();
+}
+
+QString VideoEncoderFFmpeg::hwDevice() const
+{
+    return d_func().hwdev;
 }
 
 struct ScopedAVFrameDeleter
@@ -283,10 +301,10 @@ bool VideoEncoderFFmpeg::encode(const VideoFrame &frame)
                 // reinit or got an unsupported format. assume parameters will not change, so it's  the 1st init
                 // check constraints
                 bool init_frames_ctx = d.hwframes->sw_format == AVPixelFormat(-1);
-                if (d.sw_fmts.contains(pixfmt)) {
+                pixfmt = d.sw_fmts[0];
+                if (d.sw_fmts.contains(pixfmt)) { // format changed
                     init_frames_ctx = true;
                 } else { // convert to supported sw format
-                    pixfmt = d.sw_fmts[0];
                     f->format = pixfmt;
                     VideoFrame converted = frame.to(VideoFormat::pixelFormatFromFFmpeg(pixfmt));
                     for (int i = 0; i < converted.planeCount(); ++i) {
@@ -338,3 +356,4 @@ bool VideoEncoderFFmpeg::encode(const VideoFrame &frame)
 }
 
 } //namespace QtAV
+#include "VideoEncoderFFmpeg.moc"
