@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
     qDebug("QtAV simpletranscode");
-    qDebug("./simpletranscode -i infile -o outfile [-async] [-c:v video_codec (default: libx264)] [-f format] [-an] [-ss HH:mm:ss.z]");
+    qDebug("./simpletranscode -i infile -o outfile [-async] [-c:v video_codec (default: libx264)] [-hwdev dev] [-f format] [-an] [-ss HH:mm:ss.z]");
     qDebug("-an: disable audio");
     qDebug() << "examples:\n"
              << "./simpletranscode -i test.mp4 -o /tmp/test-%05d.png -f image2 -c:v png\n"
@@ -62,6 +62,10 @@ int main(int argc, char *argv[])
     idx = a.arguments().indexOf(QLatin1String("-f"));
     if (idx > 0)
         fmt = a.arguments().at(idx + 1);
+    QString hwdev;
+    idx = a.arguments().indexOf(QLatin1String("-hwdev"));
+    if (idx > 0)
+        hwdev = a.arguments().at(idx + 1);
     const bool an = a.arguments().contains(QLatin1String("-an"));
     const bool async = a.arguments().contains(QLatin1String("-async"));
     qint64 ss = 0;
@@ -94,6 +98,8 @@ int main(int argc, char *argv[])
     VideoEncoder *venc = avt.videoEncoder();
     venc->setCodecName(cv); // "png"
     venc->setBitRate(1024*1024);
+    if (!hwdev.isEmpty())
+        venc->setProperty("hwdevice", hwdev);
     if (fmt == QLatin1String("image2"))
         venc->setPixelFormat(VideoFormat::Format_RGBA32);
     if (an) {
