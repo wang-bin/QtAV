@@ -474,7 +474,7 @@ AudioFormat AudioOutput::setAudioFormat(const AudioFormat& format)
     bool check_up = af.bytesPerSample() == 1;
     while (!d.backend->isSupported(af) && !d.backend->isSupported(af.sampleFormat())) {
         if (af.isPlanar()) {
-            af.setSampleFormat(AudioFormat::packedSampleFormat(af.sampleFormat()));
+            af.setSampleFormat(ToPacked(af.sampleFormat()));
             continue;
         }
         if (af.isFloat()) {

@@ -18,7 +18,7 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
+// FIXME: pause=>resume error
 #include "QtAV/private/AudioOutputBackend.h"
 #include <QtCore/QQueue>
 #include <QtCore/QSemaphore>
@@ -157,7 +157,7 @@ void AudioOutputAudioToolbox::tryPauseTimeline()
 
 bool AudioOutputAudioToolbox::isSupported(AudioFormat::SampleFormat smpfmt) const
 {
-    return !AudioFormat::isPlanar(smpfmt);
+    return !IsPlanar(smpfmt);
 }
 
 bool AudioOutputAudioToolbox::open()

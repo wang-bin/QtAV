@@ -135,18 +135,6 @@ public:
     qint64 channel_layout_ff;
 };
 
-bool AudioFormat::isPlanar(SampleFormat format)
-{
-    return format & kPlanar;
-}
-
-AudioFormat::SampleFormat AudioFormat::packedSampleFormat(SampleFormat fmt)
-{
-    if (isPlanar(fmt))
-        return SampleFormat((int)fmt^kPlanar);
-    return fmt;
-}
-
 AudioFormat::SampleFormat AudioFormat::make(int bytesPerSample, bool isFloat, bool isUnsigned, bool isPlanar)
 {
     int f = bytesPerSample;
@@ -157,13 +145,6 @@ AudioFormat::SampleFormat AudioFormat::make(int bytesPerSample, bool isFloat, bo
     if (isPlanar)
         f |= kPlanar;
     return SampleFormat(f);
-}
-
-AudioFormat::SampleFormat AudioFormat::planarSampleFormat(SampleFormat fmt)
-{
-    if (isPlanar(fmt))
-        return fmt;
-    return SampleFormat((int)fmt|kPlanar);
 }
 
 AudioFormat::AudioFormat():
@@ -232,12 +213,12 @@ bool AudioFormat::isFloat() const
 
 bool AudioFormat::isUnsigned() const
 {
-    return d->sample_fmt & kUnsigned;
+    return IsUnsigned(d->sample_fmt);
 }
 
 bool AudioFormat::isPlanar() const
 {
-    return d->sample_fmt & kPlanar;
+    return IsPlanar(d->sample_fmt);
 }
 
 int AudioFormat::planeCount() const

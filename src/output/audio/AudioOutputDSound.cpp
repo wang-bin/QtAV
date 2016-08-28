@@ -198,7 +198,7 @@ bool AudioOutputDSound::close()
 
 bool AudioOutputDSound::isSupported(AudioFormat::SampleFormat sampleFormat) const
 {
-    return !AudioFormat::isPlanar(sampleFormat);
+    return !IsPlanar(sampleFormat);
 }
 
 AudioOutputBackend::BufferControl AudioOutputDSound::bufferControl() const

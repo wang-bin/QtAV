@@ -251,7 +251,7 @@ bool AudioOutputXAudio2::isSupported(const AudioFormat& format) const
 
 bool AudioOutputXAudio2::isSupported(AudioFormat::SampleFormat sampleFormat) const
 {
-    return !AudioFormat::isPlanar(sampleFormat) && sampleFormat != AudioFormat::SampleFormat_Double;
+    return !IsPlanar(sampleFormat) && RawSampleSize(sampleFormat) < sizeof(double); // TODO: what about s64?
 }
 
 // FIXME:

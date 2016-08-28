@@ -340,7 +340,7 @@ bool AudioOutputOpenAL::isSupported(AudioFormat::SampleFormat sampleFormat) cons
 {
     if (sampleFormat == AudioFormat::SampleFormat_Unsigned8 || sampleFormat == AudioFormat::SampleFormat_Signed16)
         return true;
-    if (AudioFormat::isPlanar(sampleFormat))
+    if (IsPlanar(sampleFormat))
         return false;
     SCOPE_LOCK_CONTEXT();
     if (sampleFormat == AudioFormat::SampleFormat_Float)
