@@ -64,7 +64,7 @@ AVHWDeviceType fromHWAName(const char* name)
 #endif // HAVE_AVHWCTX
 
 class VideoEncoderFFmpegPrivate;
-class VideoEncoderFFmpeg Q_DECL_FINAL: public VideoEncoder
+class VideoEncoderFFmpeg : public VideoEncoder
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoEncoderFFmpeg)
@@ -99,8 +99,8 @@ public:
 
     qint64 nb_encoded;
     QByteArray buffer;
-#ifdef HAVE_AVHWCTX
     QString hwdev;
+#ifdef HAVE_AVHWCTX
     AVBufferRef *hw_device_ctx;
 
     AVBufferRef *hwframes_ref;
