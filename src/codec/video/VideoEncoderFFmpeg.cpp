@@ -151,12 +151,14 @@ bool VideoEncoderFFmpegPrivate::open()
     //avctx->sample_aspect_ratio =
     if (av_pix_fmt_desc_get(codec->pix_fmts[0])->flags & AV_PIX_FMT_FLAG_HWACCEL)
         hwfmt = codec->pix_fmts[0];
+    bool use_hwctx = false;
     if (hwfmt != AVPixelFormat(-1)) {
 #ifdef HAVE_AVHWCTX
-        avctx->pix_fmt = hwfmt;
-        hw_device_ctx = NULL;
         const AVHWDeviceType dt = fromHWAName(codec_name.section(QChar('_'), -1).toUtf8().constData());
         if (dt != AVHWDeviceType(-1)) {
+            use_hwctx = true;
+            avctx->pix_fmt = hwfmt;
+            hw_device_ctx = NULL;
             AV_ENSURE(av_hwdevice_ctx_create(&hw_device_ctx, dt, hwdev.toLatin1().constData(), NULL, 0), false);
             avctx->hw_frames_ctx = av_hwframe_ctx_alloc(hw_device_ctx);
             if (!avctx->hw_frames_ctx) {
@@ -190,7 +192,15 @@ bool VideoEncoderFFmpegPrivate::open()
             }
         }
 #endif //HAVE_AVHWCTX
-    } else {
+    }
+
+    if (!use_hwctx) {
+        // TODO: check frame is hw frame
+        if (hwfmt != AVPixelFormat(-1)) {
+            // FIXME: check whether incoming format is supported
+            //format_used = VideoFormat::pixelFormatFromFFmpeg((int)codec->pix_fmts[0]);
+            format_used = VideoFormat::Format_YUV420P;
+        }
         avctx->pix_fmt = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg(format_used);
     }
     if (frame_rate > 0)
