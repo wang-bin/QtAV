@@ -155,36 +155,39 @@ bool VideoEncoderFFmpegPrivate::open()
 #ifdef HAVE_AVHWCTX
         avctx->pix_fmt = hwfmt;
         hw_device_ctx = NULL;
-        AV_ENSURE(av_hwdevice_ctx_create(&hw_device_ctx, fromHWAName(codec_name.section(QChar('_'), -1).toUtf8().constData()), hwdev.toLatin1().constData(), NULL, 0), false);
-        avctx->hw_frames_ctx = av_hwframe_ctx_alloc(hw_device_ctx);
-        if (!avctx->hw_frames_ctx) {
-            qWarning("Failed to create hw frame context for '%s'", codec_name.toLatin1().constData());
-            return false;
-        }
-        // get sw formats
-        const void *hwcfg = NULL;
-        AVHWFramesConstraints *constraints = av_hwdevice_get_hwframe_constraints(hw_device_ctx, hwcfg);
-        const AVPixelFormat* in_fmts = constraints->valid_sw_formats;
-        if (in_fmts) {
-            while (*in_fmts != AVPixelFormat(-1)) {
-                sw_fmts.append(*in_fmts);
-                ++in_fmts;
+        const AVHWDeviceType dt = fromHWAName(codec_name.section(QChar('_'), -1).toUtf8().constData());
+        if (dt != AVHWDeviceType(-1)) {
+            AV_ENSURE(av_hwdevice_ctx_create(&hw_device_ctx, dt, hwdev.toLatin1().constData(), NULL, 0), false);
+            avctx->hw_frames_ctx = av_hwframe_ctx_alloc(hw_device_ctx);
+            if (!avctx->hw_frames_ctx) {
+                qWarning("Failed to create hw frame context for '%s'", codec_name.toLatin1().constData());
+                return false;
             }
-        }
-        av_hwframe_constraints_free(&constraints);
-        if (format_used == AVPixelFormat(-1))
-            format_used = VideoFormat::pixelFormatFromFFmpeg(sw_fmts[0]);
-        // encoder surface pool parameters
-        AVHWFramesContext* hwfs = (AVHWFramesContext*)avctx->hw_frames_ctx->data;
-        hwfs->format = hwfmt; // must the same as avctx->pix_fmt
-        hwfs->sw_format = sw_fmts[0]; // if it's not set, vaapi will choose the last valid_sw_formats, but that's wrong for vaGetImage/DeriveImage. nvenc always need sw_format
-        // hw upload parameters. encoder's hwframes is just for parameter checking, will never be intialized, so we allocate an individual one.
-        hwframes_ref = av_hwframe_ctx_alloc(hw_device_ctx);
-        if (!hwframes_ref) {
-            qWarning("Failed to create hw frame context for uploading '%s'", codec_name.toLatin1().constData());
-        } else {
-            hwframes = (AVHWFramesContext*)hwframes_ref->data;
-            hwframes->format = hwfmt;
+            // get sw formats
+            const void *hwcfg = NULL;
+            AVHWFramesConstraints *constraints = av_hwdevice_get_hwframe_constraints(hw_device_ctx, hwcfg);
+            const AVPixelFormat* in_fmts = constraints->valid_sw_formats;
+            if (in_fmts) {
+                while (*in_fmts != AVPixelFormat(-1)) {
+                    sw_fmts.append(*in_fmts);
+                    ++in_fmts;
+                }
+            }
+            av_hwframe_constraints_free(&constraints);
+            if (format_used == AVPixelFormat(-1))
+                format_used = VideoFormat::pixelFormatFromFFmpeg(sw_fmts[0]);
+            // encoder surface pool parameters
+            AVHWFramesContext* hwfs = (AVHWFramesContext*)avctx->hw_frames_ctx->data;
+            hwfs->format = hwfmt; // must the same as avctx->pix_fmt
+            hwfs->sw_format = sw_fmts[0]; // if it's not set, vaapi will choose the last valid_sw_formats, but that's wrong for vaGetImage/DeriveImage. nvenc always need sw_format
+            // hw upload parameters. encoder's hwframes is just for parameter checking, will never be intialized, so we allocate an individual one.
+            hwframes_ref = av_hwframe_ctx_alloc(hw_device_ctx);
+            if (!hwframes_ref) {
+                qWarning("Failed to create hw frame context for uploading '%s'", codec_name.toLatin1().constData());
+            } else {
+                hwframes = (AVHWFramesContext*)hwframes_ref->data;
+                hwframes->format = hwfmt;
+            }
         }
 #endif //HAVE_AVHWCTX
     } else {
