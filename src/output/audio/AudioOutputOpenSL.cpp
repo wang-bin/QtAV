@@ -94,10 +94,6 @@ private:
     SLint32 m_streamType;
     quint32 buffers_queued;
     QSemaphore sem;
-
-    // Enqueue does not copy data. We MUST keep the data until it is played out
-    int queue_data_write;
-    QByteArray queue_data;
 };
 
 typedef AudioOutputOpenSL AudioOutputBackendOpenSL;
@@ -193,7 +189,6 @@ AudioOutputOpenSL::AudioOutputOpenSL(QObject *parent)
     , m_sl_step(0)
     , m_streamType(-1)
     , buffers_queued(0)
-    , queue_data_write(0)
 {
 #ifdef Q_OS_ANDROID
     char v[PROP_VALUE_MAX+1];
@@ -255,7 +250,6 @@ void AudioOutputOpenSL::onCallback()
 
 bool AudioOutputOpenSL::open()
 {
-    queue_data.resize(buffer_size*buffer_count);
     SLDataLocator_BufferQueue bufferQueueLocator = { SL_DATALOCATOR_BUFFERQUEUE, (SLuint32)buffer_count };
     SLDataFormat_PCM_EX pcmFormat = audioFormatToSL(format);
     SLDataSource audioSrc = { &bufferQueueLocator, &pcmFormat };
@@ -348,8 +342,6 @@ bool AudioOutputOpenSL::close()
     m_playItf = NULL;
     m_volumeItf = NULL;
     m_bufferQueueItf = NULL;
-    queue_data.clear();
-    queue_data_write = 0;
     return true;
 }
 
@@ -357,24 +349,15 @@ bool AudioOutputOpenSL::write(const QByteArray& data)
 {
     if (bufferControl() & CountCallback)
         sem.acquire();
-    const int s = qMin(queue_data.size() - queue_data_write, data.size());
     // assume data.size() <= buffer_size. It's true in QtAV
-    if (s < data.size())
-        queue_data_write = 0;
-    memcpy((char*)queue_data.constData() + queue_data_write, data.constData(), data.size());
-    //qDebug("enqueue %p, queue_data_write: %d/%d available:%d", data.constData(), queue_data_write, queue_data.size(), sem.available());
 #ifdef Q_OS_ANDROID
     if (m_android)
-        SL_ENSURE((*m_bufferQueueItf_android)->Enqueue(m_bufferQueueItf_android, queue_data.constData() + queue_data_write, data.size()), false);
+        SL_ENSURE((*m_bufferQueueItf_android)->Enqueue(m_bufferQueueItf_android, data.constData(), data.size()), false);
     else
-        SL_ENSURE((*m_bufferQueueItf)->Enqueue(m_bufferQueueItf, queue_data.constData() + queue_data_write, data.size()), false);
 #else
-    SL_ENSURE((*m_bufferQueueItf)->Enqueue(m_bufferQueueItf, queue_data.constData() + queue_data_write, data.size()), false);
+    SL_ENSURE((*m_bufferQueueItf)->Enqueue(m_bufferQueueItf, data.constData(), data.size()), false);
 #endif
     buffers_queued++;
-    queue_data_write += data.size();
-    if (queue_data_write == queue_data.size())
-        queue_data_write = 0;
     return true;
 }
 
