@@ -277,6 +277,8 @@ bool isPBOSupported() {
         NULL
     };
     support = hasExtension(exts);
+    if (QOpenGLContext::currentContext()->format().majorVersion() > 2)
+        support = true;
     pbo_checked = true;
     return support;
 }
