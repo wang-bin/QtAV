@@ -32,6 +32,7 @@
 #include "QtAV/private/factory.h"
 #include "utils/Logger.h"
 
+// TODO: native sample rate, so AUDIO_OUTPUT_FLAG_FAST is enabled
 namespace QtAV {
 
 // OpenSL 1.1, or __ANDROID_API__ >= 21
@@ -222,7 +223,6 @@ bool AudioOutputOpenSL::isSupported(const AudioFormat& format) const
 
 bool AudioOutputOpenSL::isSupported(AudioFormat::SampleFormat sampleFormat) const
 {
-    return sampleFormat == AudioFormat::SampleFormat_Unsigned8 || sampleFormat == AudioFormat::SampleFormat_Signed16;
     if (sampleFormat == AudioFormat::SampleFormat_Unsigned8 || sampleFormat == AudioFormat::SampleFormat_Signed16) // TODO: android api 21 supports s32?
             return true;
     if (m_android_api_level < 21 || (engineVersion() > 0 && engineVersion() < 110))
