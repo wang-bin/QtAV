@@ -75,6 +75,7 @@ public:
     virtual BufferControl bufferControl() const = 0;
     // called by callback with Callback control
     virtual void onCallback();
+    virtual void acquireNextBuffer() {}
     //default return -1. means not the control
     virtual int getPlayedCount() {return -1;} //PlayedCount
     /*!

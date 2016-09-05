@@ -623,6 +623,7 @@ bool AudioOutput::waitForNextBuffer() // parameter bool wait: if no wait and no 
     if (f & AudioOutputBackend::Blocking) {
         remove = 1;
     } else if (f & AudioOutputBackend::CountCallback) {
+        d.backend->acquireNextBuffer();
         remove = 1;
     } else if (f & AudioOutputBackend::BytesCallback) {
 #if AO_USE_TIMER

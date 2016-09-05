@@ -62,6 +62,7 @@ public:
     bool close() Q_DECL_OVERRIDE;
     BufferControl bufferControl() const Q_DECL_OVERRIDE;
     void onCallback() Q_DECL_OVERRIDE;
+    void acquireNextBuffer() Q_DECL_OVERRIDE;
     bool write(const QByteArray& data) Q_DECL_OVERRIDE;
     bool play() Q_DECL_OVERRIDE;
     //default return -1. means not the control
@@ -248,6 +249,12 @@ void AudioOutputOpenSL::onCallback()
         sem.release();
 }
 
+void AudioOutputOpenSL::acquireNextBuffer()
+{
+    if (bufferControl() & CountCallback)
+        sem.acquire();
+}
+
 bool AudioOutputOpenSL::open()
 {
     SLDataLocator_BufferQueue bufferQueueLocator = { SL_DATALOCATOR_BUFFERQUEUE, (SLuint32)buffer_count };
@@ -265,9 +272,9 @@ bool AudioOutputOpenSL::open()
     SLDataSink audioSink = { &outputMixLocator, NULL };
 
     const SLInterfaceID ids[] = { SL_IID_BUFFERQUEUE, SL_IID_VOLUME
-  #ifdef Q_OS_ANDROID
+#ifdef Q_OS_ANDROID
                                   , SL_IID_ANDROIDCONFIGURATION
-  #endif
+#endif
                                 };
     const SLboolean req[] = { SL_BOOLEAN_TRUE, SL_BOOLEAN_TRUE
 #ifdef Q_OS_ANDROID
@@ -347,16 +354,13 @@ bool AudioOutputOpenSL::close()
 
 bool AudioOutputOpenSL::write(const QByteArray& data)
 {
-    if (bufferControl() & CountCallback)
-        sem.acquire();
     // assume data.size() <= buffer_size. It's true in QtAV
 #ifdef Q_OS_ANDROID
     if (m_android)
         SL_ENSURE((*m_bufferQueueItf_android)->Enqueue(m_bufferQueueItf_android, data.constData(), data.size()), false);
     else
-#else
-    SL_ENSURE((*m_bufferQueueItf)->Enqueue(m_bufferQueueItf, data.constData(), data.size()), false);
 #endif
+    SL_ENSURE((*m_bufferQueueItf)->Enqueue(m_bufferQueueItf, data.constData(), data.size()), false);
     buffers_queued++;
     return true;
 }
@@ -380,16 +384,13 @@ int AudioOutputOpenSL::getPlayedCount()
         SLAndroidSimpleBufferQueueState state;
         (*m_bufferQueueItf_android)->GetState(m_bufferQueueItf_android, &state);
         count = state.count;
-    } else {
+    } else
+#endif
+    {
         SLBufferQueueState state;
         (*m_bufferQueueItf)->GetState(m_bufferQueueItf, &state);
         count = state.count;
     }
-#else
-    SLBufferQueueState state;
-    (*m_bufferQueueItf)->GetState(m_bufferQueueItf, &state);
-    count = state.count;
-#endif
     buffers_queued = count;
     processed -= count;
     return processed;
