@@ -77,10 +77,13 @@ public:
     static qreal defaultFrameRate() { return 25;}
     /*!
      * \brief setPixelFormat
-     * If not set or set to an invalid format, a supported format will be used and pixelFormat() will be that format after open()
-     * \param format
+     * If not set or set to an unsupported format, a supported format will be used and pixelFormat() will be that format after open()
      */
     void setPixelFormat(const VideoFormat::PixelFormat format);
+    /*!
+     * \brief pixelFormat
+     * \return user requested format. may be different with actually used format
+     */
     VideoFormat::PixelFormat pixelFormat() const;
     // TODO: supportedPixelFormats() const;
 Q_SIGNALS:
