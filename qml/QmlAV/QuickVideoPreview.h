@@ -23,20 +23,16 @@
 #define QTAV_QUICKVIDEOPREVIEW_H
 
 #include <QtAV/VideoFrameExtractor.h>
-#define CONFIG_FBO_ITEM (QT_VERSION >= QT_VERSION_CHECK(5, 2, 0))
-#if CONFIG_FBO_ITEM
+#if QT_VERSION >= QT_VERSION_CHECK(5, 2, 0)
 #include <QmlAV/QuickFBORenderer.h>
+typedef QuickFBORenderer BaseQuickRenderer;
 #else
 #include <QmlAV/QQuickItemRenderer.h>
+typedef QQuickItemRenderer BaseQuickRenderer;
 #endif
 namespace QtAV {
 
-class QuickVideoPreview
-#if CONFIG_FBO_ITEM
-        : public QuickFBORenderer
-#else
-        : public QQuickItemRenderer
-#endif
+class QuickVideoPreview : public BaseQuickRenderer
 {
     Q_OBJECT
     // position conflicts with QQuickItem.position
