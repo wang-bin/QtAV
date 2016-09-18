@@ -1253,7 +1253,7 @@ void AVPlayer::stopFromDemuxerThread()
         if (stop_pts <= 0)
             stop_pts = masterClock()->value();
         masterClock()->reset();
-        stopNotifyTimer();
+        QMetaObject::invokeMethod(this, "stopNotifyTimer");
         // vars not set by user can be reset
         d->repeat_current = -1;
         d->start_position_norm = 0;
