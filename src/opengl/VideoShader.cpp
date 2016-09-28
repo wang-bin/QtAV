@@ -156,6 +156,8 @@ const char* VideoShader::fragmentShader() const
     } else {
         if (has_alpha)
             frag.prepend("#define HAS_ALPHA\n");
+        if (d.video_format.isXYZ())
+            frag.prepend("#define XYZ_GAMMA\n");
     }
 
     if (d.texture_target == GL_TEXTURE_RECTANGLE) {
@@ -524,6 +526,8 @@ void VideoMaterial::setCurrentFrame(const VideoFrame &frame)
                 cs = ColorSpace_GBR;
             else
                 cs = ColorSpace_RGB;
+        } else if (fmt.isXYZ()) {
+            cs = ColorSpace_XYZ;
         } else {
             if (frame.width() >= 1280 || frame.height() > 576) //values from mpv
                 cs = ColorSpace_BT709;
@@ -564,12 +568,13 @@ VideoShader* VideoMaterial::createShader() const
 
 QString VideoMaterial::typeName(qint32 value)
 {
-    return QString("gl material 16to8bit: %1, planar: %2, has alpha: %3, 2d texture: %4, 2nd plane rg: %5")
+    return QString("gl material 16to8bit: %1, planar: %2, has alpha: %3, 2d texture: %4, 2nd plane rg: %5, xyz: %6")
             .arg(!!(value&1))
             .arg(!!(value&(1<<1)))
             .arg(!!(value&(1<<2)))
             .arg(!!(value&(1<<3)))
             .arg(!!(value&(1<<4)))
+            .arg(!!(value&(1<<5)))
             ;
 }
 
@@ -581,7 +586,7 @@ qint32 VideoMaterial::type() const
     // 2d,alpha,planar,8bit
     const int rg_biplane = fmt.planeCount()==2 && !OpenGLHelper::useDeprecatedFormats() && OpenGLHelper::hasRG();
     const int channel16_to8 = d.bpc > 8 && (OpenGLHelper::depth16BitTexture() < 16 || !OpenGLHelper::has16BitTexture() || fmt.isBigEndian());
-    return (rg_biplane<<4)|(tex_2d<<3)|(fmt.hasAlpha()<<2)|(fmt.isPlanar()<<1)|(channel16_to8);
+    return (fmt.isXYZ()<<5)|(rg_biplane<<4)|(tex_2d<<3)|(fmt.hasAlpha()<<2)|(fmt.isPlanar()<<1)|(channel16_to8);
 }
 
 bool VideoMaterial::bind()

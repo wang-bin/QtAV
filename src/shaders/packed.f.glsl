@@ -36,9 +36,16 @@ vec4 sample2d(sampler2D tex, vec2 pos, int plane)
 void main() {
     vec4 c = sample2d(u_Texture0, v_TexCoords0, 0);
     c = u_c * c;
+#ifdef XYZ_GAMMA
+    c.rgb = pow(c.rgb, vec3(2.6));
+#endif // XYZ_GAMMA
+    c = u_colorMatrix * c;
+#ifdef XYZ_GAMMA
+    c.rgb = pow(c.rgb, vec3(1.0/2.2));
+#endif //XYZ_GAMMA
 #ifndef HAS_ALPHA
     c.a = 1.0;
 #endif //HAS_ALPHA
-    gl_FragColor = clamp(u_colorMatrix * c, 0.0, 1.0) * u_opacity;
+    gl_FragColor = clamp(c, 0.0, 1.0) * u_opacity;
     /***User post processing here***%userPostProcess%***/
 }

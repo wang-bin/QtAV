@@ -24,6 +24,17 @@
 
 namespace QtAV {
 
+// http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+static const QMatrix4x4 kXYZ2sRGB(3.2404542f,  -1.5371385f, -0.4985314f, 0.0f,
+                                  -0.9692660f,  1.8760108f,  0.0415560f, 0.0f,
+                                   0.0556434f, -0.2040259f,  1.0572252f, 0.0f,
+                                 0.0f, 0.0f, 0.0f, 1.0f);
+// http://www.cs.utah.edu/~halzahaw/CS7650/Project2/project2_index.html no gamma correction
+static const QMatrix4x4 kXYZ_RGB(2.5623f,  -1.1661f, -0.3962f, 0.0f,
+                                 -1.0215f,  1.9778f, 0.0437f,  0.0f,
+                                  0.0752f, -0.2562f, 1.1810f,  0.0f,
+                                 0.0f, 0.0f, 0.0f, 1.0f);
+
 static const QMatrix4x4 kGBR2RGB = QMatrix4x4(0, 0, 1, 0,
                                               1, 0, 0, 0,
                                               0, 1, 0, 0,
@@ -211,6 +222,9 @@ public:
         // M *= rgb_range_translate*rgb_range_scale
         // TODO: transform to output color space other than RGB
         switch (cs_out) {
+        case ColorSpace_XYZ:
+            M = kXYZ2sRGB.inverted() * M;
+            break;
         case ColorSpace_RGB:
             M *= ColorRangeRGB(ColorRange_Full, range_out);
             break;
@@ -224,6 +238,9 @@ public:
         }
 
         switch (cs_in) {
+        case ColorSpace_XYZ:
+            M *= kXYZ2sRGB;
+            break;
         case ColorSpace_RGB:
             break;
         case ColorSpace_GBR:
@@ -233,7 +250,8 @@ public:
             M *= YUV2RGB(cs_in)*ColorRangeYUV(range_in, ColorRange_Full);
             break;
         }
-        if (bpc_scale != 1.0) {
+        if (bpc_scale != 1.0 && cs_in != ColorSpace_XYZ) { // why no range correction for xyz?
+            //qDebug("bpc scale: %f", bpc_scale);
             M *= QMatrix4x4(bpc_scale, 0, 0, 0,
                             0, bpc_scale, 0, 0,
                             0, 0, bpc_scale, 0,
