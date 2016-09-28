@@ -97,7 +97,7 @@ void main()
 #endif //USE_RG
 #endif //CHANNEL16_TO8
 #ifndef HAS_ALPHA
-                             1
+                             1.0
 #endif //HAS_ALPHA
                             )
                          , 0.0, 1.0) * u_opacity;
