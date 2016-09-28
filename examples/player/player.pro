@@ -1,7 +1,7 @@
 TARGET = Player
 TEMPLATE = app
 contains(QT_CONFIG, opengl): QT += opengl
-QT += sql
+QT += sql svg
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TRANSLATIONS = res/player_zh_CN.ts
 VERSION = $$QTAV_VERSION
