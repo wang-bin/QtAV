@@ -373,6 +373,11 @@ static const struct {
     { VideoFormat::Format_VYUY, QTAV_PIX_FMT_C(UYVY422) }, // FIXME: hack for invalid ffmpeg formats
 
     { VideoFormat::Format_VYU, QTAV_PIX_FMT_C(RGB32) },
+#ifdef AV_PIX_FMT_XYZ12
+    { VideoFormat::Format_XYZ12, QTAV_PIX_FMT_C(XYZ12) },
+    { VideoFormat::Format_XYZ12LE, QTAV_PIX_FMT_C(XYZ12LE) },
+    { VideoFormat::Format_XYZ12BE, QTAV_PIX_FMT_C(XYZ12BE) },
+#endif
     { VideoFormat::Format_Invalid, QTAV_PIX_FMT_C(NONE) },
 };
 
@@ -718,6 +723,11 @@ bool VideoFormat::isPlanar() const
 bool VideoFormat::isRGB() const
 {
     return (d->flags() & AV_PIX_FMT_FLAG_RGB) == AV_PIX_FMT_FLAG_RGB && d->pixfmt != Format_VYU;
+}
+
+bool VideoFormat::isXYZ() const
+{
+    return d->pixfmt == Format_XYZ12 || d->pixfmt == Format_XYZ12LE || d->pixfmt == Format_XYZ12BE;
 }
 
 bool VideoFormat::hasAlpha() const

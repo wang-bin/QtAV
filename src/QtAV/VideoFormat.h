@@ -134,6 +134,9 @@ public:
         Format_BGRA64BE,
 
         Format_VYU, // for rgb422_apple texture, the layout is like rgb24: (v, y, u, )
+        Format_XYZ12,
+        Format_XYZ12LE,
+        Format_XYZ12BE,
         Format_User
     };
 
@@ -262,6 +265,7 @@ public:
      */
     bool isPlanar() const;
     bool isRGB() const;
+    bool isXYZ() const;
     bool hasAlpha() const;
 
     static bool isPlanar(PixelFormat pixfmt);

@@ -124,7 +124,8 @@ enum ColorSpace {
     ColorSpace_RGB,
     ColorSpace_GBR, // for planar gbr format(e.g. video from x264) used in glsl
     ColorSpace_BT601,
-    ColorSpace_BT709
+    ColorSpace_BT709,
+    ColorSpace_XYZ
 };
 
 /*!
