@@ -48,6 +48,8 @@
 #include <QToolTip>
 #include <QKeyEvent>
 #include <QWheelEvent>
+#include <QStyleFactory>
+
 #include "ClickableMenu.h"
 #include "Slider.h"
 #include "StatisticsView.h"
@@ -110,6 +112,10 @@ MainWindow::MainWindow(QWidget *parent) :
   , m_preview(0)
   , m_shader(NULL)
 {
+    #if defined(Q_OS_MACX) && QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+        QApplication::setStyle(QStyleFactory::create("Fusion"));
+    #endif
+
     setWindowIcon(QIcon(QString::fromLatin1(":/QtAV.svg")));
     mpOSD = new OSDFilter(this);
     mpSubtitle = new SubtitleFilter(this);
