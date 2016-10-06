@@ -4,10 +4,10 @@ if [ $# -lt 1 ]; then
   echo "${0##*/} QtAV_build_dir"
   exit 1
 fi
-#set -v
+#set -ev
 THIS_DIR=$PWD
 BUILD_DIR=$1
-QTBIN=`grep -m 1 QT_BIN $BUILD_DIR/.qmake.cache |cut -d "=" -f 2 | tr -d ' '`
+QTBIN=`grep -m 1 QT_BIN $BUILD_DIR/.qmake.cache |cut -d "=" -f 2 | tr -d ' '` #TODO: use last line
 QTDIR=$QTBIN/..
 echo "BUILD_DIR: $BUILD_DIR"
 echo "QTDIR: $QTDIR"
@@ -118,5 +118,5 @@ EOF
   fi
 }
 
-deploy player
+deploy Player
 deploy QMLPlayer
