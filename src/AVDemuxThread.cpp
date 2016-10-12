@@ -470,6 +470,7 @@ void AVDemuxThread::frameDeliveredOnStepForward()
         thread->clock()->setClockAuto(clock_type & 1);
         thread->clock()->setClockType(AVClock::ClockType(clock_type/2));
         clock_type = -1;
+        thread->clock()->updateExternalClock((thread->previousHistoryPts() - thread->clock()->initialValue())*1000.0);
     }
     Q_EMIT stepFinished();
 }
