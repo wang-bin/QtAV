@@ -83,6 +83,7 @@ public:
      * the rect will be viewport
      */
     void setProjectionMatrixToRect(const QRectF& v);
+    void setViewport(const QRectF& r);
 
     void setBrightness(qreal value);
     void setContrast(qreal value);

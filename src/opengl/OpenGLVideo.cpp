@@ -44,6 +44,7 @@ public:
         , manager(0)
         , material(new VideoMaterial())
         , material_type(0)
+        , norm_viewport(true)
         , update_geo(true)
         , tex_target(0)
         , valiad_tex_width(1.0)
@@ -77,6 +78,7 @@ public:
     ShaderManager *manager;
     VideoMaterial *material;
     qint64 material_type;
+    bool norm_viewport;
     bool has_a;
     bool update_geo;
     int tex_target;
@@ -105,7 +107,8 @@ void OpenGLVideoPrivate::updateGeometry(VideoShader* shader, const QRectF &t, co
         tex_target = shader->textureTarget();
         update_geo = true;
     }
-    QRectF& target_rect = rect;
+    // (-1, -1, 2, 2) must flip y
+    QRectF target_rect = norm_viewport ? QRectF(-1, 1, 2, -2) : rect;
     if (target.isValid()) {
         if (roi_changed || target != t) {
             target = t;
@@ -121,6 +124,7 @@ void OpenGLVideoPrivate::updateGeometry(VideoShader* shader, const QRectF &t, co
         return;
     //qDebug("updating geometry...");
     // setTextureCount may change the vertex data. Call it before setRect()
+    qDebug() << "target rect: " << target_rect ;
     geometry.setTextureCount(shader->textureTarget() == GL_TEXTURE_RECTANGLE ? tc : 1);
     geometry.setRect(target_rect, material->mapToTexture(0, roi));
     if (shader->textureTarget() == GL_TEXTURE_RECTANGLE) {
@@ -227,13 +231,22 @@ void OpenGLVideo::setCurrentFrame(const VideoFrame &frame)
 
 void OpenGLVideo::setProjectionMatrixToRect(const QRectF &v)
 {
+    setViewport(v);
+}
+
+void OpenGLVideo::setViewport(const QRectF &r)
+{
     DPTR_D(OpenGLVideo);
-    d.rect = v;
-    d.matrix.setToIdentity();
-    d.matrix.ortho(v);
+    d.rect = r;
+    if (d.norm_viewport) {
+        d.matrix.setToIdentity();
+    } else {
+        d.matrix.setToIdentity();
+        d.matrix.ortho(r);
+        d.update_geo = true; // even true for target_rect != d.rect
+    }
     // Mirrored relative to the usual Qt coordinate system with origin in the top left corner.
     //mirrored = mat(0, 0) * mat(1, 1) - mat(0, 1) * mat(1, 0) > 0;
-    d.update_geo = true; // even true for target_rect != d.rect
     if (d.ctx && d.ctx == QOpenGLContext::currentContext()) {
         DYGL(glViewport(d.rect.x(), d.rect.y(), d.rect.width(), d.rect.height()));
     }
