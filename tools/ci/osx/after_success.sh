@@ -1,8 +1,11 @@
 PKG=$TRAVIS_BUILD_DIR/${QTAV_OUT}-Player.dmg
 set -ev
+pushd $PWD
 cd $QTAV_OUT
 chmod +x *.sh
-./sdk_install.sh
+#./sdk_install.sh
+mkdir -p bin/Player.app/Contents/Frameworks
+cp -avf lib_*/QtAV*.framework bin/Player.app/Contents/Frameworks
 mkdir -p bin/Player.app/Contents/Resources/qml/QtAV
 cp -avf lib_*/*.dylib bin/Player.app/Contents/Resources/qml/QtAV
 cp -avf $TRAVIS_BUILD_DIR/qml/{plugins.qmltypes,Video.qml,qmldir} bin/Player.app/Contents/Resources/qml/QtAV
@@ -11,6 +14,7 @@ cd bin
 macdeployqt Player.app -dmg
 hdiutil convert -format UDBZ Player.dmg -o $PKG
 cd -
+popd
 
 wget http://sourceforge.net/projects/sshpass/files/sshpass/1.05/sshpass-1.05.tar.gz/download -O sshpass.tar.gz
 tar zxf sshpass.tar.gz
