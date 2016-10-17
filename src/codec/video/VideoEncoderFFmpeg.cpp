@@ -239,6 +239,9 @@ bool VideoEncoderFFmpegPrivate::open()
         av_dict_set(&dict, "preset", "ultrafast", 0);
         av_dict_set(&dict, "tune", "zero-latency", 0);
     }
+    if (avctx->codec_id == AV_CODEC_ID_MPEG2VIDEO) {
+        av_dict_set(&dict, "strict", "-2", 0); // mpeg2 arbitrary fps
+    }
     applyOptionsForContext();
     AV_ENSURE_OK(avcodec_open2(avctx, codec, &dict), false);
     // from mpv ao_lavc
