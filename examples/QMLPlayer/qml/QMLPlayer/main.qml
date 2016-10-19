@@ -234,6 +234,7 @@ Rectangle {
         MouseArea {
             anchors.fill: parent
             hoverEnabled: true
+            cursorShape: control.opacity > 0 || cursor_timer.running ? Qt.ArrowCursor : Qt.BlankCursor
             onWheel: {
                 var deg = wheel.angleDelta.y/8
                 var dp = wheel.pixelDelta
@@ -273,6 +274,7 @@ Rectangle {
             }
 
             onMouseXChanged: {
+                cursor_timer.start()
                 if (mouseX > root.width || mouseX < 0
                         || mouseY > root.height || mouseY < 0)
                     return;
@@ -298,6 +300,10 @@ Rectangle {
                         control.showPreview(mouseX/parent.width)
                     }
                 }
+            }
+            Timer {
+                id: cursor_timer
+                interval: 2000
             }
         }
     }
