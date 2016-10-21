@@ -70,7 +70,7 @@ protected:
     virtual void paintGL() Q_DECL_OVERRIDE;
     virtual void resizeGL(int w, int h) Q_DECL_OVERRIDE;
     virtual void resizeEvent(QResizeEvent *) Q_DECL_OVERRIDE;
-    //virtual void showEvent(QShowEvent *);
+    virtual void showEvent(QShowEvent *) Q_DECL_OVERRIDE;
 };
 typedef OpenGLWindowRenderer VideoRendererOpenGLWindow;
 
