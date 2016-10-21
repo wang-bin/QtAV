@@ -68,4 +68,9 @@ void OpenGLWindowRenderer::resizeEvent(QResizeEvent *e)
     QOpenGLWindow::resizeEvent(e); //will call resizeGL(). TODO:will call paintEvent()?
 }
 
+void OpenGLWindowRenderer::showEvent(QShowEvent *)
+{
+    onShowEvent();
+    resizeGL(width(), height());
+}
 } //namespace QtAV

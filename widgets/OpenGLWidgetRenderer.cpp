@@ -62,6 +62,8 @@ void OpenGLWidgetRenderer::resizeGL(int w, int h)
 {
     // QGLWidget uses window()->windowHandle()->devicePixelRatio() for resizeGL(), while QOpenGLWidget does not, so scale here
 #if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
+    if (!context())
+        return;
     const qreal dpr = context()->screen()->devicePixelRatio();
 #elif QT_VERSION >= QT_VERSION_CHECK(5, 1, 0)
     // qApp->devicePixelRatio() is global, window()->windowHandle()->devicePixelRatio() depends on screen, check window() and windowHandle() is required.
@@ -79,9 +81,9 @@ void OpenGLWidgetRenderer::resizeEvent(QResizeEvent *e)
     QOpenGLWidget::resizeEvent(e); //will call resizeGL(). TODO:will call paintEvent()?
 }
 
-void OpenGLWidgetRenderer::showEvent(QShowEvent *)
+void OpenGLWidgetRenderer::showEvent(QShowEvent *e)
 {
-    onShowEvent();
+    onShowEvent(); // TODO: onShowEvent(w, h)?
+    resizeGL(width(), height());
 }
-
 } //namespace QtAV

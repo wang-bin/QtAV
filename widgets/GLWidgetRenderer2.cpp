@@ -92,6 +92,6 @@ void GLWidgetRenderer2::resizeEvent(QResizeEvent *e)
 void GLWidgetRenderer2::showEvent(QShowEvent *)
 {
     onShowEvent();
+    resizeGL(width(), height());
 }
-
 } //namespace QtAV
