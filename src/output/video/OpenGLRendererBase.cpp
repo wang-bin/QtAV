@@ -85,9 +85,6 @@ bool OpenGLRendererBase::receiveFrame(const VideoFrame& frame)
 
 void OpenGLRendererBase::drawBackground()
 {
-    const QRegion bgRegion(backgroundRegion());
-    if (bgRegion.isEmpty())
-        return;
     d_func().glv.fill(backgroundColor());
 }
 
