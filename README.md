@@ -1,5 +1,7 @@
 # [QtAV](http://www.qtav.org)  [![Build Status](https://travis-ci.org/wang-bin/QtAV.svg)](https://travis-ci.org/wang-bin/QtAV) [![Appveyor](https://ci.appveyor.com/api/projects/status/github/wang-bin/qtav?svg=true&passingText=windows%20-%20OK)](https://ci.appveyor.com/project/wang-bin/qtav)
 
+[![Join the chat at https://gitter.im/QtAV/Lobby](https://badges.gitter.im/QtAV/Lobby.svg)](https://gitter.im/QtAV/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 QtAV is a multimedia playback library based on Qt and FFmpeg. It can help you to write a player
 with less effort than ever before.
 
