@@ -5,6 +5,7 @@ Priority: optional
 Maintainer: Wang Bin <wbsecg1@gmail.com>
 Build-Depends: debhelper (>= 9),
  qt5-qmake, libqt5opengl5-dev, qtdeclarative5-dev,
+ libqt5svg5-dev,
  libqt5x11extras5-dev,
  libass-dev,
  libavutil-dev,
