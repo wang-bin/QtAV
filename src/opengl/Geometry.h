@@ -90,15 +90,18 @@ public:
     void* vertexData() { return m_vdata.data();}
     const void* vertexData() const { return m_vdata.constData();}
     const void* constVertexData() const { return m_vdata.constData();}
+    void dumpVertexData();
     void* indexData() { return m_icount > 0 ? m_idata.data() : NULL;}
     const void* indexData() const { return m_icount > 0 ? m_idata.constData() : NULL;}
+    const void* constIndexData() const { return m_icount > 0 ? m_idata.constData() : NULL;}
     int indexCount() const { return m_icount;}
     int indexDataSize() const;
     // GL_UNSIGNED_BYTE/SHORT/INT
     DataType indexType() const {return m_itype;}
     void setIndexType(DataType value) { m_itype = value;}
     void setIndexValue(int index, int value);
-    void setIndexValue(int index, int v1, int v2, int v3);
+    void setIndexValue(int index, int v1, int v2, int v3); // a triangle
+    void dumpIndexData();
     /*!
      * \brief allocate
      * Call allocate() when all parameters are set. vertexData() may change
@@ -135,10 +138,37 @@ public:
     void setRect(const QRectF& r, const QRectF& tr, int texIndex = 0);
     void setGeometryRect(const QRectF& r);
     void setTextureRect(const QRectF& tr, int texIndex = 0);
-    int stride() const Q_DECL_OVERRIDE { return 2*sizeof(float)*(textureCount()+1); }
+    int stride() const Q_DECL_OVERRIDE { return 3*sizeof(float)+2*sizeof(float)*textureCount(); }
     const QVector<Attribute>& attributes() const Q_DECL_OVERRIDE;
 private:
     int nb_tex;
+    QVector<Attribute> a;
+};
+
+class Sphere : public Geometry {
+public:
+    Sphere();
+    void setResolution(int w, int h); // >= 2x2
+    void setRadius(float value);
+    float radius() const;
+    /*!
+     * \brief setTextureCount
+     * sometimes we needs more than 1 texture coordinates, for example we have to set rectangle texture
+     * coordinates for each plane.
+     */
+    void setTextureCount(int value);
+    int textureCount() const;
+    void setTextureRect(const QRectF& tr, int texIndex = 0);
+    void create();
+    int stride() const Q_DECL_OVERRIDE { return 3*sizeof(float)+2*sizeof(float)*textureCount(); }
+    const QVector<Attribute>& attributes() const Q_DECL_OVERRIDE;
+protected:
+    using Geometry::setPrimitive;
+private:
+    int nb_tex;
+    int ru, rv;
+    float r;
+    QVector<QRectF> texRect;
     QVector<Attribute> a;
 };
 } //namespace QtAV

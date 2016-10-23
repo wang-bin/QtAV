@@ -21,7 +21,7 @@
 
 #include "Geometry.h"
 #include <QtDebug>
-
+#include <QtMath>
 namespace QtAV {
 
 Attribute::Attribute(DataType type, int tupleSize, int offset, bool normalize)
@@ -91,6 +91,7 @@ void Geometry::setIndexValue(int index, int value)
 
 void Geometry::setIndexValue(int index, int v1, int v2, int v3)
 {
+    // TODO: *(d + 3*index), *(d + 3*index + 1), *(d + 3*index + 2)
     switch (indexType()) {
     case TypeU8: {
         quint8* d = (quint8*)m_idata.constData();
@@ -118,11 +119,50 @@ void Geometry::setIndexValue(int index, int v1, int v2, int v3)
     }
 }
 
+void Geometry::dumpVertexData()
+{
+    printf("vertex %p: ", m_vdata.constData());
+    const int n = stride()/sizeof(float);
+    for (int i = 0; i < m_vcount; ++i) {
+        const float* f = (const float*)(m_vdata.constData()+i*stride());
+        for (int j = 0; j < n; ++j) {
+            printf("%f, ", *(f+j));
+        }
+        printf(";");
+    }
+    printf("\n");fflush(0);
+}
+
+void Geometry::dumpIndexData()
+{
+    switch (indexType()) {
+    case TypeU8: {
+        quint8* d = (quint8*)m_idata.constData();
+        for (int i = 0; i < m_icount; ++i) printf("%u, ", *(d+i));
+    }
+        break;
+    case TypeU16: {
+        quint16* d = (quint16*)m_idata.constData();
+        for (int i = 0; i < m_icount; ++i) printf("%u, ", *(d+i));
+    }
+        break;
+    case TypeU32: {
+        quint32* d = (quint32*)m_idata.constData();
+        for (int i = 0; i < m_icount; ++i) printf("%u, ", *(d+i));
+    }
+        break;
+    default:
+        break;
+    }
+    printf("\n");fflush(0);
+}
+
 void Geometry::allocate(int nbVertex, int nbIndex)
 {
     m_icount = nbIndex;
     m_vcount = nbVertex;
     m_vdata.resize(nbVertex*stride());
+    memset(m_vdata.data(), 0, m_vdata.size());
     if (nbIndex <= 0) {
         m_idata.clear(); // required?
         return;
@@ -140,6 +180,7 @@ void Geometry::allocate(int nbVertex, int nbIndex)
     default:
         break;
     }
+    memset((void*)m_idata.constData(), 0, m_idata.size());
 }
 
 bool Geometry::compare(const Geometry *other) const
@@ -268,5 +309,115 @@ void TexturedGeometry::setTextureRect(const QRectF &tr, int texIndex)
 const QVector<Attribute>& TexturedGeometry::attributes() const
 {
     return a;
+}
+
+
+Sphere::Sphere()
+    : Geometry()
+    , nb_tex(0)
+    , ru(128)
+    , rv(128)
+    , r(1)
+{
+    setPrimitive(Triangles);
+    setVertexCount((ru+1)*(rv+1));
+    a = QVector<Attribute>()
+            << Attribute(TypeF32, 3, 0)
+            << Attribute(TypeF32, 2, 3*sizeof(float))
+               ;
+    setTextureCount(1);
+}
+
+void Sphere::setResolution(int w, int h)
+{
+    ru = w;
+    rv = h;
+    setVertexCount((ru+1)*(rv+1));
+}
+
+void Sphere::setRadius(float value)
+{
+    r = value;
+}
+
+float Sphere::radius() const
+{
+    return r;
+}
+
+void Sphere::setTextureCount(int value)
+{
+    if (value < 1)
+        value = 1;
+    if (value == nb_tex)
+        return;
+    texRect.resize(value);
+    nb_tex = value;
+}
+
+int Sphere::textureCount() const
+{
+    return nb_tex;
+}
+
+void Sphere::setTextureRect(const QRectF &tr, int texIndex)
+{
+    if (texRect.size() <= texIndex)
+        texRect.resize(texIndex+1);
+    texRect[texIndex] = tr;
+}
+
+const QVector<Attribute>& Sphere::attributes() const
+{
+    return a;
+}
+
+void Sphere::create()
+{
+    allocate(vertexCount(), ru*rv*3*2); // quads * 2 triangles,
+    if (a.size()-1 < nb_tex) { // the first is position
+        for (int i = a.size()-1; i < nb_tex; ++i)
+            a << Attribute(TypeF32, 2, 3*sizeof(float) + int(i* 2*sizeof(float)));
+    } else {
+        a.resize(nb_tex + 1);
+    }
+
+    float *vd = (float*)m_vdata.constData();
+    const float dTheta = M_PI*2.0/float(ru);
+    const float dPhi = M_PI/float(rv);
+    //const float du = 1.0f/float(ru);
+    //const float dv = 1.0f/float(rv);
+    for (int lat = 0; lat <= rv; ++lat) {
+        const float phi = M_PI_2 - float(lat)*dPhi;
+        const float cosPhi = qCos(phi);
+        const float sinPhi = qSin(phi);
+        //const float v = 1.0f - float(lat)*dv; // flip y?
+        for (int lon = 0; lon <= ru; ++lon) {
+            const float theta = float(lon)*dTheta;
+            const float cosTheta = qCos(theta);
+            const float sinTheta = qSin(theta);
+            //const float u = float(lon) * du;
+            *vd++ = r*cosPhi*cosTheta;//2.0*float(lon)/float(ru) -1.0;//
+            *vd++ = r*sinPhi;//2.0*float(lat)/float(rv)-1.0;//
+            *vd++ = r*cosPhi*sinTheta;
+            for (int i = 0; i < nb_tex; ++i) {
+                *vd++ = texRect[i].x()+texRect[i].width()/float(ru) * float(lon);
+                *vd++ = texRect[i].y()+texRect[i].height()/float(rv) * float(lat);
+            }
+        }
+    }
+    // create index data
+    if (m_icount > 0) {
+        int idx = 0;
+        for (int lat = 0; lat < rv; ++lat) {
+            for (int lon = 0; lon < ru; ++lon) {
+                const int ring = lat*(ru+1) + lon;
+                const int ringNext = ring + ru+1;
+                setIndexValue(idx, ring, ringNext, ring+1);
+                setIndexValue(idx+3, ringNext, ringNext+1, ring+1);
+                idx += 6;
+            }
+        }
+    }
 }
 } //namespace QtAV
