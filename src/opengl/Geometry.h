@@ -132,44 +132,37 @@ public:
      */
     void setTextureCount(int value);
     int textureCount() const;
-    void setPoint(int index, const QPointF& p, const QPointF& tp, int texIndex = 0);
-    void setGeometryPoint(int index, const QPointF& p);
-    void setTexturePoint(int index, const QPointF& tp, int texIndex = 0);
+
     void setRect(const QRectF& r, const QRectF& tr, int texIndex = 0);
     void setGeometryRect(const QRectF& r);
     void setTextureRect(const QRectF& tr, int texIndex = 0);
-    int stride() const Q_DECL_OVERRIDE { return 3*sizeof(float)+2*sizeof(float)*textureCount(); }
+    int stride() const Q_DECL_OVERRIDE { return 2*sizeof(float)*(textureCount()+1); }
     const QVector<Attribute>& attributes() const Q_DECL_OVERRIDE;
+    virtual void create();
 private:
+    void setPoint(int index, const QPointF& p, const QPointF& tp, int texIndex = 0);
+    void setGeometryPoint(int index, const QPointF& p);
+    void setTexturePoint(int index, const QPointF& tp, int texIndex = 0);
+protected:
     int nb_tex;
+    QRectF geo_rect;
+    QVector<QRectF> texRect;
     QVector<Attribute> a;
 };
 
-class Sphere : public Geometry {
+class Sphere : public TexturedGeometry {
 public:
     Sphere();
     void setResolution(int w, int h); // >= 2x2
     void setRadius(float value);
     float radius() const;
-    /*!
-     * \brief setTextureCount
-     * sometimes we needs more than 1 texture coordinates, for example we have to set rectangle texture
-     * coordinates for each plane.
-     */
-    void setTextureCount(int value);
-    int textureCount() const;
-    void setTextureRect(const QRectF& tr, int texIndex = 0);
-    void create();
+    void create() Q_DECL_OVERRIDE;
     int stride() const Q_DECL_OVERRIDE { return 3*sizeof(float)+2*sizeof(float)*textureCount(); }
-    const QVector<Attribute>& attributes() const Q_DECL_OVERRIDE;
 protected:
     using Geometry::setPrimitive;
 private:
-    int nb_tex;
     int ru, rv;
     float r;
-    QVector<QRectF> texRect;
-    QVector<Attribute> a;
 };
 } //namespace QtAV
 #endif //QTAV_GEOMETRY_H

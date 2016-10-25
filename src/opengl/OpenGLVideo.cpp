@@ -126,13 +126,15 @@ void OpenGLVideoPrivate::updateGeometry(VideoShader* shader, const QRectF &t, co
     // setTextureCount may change the vertex data. Call it before setRect()
     qDebug() << "target rect: " << target_rect ;
     geometry.setTextureCount(shader->textureTarget() == GL_TEXTURE_RECTANGLE ? tc : 1);
-    geometry.setRect(target_rect, material->mapToTexture(0, roi));
+    geometry.setGeometryRect(target_rect);
+    geometry.setTextureRect(material->mapToTexture(0, roi));
     if (shader->textureTarget() == GL_TEXTURE_RECTANGLE) {
         for (int i = 1; i < tc; ++i) {
             // tc can > planes, but that will compute chroma plane
             geometry.setTextureRect(material->mapToTexture(i, roi), i);
         }
     }
+    geometry.create();
     update_geo = false;
     gr.updateGeometry(&geometry);
 }
@@ -240,6 +242,7 @@ void OpenGLVideo::setViewport(const QRectF &r)
     d.rect = r;
     if (d.norm_viewport) {
         d.matrix.setToIdentity();
+        //d.matrix.perspective(45, 1, 0.1, 100);
     } else {
         d.matrix.setToIdentity();
         d.matrix.ortho(r);

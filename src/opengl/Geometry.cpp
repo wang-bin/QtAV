@@ -21,7 +21,8 @@
 
 #include "Geometry.h"
 #include <QtDebug>
-#include <QtMath>
+#include <QtCore/qmath.h>
+
 namespace QtAV {
 
 Attribute::Attribute(DataType type, int tupleSize, int offset, bool normalize)
@@ -196,6 +197,7 @@ bool Geometry::compare(const Geometry *other) const
 TexturedGeometry::TexturedGeometry()
     : Geometry()
     , nb_tex(0)
+    , geo_rect(-1, 1, 2, -2) // (-1, -1, 2, 2) flip y
 {
     setVertexCount(4);
     a = QVector<Attribute>()
@@ -207,18 +209,10 @@ TexturedGeometry::TexturedGeometry()
 
 void TexturedGeometry::setTextureCount(int value)
 {
-    if (value < 1)
-        value = 1;
     if (value == nb_tex)
         return;
+    texRect.resize(value);
     nb_tex = value;
-    allocate(vertexCount());
-    if (a.size()-1 < value) { // the first is position
-        for (int i = a.size()-1; i < value; ++i)
-            a << Attribute(TypeF32, 2, int((i+1)* 2*sizeof(float)));
-    } else {
-        a.resize(value + 1);
-    }
 }
 
 int TexturedGeometry::textureCount() const
@@ -268,42 +262,14 @@ void TexturedGeometry::setRect(const QRectF &r, const QRectF &tr, int texIndex)
 
 void TexturedGeometry::setGeometryRect(const QRectF &r)
 {
-    setGeometryPoint(0, r.topLeft());
-    setGeometryPoint(1, r.bottomLeft());
-    switch (primitive()) {
-    case TriangleStrip:
-        setGeometryPoint(2, r.topRight());
-        setGeometryPoint(3, r.bottomRight());
-        break;
-    case TriangleFan:
-        setGeometryPoint(3, r.topRight());
-        setGeometryPoint(2, r.bottomRight());
-        break;
-    case Triangles:
-        break;
-    default:
-        break;
-    }
+    geo_rect = r;
 }
 
 void TexturedGeometry::setTextureRect(const QRectF &tr, int texIndex)
 {
-    setTexturePoint(0, tr.topLeft(), texIndex);
-    setTexturePoint(1, tr.bottomLeft(), texIndex);
-    switch (primitive()) {
-    case TriangleStrip:
-        setTexturePoint(2, tr.topRight(), texIndex);
-        setTexturePoint(3, tr.bottomRight(), texIndex);
-        break;
-    case TriangleFan:
-        setTexturePoint(3, tr.topRight(), texIndex);
-        setTexturePoint(2, tr.bottomRight(), texIndex);
-        break;
-    case Triangles:
-        break;
-    default:
-        break;
-    }
+    if (texRect.size() <= texIndex)
+        texRect.resize(texIndex+1);
+    texRect[texIndex] = tr;
 }
 
 const QVector<Attribute>& TexturedGeometry::attributes() const
@@ -311,21 +277,65 @@ const QVector<Attribute>& TexturedGeometry::attributes() const
     return a;
 }
 
+void TexturedGeometry::create()
+{
+    allocate(vertexCount());
+    if (a.size()-1 < textureCount()) { // the first is position
+        for (int i = a.size()-1; i < textureCount(); ++i)
+            a << Attribute(TypeF32, 2, int((i+1)* 2*sizeof(float)));
+    } else {
+        a.resize(textureCount() + 1);
+    }
+
+    setGeometryPoint(0, geo_rect.topLeft());
+    setGeometryPoint(1, geo_rect.bottomLeft());
+    switch (primitive()) {
+    case TriangleStrip:
+        setGeometryPoint(2, geo_rect.topRight());
+        setGeometryPoint(3, geo_rect.bottomRight());
+        break;
+    case TriangleFan:
+        setGeometryPoint(3, geo_rect.topRight());
+        setGeometryPoint(2, geo_rect.bottomRight());
+        break;
+    case Triangles:
+        break;
+    default:
+        break;
+    }
+
+    for (int i = 0; i < texRect.size(); ++i) {
+        const QRectF tr = texRect[i];
+        setTexturePoint(0, tr.topLeft(), i);
+        setTexturePoint(1, tr.bottomLeft(), i);
+        switch (primitive()) {
+        case TriangleStrip:
+            setTexturePoint(2, tr.topRight(), i);
+            setTexturePoint(3, tr.bottomRight(), i);
+            break;
+        case TriangleFan:
+            setTexturePoint(3, tr.topRight(), i);
+            setTexturePoint(2, tr.bottomRight(), i);
+            break;
+        case Triangles:
+            break;
+        default:
+            break;
+        }
+    }
+}
+
 
 Sphere::Sphere()
-    : Geometry()
-    , nb_tex(0)
-    , ru(128)
-    , rv(128)
+    : TexturedGeometry()
     , r(1)
 {
     setPrimitive(Triangles);
-    setVertexCount((ru+1)*(rv+1));
+    setResolution(128, 128);
     a = QVector<Attribute>()
             << Attribute(TypeF32, 3, 0)
             << Attribute(TypeF32, 2, 3*sizeof(float))
                ;
-    setTextureCount(1);
 }
 
 void Sphere::setResolution(int w, int h)
@@ -345,33 +355,6 @@ float Sphere::radius() const
     return r;
 }
 
-void Sphere::setTextureCount(int value)
-{
-    if (value < 1)
-        value = 1;
-    if (value == nb_tex)
-        return;
-    texRect.resize(value);
-    nb_tex = value;
-}
-
-int Sphere::textureCount() const
-{
-    return nb_tex;
-}
-
-void Sphere::setTextureRect(const QRectF &tr, int texIndex)
-{
-    if (texRect.size() <= texIndex)
-        texRect.resize(texIndex+1);
-    texRect[texIndex] = tr;
-}
-
-const QVector<Attribute>& Sphere::attributes() const
-{
-    return a;
-}
-
 void Sphere::create()
 {
     allocate(vertexCount(), ru*rv*3*2); // quads * 2 triangles,
@@ -382,6 +365,7 @@ void Sphere::create()
         a.resize(nb_tex + 1);
     }
 
+    // TODO: use geo_rect?
     float *vd = (float*)m_vdata.constData();
     const float dTheta = M_PI*2.0/float(ru);
     const float dPhi = M_PI/float(rv);
