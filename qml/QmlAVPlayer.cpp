@@ -136,8 +136,12 @@ void QmlAVPlayer::setSource(const QUrl &url)
     if (mSource == url)
         return;
     mSource = url;
-    if (url.isLocalFile() || url.scheme().isEmpty() || url.scheme().startsWith("qrc"))
-        mpPlayer->setFile(QUrl::fromPercentEncoding(mSource.toEncoded()));
+    if (url.isLocalFile() || url.scheme().isEmpty()
+            || url.scheme().startsWith("qrc")
+            || url.scheme().startsWith("avdevice")
+            // TODO: what about custom io?
+            )
+        mpPlayer->setFile(QUrl::fromPercentEncoding(url.toEncoded()));
     else
         mpPlayer->setFile(url.toEncoded());
     Q_EMIT sourceChanged(); //TODO: Q_EMIT only when player loaded a new source
