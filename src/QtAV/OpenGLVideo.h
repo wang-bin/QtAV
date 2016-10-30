@@ -53,6 +53,10 @@ class Q_AV_EXPORT OpenGLVideo : public QObject
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(OpenGLVideo)
 public:
+    enum MeshType {
+        RectMesh,
+        SphereMesh
+    };
     static bool isSupported(VideoFormat::PixelFormat pixfmt);
     OpenGLVideo();
     /*!
@@ -92,6 +96,9 @@ public:
 
     void setUserShader(VideoShader* shader);
     VideoShader* userShader() const;
+
+    void setMeshType(MeshType value);
+    MeshType meshType() const;
 Q_SIGNALS:
     void beforeRendering();
     /*!

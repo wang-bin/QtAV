@@ -48,6 +48,8 @@ public:
         , update_geo(true)
         , tex_target(0)
         , valiad_tex_width(1.0)
+        , mesh_type(OpenGLVideo::SphereMesh)
+        , geometry(NULL)
         , user_shader(NULL)
     {
     }
@@ -56,6 +58,7 @@ public:
             delete material;
             material = 0;
         }
+        delete geometry;
     }
 
     void resetGL() {
@@ -86,7 +89,8 @@ public:
     QSize video_size;
     QRectF target;
     QRectF roi; //including invalid padding width
-    TexturedGeometry geometry;
+    OpenGLVideo::MeshType mesh_type;
+    TexturedGeometry *geometry;
     GeometryRenderer gr;
     QRectF rect;
     QMatrix4x4 matrix;
@@ -122,21 +126,27 @@ void OpenGLVideoPrivate::updateGeometry(VideoShader* shader, const QRectF &t, co
     }
     if (!update_geo)
         return;
+    delete geometry;
+    geometry = NULL;
+    if (mesh_type == OpenGLVideo::SphereMesh)
+        geometry = new Sphere();
+    else
+        geometry = new TexturedGeometry();
     //qDebug("updating geometry...");
     // setTextureCount may change the vertex data. Call it before setRect()
     qDebug() << "target rect: " << target_rect ;
-    geometry.setTextureCount(shader->textureTarget() == GL_TEXTURE_RECTANGLE ? tc : 1);
-    geometry.setGeometryRect(target_rect);
-    geometry.setTextureRect(material->mapToTexture(0, roi));
+    geometry->setTextureCount(shader->textureTarget() == GL_TEXTURE_RECTANGLE ? tc : 1);
+    geometry->setGeometryRect(target_rect);
+    geometry->setTextureRect(material->mapToTexture(0, roi));
     if (shader->textureTarget() == GL_TEXTURE_RECTANGLE) {
         for (int i = 1; i < tc; ++i) {
             // tc can > planes, but that will compute chroma plane
-            geometry.setTextureRect(material->mapToTexture(i, roi), i);
+            geometry->setTextureRect(material->mapToTexture(i, roi), i);
         }
     }
-    geometry.create();
+    geometry->create();
     update_geo = false;
-    gr.updateGeometry(&geometry);
+    gr.updateGeometry(geometry);
 }
 
 OpenGLVideo::OpenGLVideo() {}
@@ -242,7 +252,8 @@ void OpenGLVideo::setViewport(const QRectF &r)
     d.rect = r;
     if (d.norm_viewport) {
         d.matrix.setToIdentity();
-        //d.matrix.perspective(45, 1, 0.1, 100);
+        if (d.mesh_type == SphereMesh)
+            d.matrix.perspective(45, 1, 0.1, 100); // for sphere
     } else {
         d.matrix.setToIdentity();
         d.matrix.ortho(r);
@@ -285,6 +296,24 @@ VideoShader* OpenGLVideo::userShader() const
     return d_func().user_shader;
 }
 
+void OpenGLVideo::setMeshType(MeshType value)
+{
+    DPTR_D(OpenGLVideo);
+    if (d.mesh_type == value)
+        return;
+    d.mesh_type = value;
+    d.update_geo = true;
+    if (d.mesh_type == SphereMesh && d.norm_viewport) {
+        d.matrix.setToIdentity();
+        d.matrix.perspective(45, 1, 0.1, 100); // for sphere
+    }
+}
+
+OpenGLVideo::MeshType OpenGLVideo::meshType() const
+{
+    return d_func().mesh_type;
+}
+
 void OpenGLVideo::fill(const QColor &color)
 {
     DYGL(glClearColor(color.redF(), color.greenF(), color.blueF(), color.alphaF()));
@@ -317,6 +346,7 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
         DYGL(glEnable(GL_BLEND));
         gl().BlendFuncSeparate(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA); //
     }
+    DYGL(glEnable(GL_CULL_FACE)); // required for sphere!
     d.gr.render();
     if (blending)
         DYGL(glDisable(GL_BLEND));
