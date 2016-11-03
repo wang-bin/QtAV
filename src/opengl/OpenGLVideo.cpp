@@ -48,7 +48,7 @@ public:
         , update_geo(true)
         , tex_target(0)
         , valiad_tex_width(1.0)
-        , mesh_type(OpenGLVideo::SphereMesh)
+        , mesh_type(OpenGLVideo::RectMesh)
         , geometry(NULL)
         , user_shader(NULL)
     {
@@ -346,7 +346,8 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
         DYGL(glEnable(GL_BLEND));
         gl().BlendFuncSeparate(GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA , GL_ONE_MINUS_SRC_ALPHA); //
     }
-    DYGL(glEnable(GL_CULL_FACE)); // required for sphere!
+    //if (d.mesh_type == OpenGLVideo::SphereMesh)
+        //DYGL(glEnable(GL_CULL_FACE)); // required for sphere! FIXME: broken in qml and qgvf
     d.gr.render();
     if (blending)
         DYGL(glDisable(GL_BLEND));
