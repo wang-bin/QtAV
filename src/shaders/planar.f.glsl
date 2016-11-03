@@ -62,16 +62,10 @@ void main()
                              dot(sample2d(u_Texture0, v_TexCoords0, 0).rg, u_to8),
                              dot(sample2d(u_Texture1, v_TexCoords1, 1).rg, u_to8),
                              dot(sample2d(u_Texture2, v_TexCoords2, 2).rg, u_to8),
-#ifdef HAS_ALPHA
-                             dot(sample2d(u_Texture3, v_TexCoords3, 3).rg, u_to8)
-#endif //HAS_ALPHA
 #else
                              dot(sample2d(u_Texture0, v_TexCoords0, 0).ra, u_to8),
                              dot(sample2d(u_Texture1, v_TexCoords1, 1).ra, u_to8),
                              dot(sample2d(u_Texture2, v_TexCoords2, 2).ra, u_to8),
-#ifdef HAS_ALPHA
-                             dot(sample2d(u_Texture3, v_TexCoords3, 3).ra, u_to8)
-#endif //HAS_ALPHA
 #endif //USE_RG
 #else
 #ifdef USE_RG
@@ -82,24 +76,33 @@ void main()
 #else
                              sample2d(u_Texture2, v_TexCoords2, 2).r,
 #endif //IS_BIPLANE
-#ifdef HAS_ALPHA
-                             sample2d(u_Texture3, v_TexCoords3, 3).r
-
-#endif //HAS_ALPHA
 #else
 // use r, g, a to work for both yv12 and nv12. idea from xbmc
                              sample2d(u_Texture0, v_TexCoords0, 0).r,
                              sample2d(u_Texture1, v_TexCoords1, 1).g,
                              sample2d(u_Texture2, v_TexCoords2, 2).a,
-#ifdef HAS_ALPHA
-                             sample2d(u_Texture3, v_TexCoords3, 3).a
-#endif //HAS_ALPHA
 #endif //USE_RG
 #endif //CHANNEL16_TO8
-#ifndef HAS_ALPHA
                              1.0
-#endif //HAS_ALPHA
                             )
                          , 0.0, 1.0) * u_opacity;
+#ifdef HAS_ALPHA
+    float a =
+#ifdef CHANNEL16_TO8
+#ifdef USE_RG
+    dot(sample2d(u_Texture3, v_TexCoords3, 3).rg, u_to8);
+#else
+    dot(sample2d(u_Texture3, v_TexCoords3, 3).ra, u_to8);
+#endif
+#else
+#ifdef USE_RG
+    sample2d(u_Texture3, v_TexCoords3, 3).r;
+#else
+    sample2d(u_Texture3, v_TexCoords3, 3).a;
+#endif
+#endif
+    gl_FragColor.rgb = gl_FragColor.rgb*a;
+    gl_FragColor.a = a;
+#endif //HAS_ALPHA
 /***User post processing here***%userPostProcess%***/
 }
