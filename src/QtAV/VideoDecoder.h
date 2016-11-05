@@ -86,6 +86,7 @@ public:
 private:
     template<class C> static VideoDecoder* create() { return new C();}
     typedef VideoDecoder* (*VideoDecoderCreator)();
+protected:
     static bool Register(VideoDecoderId id, VideoDecoderCreator, const char *name);
 protected:
     VideoDecoder(VideoDecoderPrivate& d);
@@ -102,5 +103,8 @@ extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_Cedarv;
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_VDA;
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_VideoToolbox;
 extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_MediaCodec;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_MMAL;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_QSV;
+extern Q_AV_EXPORT VideoDecoderId VideoDecoderId_CrystalHD;
 } //namespace QtAV
 #endif // QTAV_VIDEODECODER_H

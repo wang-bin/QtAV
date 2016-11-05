@@ -27,13 +27,21 @@
 
 namespace QtAV {
 
-static AVCodec* get_codec(const QString &name, AVCodecID cid)
+static AVCodec* get_codec(const QString &name, const QString& hwa, AVCodecID cid)
 {
     AVCodec *codec = 0;
     if (!name.isEmpty()) {
         codec = avcodec_find_decoder_by_name(name.toUtf8().constData());
         if (!codec) {
             const AVCodecDescriptor* cd = avcodec_descriptor_get_by_name(name.toUtf8().constData());
+            if (cd)
+                codec = avcodec_find_decoder(cd->id);
+        }
+    } else if (!hwa.isEmpty()) {
+        const QString name_hwa = QString("%1_%2").arg(avcodec_get_name(cid)).arg(hwa);
+        codec = avcodec_find_decoder_by_name(name_hwa.toUtf8().constData());
+        if (!codec) {
+            const AVCodecDescriptor* cd = avcodec_descriptor_get_by_name(name_hwa.toUtf8().constData());
             if (cd)
                 codec = avcodec_find_decoder(cd->id);
         }
@@ -72,11 +80,14 @@ bool AVDecoder::open()
         qWarning("FFmpeg codec context not ready");
         return false;
     }
-    AVCodec* codec = get_codec(codecName(), d.codec_ctx->codec_id);
-    if (!codec)  { // TODO: can be null for none-ffmpeg based decoders
+    const QString hwa = property("hwaccel").toString();
+    AVCodec* codec = get_codec(codecName(), hwa, d.codec_ctx->codec_id);
+    if (!codec) { // TODO: can be null for none-ffmpeg based decoders
         QString es(tr("No codec could be found for '%1'"));
         if (d.codec_name.isEmpty()) {
             es = es.arg(QLatin1String(avcodec_get_name(d.codec_ctx->codec_id)));
+            if (!hwa.isEmpty())
+                es.append('_').append(hwa);
         } else {
             es = es.arg(d.codec_name);
         }
@@ -107,6 +118,8 @@ bool AVDecoder::open()
     d.applyOptionsForDict();
     av_opt_set_int(d.codec_ctx, "refcounted_frames", d.enableFrameRef(), 0); // why dict may have no effect?
     // TODO: only open for ff decoders
+    //av_dict_set(&d.dict, "lowres", "1", 0);
+    // dict is used for a specified AVCodec options (priv_class), av_opt_set_xxx(avctx) is only for avctx
     AV_ENSURE_OK(avcodec_open2(d.codec_ctx, codec, d.options.isEmpty() ? NULL : &d.dict), false);
     d.is_open = true;
     static const char* thread_name[] = { "Single", "Frame", "Slice"};
@@ -259,7 +272,7 @@ void AVDecoderPrivate::applyOptionsForContext()
         // av_opt_set_defaults(codec_ctx); //can't set default values! result maybe unexpected
         return;
     }
-    // TODO: use QVariantMap only
+
     if (!options.contains(QStringLiteral("avcodec")))
         return;
     // workaround for VideoDecoderFFmpeg. now it does not call av_opt_set_xxx, so set here in dict

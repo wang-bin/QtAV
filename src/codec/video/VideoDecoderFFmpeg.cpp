@@ -18,7 +18,6 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
 #include "VideoDecoderFFmpegBase.h"
 #include "QtAV/private/AVCompat.h"
 #include "QtAV/private/factory.h"
@@ -39,6 +38,7 @@ class VideoDecoderFFmpeg : public VideoDecoderFFmpegBase
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoDecoderFFmpeg)
     Q_PROPERTY(QString codecName READ codecName WRITE setCodecName NOTIFY codecNameChanged)
+    Q_PROPERTY(QString hwaccel READ hwaccel WRITE setHwaccel NOTIFY hwaccelChanged)
     Q_PROPERTY(DiscardType skip_loop_filter READ skipLoopFilter WRITE setSkipLoopFilter)
     Q_PROPERTY(DiscardType skip_idct READ skipIDCT WRITE setSkipIDCT)
     // Force a strict standard compliance when encoding (accepted values: -2 to 2)
@@ -111,6 +111,34 @@ public:
     };
     Q_DECLARE_FLAGS(BugFlags, BugFlag)
 
+    static VideoDecoder* createMMAL() {
+        VideoDecoderFFmpeg *vd = new VideoDecoderFFmpeg();
+        vd->setProperty("hwaccel", "mmal");
+        return vd;
+    }
+    static VideoDecoder* createQSV() {
+        VideoDecoderFFmpeg *vd = new VideoDecoderFFmpeg();
+        vd->setProperty("hwaccel", "qsv");
+        return vd;
+    }
+    static VideoDecoder* createCrystalHD() {
+        VideoDecoderFFmpeg *vd = new VideoDecoderFFmpeg();
+        vd->setProperty("hwaccel", "crystalhd");
+        return vd;
+    }
+
+    static void registerHWA() {
+#if defined(Q_OS_WIN32) || (defined(Q_OS_LINUX) && !defined(Q_PROCESSOR_ARM) && !defined(QT_ARCH_ARM))
+        VideoDecoder::Register(VideoDecoderId_QSV, createQSV, "QSV");
+#endif
+#ifdef Q_OS_LINUX
+#if defined(Q_PROCESSOR_ARM)/*qt5*/ || defined(QT_ARCH_ARM) /*qt4*/
+        VideoDecoder::Register(VideoDecoderId_MMAL, createMMAL, "MMAL");
+#else
+        VideoDecoder::Register(VideoDecoderId_CrystalHD, createCrystalHD, "CrystalHD");
+#endif
+#endif
+    }
     VideoDecoderFFmpeg();
     VideoDecoderId id() const Q_DECL_OVERRIDE Q_DECL_FINAL;
     QString description() const Q_DECL_OVERRIDE Q_DECL_FINAL {
@@ -138,12 +166,27 @@ public:
     MotionVectorVisFlags motionVectorVisFlags() const;
     void setBugFlags(BugFlags value);
     BugFlags bugFlags() const;
+    void setHwaccel(const QString& value);
+    QString hwaccel() const;
 Q_SIGNALS:
     void codecNameChanged() Q_DECL_OVERRIDE;
+    void hwaccelChanged();
 };
 
 extern VideoDecoderId VideoDecoderId_FFmpeg;
 FACTORY_REGISTER(VideoDecoder, FFmpeg, "FFmpeg")
+
+void RegisterFFmpegHWA_Man() {
+    VideoDecoderFFmpeg::registerHWA();
+}
+
+namespace {
+    static const struct factory_register_FFmpegHWA {
+        inline factory_register_FFmpegHWA() {
+            VideoDecoderFFmpeg::registerHWA();
+        }
+    } sInit_FFmpegHWA;
+}
 
 class VideoDecoderFFmpegPrivate Q_DECL_FINAL: public VideoDecoderFFmpegBasePrivate
 {
@@ -209,6 +252,7 @@ public:
     int threads;
     int debug_mv;
     int bug;
+    QString hwa;
 };
 
 VideoDecoderFFmpeg::VideoDecoderFFmpeg():
@@ -229,6 +273,13 @@ VideoDecoderFFmpeg::VideoDecoderFFmpeg():
 
 VideoDecoderId VideoDecoderFFmpeg::id() const
 {
+    DPTR_D(const VideoDecoderFFmpeg);
+    if (d.hwa == QLatin1String("mmal"))
+        return VideoDecoderId_MMAL;
+    if (d.hwa == QLatin1String("qsv"))
+        return VideoDecoderId_QSV;
+    if (d.hwa == QLatin1String("crystalhd"))
+        return VideoDecoderId_CrystalHD;
     return VideoDecoderId_FFmpeg;
 }
 
@@ -351,6 +402,20 @@ void VideoDecoderFFmpeg::setBugFlags(BugFlags value)
 VideoDecoderFFmpeg::BugFlags VideoDecoderFFmpeg::bugFlags() const
 {
     return (BugFlags)d_func().bug;
+}
+
+void VideoDecoderFFmpeg::setHwaccel(const QString &value)
+{
+    DPTR_D(VideoDecoderFFmpeg);
+    if (d.hwa == value)
+        return;
+    d.hwa = value.toLower();
+    Q_EMIT hwaccelChanged();
+}
+
+QString VideoDecoderFFmpeg::hwaccel() const
+{
+    return d_func().hwa;
 }
 
 //namespace {

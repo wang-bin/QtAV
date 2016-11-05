@@ -37,6 +37,9 @@ VideoDecoderId VideoDecoderId_Cedarv = mkid::id32base36_6<'C', 'e', 'd', 'a', 'r
 VideoDecoderId VideoDecoderId_VDA = mkid::id32base36_3<'V', 'D', 'A'>::value;
 VideoDecoderId VideoDecoderId_VideoToolbox = mkid::id32base36_5<'V', 'T', 'B', 'o', 'x'>::value;
 VideoDecoderId VideoDecoderId_MediaCodec = mkid::id32base36_4<'F','F','M','C'>::value;
+VideoDecoderId VideoDecoderId_MMAL = mkid::id32base36_6<'F','F','M', 'M','A', 'L'>::value;
+VideoDecoderId VideoDecoderId_QSV = mkid::id32base36_5<'F','F','Q','S', 'V'>::value;
+VideoDecoderId VideoDecoderId_CrystalHD = mkid::id32base36_5<'F','F','C','H', 'D'>::value;
 
 static void VideoDecoder_RegisterAll()
 {
@@ -78,6 +81,7 @@ static void VideoDecoder_RegisterAll()
     RegisterVideoDecoderCedarv_Man();
 #endif //QTAV_HAVE(CEDARV)
 }
+// TODO: called in ::create()/next() etc. to ensure registered?
 QVector<VideoDecoderId> VideoDecoder::registered()
 {
     VideoDecoder_RegisterAll();
