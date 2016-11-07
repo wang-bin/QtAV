@@ -29,26 +29,19 @@ namespace QtAV {
 
 static AVCodec* get_codec(const QString &name, const QString& hwa, AVCodecID cid)
 {
-    AVCodec *codec = 0;
-    if (!name.isEmpty()) {
-        codec = avcodec_find_decoder_by_name(name.toUtf8().constData());
-        if (!codec) {
-            const AVCodecDescriptor* cd = avcodec_descriptor_get_by_name(name.toUtf8().constData());
-            if (cd)
-                codec = avcodec_find_decoder(cd->id);
-        }
-    } else if (!hwa.isEmpty()) {
-        const QString name_hwa = QString("%1_%2").arg(avcodec_get_name(cid)).arg(hwa);
-        codec = avcodec_find_decoder_by_name(name_hwa.toUtf8().constData());
-        if (!codec) {
-            const AVCodecDescriptor* cd = avcodec_descriptor_get_by_name(name_hwa.toUtf8().constData());
-            if (cd)
-                codec = avcodec_find_decoder(cd->id);
-        }
-    } else {
-        codec = avcodec_find_decoder(cid);
+    QString fullname(name);
+    if (name.isEmpty()) {
+        if (hwa.isEmpty())
+            return avcodec_find_decoder(cid);
+        fullname = QString("%1_%2").arg(avcodec_get_name(cid)).arg(hwa);
     }
-    return codec;
+    AVCodec *codec = avcodec_find_decoder_by_name(fullname.toUtf8().constData());
+    if (codec)
+        return codec;
+    const AVCodecDescriptor* cd = avcodec_descriptor_get_by_name(fullname.toUtf8().constData());
+    if (cd)
+        return avcodec_find_decoder(cd->id);
+    return NULL;
 }
 
 AVDecoder::AVDecoder(AVDecoderPrivate &d)
@@ -59,7 +52,7 @@ AVDecoder::AVDecoder(AVDecoderPrivate &d)
 
 AVDecoder::~AVDecoder()
 {
-    setCodecContext(0);
+    setCodecContext(0); // FIXME:  will call virtual
 }
 
 QString AVDecoder::name() const
@@ -135,6 +128,7 @@ bool AVDecoder::close()
     DPTR_D(AVDecoder);
     d.is_open = false;
     // hwa extra finalize can be here
+    flush();
     d.close();
     // TODO: reset config?
     if (d.codec_ctx) {
