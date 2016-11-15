@@ -97,7 +97,12 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
     }
     if (ibo.isCreated()) {
         ibo.bind();
-        ibo.allocate(g->indexData(), g->indexDataSize());
+        const int bs = g->indexDataSize();
+        if (bs == ibo.size()) {
+            ibo.write(0, g->constIndexData(), bs);
+        } else {
+            ibo.allocate(g->indexData(), bs);
+        }
         ibo.release();
     }
     if (testFeatures(kVBO) && !vbo.isCreated()) {
@@ -107,29 +112,36 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
     }
     if (vbo.isCreated()) {
         vbo.bind();
-        vbo.allocate(g->vertexData(), g->vertexCount()*g->stride());
+        const int bs = g->vertexCount()*g->stride();
+        /* Notes from https://www.opengl.org/sdk/docs/man/html/glBufferSubData.xhtml
+           When replacing the entire data store, consider using glBufferSubData rather than completely recreating the data store with glBufferData. This avoids the cost of reallocating the data store.
+         */
+        if (bs == vbo.size()) {
+            vbo.write(0, g->constVertexData(), bs);
+        } else {
+            vbo.allocate(g->vertexData(), bs);
+        }
         vbo.release();
     }
 #if QT_VAO
+    if (stride == g->stride() && attrib == g->attributes())
+        return;
+    stride = g->stride();
+    attrib = g->attributes();
+
     if (testFeatures(kVAO) && !vao.isCreated()) {
         qDebug("creating VAO...");
         if (!vao.create())
             qDebug("VAO create error");
     }
+    qDebug("vao updated");
     if (vao.isCreated()) // can not use vao binder because it will create a vao if necessary
         vao.bind();
-#endif
 // can set data before vao bind
-    //qDebug("allocate(%p, %d*%d)", g->vertexData(), g->vertexCount(), g->stride());
-#if QT_VAO
     if (!vao.isCreated())
         return;
-    if (stride == g->stride() && attrib == g->attributes())
-        return;
-    stride = g->stride();
-    attrib = g->attributes();
-    //qDebug("geometry attributes changed, rebind vao...");
-    // TODO: call once is enough if no feature and no geometry attribute is changed
+    qDebug("geometry attributes changed, rebind vao...");
+    // call once is enough if no feature and no geometry attribute is changed
     if (vbo.isCreated()) {
         vbo.bind();
         for (int an = 0; an < g->attributes().size(); ++an) {
@@ -139,7 +151,7 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
             QGLF(glEnableVertexAttribArray(an));
         }
         vbo.release(); // unbind after vao unbind? http://www.zwqxin.com/archives/opengl/vao-and-vbo-stuff.html
-    }
+    } // TODO: bind pointers if vbo is disabled
     // bind ibo to vao thus no bind is required later
     if (ibo.isCreated())// if not bind here, glDrawElements(...,NULL) crashes and must use ibo data ptr, why?
         ibo.bind();
@@ -147,6 +159,7 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
     if (ibo.isCreated())
         ibo.release();
 #endif
+    qDebug("geometry updated");
 }
 
 void GeometryRenderer::bindBuffers()
@@ -221,7 +234,7 @@ void GeometryRenderer::render()
         return;
     bindBuffers();
     if (g->indexCount() > 0) {
-        DYGL(glDrawElements(g->primitive(), g->indexCount(), g->indexType(), ibo.isCreated() ? NULL : g->indexData()));
+        DYGL(glDrawElements(g->primitive(), g->indexCount(), g->indexType(), ibo.isCreated() ? NULL : g->indexData())); // null: data in vao or ibo. not null: data in memory
     } else {
         DYGL(glDrawArrays(g->primitive(), 0, g->vertexCount()));
     }
