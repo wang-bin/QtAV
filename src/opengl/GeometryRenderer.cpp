@@ -28,7 +28,7 @@ namespace QtAV {
 
 GeometryRenderer::GeometryRenderer()
     : g(NULL)
-    , features_(kVBO|kIBO|kVAO)
+    , features_(kVBO|kIBO|kVAO|kMapBuffer)
     , ibo(QOpenGLBuffer::IndexBuffer)
     , stride(0)
 {
@@ -99,9 +99,17 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
         ibo.bind();
         const int bs = g->indexDataSize();
         if (bs == ibo.size()) {
-            ibo.write(0, g->constIndexData(), bs);
+            void * p = NULL;
+            if (testFeatures(kMapBuffer))
+                p = ibo.map(QOpenGLBuffer::WriteOnly);
+            if (p) {
+                memcpy(p, g->constIndexData(), bs);
+                ibo.unmap();
+            } else {
+                ibo.write(0, g->constIndexData(), bs);
+            }
         } else {
-            ibo.allocate(g->indexData(), bs);
+            ibo.allocate(g->indexData(), bs); // TODO: allocate NULL and then map or BufferSubData?
         }
         ibo.release();
     }
@@ -117,7 +125,15 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
            When replacing the entire data store, consider using glBufferSubData rather than completely recreating the data store with glBufferData. This avoids the cost of reallocating the data store.
          */
         if (bs == vbo.size()) {
-            vbo.write(0, g->constVertexData(), bs);
+            void* p = NULL;
+            if (testFeatures(kMapBuffer))
+                p = vbo.map(QOpenGLBuffer::WriteOnly);
+            if (p) {
+                memcpy(p, g->constVertexData(), bs);
+                vbo.unmap();
+            } else {
+                vbo.write(0, g->constVertexData(), bs);
+            }
         } else {
             vbo.allocate(g->vertexData(), bs);
         }

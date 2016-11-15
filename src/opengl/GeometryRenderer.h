@@ -43,8 +43,10 @@ public:
     static const int kVBO = 0x01;
     static const int kIBO = 0x02;
     static const int kVAO = 0x04;
+    static const int kMapBuffer = 1<<16;
     // TODO: VAB, VBUM etc.
     GeometryRenderer();
+    virtual ~GeometryRenderer() {}
     // call updateBuffer internally in bindBuffer if feature is changed
     void setFeature(int f, bool on);
     void setFeatures(int value);
