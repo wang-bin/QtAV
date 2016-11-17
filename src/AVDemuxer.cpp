@@ -741,19 +741,19 @@ bool AVDemuxer::load()
     static const QString avd_scheme(QStringLiteral("avdevice:"));
     if (d->file.startsWith(avd_scheme)) {
         QStringList parts = d->file.split(QStringLiteral(":"));
-        if (parts.count() != 3) {
+        int s0 = avd_scheme.size();
+        const int s1 = d->file.indexOf(QChar(':'), s0);
+        if (s1 < 0) {
             qDebug("invalid avdevice specification");
             setMediaStatus(InvalidMedia);
             return false;
         }
-        if (d->file.startsWith(avd_scheme + QStringLiteral("//"))) {
+        if (d->file.at(s0) == QChar('/') && d->file.at(s0+1) == QChar('/')) {
             // avdevice://avfoundation:device_name
-            d->input_format = av_find_input_format(parts[1].mid(2).toUtf8().constData());
-        } else {
-            // avdevice:video4linux2:file_name
-            d->input_format = av_find_input_format(parts[1].toUtf8().constData());
-        }
-        d->file = parts[2];
+            s0 += 2;
+        } // else avdevice:video4linux2:file_name
+        d->input_format = av_find_input_format(d->file.mid(s0, s1-s0).toUtf8().constData());
+        d->file = d->file.mid(s1+1);
     }
 #endif
     //alloc av format context
