@@ -56,7 +56,7 @@ public:
     /*!
      * \brief DeviceFeature Feature enum
      * Features supported by the audio playback api (we call device or backend here)
-     * If a feature is not supported, e.g. SetVolume, then a software implemention is used.
+     * If a feature is not supported, e.g. SetVolume, then a software implementation is used.
      */
     enum DeviceFeature {
         NoFeature = 0,
@@ -136,7 +136,7 @@ public:
     /*!
      * \brief setVolume
      * Set volume level.
-     * If SetVolume feature is not set or not supported, software implemention will be used.
+     * If SetVolume feature is not set or not supported, software implementation will be used.
      * Call this after open(), because it will call backend api if SetVolume feature is enabled
      * \param volume linear. 1.0: original volume.
      */
@@ -144,7 +144,7 @@ public:
     qreal volume() const;
     /*!
      * \brief setMute
-     * If SetMute feature is not set or not supported, software implemention will be used.
+     * If SetMute feature is not set or not supported, software implementation will be used.
      * Call this after open(), because it will call backend api if SetMute feature is enabled
      */
     void setMute(bool value = true);
@@ -216,7 +216,7 @@ protected:
      * \brief waitForNextBuffer
      * wait until you can feed more data
      */
-    virtual bool waitForNextBuffer();
+    bool waitForNextBuffer();
 private Q_SLOTS:
     void reportVolume(qreal value);
     void reportMute(bool value);
