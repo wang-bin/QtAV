@@ -627,14 +627,15 @@ target.depends *= $${libqtav.target}
 
 DEB_INSTALL_LIST = $$join(SDK_HEADERS, \\n.$$[QT_INSTALL_HEADERS]/, .$$[QT_INSTALL_HEADERS]/)
 DEB_INSTALL_LIST += .$$[QT_INSTALL_LIBS]/libQt*AV.prl .$$[QT_INSTALL_LIBS]/libQt*AV.so
-DEB_INSTALL_LIST += .$$[QT_INSTALL_BINS]/../mkspecs/features/av.prf .$$[QT_INSTALL_BINS]/../mkspecs/modules/qt_lib_av.pri
+MKSPECS_DIR=$$[QT_INSTALL_ARCHDATA]/mkspecs # we only build deb for qt5, so QT_INSTALL_ARCHDATA is fine. qt4 can use $$[QMAKE_MKSPECS]
+DEB_INSTALL_LIST += .$${MKSPECS_DIR}/features/av.prf .$${MKSPECS_DIR}/modules/qt_lib_av.pri
 qtav_dev.target = qtav-dev.install
 qtav_dev.commands = echo \"$$join(DEB_INSTALL_LIST, \\n)\" >$$PROJECTROOT/debian/$${qtav_dev.target}
 QMAKE_EXTRA_TARGETS += qtav_dev
 target.depends *= $${qtav_dev.target}
 
 DEB_INSTALL_LIST = $$join(SDK_PRIVATE_HEADERS, \\n.$$[QT_INSTALL_HEADERS]/QtAV/*/, .$$[QT_INSTALL_HEADERS]/QtAV/*/)
-DEB_INSTALL_LIST += .$$[QT_INSTALL_BINS]/../mkspecs/modules/qt_lib_av_private.pri
+DEB_INSTALL_LIST += .$${MKSPECS_DIR}/modules/qt_lib_av_private.pri
 qtav_private_dev.target = qtav-private-dev.install
 qtav_private_dev.commands = echo \"$$join(DEB_INSTALL_LIST, \\n)\" >$$PROJECTROOT/debian/$${qtav_private_dev.target}
 QMAKE_EXTRA_TARGETS += qtav_private_dev
