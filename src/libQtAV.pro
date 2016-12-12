@@ -17,9 +17,6 @@ CONFIG *= qtav-buildlib
 staticlib: DEFINES += BUILD_QTAV_STATIC
 static: CONFIG *= static_ffmpeg
 INCLUDEPATH += $$[QT_INSTALL_HEADERS]
-icon.files = $$PWD/$${TARGET}.svg
-icon.path = /usr/share/icons/hicolor/scalable/apps
-!contains(QMAKE_HOST.os, Windows):INSTALLS += icon
 
 #mac: simd.prf will load qt_build_config and the result is soname will prefixed with QT_INSTALL_LIBS and link flag will append soname after QMAKE_LFLAGS_SONAME
 config_libcedarv: CONFIG *= neon config_simd #need by qt4 addSimdCompiler(). neon or config_neon is required because tests/arch can not detect neon
@@ -617,7 +614,10 @@ mac {
    }
 }
 
-unix:!android:!mac {
+unix:!mac:!cross_compile {
+icon.files = $$PWD/$${TARGET}.svg
+icon.path = /usr/share/icons/hicolor/scalable/apps
+INSTALLS += icon
 #debian
 DEB_INSTALL_LIST = .$$[QT_INSTALL_LIBS]/libQt*AV.so.*
 libqtav.target = libqtav.install
