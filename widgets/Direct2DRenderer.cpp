@@ -25,7 +25,6 @@
 #include <QtCore/QLibrary>
 #include "QtAV/private/VideoRenderer_p.h"
 #include "QtAV/private/factory.h"
-
 //#define CINTERFACE //http://rxlib.ru/faqs/faqc_en/15596.html
 #include <sal.h>
 #ifndef _Out_writes_bytes_opt_
@@ -226,8 +225,10 @@ public:
         bitmap_width = w;
         bitmap_height = h;
         qDebug("Resize bitmap to %d x %d", w, h);
-        D2D1_SIZE_U s = {(UINT32)w, (UINT32)h};
         SafeRelease(&bitmap);
+        if (w ==0 || h == 0)
+            return true;
+        D2D1_SIZE_U s = {(UINT32)w, (UINT32)h};
         HRESULT hr = render_target->CreateBitmap(s
                                                  , NULL
                                                  , 0
@@ -296,9 +297,11 @@ bool Direct2DRenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 
 bool Direct2DRenderer::receiveFrame(const VideoFrame& frame)
 {
-    if (!frame.isValid())
-        return false;
     DPTR_D(Direct2DRenderer);
+    if (!frame.isValid()) {
+        //d.prepareBitmap(0, 0);
+        return false;
+    }
     if (!d.prepareBitmap(frame.width(), frame.height()))
         return false;
     HRESULT hr = S_OK;
@@ -344,18 +347,20 @@ void Direct2DRenderer::drawBackground()
 void Direct2DRenderer::drawFrame()
 {
     DPTR_D(Direct2DRenderer);
+    if (!d.bitmap || d.out_rect.isEmpty())
+        return;
     D2D1_RECT_F out_rect = {
-        (FLOAT)d.out_rect.left(),
-        (FLOAT)d.out_rect.top(),
-        (FLOAT)d.out_rect.right(),
-        (FLOAT)d.out_rect.bottom()
+        (FLOAT)d.out_rect.x(),
+        (FLOAT)d.out_rect.y(),
+        (FLOAT)(d.out_rect.x() + d.out_rect.width()), // QRect.right() is x+width-1 for historical reason
+        (FLOAT)(d.out_rect.y() + d.out_rect.height())
     };
     QRect roi = realROI();
     D2D1_RECT_F roi_d2d = {
-        (FLOAT)roi.left(),
-        (FLOAT)roi.top(),
-        (FLOAT)roi.right(),
-        (FLOAT)roi.bottom()
+        (FLOAT)roi.x(),
+        (FLOAT)roi.y(),
+        (FLOAT)(roi.x() + roi.width()),
+        (FLOAT)(roi.y() + roi.height())
     };
     //d.render_target->SetTransform
     d.render_target->DrawBitmap(d.bitmap
