@@ -153,7 +153,7 @@ OpenGLVideo::OpenGLVideo() {}
 
 bool OpenGLVideo::isSupported(VideoFormat::PixelFormat pixfmt)
 {
-    return pixfmt != VideoFormat::Format_RGB48BE;
+    return pixfmt != VideoFormat::Format_RGB48BE && pixfmt != VideoFormat::Format_Invalid;
 }
 
 void OpenGLVideo::setOpenGLContext(QOpenGLContext *ctx)
@@ -197,7 +197,7 @@ void OpenGLVideo::setOpenGLContext(QOpenGLContext *ctx)
     // TODO: what if ctx is delete?
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     d.manager = new ShaderManager(ctx);
-    QObject::connect(ctx, SIGNAL(aboutToBeDestroyed()), this, SLOT(resetGL()), Qt::DirectConnection); //direct?
+    QObject::connect(ctx, SIGNAL(aboutToBeDestroyed()), this, SLOT(resetGL()), Qt::DirectConnection); // direct to make sure there is a valid context. makeCurrent in window.aboutToBeDestroyed()?
 #else
     d.manager = new ShaderManager(this);
 #endif

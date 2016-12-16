@@ -218,7 +218,12 @@ bool VideoThread::deliverVideoFrame(VideoFrame &frame)
     if (vo && (!vo->isSupported(frame.pixelFormat())
             || (vo->isPreferredPixelFormatForced() && vo->preferredPixelFormat() != frame.pixelFormat())
             )) {
-        VideoFrame outFrame(d.conv.convert(frame, vo->preferredPixelFormat()));
+        VideoFormat fmt(frame.format());
+        if (fmt.hasPalette() || fmt.isRGB())
+            fmt = VideoFormat::Format_RGB32;
+        else
+            fmt = vo->preferredPixelFormat();
+        VideoFrame outFrame(d.conv.convert(frame, fmt));
         if (!outFrame.isValid()) {
             d.outputSet->unlock();
             return false;
@@ -612,6 +617,14 @@ void VideoThread::run()
             //qDebug("v_a:%.4f, v_a_: %.4f", v_a, v_a_);
         }
     }
+#if 0
+    if (d.stop) {// user stop
+        // decode eof?
+        qDebug("decoding eof...");
+
+        while (d.dec && d.dec->decode(Packet::createEOF())) {d.dec->flush();}
+    }
+#endif
     d.packets.clear();
     qDebug("Video thread stops running...");
 }

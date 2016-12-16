@@ -116,7 +116,8 @@ QQuickFramebufferObject::Renderer* QuickFBORenderer::createRenderer() const
 
 bool QuickFBORenderer::isSupported(VideoFormat::PixelFormat pixfmt) const
 {
-    if (pixfmt == VideoFormat::Format_RGB48BE)
+    if (pixfmt == VideoFormat::Format_RGB48BE
+            || pixfmt == VideoFormat::Format_Invalid)
         return false;
     if (!isOpenGL())
         return VideoFormat::isRGB(pixfmt);
