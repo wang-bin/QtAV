@@ -284,11 +284,6 @@ int VideoFrame::height() const
     return d_func()->height;
 }
 
-int VideoFrame::effectivePlaneWidth(int plane) const
-{
-    return planeWidth(plane)*effectiveBytesPerLine(plane)/bytesPerLine(plane);
-}
-
 int VideoFrame::planeWidth(int plane) const
 {
     Q_D(const VideoFrame);
@@ -520,11 +515,17 @@ VideoFrame VideoFrameConverter::convert(const VideoFrame &frame, int fffmt) cons
     m_cvt->setInSize(frame.width(), frame.height());
     m_cvt->setOutSize(frame.width(), frame.height());
     m_cvt->setInRange(frame.colorRange());
-    QVector<const uchar*> pitch(format.planeCount());
-    QVector<int> stride(format.planeCount());
+    const int pal = format.hasPalette();
+    QVector<const uchar*> pitch(format.planeCount() + pal);
+    QVector<int> stride(format.planeCount() + pal);
     for (int i = 0; i < format.planeCount(); ++i) {
         pitch[i] = frame.constBits(i);
         stride[i] = frame.bytesPerLine(i);
+    }
+    const QByteArray paldata(frame.metaData(QStringLiteral("pallete")).toByteArray());
+    if (pal > 0) {
+        pitch[1] = (const uchar*)paldata.constData();
+        stride[1] = paldata.size();
     }
     if (!m_cvt->convert(pitch.constData(), stride.constData())) {
         return VideoFrame();

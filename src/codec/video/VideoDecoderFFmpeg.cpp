@@ -297,6 +297,9 @@ VideoFrame VideoDecoderFFmpeg::frame()
     frame.setTimestamp((double)d.frame->pkt_pts/1000.0);
     frame.setMetaData(QStringLiteral("avbuf"), QVariant::fromValue(AVFrameBuffersRef(new AVFrameBuffers(d.frame))));
     d.updateColorDetails(&frame);
+    if (frame.format().hasPalette()) {
+        frame.setMetaData(QStringLiteral("pallete"), QByteArray((const char*)d.frame->data[1], 256*4));
+    }
     return frame;
 }
 

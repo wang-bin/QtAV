@@ -28,6 +28,7 @@
 /// TODO: fromAVFrame(const AVFrame* f);
 namespace QtAV {
 
+/// metadata: pallete for pal8
 class VideoFramePrivate;
 class Q_AV_EXPORT VideoFrame : public Frame
 {
@@ -75,8 +76,11 @@ public:
     //int width(int plane = 0) const?
     int width() const;
     int height() const;
-    // plane width without padded bytes.
-    int effectivePlaneWidth(int plane) const;
+    /*!
+     * \brief effectiveBytesPerLine
+     * The plane bytes contains valid image data without padded data for alignment reason
+     */
+    int effectiveBytesPerLine(int plane) const;
     // plane width with padded bytes for alignment.
     int planeWidth(int plane) const;
     int planeHeight(int plane) const;
@@ -88,11 +92,6 @@ public:
     void setColorSpace(ColorSpace value);
     ColorRange colorRange() const;
     void setColorRange(ColorRange value);
-    /*!
-     * \brief effectiveBytesPerLine
-     * The plane bytes contains valid image data without padded data for alignment reason
-     */
-    int effectiveBytesPerLine(int plane) const;
     /*!
      * \brief toImage
      * Return a QImage of current video frame, with given format, image size and region of interest.
