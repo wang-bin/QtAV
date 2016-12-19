@@ -88,6 +88,15 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
 #endif
         return;
     }
+    static int support_map = -1;
+    if (support_map < 0) {
+        if (OpenGLHelper::isOpenGLES()) {
+            support_map = QOpenGLContext::currentContext()->format().majorVersion() > 2 ||
+                    QOpenGLContext::currentContext()->hasExtension("GL_OES_mapbuffer");
+        } else {
+            support_map = 1;
+        }
+    }
     if (testFeatures(kIBO) && !ibo.isCreated()) {
         if (g->indexCount() > 0) {
             qDebug("creating IBO...");
@@ -100,7 +109,7 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
         const int bs = g->indexDataSize();
         if (bs == ibo.size()) {
             void * p = NULL;
-            if (testFeatures(kMapBuffer))
+            if (support_map && testFeatures(kMapBuffer))
                 p = ibo.map(QOpenGLBuffer::WriteOnly);
             if (p) {
                 memcpy(p, g->constIndexData(), bs);
@@ -126,7 +135,7 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
          */
         if (bs == vbo.size()) {
             void* p = NULL;
-            if (testFeatures(kMapBuffer))
+            if (support_map && testFeatures(kMapBuffer))
                 p = vbo.map(QOpenGLBuffer::WriteOnly);
             if (p) {
                 memcpy(p, g->constVertexData(), bs);
