@@ -158,6 +158,12 @@ QColor SubtitleFilter::color() const
     return d_func().color;
 }
 
+QString SubtitleFilter::subtitleText(qreal t) const
+{
+    d.player_sub->subtitle()->setTimestamp(t);
+    return d.player_sub->subtitle()->getText();
+}
+
 void SubtitleFilter::process(Statistics *statistics, VideoFrame *frame)
 {
     Q_UNUSED(statistics);

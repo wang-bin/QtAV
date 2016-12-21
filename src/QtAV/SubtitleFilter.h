@@ -83,6 +83,8 @@ public:
     QFont font() const;
     void setColor(const QColor& c);
     QColor color() const;
+
+    QString subtitleText(qreal t) const;
 public Q_SLOTS:
     // TODO: enable changed & autoload=> load
     void setAutoLoad(bool value);
