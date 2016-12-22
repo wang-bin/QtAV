@@ -160,6 +160,7 @@ QColor SubtitleFilter::color() const
 
 QString SubtitleFilter::subtitleText(qreal t) const
 {
+    DPTR_D(const SubtitleFilter);
     d.player_sub->subtitle()->setTimestamp(t);
     return d.player_sub->subtitle()->getText();
 }
