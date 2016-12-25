@@ -22,7 +22,7 @@
 #ifndef QTAV_OPENGLRENDERERBASE_P_H
 #define QTAV_OPENGLRENDERERBASE_P_H
 
-#include "private/VideoRenderer_p.h"
+#include "QtAV/private/VideoRenderer_p.h"
 #include "QtAV/OpenGLVideo.h"
 
 namespace QtAV {
