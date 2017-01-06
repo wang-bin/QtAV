@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
     VideoRenderer *renderer = 0;
     bool textfilter = false;
     if (vo == QLatin1String("gl")) {
-        renderer = VideoRenderer::create(VideoRendererId_GLWidget);
+        renderer = VideoRenderer::create(VideoRendererId_GLWidget2);
         textfilter = true;
     } else if (vo == QLatin1String("d2d")) {
         renderer = VideoRenderer::create(VideoRendererId_Direct2D);

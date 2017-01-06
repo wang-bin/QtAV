@@ -13,7 +13,6 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   }
 }
 CONFIG *= qtavwidgets-buildlib
-staticlib: DEFINES += BUILD_QTAVWIDGETS_STATIC
 
 INCLUDEPATH += $$[QT_INSTALL_HEADERS]
 #release: DEFINES += QT_NO_DEBUG_OUTPUT

@@ -1,4 +1,4 @@
-VERSION = $$QTAV_VERSION
+!static:VERSION = $$QTAV_VERSION # vc: will create exp and lib, result in static build error
 QT += sql
 android {
   QT += androidextras

@@ -1,5 +1,5 @@
 TARGET = QMLPlayer
-VERSION = $$QTAV_VERSION
+!static:VERSION = $$QTAV_VERSION
 QT += av svg qml quick sql
 android {
   QT += androidextras

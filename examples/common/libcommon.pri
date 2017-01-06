@@ -52,7 +52,7 @@ LIB_VERSION = $$QTAV_VERSION #0.x.y may be wrong for dll
 
 # If user haven't supplied STATICLINK, then auto-detect
 isEmpty(STATICLINK) {
-  contains(CONFIG, staticlib) {
+  static|contains(CONFIG, staticlib) {
     STATICLINK = 1
   } else {
     STATICLINK = 0

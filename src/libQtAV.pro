@@ -14,9 +14,8 @@ greaterThan(QT_MAJOR_VERSION, 4) {
   config_gl: QT += opengl
 }
 CONFIG *= qtav-buildlib
-staticlib: DEFINES += BUILD_QTAV_STATIC
 static: CONFIG *= static_ffmpeg
-INCLUDEPATH += $$[QT_INSTALL_HEADERS]
+INCLUDEPATH += $$[QT_INSTALL_HEADERS] # TODO: ffmpeg dir
 
 #mac: simd.prf will load qt_build_config and the result is soname will prefixed with QT_INSTALL_LIBS and link flag will append soname after QMAKE_LFLAGS_SONAME
 config_libcedarv: CONFIG *= neon config_simd #need by qt4 addSimdCompiler(). neon or config_neon is required because tests/arch can not detect neon
@@ -31,7 +30,7 @@ PROJECTROOT = $$PWD/..
 preparePaths($$OUT_PWD/../out)
 exists($$PROJECTROOT/extra/qtLongName(include)): INCLUDEPATH += $$PROJECTROOT/extra/qtLongName(include)
 exists($$PROJECTROOT/extra/qtLongName(lib)): LIBS += -L$$PROJECTROOT/extra/qtLongName(lib)
-
+staticlib: DEFINES += BUILD_QTAV_STATIC
 
 config_uchardet {
   DEFINES += LINK_UCHARDET
@@ -97,7 +96,7 @@ win32 {
   }
     debug: QMAKE_LFLAGS += /SAFESEH:NO
 #CXXFLAGS debug: /MTd
-    QMAKE_LFLAGS *= /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib #for msbuild vs2013
+    !static:QMAKE_LFLAGS *= /NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib #for msbuild vs2013
 
 }
 capi {

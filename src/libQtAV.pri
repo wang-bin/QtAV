@@ -49,10 +49,9 @@ NAME = QtAV
 eval(LIB$$upper($$NAME)_PRI_INCLUDED = 1)
 
 LIB_VERSION = $$QTAV_VERSION #0.x.y may be wrong for dll
-
 # If user haven't supplied STATICLINK, then auto-detect
 isEmpty(STATICLINK) {
-  contains(CONFIG, staticlib) {
+  static|contains(CONFIG, staticlib) {
     STATICLINK = 1
   } else {
     STATICLINK = 0
@@ -61,6 +60,7 @@ isEmpty(STATICLINK) {
   # in iOS 8.1.
   ios:STATICLINK = 1
 }
+isEqual(STATICLINK, 1):DEFINES += BUILD_$$upper($$NAME)_STATIC
 
 TEMPLATE += fakelib
 PROJECT_TARGETNAME = $$qtLibraryTarget($$NAME)
@@ -109,9 +109,9 @@ DEPENDPATH *= $$PROJECT_SRCPATH
         CONFIG *= create_prl #
         DEFINES += BUILD_$$upper($$NAME)_LIB #win32-msvc*
         isEqual(STATICLINK, 1) {
-		CONFIG -= shared dll ##otherwise the following shared is true, why?
+                CONFIG -= shared dll ##otherwise the following shared is true, why?
 		CONFIG *= staticlib
-	} else {
+        } else {
 		CONFIG *= shared #shared includes dll
 	}
 
