@@ -40,8 +40,8 @@ static const char* names[] = {
 #ifdef CAPI_TARGET_OS_WIN
     "OpenAL32",
 #endif
-#ifdef CAPI_TARGET_OS_MAC
-    "/System/Library/Frameworks/OpenAL.framework/Versions/A/OpenAL",
+#ifdef __APPLE__
+    "/System/Library/Frameworks/OpenAL.framework/OpenAL", // iOS and macOS
 #endif
     "OpenAL", //blackberry
     NULL
