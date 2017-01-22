@@ -26,22 +26,130 @@ endforeach(M ${MODULES})
 get_target_property(QtCore_location Qt5::Core LOCATION)
 get_filename_component(QTDIR "${QTDIR}" ABSOLUTE)
 #set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -L${QTDIR}/lib") # unix: for extra libs
-CHECK_INCLUDE_FILE(ass/ass.h HAVE_ASS_H)
-#if (HAVE_ASS_H)
-  # check link
-#endif()
-CHECK_INCLUDE_FILE(libavfilter/avfilter.h HAVE_AVFILTER_H)
-CHECK_INCLUDE_FILE(libavdevice/avdevice.h HAVE_AVDEVICE_H)
-CHECK_INCLUDE_FILE(libavresample/avresample.h HAVE_AVRESAMPLE_H)
-CHECK_INCLUDE_FILE(libswresample/swresample.h HAVE_SWRESAMPLE_H)
-if (NOT HAVE_SWRESAMPLE_H)
-  if (NOT HAVE_AVRESAMPLE_H)
-    #message(FATAL_ERROR "swresample or avresample is required")
+
+list(APPEND EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/external/include)
+if(APPLE)
+    if(IOS)
+      #set_xcode_property(myioslib IPHONEOS_DEPLOYMENT_TARGET "8.0")
+    else()
+      list(APPEND EXTRA_INCLUDE /usr/local/include) #macOS only
+      list(APPEND EXTRA_LIBS -L/usr/local/lib)
+    endif()
+endif()
+if(EXISTS ${CMAKE_SOURCE_DIR}/contrib/capi/capi.h)
+    set(HAVE_CAPI 1)
+    list(APPEND EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/contrib/capi) # TODO: only files use capi.h
+    list(APPEND EXTRA_DEFS -DQTAV_HAVE_CAPI=1)
+endif()
+
+# check ffmpeg headers. assume libs exist. lib order matters if they are static
+set(AVMODULES avformat avcodec swresample swscale avutil) # avdevice avfilter avresample swscale)
+# CMAKE_FIND_ROOT_PATH_BOTH: ensure find_file can search from given paths for cross compiling, may be set to ONLY in toolchain file
+foreach(av ${AVMODULES})
+    string(TOUPPER ${av} AV)
+    find_file(HAVE_${AV} lib${av}/${av}.h HINTS ${EXTRA_INCLUDE} PATHS ${EXTRA_INCLUDE} CMAKE_FIND_ROOT_PATH_BOTH)
+    message("HAVE_${AV}: ${HAVE_${AV}}")
+    if(NOT ${HAVE_${AV}} MATCHES HAVE_${AV}-NOTFOUND)
+      set(HAVE_${AV} 1)
+      list(APPEND EXTRA_LIBS ${av})
+      list(APPEND EXTRA_DEFS "-DQTAV_HAVE_${AV}=1")
+    else()
+      message(FATAL_ERROR "${av} is required")
+    endif()
+    #check_include_file(lib${av}/${av}.h HAVE_${AV}) # -D__STDC_CONSTANT_MACROS is required!
+endforeach()
+
+foreach(av avfilter avdevice avresample swresample)
+  string(TOUPPER ${av} AV)
+  find_file(HAVE_${AV} lib${av}/${av}.h HINTS ${EXTRA_INCLUDE} PATHS ${EXTRA_INCLUDE} CMAKE_FIND_ROOT_PATH_BOTH)
+  message("HAVE_${AV}: ${HAVE_${AV}}")
+  if(NOT ${HAVE_${AV}} MATCHES HAVE_${AV}-NOTFOUND)
+    set(HAVE_${AV} 1)
+    list(APPEND EXTRA_LIBS ${av})
+    list(APPEND EXTRA_DEFS "-DQTAV_HAVE_${AV}=1")
+    list(APPEND AVMODULES ${av})
+  endif()
+endforeach()
+
+if (NOT HAVE_SWRESAMPLE)
+  if (NOT HAVE_AVRESAMPLE)
+    message(FATAL_ERROR "swresample or avresample is required")
   endif()
 endif()
 
-set(QTAV_EXTRA_DEFS -DBUILD_QTAV_LIB -DQ_AV_EXPORT -D__STDC_CONSTANT_MACROS)
-set(QTAV_EXTRA_LIBS avcodec avformat avutil swscale)
+list(APPEND EXTRA_DEFS -DBUILD_QTAV_LIB -DQ_AV_EXPORT -D__STDC_CONSTANT_MACROS)
+
+check_include_file(ass/ass.h HAVE_ASS_H)
+if(HAVE_ASS_H)
+  if(HAVE_CAPI) # dynamic load
+    if(IOS OR ANDROID OR WindowsPhone OR WindowsStore)
+    else()
+      set(HAVE_ASS 1)
+    endif()
+  endif()
+  if(NOT HAVE_ASS) # link to ass
+    check_library_exists(ass ass_library_init "" HAVE_ASS)
+    if(HAVE_ASS)
+      set(DYNAMIC_ASS 0)
+      list(APPEND EXTRA_DEFS -DCAPI_LINK_ASS)
+      list(APPEND EXTRA_LIBS ass)
+    endif()
+  endif()
+endif()
+if(HAVE_ASS)
+  list(APPEND EXTRA_DEFS -DQTAV_HAVE_LIBASS=1)
+  list(APPEND SOURCES
+    capi/ass_api.cpp
+    subtitle/SubtitleProcessorLibASS.cpp
+  )
+endif()
+
+if(APPLE)
+  set(HAVE_OPENAL 1)
+  set(DYNAMIC_OPENAL ${HAVE_CAPI})
+  if(NOT DYNAMIC_OPENAL)
+    list(APPEND EXTRA_LIBS "-framework OpenAL")
+  endif()
+  list(APPEND EXTRA_DEFS -DHEADER_OPENAL_PREFIX)
+else()
+  set(OLD_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
+  set(CMAKE_REQUIRED_INCLUDES ${EXTRA_INCLUDE})
+  check_include_files(AL/al.h HAVE_AL_H)
+  set(CMAKE_REQUIRED_INCLUDES ${OLD_REQUIRED_INCLUDES})
+  if(HAVE_AL_H)
+    if(HAVE_CAPI) #TODO: option(LINK_OPENAL...)
+      set(HAVE_OPENAL 1)
+      # DYNAMIC_OPENAL is set by user
+    else()
+      if(WIN32)
+        check_library_exists(OpenAL alGetError "" HAVE_OPENAL)
+      else()
+        check_library_exists(openal alGetError "" HAVE_OPENAL)
+        if(NOT HAVE_OPENAL)
+            check_library_exists(OpenAL alGetError "" HAVE_OPENAL) # blackberry
+            if(HAVE_OPENAL)
+              list(APPEND EXTRA_LIBS OpenAL)
+            endif()
+        else()
+            list(APPEND EXTRA_LIBS openal)
+        endif()
+      endif()
+      if(HAVE_OPENAL)
+        set(DYNAMIC_OPENAL 0)
+      endif()
+    endif()
+  endif()
+endif()
+if(HAVE_OPENAL AND NOT DYNAMIC_OPENAL)
+  list(APPEND EXTRA_DEFS -DCAPI_LINK_OPENAL)
+endif()
+if(HAVE_OPENAL)
+  list(APPEND SOURCES
+    capi/openal_api.cpp
+    output/audio/AudioOutputOpenAL.cpp
+    )
+endif()
+
 if (APPLE)
   set(CMAKE_CXX_SYSTEM_FRAMEWORK_SEARCH_FLAG "-F ") # original is "-iframework", lots of build errors
   set(CMAKE_C_SYSTEM_FRAMEWORK_SEARCH_FLAG "-F ")
@@ -55,8 +163,8 @@ if (APPLE)
     }" HAVE_VIDEOTOOLBOX)
 
   if (HAVE_VIDEOTOOLBOX)
-    list(APPEND QTAV_EXTRA_DEFS -DQTAV_HAVE_VIDEOTOOLBOX=1)
-    list(APPEND QTAV_EXTRA_LIBS "-framework CoreMedia -framework VideoToolbox -framework CoreVideo")
+    list(APPEND EXTRA_DEFS -DQTAV_HAVE_VIDEOTOOLBOX=1)
+    list(APPEND EXTRA_LIBS "-framework CoreMedia" "-framework VideoToolbox" "-framework CoreVideo")
     list(APPEND SOURCES 
       codec/video/VideoDecoderVideoToolbox.cpp
       codec/video/SurfaceInteropCV.cpp
@@ -71,36 +179,22 @@ if (APPLE)
         )
     endif()
   endif()
-  set(HAVE_OPENAL_H 1)
-  add_definitions(-DHEADER_OPENAL_PREFIX)
 
   list(APPEND SOURCES output/audio/AudioOutputAudioToolbox.cpp)
-  list(APPEND QTAV_EXTRA_LIBS "-framework CoreFoundation -framework AudioToolbox -framework OpenGL")
+  list(APPEND EXTRA_LIBS "-framework CoreFoundation -framework AudioToolbox -framework OpenGL")
 endif()
 
-set(DEP_H AVRESAMPLE SWRESAMPLE AVDEVICE AVFILTER OPENAL VIDEOTOOLBOX)
+set(DEP_H  OPENAL VIDEOTOOLBOX)
 foreach (D ${DEP_H})
   if (${D})
     ADD_DEFINITIONS(-DQTAV_HAVE_${D}=1)
   endif()
 endforeach()
 
-if (HAVE_AVFILTER_H)
-  list(APPEND QTAV_EXTRA_DEFS -DQTAV_HAVE_AVFILTER=1)
-  list(APPEND QTAV_EXTRA_LIBS avfilter)
-endif()
-if (HAVE_AVDEVICE_H)
-  list(APPEND QTAV_EXTRA_DEFS -DQTAV_HAVE_AVDEVICE=1)
-  list(APPEND QTAV_EXTRA_LIBS avdevice)
-endif()
-if (HAVE_AVRESAMPLE_H)
-  list(APPEND QTAV_EXTRA_DEFS -DQTAV_HAVE_AVRESAMPLE=1)
-  list(APPEND QTAV_EXTRA_LIBS avresample)
+if (HAVE_AVRESAMPLE)
   list(APPEND SOURCES AudioResamplerLibav.cpp)
 endif()
-if (HAVE_SWRESAMPLE_H)
-  list(APPEND QTAV_EXTRA_DEFS -DQTAV_HAVE_SWRESAMPLE=1)
-  list(APPEND QTAV_EXTRA_LIBS swresample)
+if (HAVE_SWRESAMPLE)
   list(APPEND SOURCES AudioResamplerFF.cpp)
 endif()
 
@@ -283,7 +377,7 @@ set_source_files_properties(${RESOURCES_SOURCES} PROPERTIES GENERATED ON)
 # add HEADERS for moc
 add_library(QtAV SHARED ${SOURCES} ${RESOURCES_SOURCES} ${HEADERS})
 qt5_use_modules(QtAV Core Gui)
-target_link_libraries(QtAV ${QTAV_EXTRA_LIBS})
+target_link_libraries(QtAV ${EXTRA_LIBS})
 set_target_properties(QtAV PROPERTIES
   MACOSX_RPATH ON
   FRAMEWORK ON
@@ -300,8 +394,9 @@ set_target_properties(QtAV PROPERTIES
 set(CMAKE_INCLUDE_CURRENT_DIR ON) # for .moc
 target_include_directories(QtAV
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${EXTRA_INCLUDE}
   )
 
 target_compile_definitions(QtAV
-  PRIVATE ${QTAV_EXTRA_DEFS}
+  PRIVATE ${EXTRA_DEFS}
 )
