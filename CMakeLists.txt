@@ -14,7 +14,21 @@ find_package(Qt5Core REQUIRED)
 message(STATUS "Qt version: ${Qt5Core_VERSION_STRING}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${QT5_CFLAGS}")
 
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+if(POLICY CMP0063) # visibility. since 3.3
+  cmake_policy(SET CMP0063 NEW)
+endif()
+set(CMAKE_CXX_VISIBILITY_PRESET hidden) #use with -fdata-sections -ffunction-sections to reduce target size
+set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
+
+set(CMAKE_AUTOMOC ON)
+
 add_subdirectory(src)
+find_package(Qt5Widgets)
+if(Qt5Widgets_FOUND)
+  add_subdirectory(widgets)
+endif()
 
 #set(CMAKE_REQUIRED_INCLUDES ${Qt5WebEngine_INCLUDE_DIRS};${Qt5WebEngine_PRIVATE_INCLUDE_DIRS})
 #set(CMAKE_REQUIRED_LIBRARIES ${QT5_LIBRARIES})

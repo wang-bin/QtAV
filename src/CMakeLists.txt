@@ -1,11 +1,11 @@
-
+set(MODULE QtAV)
 
 INCLUDE(CheckCCompilerFlag)
 INCLUDE(CheckIncludeFile)
 INCLUDE(CheckTypeSize)
 
 # set qt dirs first so we can find depends in qt install dir
-include_directories(${QTDIR}/include)
+include_directories(${QTDIR}/include) #TODO: remove. use external/include
 set(MODULES Core Gui)
 
 foreach(M ${MODULES})
@@ -43,7 +43,7 @@ if(EXISTS ${CMAKE_SOURCE_DIR}/contrib/capi/capi.h)
 endif()
 
 # check ffmpeg headers. assume libs exist. lib order matters if they are static
-set(AVMODULES avformat avcodec swresample swscale avutil) # avdevice avfilter avresample swscale)
+set(AVMODULES avformat avcodec swscale avutil) # avdevice avfilter avresample swscale)
 # CMAKE_FIND_ROOT_PATH_BOTH: ensure find_file can search from given paths for cross compiling, may be set to ONLY in toolchain file
 foreach(av ${AVMODULES})
     string(TOUPPER ${av} AV)
@@ -181,7 +181,7 @@ if (APPLE)
   endif()
 
   list(APPEND SOURCES output/audio/AudioOutputAudioToolbox.cpp)
-  list(APPEND EXTRA_LIBS "-framework CoreFoundation -framework AudioToolbox -framework OpenGL")
+  list(APPEND EXTRA_LIBS "-framework CoreFoundation" "-framework AudioToolbox" "-framework OpenGL")
 endif()
 
 set(DEP_H  OPENAL VIDEOTOOLBOX)
@@ -326,7 +326,7 @@ list(APPEND SOURCES
     output/video/VideoRenderer.cpp
     output/video/VideoOutput.cpp
     output/video/QPainterRenderer.cpp
-    output/video/OpenGLRendererBase.cpp
+    output/video/OpenGLRendererBase.cpp #TODO: check opengl
     output/video/OpenGLWindowRenderer.cpp
     output/AVOutput.cpp
     output/OutputSet.cpp
@@ -341,7 +341,7 @@ list(APPEND SOURCES
     VideoFrameExtractor.cpp
     )
 
-aux_source_directory(opengl SRC_OPENGL)
+aux_source_directory(opengl SRC_OPENGL) #TODO: check qt opengl support, egl
 list(APPEND SOURCES ${SRC_OPENGL})
 list(APPEND HEADERS ${SDK_HEADERS} ${SDK_PRIVATE_HEADERS}
     AVPlayerPrivate.h
@@ -369,21 +369,22 @@ list(APPEND HEADERS ${SDK_HEADERS} ${SDK_PRIVATE_HEADERS}
     ColorTransform.h
     )
 
-SET(RESOURCES QtAV.qrc shaders/shaders.qrc)
+SET(RESOURCES ${MODULE}.qrc shaders/shaders.qrc)
 SOURCE_GROUP("Resources" FILES ${RESOURCES})
 QT5_ADD_RESOURCES(RESOURCES_SOURCES ${RESOURCES})
 set_source_files_properties(${RESOURCES_SOURCES} PROPERTIES GENERATED ON)
 
 # add HEADERS for moc
-add_library(QtAV SHARED ${SOURCES} ${RESOURCES_SOURCES} ${HEADERS})
-qt5_use_modules(QtAV Core Gui)
-target_link_libraries(QtAV ${EXTRA_LIBS})
-set_target_properties(QtAV PROPERTIES
+add_library(${MODULE} SHARED ${SOURCES} ${RESOURCES_SOURCES} ${HEADERS})
+qt5_use_modules(${MODULE} LINK_PUBLIC Core Gui)
+list(REMOVE_DUPLICATES EXTRA_LIBS)
+target_link_libraries(${MODULE} LINK_PRIVATE ${EXTRA_LIBS})
+set_target_properties(${MODULE} PROPERTIES
   MACOSX_RPATH ON
   FRAMEWORK ON
   VERSION ${PROJECT_VERSION}
   SOVERSION ${SO_VERSION}
-  OUTPUT_NAME "QtAV"
+  OUTPUT_NAME ${MODULE}
   CLEAN_DIRECT_OUTPUT 1
   #LINK_SEARCH_START_STATIC 1
 )
@@ -392,11 +393,11 @@ set_target_properties(QtAV PROPERTIES
 #http://stackoverflow.com/questions/19866424/cmake-and-qt5-automoc-error
 #http://doc.qt.io/qt-5/cmake-manual.html
 set(CMAKE_INCLUDE_CURRENT_DIR ON) # for .moc
-target_include_directories(QtAV
+target_include_directories(${MODULE}
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${EXTRA_INCLUDE}
   )
 
-target_compile_definitions(QtAV
+target_compile_definitions(${MODULE}
   PRIVATE ${EXTRA_DEFS}
 )
