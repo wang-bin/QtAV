@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -123,7 +123,7 @@ void Logger(QtMsgType type, const QMessageLogContext &, const QString& qmsg)
      fflush(0);
      fileLogger()->write(msgArray);
      fileLogger()->write(QByteArray("\n"));
-     fileLogger()->flush();
+     //fileLogger()->flush(); // crash in qt5.7
 }
 
 QOptions get_common_options()
@@ -200,7 +200,6 @@ void do_common_options(const QOptions &options, const QString& appName)
         qDebug() << "set log file: " << logfile;
         fileLogger()->setFileName(logfile);
         if (fileLogger()->open(QIODevice::WriteOnly)) {
-            qDebug() << "Logger";
             qInstallMessageHandler(Logger);
         } else {
             qWarning() << "Failed to open log file '" << fileLogger()->fileName() << "': " << fileLogger()->errorString();
