@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2016)
 
@@ -90,9 +90,10 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
     }
     static int support_map = -1;
     if (support_map < 0) {
+        static const char* ext[] = { "GL_OES_mapbuffer", NULL};
         if (OpenGLHelper::isOpenGLES()) {
             support_map = QOpenGLContext::currentContext()->format().majorVersion() > 2 ||
-                    QOpenGLContext::currentContext()->hasExtension("GL_OES_mapbuffer");
+                    OpenGLHelper::hasExtension(ext);
         } else {
             support_map = 1;
         }
