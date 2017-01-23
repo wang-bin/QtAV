@@ -1,4 +1,5 @@
 set(MODULE QtAV)
+# TODO: translations, rpath, rc template
 
 INCLUDE(CheckCCompilerFlag)
 INCLUDE(CheckIncludeFile)
@@ -77,7 +78,7 @@ if (NOT HAVE_SWRESAMPLE)
   endif()
 endif()
 
-list(APPEND EXTRA_DEFS -DBUILD_QTAV_LIB -DQ_AV_EXPORT -D__STDC_CONSTANT_MACROS)
+list(APPEND EXTRA_DEFS -DBUILD_QTAV_LIB -D__STDC_CONSTANT_MACROS)
 
 check_include_file(ass/ass.h HAVE_ASS_H)
 if(HAVE_ASS_H)
@@ -217,9 +218,11 @@ set(SDK_HEADERS
     QtAV/AVMuxer.h
     QtAV/Filter.h
     QtAV/FilterContext.h
+    QtAV/GLSLFilter.h
     QtAV/LibAVFilter.h
     QtAV/EncodeFilter.h
     QtAV/Frame.h
+    QtAV/FrameReader.h
     QtAV/QPainterRenderer.h
     QtAV/Packet.h
     QtAV/AVError.h
@@ -238,6 +241,7 @@ set(SDK_HEADERS
     QtAV/VideoFrameExtractor.h
     QtAV/FactoryDefine.h
     QtAV/Statistics.h
+    QtAV/SubImage.h
     QtAV/Subtitle.h
     QtAV/SubtitleFilter.h
     QtAV/SurfaceInterop.h
@@ -300,9 +304,11 @@ list(APPEND SOURCES
     AVDemuxThread.cpp
     ColorTransform.cpp
     Frame.cpp
+    FrameReader.cpp
     filter/Filter.cpp
     filter/FilterContext.cpp
     filter/FilterManager.cpp
+    filter/GLSLFilter.cpp
     filter/LibAVFilter.cpp
     filter/SubtitleFilter.cpp
     filter/EncodeFilter.cpp
@@ -369,6 +375,7 @@ list(APPEND HEADERS ${SDK_HEADERS} ${SDK_PRIVATE_HEADERS}
     ColorTransform.h
     )
 
+# TODO: rc template
 SET(RESOURCES ${MODULE}.qrc shaders/shaders.qrc)
 SOURCE_GROUP("Resources" FILES ${RESOURCES})
 QT5_ADD_RESOURCES(RESOURCES_SOURCES ${RESOURCES})
@@ -387,6 +394,7 @@ set_target_properties(${MODULE} PROPERTIES
   OUTPUT_NAME ${MODULE}
   CLEAN_DIRECT_OUTPUT 1
   #LINK_SEARCH_START_STATIC 1
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
 )
 
 
@@ -395,6 +403,7 @@ set_target_properties(${MODULE} PROPERTIES
 set(CMAKE_INCLUDE_CURRENT_DIR ON) # for .moc
 target_include_directories(${MODULE}
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/QtAV
   PRIVATE ${EXTRA_INCLUDE}
   )
 

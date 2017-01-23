@@ -23,6 +23,11 @@ set(CMAKE_CXX_VISIBILITY_PRESET hidden) #use with -fdata-sections -ffunction-sec
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
 set(CMAKE_AUTOMOC ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON) # for .moc
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 
 add_subdirectory(src)
 find_package(Qt5Widgets)
@@ -30,5 +35,11 @@ if(Qt5Widgets_FOUND)
   add_subdirectory(widgets)
 endif()
 
-#set(CMAKE_REQUIRED_INCLUDES ${Qt5WebEngine_INCLUDE_DIRS};${Qt5WebEngine_PRIVATE_INCLUDE_DIRS})
-#set(CMAKE_REQUIRED_LIBRARIES ${QT5_LIBRARIES})
+option(BUILD_EXAMPLES "Build examples" ON)
+option(BUILD_TESTS "Build tests" ON)
+
+if(BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif()
+
+

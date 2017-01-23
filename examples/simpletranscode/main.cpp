@@ -18,7 +18,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <QApplication>
+#include <QCoreApplication>
 #include <QtCore/QDir>
 #include <QtAV>
 #include <QtAV/AVTranscoder.h>
@@ -28,7 +28,7 @@ using namespace QtAV;
 
 int main(int argc, char *argv[])
 {
-    QApplication a(argc, argv);
+    QCoreApplication a(argc, argv);
     qDebug("QtAV simpletranscode");
     qDebug("./simpletranscode -i infile -o outfile [-async] [-c:v video_codec (default: libx264)] [-hwdev dev] [-f format] [-an] [-ss HH:mm:ss.z]");
     qDebug("-an: disable audio");

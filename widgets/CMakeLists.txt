@@ -1,4 +1,6 @@
 set(MODULE QtAVWidgets)
+set(EXTRA_DEFS -DBUILD_QTAVWIDGETS_LIB)
+list(APPEND EXTRA_DEFS -DQTAV_HAVE_GL=1)
 set(SDK_HEADERS
   QtAVWidgets/global.h
   QtAVWidgets/GLWidgetRenderer2.h #TODO: check opengl
@@ -32,6 +34,7 @@ set_target_properties(${MODULE} PROPERTIES
   OUTPUT_NAME ${MODULE}
   CLEAN_DIRECT_OUTPUT 1
   #LINK_SEARCH_START_STATIC 1
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
 )
 
 
@@ -40,10 +43,10 @@ set_target_properties(${MODULE} PROPERTIES
 set(CMAKE_INCLUDE_CURRENT_DIR ON) # for .moc
 target_include_directories(${MODULE}
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-  PUBLIC ${CMAKE_SOURCE_DIR}/src
+  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/QtAVWidgets
   PRIVATE ${EXTRA_INCLUDE}
   )
 
-target_compile_definitions(QtAV
+target_compile_definitions(${MODULE}
   PRIVATE ${EXTRA_DEFS}
 )
