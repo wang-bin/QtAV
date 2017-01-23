@@ -1,3 +1,4 @@
+find_package(Qt5Sql REQUIRED)
 
 set(COMMON_SRC
   common/common.cpp
@@ -25,14 +26,12 @@ set_source_files_properties(${COMMON_RES} PROPERTIES GENERATED ON)
 
 # add HEADERS for moc
 add_library(common STATIC ${COMMON_SRC} ${COMMON_RES} ${COMMON_HEADERS})
-qt5_use_modules(common LINK_PUBLIC Core Gui Sql)
-target_compile_definitions(common
-  PUBLIC -DBUILD_COMMON_STATIC
+target_link_libraries(common
+  LINK_PUBLIC Qt5::Core Qt5::Gui ${COMMON_LIBS}
+  LINK_PRIVATE Qt5::Sql
 )
-target_include_directories(common
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-  )
-target_link_libraries(common LINK_PUBLIC ${COMMON_LIBS})
+target_compile_definitions(common PUBLIC -DBUILD_COMMON_STATIC)
+target_include_directories(common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 set(PLAYER_SRC
     player/main.cpp

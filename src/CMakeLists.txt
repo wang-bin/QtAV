@@ -1,32 +1,15 @@
 set(MODULE QtAV)
-# TODO: translations, rpath, rc template
+# TODO: translations, rpath, rc template,egl, dygl, uchardet, d3d11, cuda
 
 INCLUDE(CheckCCompilerFlag)
 INCLUDE(CheckIncludeFile)
+include(CheckLibraryExists)
 INCLUDE(CheckTypeSize)
 
 # set qt dirs first so we can find depends in qt install dir
 include_directories(${QTDIR}/include) #TODO: remove. use external/include
-set(MODULES Core Gui)
 
-foreach(M ${MODULES})
-    set(mod Qt5${M})
-    # look for the config files in the QtConfigRoot defined above
-    set(${mod}_DIR ${QTCONFIGROOT}${M})
-
-    # look for the actual package
-    find_package(${mod} REQUIRED)
-
-    include_directories(${${mod}_INCLUDE_DIRS})
-    include_directories(${${mod}_PRIVATE_INCLUDE_DIRS})
-
-    list(APPEND QT5_LIBRARIES ${${mod}_LIBRARIES})
-    list(APPEND QT5_CFLAGS ${${mod}_EXECUTABLE_COMPILE_FLAGS})
-endforeach(M ${MODULES})
-
-get_target_property(QtCore_location Qt5::Core LOCATION)
 get_filename_component(QTDIR "${QTDIR}" ABSOLUTE)
-#set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -L${QTDIR}/lib") # unix: for extra libs
 
 list(APPEND EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/external/include)
 if(APPLE)
@@ -247,7 +230,6 @@ set(SDK_HEADERS
     QtAV/SurfaceInterop.h
     QtAV/OpenGLVideo.h
     QtAV/OpenGLRendererBase.h
-    QtAV/OpenGLWindowRenderer.h
     QtAV/VideoShader.h
     QtAV/VideoShaderObject.h
     QtAV/version.h
@@ -333,7 +315,6 @@ list(APPEND SOURCES
     output/video/VideoOutput.cpp
     output/video/QPainterRenderer.cpp
     output/video/OpenGLRendererBase.cpp #TODO: check opengl
-    output/video/OpenGLWindowRenderer.cpp
     output/AVOutput.cpp
     output/OutputSet.cpp
     Statistics.cpp
@@ -347,7 +328,73 @@ list(APPEND SOURCES
     VideoFrameExtractor.cpp
     )
 
-aux_source_directory(opengl SRC_OPENGL) #TODO: check qt opengl support, egl
+#TODO: check qt opengl support, egl
+if(NOT Qt5Gui_VERSION VERSION_LESS 5.4.0)
+  list(APPEND SDK_HEADERS QtAV/OpenGLWindowRenderer.h)
+  list(APPEND SOURCES output/video/OpenGLWindowRenderer.cpp)
+endif()
+if(WIN32 OR WindowsStore OR WindowsPhone)
+  list(APPEND HEADERS
+    output/audio/xaudio2_compat.h
+    codec/video/VideoDecoderD3D.h
+  )
+  list(APPEND SOURCES
+    utils/DirectXHelper.cpp
+    output/audio/AudioOutputXAudio2.cpp
+    codec/video/VideoDecoderD3D.cpp
+  )
+  list(APPEND EXTRA_DEFS -DQTAV_HAVE_XAUDIO2=1)
+  if(WindowsStore OR WindowsPhone)
+    list(APPEND SOURCES io/WinRTIO.cpp)
+    list(APPEND EXTRA_LIBS
+      xaudio2 #only for xbox or >=win8
+      shcore
+    )
+  else()
+    list(APPEND EXTRA_LIBS ole32 user32) #ole32: CoInitializeEx for vs2008, but can not find the symbol at runtime
+    list(APPEND SOURCES
+      output/audio/AudioOutputDSound.cpp
+      directx/SurfaceInteropD3D9.cpp
+      directx/SurfaceInteropD3D9EGL.cpp # TODO: check EGL/dynamic gl
+      directx/SurfaceInteropD3D9GL.cpp # TODO: check desktop/dynamic gl
+      codec/video/VideoDecoderDXVA.cpp
+    )
+    list(APPEND EXTRA_DEFS
+      -DQTAV_HAVE_DSOUND=1
+      -DQTAV_HAVE_DXVA=1
+    )
+  endif()
+endif()
+check_library_exists(portaudio Pa_Initialize "" HAVE_PORTAUDIO)
+if(HAVE_PORTAUDIO)
+  list(APPEND SOURCES output/audio/AudioOutputPortAudio.cpp)
+  list(APPEND EXTRA_DEFS -DQTAV_HAVE_PORTAUDIO=1)
+  list(APPEND EXTRA_LIBS portaudio)
+endif()
+check_library_exists(pulse pa_threaded_mainloop_new "" HAVE_PULSE)
+if(HAVE_PULSE)
+  list(APPEND SOURCES output/audio/AudioOutputPulse.cpp)
+  list(APPEND EXTRA_DEFS -DQTAV_HAVE_PULSEAUDIO=1)
+  list(APPEND EXTRA_LIBS pulse)
+endif()
+check_library_exists(OpenSLES slCreateEngine "" HAVE_OPENSL)
+if(HAVE_OPENSL)
+  list(APPEND SOURCES output/audio/AudioOutputOpenSL.cpp)
+  list(APPEND EXTRA_DEFS -DQTAV_HAVE_OPENSL=1)
+  list(APPEND EXTRA_LIBS OpenSLES)
+endif()
+check_library_exists(va vaInitialize "" HAVE_VAAPI)
+if(HAVE_VAAPI)
+  list(APPEND SOURCES
+    vaapi/vaapi_helper.cpp
+    vaapi/SurfaceInteropVAAPI.cpp
+    codec/video/VideoDecoderVAAPI.cpp
+  )
+  list(APPEND EXTRA_DEFS -DQTAV_HAVE_VAAPI=1)
+  list(APPEND EXTRA_LIBS va X11)
+endif()
+
+aux_source_directory(opengl SRC_OPENGL) 
 list(APPEND SOURCES ${SRC_OPENGL})
 list(APPEND HEADERS ${SDK_HEADERS} ${SDK_PRIVATE_HEADERS}
     AVPlayerPrivate.h
@@ -383,9 +430,13 @@ set_source_files_properties(${RESOURCES_SOURCES} PROPERTIES GENERATED ON)
 
 # add HEADERS for moc
 add_library(${MODULE} SHARED ${SOURCES} ${RESOURCES_SOURCES} ${HEADERS})
-qt5_use_modules(${MODULE} LINK_PUBLIC Core Gui)
+
 list(REMOVE_DUPLICATES EXTRA_LIBS)
-target_link_libraries(${MODULE} LINK_PRIVATE ${EXTRA_LIBS})
+# qt5_use_modules(since 2.8.9) is deprecated since cmake 2.8.11
+target_link_libraries(${MODULE} 
+  LINK_PRIVATE ${EXTRA_LIBS}
+  LINK_PUBLIC Qt5::Core Qt5::Gui # will add include dirs, macros etc.
+)
 set_target_properties(${MODULE} PROPERTIES
   MACOSX_RPATH ON
   FRAMEWORK ON
@@ -397,7 +448,6 @@ set_target_properties(${MODULE} PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
 )
 
-
 #http://stackoverflow.com/questions/19866424/cmake-and-qt5-automoc-error
 #http://doc.qt.io/qt-5/cmake-manual.html
 set(CMAKE_INCLUDE_CURRENT_DIR ON) # for .moc
@@ -406,7 +456,4 @@ target_include_directories(${MODULE}
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/QtAV
   PRIVATE ${EXTRA_INCLUDE}
   )
-
-target_compile_definitions(${MODULE}
-  PRIVATE ${EXTRA_DEFS}
-)
+target_compile_definitions(${MODULE} PRIVATE ${EXTRA_DEFS})

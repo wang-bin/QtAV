@@ -1,9 +1,17 @@
 set(MODULE QtAVWidgets)
 set(EXTRA_DEFS -DBUILD_QTAVWIDGETS_LIB)
 list(APPEND EXTRA_DEFS -DQTAV_HAVE_GL=1)
+
+set(HAVE_QT5OPENGL 0)
+if(BUILD_QT5OPENGL)
+  find_package(Qt5OpenGL)
+  if(Qt5OpenGL_FOUND)
+    set(HAVE_QT5OPENGL 1)
+  endif()
+endif()
+
 set(SDK_HEADERS
   QtAVWidgets/global.h
-  QtAVWidgets/GLWidgetRenderer2.h #TODO: check opengl
   QtAVWidgets/GraphicsItemRenderer.h
   QtAVWidgets/OpenGLWidgetRenderer.h
   QtAVWidgets/QtAVWidgets
@@ -12,20 +20,35 @@ set(SDK_HEADERS
   QtAVWidgets/VideoPreviewWidget.h
   QtAVWidgets/WidgetRenderer.h
 )
-set(HEADERS ${SDK_HEADERS})
-list(APPEND SOURCES
+set(SOURCES
   global.cpp
-  GLWidgetRenderer2.cpp
   GraphicsItemRenderer.cpp
   OpenGLWidgetRenderer.cpp
   VideoPreviewWidget.cpp
   WidgetRenderer.cpp
 )
+if(HAVE_QT5OPENGL)
+  list(APPEND SDK_HEADERS QtAVWidgets/GLWidgetRenderer2.h)
+  list(APPEND SOURCES GLWidgetRenderer2.cpp)
+endif()
+
+# TODO: Qt5Gui_OPENGL_IMPLEMENTATION?
+if(Qt5Gui_VERSION VERSION_LESS 5.4.0)
+  list(APPEND SDK_HEADERS QtAVWidgets/QOpenGLWidget.h)
+  list(APPEND SOURCES QOpenGLWidget.cpp)
+endif()
+
+set(HEADERS ${SDK_HEADERS})
+
 # add HEADERS for moc
 add_library(${MODULE} SHARED ${SOURCES} ${RESOURCES_SOURCES} ${HEADERS})
-qt5_use_modules(${MODULE} LINK_PUBLIC Core Gui Widgets OpenGL) #TODO: check OpenGL
-target_link_libraries(${MODULE} LINK_PRIVATE ${EXTRA_LIBS})
-target_link_libraries(${MODULE} LINK_PUBLIC QtAV)
+target_link_libraries(${MODULE}
+  LINK_PRIVATE ${EXTRA_LIBS}
+  LINK_PUBLIC QtAV Qt5::Widgets
+)
+if(HAVE_QT5OPENGL)
+  target_link_libraries(${MODULE} LINK_PUBLIC Qt5::OpenGL)
+endif()
 set_target_properties(${MODULE} PROPERTIES
   MACOSX_RPATH ON
   FRAMEWORK ON
@@ -46,7 +69,4 @@ target_include_directories(${MODULE}
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/QtAVWidgets
   PRIVATE ${EXTRA_INCLUDE}
   )
-
-target_compile_definitions(${MODULE}
-  PRIVATE ${EXTRA_DEFS}
-)
+target_compile_definitions(${MODULE} PRIVATE ${EXTRA_DEFS})
