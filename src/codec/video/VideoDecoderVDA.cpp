@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -37,6 +37,12 @@ extern "C" {
 #include <VideoDecodeAcceleration/VDADecoder.h>
 #include "utils/Logger.h"
 
+// av_vda_default_init2: 2015-05-13 - cc48409 / e7c5e17 - lavc 56.39.100 / 56.23.0
+// I(wang bin) found the nv12 is the best format on mac. Then mpv developers confirmed it and pigoz added it to ffmpeg
+#if AV_MODULE_CHECK(LIBAVCODEC, 56, 23, 0, 39, 100)
+#define AV_VDA_NEW
+#endif
+
 #ifdef MAC_OS_X_VERSION_MIN_REQUIRED
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1070 //MAC_OS_X_VERSION_10_7
 #define OSX_TARGET_MIN_LION
@@ -46,6 +52,7 @@ extern "C" {
 #define kCFCoreFoundationVersionNumber10_7      635.00
 #endif
 
+// hwaccel 1.2: av_vda_xxx
 namespace QtAV {
 namespace cv {
 VideoFormat::PixelFormat format_from_cv(int cv);
@@ -90,7 +97,9 @@ public:
             out_fmt = VideoDecoderVDA::UYVY;
         copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
         description = QStringLiteral("VDA");
+#ifndef AV_VDA_NEW
         memset(&hw_ctx, 0, sizeof(hw_ctx));
+#endif
     }
     ~VideoDecoderVDAPrivate() {qDebug("~VideoDecoderVDAPrivate");}
     bool open() Q_DECL_OVERRIDE;
@@ -99,10 +108,18 @@ public:
     void* setup(AVCodecContext *avctx) Q_DECL_OVERRIDE;
     bool getBuffer(void **opaque, uint8_t **data) Q_DECL_OVERRIDE;
     void releaseBuffer(void *opaque, uint8_t *data) Q_DECL_OVERRIDE;
-    AVPixelFormat vaPixelFormat() const Q_DECL_OVERRIDE { return QTAV_PIX_FMT_C(VDA_VLD);}
+    AVPixelFormat vaPixelFormat() const Q_DECL_OVERRIDE {
+#ifdef AV_VDA_NEW
+        return AV_PIX_FMT_VDA;
+#else
+        return QTAV_PIX_FMT_C(VDA_VLD);
+#endif
+    }
 
     VideoDecoderVDA::PixelFormat out_fmt;
+#ifndef AV_VDA_NEW
     struct vda_context  hw_ctx;
+#endif
 };
 
 typedef struct {
@@ -175,7 +192,9 @@ VideoFrame VideoDecoderVDA::frame()
         CVPixelBufferRef cvbuf; // keep ref until video frame is destroyed
     public:
         SurfaceInteropCVBuffer(CVPixelBufferRef cv, bool gl) : glinterop(gl), cvbuf(cv) {
-            //CVPixelBufferRetain(cvbuf);
+#ifdef AV_VDA_NEW
+            CVPixelBufferRetain(cvbuf);
+#endif
         }
         ~SurfaceInteropCVBuffer() {
             CVPixelBufferRelease(cvbuf);
@@ -348,11 +367,17 @@ VideoDecoderVDA::PixelFormat VideoDecoderVDA::format() const
 
 void* VideoDecoderVDAPrivate::setup(AVCodecContext *avctx)
 {
+    releaseUSWC();
+#ifdef AV_VDA_NEW
+    av_vda_default_free(avctx);
+    AVVDAContext* hw_ctx = av_vda_alloc_context();
+    hw_ctx->cv_pix_fmt_type = out_fmt;
+    int status = av_vda_default_init2(avctx, hw_ctx);
+#else
     const int w = codedWidth(avctx);
     const int h = codedHeight(avctx);
     if (hw_ctx.decoder) {
         ff_vda_destroy_decoder(&hw_ctx);
-        releaseUSWC();
     } else {
         memset(&hw_ctx, 0, sizeof(hw_ctx));
         hw_ctx.format = 'avc1'; //fourcc
@@ -365,13 +390,18 @@ void* VideoDecoderVDAPrivate::setup(AVCodecContext *avctx)
     height = avctx->height;
     /* create the decoder */
     int status = ff_vda_create_decoder(&hw_ctx, codec_ctx->extradata, codec_ctx->extradata_size);
+#endif
     if (status) {
-        qWarning("Failed to create decoder (%i): %s", status, vda_err_str(status));
+        qWarning("Failed to init VDA decoder (%#x %s): %s", status, av_err2str(status), vda_err_str(status));
         return NULL;
     }
-    initUSWC(hw_ctx.width);
+    initUSWC(codedWidth(avctx));
     qDebug() << "VDA decoder created. format: " << cv::format_from_cv(out_fmt);
+#ifdef AV_VDA_NEW
+    return hw_ctx;
+#else
     return &hw_ctx;
+#endif
 }
 
 bool VideoDecoderVDAPrivate::getBuffer(void **opaque, uint8_t **data)
@@ -385,13 +415,6 @@ void VideoDecoderVDAPrivate::releaseBuffer(void *opaque, uint8_t *data)
 {
     Q_UNUSED(opaque);
     Q_UNUSED(data)
-#if 0
-    // released in getBuffer?
-    CVPixelBufferRef cv_buffer = (CVPixelBufferRef)data;
-    if (!cv_buffer)
-        return;
-    CVPixelBufferRelease(cv_buffer);
-#endif
 }
 
 bool VideoDecoderVDAPrivate::open()
@@ -415,20 +438,20 @@ bool VideoDecoderVDAPrivate::open()
     default:
         break;
     }
-#if 0
-    if (!codec_ctx->extradata || codec_ctx->extradata_size < 7) {
-        qWarning("VDA requires extradata.");
-        return false;
-    }
-#endif
-    return setup(codec_ctx);
+    return true;
+    //return setup(codec_ctx); // must be in get_format() in hwa 1.2
 }
 
 void VideoDecoderVDAPrivate::close()
 {
     restore(); //IMPORTANT. can not call restore in dtor because ctx is 0 there
     qDebug("destroying VDA decoder");
+#ifdef AV_VDA_NEW
+    if (codec_ctx)
+        av_vda_default_free(codec_ctx);
+#else
     ff_vda_destroy_decoder(&hw_ctx);
+#endif
     releaseUSWC();
 }
 
