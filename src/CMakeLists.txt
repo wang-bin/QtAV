@@ -3,6 +3,7 @@ set(MODULE QtAV)
 
 INCLUDE(CheckCCompilerFlag)
 INCLUDE(CheckIncludeFile)
+include(CheckIncludeFiles)
 include(CheckLibraryExists)
 INCLUDE(CheckTypeSize)
 
@@ -88,9 +89,9 @@ if(HAVE_ASS)
   )
 endif()
 
+set(DYNAMIC_OPENAL ${HAVE_CAPI})
 if(APPLE)
   set(HAVE_OPENAL 1)
-  set(DYNAMIC_OPENAL ${HAVE_CAPI})
   if(NOT DYNAMIC_OPENAL)
     list(APPEND EXTRA_LIBS "-framework OpenAL")
   endif()
@@ -182,7 +183,39 @@ if (HAVE_SWRESAMPLE)
   list(APPEND SOURCES AudioResamplerFF.cpp)
 endif()
 
-set(CMAKE_AUTOMOC ON)
+set(HAVE_EGL 0)
+set(DYNAMIC_GL 0)
+set(OPENGL 0)     #desktop opengl
+set(OPENGLES 0)   #glesv2
+#get_target_property(QtGui_location Qt5::Gui LOCATION) #dll path
+get_target_property(qmake Qt5::qmake LOCATION) #dll path
+execute_process(
+    COMMAND ${qmake} -query QT_INSTALL_HEADERS
+    OUTPUT_VARIABLE QT_INSTALL_HEADERS
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if(Qt5Gui_OPENGL_IMPLEMENTATION STREQUAL GL) # windows always set to GL
+  set(OPENGL 1)
+  if(EXISTS ${QT_INSTALL_HEADERS}/QtANGLE)
+    set(DYNAMIC_GL 1)
+    if(NOT DEFINED Qt5Gui_EGL_INCLUDE_DIRS)
+      set(Qt5Gui_EGL_INCLUDE_DIRS ${QT_INSTALL_HEADERS}/QtANGLE)
+    endif()
+  endif()
+  if(DEFINED Qt5Gui_EGL_LIBRARIES) # x11?
+    set(HAVE_EGL 1)
+  endif()
+else()
+  set(OPENGLES 1)
+endif()
+if(OPENGLES OR DYNAMIC_GL)
+  set(HAVE_EGL 1)
+endif()
+set(HAVE_OPENGL 1) # qt with opengl enabled
+if(NOT OPENGL AND NOT OPENGLES AND NOT DYNAMIC_GL)
+  set(HAVE_OPENGL 0)
+endif()
 
 set(SDK_HEADERS 
       QtAV/QtAV
@@ -290,7 +323,6 @@ list(APPEND SOURCES
     filter/Filter.cpp
     filter/FilterContext.cpp
     filter/FilterManager.cpp
-    filter/GLSLFilter.cpp
     filter/LibAVFilter.cpp
     filter/SubtitleFilter.cpp
     filter/EncodeFilter.cpp
@@ -314,7 +346,6 @@ list(APPEND SOURCES
     output/video/VideoRenderer.cpp
     output/video/VideoOutput.cpp
     output/video/QPainterRenderer.cpp
-    output/video/OpenGLRendererBase.cpp #TODO: check opengl
     output/AVOutput.cpp
     output/OutputSet.cpp
     Statistics.cpp
@@ -328,12 +359,39 @@ list(APPEND SOURCES
     VideoFrameExtractor.cpp
     )
 
-#TODO: check qt opengl support, egl
-if(NOT Qt5Gui_VERSION VERSION_LESS 5.4.0)
-  list(APPEND SDK_HEADERS QtAV/OpenGLWindowRenderer.h)
-  list(APPEND SOURCES output/video/OpenGLWindowRenderer.cpp)
+if(HAVE_OPENGL)
+  aux_source_directory(opengl SRC_OPENGL) 
+  list(APPEND SOURCES ${SRC_OPENGL})
+  list(APPEND SOURCES
+    filter/GLSLFilter.cpp
+    output/video/OpenGLRendererBase.cpp
+  )
+  if(NOT Qt5Gui_VERSION VERSION_LESS 5.4.0)
+    list(APPEND SDK_HEADERS QtAV/OpenGLWindowRenderer.h)
+    list(APPEND SOURCES output/video/OpenGLWindowRenderer.cpp)
+  endif()
+endif()
+
+if(HAVE_EGL)
+  list(APPEND SOURCES capi/egl_api.cpp)
+  # TODO: X11Extras
+  if(DEFINED Qt5Gui_EGL_INCLUDE_DIRS) # ANGLE
+    list(APPEND EXTRA_INCLUDE ${Qt5Gui_EGL_INCLUDE_DIRS})
+    #list(APPEND EXTRA_DEFS -DQTAV_HAVE_QT_EGL=1)
+    if(HAVE_CAPI AND NOT IOS)
+      list(APPEND EXTRA_DEFS -DQTAV_HAVE_EGL_CAPI=1)
+      if(WindowsPhone OR WindowsStore)
+        list(APPEND EXTRA_DEFS -DCAPI_LINK_EGL)
+      endif()
+    endif()
+  endif()
 endif()
 if(WIN32 OR WindowsStore OR WindowsPhone)
+  check_include_files(XAudio2.h HAVE_XAUDIO2_H)
+  if(NOT HAVE_XAUDIO2_H)
+    list(APPEND EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/contrib/dxsdk)
+  endif()
+  message("Qt5Gui_EGL_INCLUDE_DIRS: ${Qt5Gui_EGL_INCLUDE_DIRS}")
   list(APPEND HEADERS
     output/audio/xaudio2_compat.h
     codec/video/VideoDecoderD3D.h
@@ -355,10 +413,14 @@ if(WIN32 OR WindowsStore OR WindowsPhone)
     list(APPEND SOURCES
       output/audio/AudioOutputDSound.cpp
       directx/SurfaceInteropD3D9.cpp
-      directx/SurfaceInteropD3D9EGL.cpp # TODO: check EGL/dynamic gl
-      directx/SurfaceInteropD3D9GL.cpp # TODO: check desktop/dynamic gl
       codec/video/VideoDecoderDXVA.cpp
     )
+    if(HAVE_EGL)
+      list(APPEND SOURCES directx/SurfaceInteropD3D9EGL.cpp)
+    endif()
+    if(OPENGL OR DYNAMIC_GL)
+      list(APPEND SOURCES directx/SurfaceInteropD3D9GL.cpp)
+    endif()
     list(APPEND EXTRA_DEFS
       -DQTAV_HAVE_DSOUND=1
       -DQTAV_HAVE_DXVA=1
@@ -394,8 +456,6 @@ if(HAVE_VAAPI)
   list(APPEND EXTRA_LIBS va X11)
 endif()
 
-aux_source_directory(opengl SRC_OPENGL) 
-list(APPEND SOURCES ${SRC_OPENGL})
 list(APPEND HEADERS ${SDK_HEADERS} ${SDK_PRIVATE_HEADERS}
     AVPlayerPrivate.h
     AVDemuxThread.h
