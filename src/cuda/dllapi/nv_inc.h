@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -40,8 +40,13 @@ namespace cuda {
 //extern "C" {
 #endif /* __cplusplus */
 
+#ifdef HAVE_CUDA_H
 #include "cuda.h"
 #include "nvcuvid.h"
+#else
+#include "dynlink_cuda.h"
+#include "dynlink_nvcuvid.h"
+#endif
 // __CUDA_API_VERSION is undefined in cuda.h
 #ifdef CUDA_FORCE_API_VERSION
 #define __CUDA_API_VERSION CUDA_FORCE_API_VERSION

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -60,9 +60,6 @@ inline const char *_cudaGetErrorEnum(CUresult error)
         case CUDA_ERROR_ECC_UNCORRECTABLE: return "CUDA_ERROR_ECC_UNCORRECTABLE";
         case CUDA_ERROR_UNSUPPORTED_LIMIT: return "CUDA_ERROR_UNSUPPORTED_LIMIT";
         case CUDA_ERROR_CONTEXT_ALREADY_IN_USE: return "CUDA_ERROR_CONTEXT_ALREADY_IN_USE";
-        case CUDA_ERROR_PEER_ACCESS_UNSUPPORTED: return "CUDA_ERROR_PEER_ACCESS_UNSUPPORTED";
-        case CUDA_ERROR_INVALID_PTX: return "CUDA_ERROR_INVALID_PTX";
-        case CUDA_ERROR_INVALID_GRAPHICS_CONTEXT: return "CUDA_ERROR_INVALID_GRAPHICS_CONTEXT";
         case CUDA_ERROR_INVALID_SOURCE: return "CUDA_ERROR_INVALID_SOURCE";
         case CUDA_ERROR_FILE_NOT_FOUND: return "CUDA_ERROR_FILE_NOT_FOUND";
         case CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND: return "CUDA_ERROR_SHARED_OBJECT_SYMBOL_NOT_FOUND";
@@ -71,7 +68,6 @@ inline const char *_cudaGetErrorEnum(CUresult error)
         case CUDA_ERROR_INVALID_HANDLE: return "CUDA_ERROR_INVALID_HANDLE";
         case CUDA_ERROR_NOT_FOUND: return "CUDA_ERROR_NOT_FOUND";
         case CUDA_ERROR_NOT_READY: return "CUDA_ERROR_NOT_READY";
-        case CUDA_ERROR_ILLEGAL_ADDRESS: return "CUDA_ERROR_ILLEGAL_ADDRESS";
         case CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES: return "CUDA_ERROR_LAUNCH_OUT_OF_RESOURCES";
         case CUDA_ERROR_LAUNCH_TIMEOUT: return "CUDA_ERROR_LAUNCH_TIMEOUT";
         case CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING: return "CUDA_ERROR_LAUNCH_INCOMPATIBLE_TEXTURING";
@@ -79,18 +75,7 @@ inline const char *_cudaGetErrorEnum(CUresult error)
         case CUDA_ERROR_PEER_ACCESS_NOT_ENABLED: return "CUDA_ERROR_PEER_ACCESS_NOT_ENABLED";
         case CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE: return "CUDA_ERROR_PRIMARY_CONTEXT_ACTIVE";
         case CUDA_ERROR_CONTEXT_IS_DESTROYED: return "CUDA_ERROR_CONTEXT_IS_DESTROYED";
-        case CUDA_ERROR_ASSERT: return "CUDA_ERROR_ASSERT";
-        case CUDA_ERROR_TOO_MANY_PEERS: return "CUDA_ERROR_TOO_MANY_PEERS";
-        case CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED: return "CUDA_ERROR_HOST_MEMORY_ALREADY_REGISTERED";
-        case CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED: return "CUDA_ERROR_HOST_MEMORY_NOT_REGISTERED";
-        case CUDA_ERROR_HARDWARE_STACK_ERROR: return "CUDA_ERROR_HARDWARE_STACK_ERROR";
-        case CUDA_ERROR_ILLEGAL_INSTRUCTION: return "CUDA_ERROR_ILLEGAL_INSTRUCTION";
-        case CUDA_ERROR_MISALIGNED_ADDRESS: return "CUDA_ERROR_MISALIGNED_ADDRESS";
-        case CUDA_ERROR_INVALID_ADDRESS_SPACE: return "CUDA_ERROR_INVALID_ADDRESS_SPACE";
-        case CUDA_ERROR_INVALID_PC: return "CUDA_ERROR_INVALID_PC";
         case CUDA_ERROR_LAUNCH_FAILED: return "CUDA_ERROR_LAUNCH_FAILED";
-        case CUDA_ERROR_NOT_PERMITTED: return "CUDA_ERROR_NOT_PERMITTED";
-        case CUDA_ERROR_NOT_SUPPORTED: return "CUDA_ERROR_NOT_SUPPORTED";
         case CUDA_ERROR_UNKNOWN: return "CUDA_ERROR_UNKNOWN";
         default:
             return "CUDA_ERROR_UNKNOWN";
@@ -124,7 +109,7 @@ inline int _ConvertSMVer2Cores(int major, int minor)
         { 0x35, 192}, // Kepler Generation (SM 3.5) GK11x class
         { 0x37, 192}, // Kepler Generation (SM 3.7) GK21x class
         { 0x50, 128}, // Maxwell Generation (SM 5.0) GM10x class
-        { 0x52, 128}, // Maxwell Generation (SM 5.2) GM20x class
+        { 0x52, 128}, // Maxwell Generation (SM 5.2) GM20x class //enc: h264 yuv444p, hevc (libavcodec/nvenc.c)
         {   -1, -1 }
     };
     int index = 0;
