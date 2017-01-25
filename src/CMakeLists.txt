@@ -1,5 +1,5 @@
 set(MODULE QtAV)
-# TODO: translations, rpath, rc template,egl, dygl, uchardet, d3d11, cuda
+# TODO: translations, rpath, rc template,egl, dygl, uchardet, d3d11
 
 INCLUDE(CheckCCompilerFlag)
 INCLUDE(CheckIncludeFile)
@@ -454,6 +454,16 @@ if(HAVE_VAAPI)
   )
   list(APPEND EXTRA_DEFS -DQTAV_HAVE_VAAPI=1)
   list(APPEND EXTRA_LIBS va X11)
+endif()
+
+if(NOT APPLE)
+  list(APPEND EXTRA_DEFS -DQTAV_HAVE_CUDA=1)
+  list(APPEND EXTRA_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/cuda)
+  list(APPEND SOURCES
+    cuda/cuda_api.cpp
+    codec/video/SurfaceInteropCUDA.cpp
+    codec/video/VideoDecoderCUDA.cpp
+  )
 endif()
 
 list(APPEND HEADERS ${SDK_HEADERS} ${SDK_PRIVATE_HEADERS}
