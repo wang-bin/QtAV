@@ -188,12 +188,6 @@ set(DYNAMIC_GL 0)
 set(OPENGL 0)     #desktop opengl
 set(OPENGLES 0)   #glesv2
 #get_target_property(QtGui_location Qt5::Gui LOCATION) #dll path
-get_target_property(qmake Qt5::qmake LOCATION) #dll path
-execute_process(
-    COMMAND ${qmake} -query QT_INSTALL_HEADERS
-    OUTPUT_VARIABLE QT_INSTALL_HEADERS
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
 
 if(Qt5Gui_OPENGL_IMPLEMENTATION STREQUAL GL) # windows always set to GL
   set(OPENGL 1)
@@ -217,77 +211,9 @@ if(NOT OPENGL AND NOT OPENGLES AND NOT DYNAMIC_GL)
   set(HAVE_OPENGL 0)
 endif()
 
-set(SDK_HEADERS 
-      QtAV/QtAV
-    QtAV/QtAV.h
-    QtAV/dptr.h
-    QtAV/QtAV_Global.h
-    QtAV/AudioResampler.h
-    QtAV/AudioDecoder.h
-    QtAV/AudioEncoder.h
-    QtAV/AudioFormat.h
-    QtAV/AudioFrame.h
-    QtAV/AudioOutput.h
-    QtAV/AVDecoder.h
-    QtAV/AVEncoder.h
-    QtAV/AVDemuxer.h
-    QtAV/AVMuxer.h
-    QtAV/Filter.h
-    QtAV/FilterContext.h
-    QtAV/GLSLFilter.h
-    QtAV/LibAVFilter.h
-    QtAV/EncodeFilter.h
-    QtAV/Frame.h
-    QtAV/FrameReader.h
-    QtAV/QPainterRenderer.h
-    QtAV/Packet.h
-    QtAV/AVError.h
-    QtAV/AVPlayer.h
-    QtAV/AVTranscoder.h
-    QtAV/VideoCapture.h
-    QtAV/VideoRenderer.h
-    QtAV/VideoOutput.h
-    QtAV/MediaIO.h
-    QtAV/AVOutput.h
-    QtAV/AVClock.h
-    QtAV/VideoDecoder.h
-    QtAV/VideoEncoder.h
-    QtAV/VideoFormat.h
-    QtAV/VideoFrame.h
-    QtAV/VideoFrameExtractor.h
-    QtAV/FactoryDefine.h
-    QtAV/Statistics.h
-    QtAV/SubImage.h
-    QtAV/Subtitle.h
-    QtAV/SubtitleFilter.h
-    QtAV/SurfaceInterop.h
-    QtAV/OpenGLVideo.h
-    QtAV/OpenGLRendererBase.h
-    QtAV/VideoShader.h
-    QtAV/VideoShaderObject.h
-    QtAV/version.h
-    )
-set(SDK_PRIVATE_HEADERS
-    QtAV/private/factory.h
-    QtAV/private/mkid.h
-    QtAV/private/prepost.h
-    QtAV/private/singleton.h
-    QtAV/private/PlayerSubtitle.h
-    QtAV/private/SubtitleProcessor.h
-    QtAV/private/AVCompat.h
-    QtAV/private/AudioOutputBackend.h
-    QtAV/private/AudioResampler_p.h
-    QtAV/private/AVDecoder_p.h
-    QtAV/private/AVEncoder_p.h
-    QtAV/private/MediaIO_p.h
-    QtAV/private/AVOutput_p.h
-    QtAV/private/Filter_p.h
-    QtAV/private/Frame_p.h
-    QtAV/private/VideoShader_p.h
-    QtAV/private/VideoRenderer_p.h
-    QtAV/private/QPainterRenderer_p.h
-    QtAV/private/OpenGLRendererBase_p.h
-    )
+file(GLOB SDK_HEADERS QtAV/*.h)
+list(APPEND SDK_HEADERS QtAV/QtAV)
+file(GLOB SDK_PRIVATE_HEADERS QtAV/private/*.h)
 
 list(APPEND SOURCES
     AVCompat.cpp
@@ -510,6 +436,11 @@ target_link_libraries(${MODULE}
 set_target_properties(${MODULE} PROPERTIES
   MACOSX_RPATH ON
   FRAMEWORK ON
+    #  MACOSX_FRAMEWORK_INFO_PLIST qtav-Info.plist
+    #PUBLIC_HEADER ${SDK_HEADERS}
+    #PRIVATE_HEADER ${SDK_PRIVATE_HEADERS}
+    XCODE_ATTRIBUTE_INSTALL_PATH "@rpath"
+
   VERSION ${PROJECT_VERSION}
   SOVERSION ${SO_VERSION}
   OUTPUT_NAME ${MODULE}
@@ -522,8 +453,35 @@ set_target_properties(${MODULE} PROPERTIES
 #http://doc.qt.io/qt-5/cmake-manual.html
 set(CMAKE_INCLUDE_CURRENT_DIR ON) # for .moc
 target_include_directories(${MODULE}
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
-  PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/QtAV
+  PUBLIC $<INSTALL_INTERFACE:include>
+  PUBLIC $<INSTALL_INTERFACE:include/${MODULE}>
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${MODULE}>
   PRIVATE ${EXTRA_INCLUDE}
   )
 target_compile_definitions(${MODULE} PRIVATE ${EXTRA_DEFS})
+
+install(FILES
+  ${SDK_HEADERS}
+  DESTINATION ${QT_INSTALL_HEADERS}/${MODULE}
+)
+install(FILES
+  ${SDK_PRIVATE_HEADERS}
+  DESTINATION ${QT_INSTALL_HEADERS}/${MODULE}/private
+)
+install(TARGETS ${MODULE}
+  EXPORT ${MODULE}-targets
+  #PUBLIC_HEADER DESTINATION ${QT_INSTALL_HEADERS}/${MODULE} # list is too long
+  #PRIVATE_HEADER DESTINATION ${QT_INSTALL_HEADERS}/${MODULE}/private
+  RUNTIME DESTINATION ${QT_INSTALL_LIBS}/bin
+  LIBRARY DESTINATION ${QT_INSTALL_LIBS}/lib
+  ARCHIVE DESTINATION ${QT_INSTALL_LIBS}/lib
+  FRAMEWORK DESTINATION ${QT_INSTALL_LIBS}
+)
+
+# FIXME: why QTAV_INCLUDE_DIRS is empty?
+install(EXPORT ${MODULE}-targets
+  DESTINATION ${QT_INSTALL_LIBS}/cmake/${MODULE}
+  FILE ${MODULE}-config.cmake
+)
+
