@@ -192,7 +192,7 @@ set(OPENGLES 0)   #glesv2
 if(Qt5Gui_OPENGL_IMPLEMENTATION STREQUAL GL) # windows always set to GL
   set(OPENGL 1)
   if(EXISTS ${QT_INSTALL_HEADERS}/QtANGLE)
-    set(DYNAMIC_GL 1)
+    set(DYNAMIC_GL 1) # assume Qt5Gui_OPENGL_IMPLEMENTATION is not GL if build with ANGLE only
     if(NOT DEFINED Qt5Gui_EGL_INCLUDE_DIRS)
       set(Qt5Gui_EGL_INCLUDE_DIRS ${QT_INSTALL_HEADERS}/QtANGLE)
     endif()
@@ -209,6 +209,12 @@ endif()
 set(HAVE_OPENGL 1) # qt with opengl enabled
 if(NOT OPENGL AND NOT OPENGLES AND NOT DYNAMIC_GL)
   set(HAVE_OPENGL 0)
+endif()
+if(HAVE_OPENGL)
+  if(WIN32 AND NOT DYNAMIC_GL AND NOT OPENGLES) # msys2
+    find_package(OpenGL REQUIRED)
+    list(APPEND EXTRA_LIBS ${OPENGL_gl_LIBRARY})
+  endif()
 endif()
 
 file(GLOB SDK_HEADERS QtAV/*.h)
