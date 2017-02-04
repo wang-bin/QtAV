@@ -1,8 +1,9 @@
 set(MODULE QtAV)
-# TODO: translations, rpath, rc template,egl, dygl, uchardet, d3d11
+# TODO: translations, rpath, rc template, uchardet, x11extras, android
 
-INCLUDE(CheckCCompilerFlag)
-INCLUDE(CheckIncludeFile)
+include(CheckCCompilerFlag)
+include(CheckCXXSourceCompiles)
+include(CheckIncludeFile)
 include(CheckIncludeFiles)
 include(CheckLibraryExists)
 INCLUDE(CheckTypeSize)
@@ -146,6 +147,7 @@ if (APPLE)
         av_videotoolbox_alloc_context();
         return 0;
     }" HAVE_VIDEOTOOLBOX)
+  set(CMAKE_REQUIRED_LIBRARIES ${OLD_REQUIRED_LIBRARIES})
 
   if (HAVE_VIDEOTOOLBOX)
     list(APPEND EXTRA_DEFS -DQTAV_HAVE_VIDEOTOOLBOX=1)
@@ -185,17 +187,19 @@ endif()
 
 set(HAVE_EGL 0)
 set(DYNAMIC_GL 0)
-set(OPENGL 0)     #desktop opengl
-set(OPENGLES 0)   #glesv2
+set(OPENGL 0)     #desktop opengl only
+set(OPENGLES 0)   #glesv2 only
+set(HAVE_OPENGL 1) # qt with opengl enabled. 1 of DYNAMIC_GL, OPENGL and OPENGLES is true
 #get_target_property(QtGui_location Qt5::Gui LOCATION) #dll path
 
 if(Qt5Gui_OPENGL_IMPLEMENTATION STREQUAL GL) # windows always set to GL
-  set(OPENGL 1)
   if(EXISTS ${QT_INSTALL_HEADERS}/QtANGLE)
     set(DYNAMIC_GL 1) # assume Qt5Gui_OPENGL_IMPLEMENTATION is not GL if build with ANGLE only
     if(NOT DEFINED Qt5Gui_EGL_INCLUDE_DIRS)
       set(Qt5Gui_EGL_INCLUDE_DIRS ${QT_INSTALL_HEADERS}/QtANGLE)
     endif()
+  else()
+    set(OPENGL 1)
   endif()
   if(DEFINED Qt5Gui_EGL_LIBRARIES) # x11?
     set(HAVE_EGL 1)
@@ -206,7 +210,6 @@ endif()
 if(OPENGLES OR DYNAMIC_GL)
   set(HAVE_EGL 1)
 endif()
-set(HAVE_OPENGL 1) # qt with opengl enabled
 if(NOT OPENGL AND NOT OPENGLES AND NOT DYNAMIC_GL)
   set(HAVE_OPENGL 0)
 endif()
@@ -334,12 +337,46 @@ if(WIN32 OR WindowsStore OR WindowsPhone)
     codec/video/VideoDecoderD3D.cpp
   )
   list(APPEND EXTRA_DEFS -DQTAV_HAVE_XAUDIO2=1)
+  set(OLD_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
+  set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} -lavcodec)
+  check_cxx_source_compiles("
+  extern \"C\" {
+  #include <libavcodec/d3d11va.h>
+  }
+  #include <wrl/client.h> //ComPtr is used in QtAV
+  int main() {
+    av_d3d11va_alloc_context();
+    D3D11_VIDEO_PROCESSOR_STREAM s; //used by vp
+    return 0;
+  }
+  " HAVE_D3D11)
+  set(CMAKE_REQUIRED_LIBRARIES ${OLD_REQUIRED_LIBRARIES})
+  if(HAVE_D3D11)
+    # https://crascit.com/2015/03/28/enabling-cxx11-in-cmake/ (global and specified target)
+    set(CMAKE_CXX_STANDARD 11)
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    list(APPEND EXTRA_DEFS -DQTAV_HAVE_D3D11VA=1)
+    list(APPEND SOURCES
+      codec/video/VideoDecoderD3D11.cpp
+      directx/SurfaceInteropD3D11.cpp
+      directx/D3D11VP.cpp
+    )
+    if(HAVE_EGL)
+      list(APPEND SOURCES directx/SurfaceInteropD3D11EGL.cpp)
+    endif()
+    if(HAVE_OPENGL AND NOT OPENGLES) # dynamic gl or desktop
+      list(APPEND SOURCES directx/SurfaceInteropD3D11GL.cpp)
+    endif()
+  endif()
   if(WindowsStore OR WindowsPhone)
     list(APPEND SOURCES io/WinRTIO.cpp)
     list(APPEND EXTRA_LIBS
       xaudio2 #only for xbox or >=win8
       shcore
     )
+    if(HAVE_D3D11)
+      list(APPEND EXTRA_LIBS d3d11)
+    endif()
   else()
     list(APPEND EXTRA_LIBS ole32 user32) #ole32: CoInitializeEx for vs2008, but can not find the symbol at runtime
     list(APPEND SOURCES
