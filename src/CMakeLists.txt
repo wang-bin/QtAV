@@ -140,7 +140,7 @@ if (APPLE)
   set(CMAKE_CXX_SYSTEM_FRAMEWORK_SEARCH_FLAG "-F ") # original is "-iframework", lots of build errors
   set(CMAKE_C_SYSTEM_FRAMEWORK_SEARCH_FLAG "-F ")
   set(OLD_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
-  set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} -lavcodec)
+  set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} avcodec)
   check_c_source_compiles(
     "#include <libavcodec/videotoolbox.h>
     int main() {
@@ -338,8 +338,12 @@ if(WIN32 OR WindowsStore OR WindowsPhone)
   )
   list(APPEND EXTRA_DEFS -DQTAV_HAVE_XAUDIO2=1)
   set(OLD_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
-  set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} -lavcodec)
+  set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} avcodec) # TODO: lib dir
+  set(OLD_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
+  set(CMAKE_REQUIRED_INCLUDES ${EXTRA_INCLUDE} ${CMAKE_CURRENT_SOURCE_DIR})
   check_cxx_source_compiles("
+  #include \"directx/dxcompat.h\"
+  #include <d3d11.h>
   extern \"C\" {
   #include <libavcodec/d3d11va.h>
   }
@@ -350,6 +354,7 @@ if(WIN32 OR WindowsStore OR WindowsPhone)
     return 0;
   }
   " HAVE_D3D11)
+  set(CMAKE_REQUIRED_INCLUDES ${OLD_REQUIRED_INCLUDES})
   set(CMAKE_REQUIRED_LIBRARIES ${OLD_REQUIRED_LIBRARIES})
   if(HAVE_D3D11)
     # https://crascit.com/2015/03/28/enabling-cxx11-in-cmake/ (global and specified target)
