@@ -83,6 +83,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 # copy files to a dir need '/' at the end
 mac_framework {
   sdk_install.commands = $$quote($$COPY_DIR $$system_path($$PROJECT_LIBDIR/$${MODULE_FULL_NAME}.framework) $$system_path($$[QT_INSTALL_LIBS]))
+  sdk_install.commands += $$quote($$RM $$system_path($$[QT_INSTALL_LIBS])/$${MODULE_FULL_NAME}.framework/*.prl)
 } else {
   sdk_install.commands = $$quote($$MKDIR $$system_path($$[QT_INSTALL_HEADERS]/$${MODULE_FULL_NAME}/))
   sdk_install.commands += $$quote($$COPY $$system_path($$PROJECT_LIBDIR/*Qt*AV*.$$LIBSUFFIX*) $$system_path($$[QT_INSTALL_LIBS]/))
