@@ -18,7 +18,8 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-#include "GeometryRenderer.h"
+#include "QtAV/GeometryRenderer.h"
+#include "opengl/OpenGLHelper.h"
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #define QGLF(f) QOpenGLContext::currentContext()->functions()->f
 #else

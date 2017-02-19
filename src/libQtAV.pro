@@ -351,6 +351,8 @@ config_gl|config_opengl {
   }
   OTHER_FILES += shaders/planar.f.glsl shaders/rgb.f.glsl
   SDK_HEADERS *= \
+    QtAV/Geometry.h \
+    QtAV/GeometryRenderer.h \
     QtAV/GLSLFilter.h \
     QtAV/OpenGLRendererBase.h \
     QtAV/OpenGLTypes.h \
@@ -363,8 +365,6 @@ config_gl|config_opengl {
   HEADERS *= \
     opengl/gl_api.h \
     opengl/OpenGLHelper.h \
-    opengl/Geometry.h \
-    opengl/GeometryRenderer.h \
     opengl/SubImagesGeometry.h \
     opengl/SubImagesRenderer.h \
     opengl/ShaderManager.h
@@ -416,7 +416,7 @@ winrt {
 glibc_compat: *linux*: LIBS += -lrt  # do not use clock_gettime in libc, GLIBC_2.17 is not available on old system
 static_ffmpeg {
 # libs needed by mac static ffmpeg. corefoundation: vda, avdevice. coca: vf_coreimage
-  mac|ios: LIBS += -liconv -lbz2 -llzma -lz -framework CoreFoundation -framework Security -framework Cocoa
+  mac|ios: LIBS += -liconv -lbz2 -llzma -lz -framework CoreFoundation -framework Security # -framework Cocoa Cocoa is not available on ios10
   win32: LIBS *= -lws2_32 -lstrmiids -lvfw32 -luuid
   !mac:*g++* {
     LIBS *= -lz

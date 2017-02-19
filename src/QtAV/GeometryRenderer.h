@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2016)
 
@@ -20,13 +20,17 @@
 ******************************************************************************/
 #ifndef QTAV_GEOMETRYRENDERER_H
 #define QTAV_GEOMETRYRENDERER_H
-#include "opengl/Geometry.h"
-#include "opengl/OpenGLHelper.h"
+#include <QtAV/Geometry.h>
 #define QT_VAO (QT_VERSION >= QT_VERSION_CHECK(5, 1, 0))
 #if QT_VAO
 #include <QtGui/QOpenGLVertexArrayObject>
 #endif //QT_VAO
-
+# if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+#include <QtGui/QOpenGLBuffer>
+#else
+#include <QtOpenGL/QGLBuffer>
+typedef QGLBuffer QOpenGLBuffer;
+#endif
 QT_BEGIN_NAMESPACE
 class QOpenGLShaderProgram;
 QT_END_NAMESPACE
@@ -36,7 +40,7 @@ namespace QtAV {
  * \brief The GeometryRenderer class
  * TODO: support multiple geometry with same primitive (glPrimitiveRestartIndex, glDrawArraysInstanced, glDrawArraysInstanced, glMultiDrawArrays...)
  */
-class GeometryRenderer
+class Q_AV_EXPORT GeometryRenderer
 {
 public:
     // rendering features. Use all possible features as the default.

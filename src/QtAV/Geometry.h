@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2016)
 
@@ -37,7 +37,7 @@ enum DataType { //equals to GL_BYTE etc.
     TypeF32 = 0x1406 //F32
 };
 
-class Attribute {
+class Q_AV_EXPORT Attribute {
     bool m_normalize;
     DataType m_type;
     int m_tupleSize, m_offset;
@@ -58,7 +58,7 @@ public:
     }
 };
 #ifndef QT_NO_DEBUG_STREAM
-QDebug operator<<(QDebug debug, const Attribute &a);
+Q_AV_EXPORT QDebug operator<<(QDebug debug, const Attribute &a);
 #endif
 
 /*!
@@ -69,7 +69,7 @@ QDebug operator<<(QDebug debug, const Attribute &a);
  * }
  * \endcode
  */
-class Geometry {
+class Q_AV_EXPORT Geometry {
 public:
     /// Strip or Triangles is preferred by ANGLE. The values are equal to opengl
     enum Primitive {
@@ -122,7 +122,7 @@ protected:
     QByteArray m_idata;
 };
 
-class TexturedGeometry : public Geometry {
+class Q_AV_EXPORT TexturedGeometry : public Geometry {
 public:
     TexturedGeometry();
     /*!
@@ -150,7 +150,7 @@ protected:
     QVector<Attribute> a;
 };
 
-class Sphere : public TexturedGeometry {
+class Q_AV_EXPORT Sphere : public TexturedGeometry {
 public:
     Sphere();
     void setResolution(int w, int h); // >= 2x2

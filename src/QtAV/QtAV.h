@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -47,6 +47,8 @@
 #include <QtAV/LibAVFilter.h>
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5,0,0) && !defined(QT_NO_OPENGL)) || defined(QT_OPENGL_LIB)
+#include <QtAV/Geometry.h>
+#include <QtAV/GeometryRenderer.h>
 #include <QtAV/VideoShader.h>
 #include <QtAV/OpenGLVideo.h>
 #include <QtAV/ConvolutionShader.h>
