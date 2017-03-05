@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -513,11 +513,6 @@ bool AVDemuxThread::waitForStarted(int msec)
     return true;
 }
 
-void AVDemuxThread::eofDecoded()
-{
-    Q_EMIT mediaStatusChanged(QtAV::EndOfMedia);
-}
-
 void AVDemuxThread::run()
 {
     m_buffering = false;
@@ -546,7 +541,6 @@ void AVDemuxThread::run()
         vqueue->setBlocking(true);
     }
     connect(thread, SIGNAL(seekFinished(qint64)), this, SIGNAL(seekFinished(qint64)), Qt::DirectConnection);
-    connect(thread, SIGNAL(eofDecoded()), this, SLOT(eofDecoded()));
     seek_tasks.clear();
     int was_end = 0;
     if (ademuxer) {
@@ -585,7 +579,6 @@ void AVDemuxThread::run()
             if (m_buffering) {
                 m_buffering = false;
                 Q_EMIT mediaStatusChanged(QtAV::BufferedMedia);
-                Q_EMIT mediaStatusChanged(QtAV::EndOfMedia);
             }
             was_end = qMin(was_end + 1, kMaxEof);
             bool exit_thread = !user_paused;
@@ -606,6 +599,10 @@ void AVDemuxThread::run()
             // wait for a/v thread finished
             msleep(100);
             continue;
+        }
+        if (demuxer->mediaStatus() == StalledMedia) {
+            qDebug("stalled media. exiting demuxing thread");
+            break;
         }
         was_end = 0;
         if (tryPause()) {
@@ -717,9 +714,12 @@ void AVDemuxThread::run()
         video_thread->pause(false);
         video_thread->wait(500);
     }
-    thread->disconnect(this, SIGNAL(eofDecoded()));
     thread->disconnect(this, SIGNAL(seekFinished(qint64)));
     qDebug("Demux thread stops running....");
+    if (demuxer->atEnd())
+        Q_EMIT mediaStatusChanged(QtAV::EndOfMedia);
+    else
+        Q_EMIT mediaStatusChanged(QtAV::StalledMedia);
 }
 
 bool AVDemuxThread::tryPause(unsigned long timeout)

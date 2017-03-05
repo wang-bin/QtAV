@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -435,18 +435,20 @@ bool AVDemuxer::readFrame()
         if (ret == AVERROR_EOF
                 || avio_feof(d->format_ctx->pb)) {
             if (!d->eof) {
-                if (getInterruptStatus()) { //eof error if interrupted!
+                if (getInterruptStatus()) {
                     AVError::ErrorCode ec(AVError::ReadError);
                     QString msg(tr("error reading stream data"));
                     handleError(ret, &ec, msg);
                 }
-                d->eof = true;
+                if (mediaStatus() != StalledMedia) {
+                    d->eof = true;
 #if 0 // EndOfMedia when demux thread finished
-                d->started = false;
-                setMediaStatus(EndOfMedia);
-                Q_EMIT finished();
+                    d->started = false;
+                    setMediaStatus(EndOfMedia);
+                    Q_EMIT finished();
 #endif
-                qDebug("End of file. erreof=%d feof=%d", ret == AVERROR_EOF, avio_feof(d->format_ctx->pb));
+                    qDebug("End of file. erreof=%d feof=%d", ret == AVERROR_EOF, avio_feof(d->format_ctx->pb));
+                }
             }
             return false;
         }
