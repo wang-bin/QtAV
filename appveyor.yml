@@ -8,19 +8,19 @@ branches:
 environment:
 
   matrix:
+  - arch: x86
+    cc: VS2015
+    qt: 5.8
+    toolchain_version: 14
+    mode: release
+    QTDIR: C:\Qt\5.7\msvc2015
+
   - arch: x64
     cc: VS2013
     qt: 5.6
     toolchain_version: 12
     mode: debug
     QTDIR: C:\Qt\5.6\msvc2013_64
-
-  - arch: x86
-    cc: VS2015
-    qt: 5.7
-    toolchain_version: 14
-    mode: release
-    QTDIR: C:\Qt\5.7\msvc2015
 
   - arch: 32
     cc: MinGW
