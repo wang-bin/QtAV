@@ -13,7 +13,7 @@ environment:
     qt: 5.8
     toolchain_version: 14
     mode: release
-    QTDIR: C:\Qt\5.7\msvc2015
+    QTDIR: C:\Qt\5.8\msvc2015
 
   - arch: x64
     cc: VS2013
