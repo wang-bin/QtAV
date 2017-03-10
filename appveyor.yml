@@ -17,7 +17,7 @@ environment:
 
   - arch: x86
     cc: VS2015
-    qt: 5.7
+    qt: 5.8
     toolchain_version: 14
     mode: release
     QTDIR: C:\Qt\5.7\msvc2015
@@ -83,7 +83,7 @@ deploy:
   provider: FTP
   protocol: sftp
   host: frs.sourceforge.net
-  username: novesky,qtav
+  username: novesky
   password:
     secure: 2mQg4oxdX8S7rMJz2TCGGg==
   folder: /home/frs/project/q/qt/qtav/ci # why always relative path even if starts with / ? I have to make a link home/frs/project/q/qt/qtav/ci => /home/frs/project/q/qt/qtav/ci
