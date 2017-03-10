@@ -89,6 +89,18 @@ SOURCE_GROUP("Resources" FILES ${PLAYER_QRC})
 qt5_add_resources(PLAYER_RES ${PLAYER_QRC})
 set_source_files_properties(${PLAYER_RES} PROPERTIES GENERATED ON)
 
+if(Qt5Quick_FOUND)
+  set(QMLPLAYER_QRC QMLPlayer/qmlplayer.qrc)
+  qt5_add_resources(QMLPLAYER_RES ${QMLPLAYER_QRC})
+  set_source_files_properties(${QMLPLAYER_RES} PROPERTIES GENERATED ON)
+  add_executable(QMLPlayer
+      QMLPlayer/main.cpp
+      QMLPlayer/qtquick2applicationviewer/qtquick2applicationviewer.cpp
+      QMLPlayer/qtquick2applicationviewer/qtquick2applicationviewer.h
+      ${QMLPLAYER_RES})
+  target_include_directories(QMLPlayer PRIVATE QMLPlayer/qtquick2applicationviewer)
+  target_link_libraries(QMLPlayer Qt5::Quick common)
+endif()
 if(Qt5Widgets_FOUND)
   add_executable(Player ${PLAYER_SRC} ${PLAYER_HEADERS} ${PLAYER_RES})
   target_link_libraries(Player QtAVWidgets common)

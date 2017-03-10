@@ -1,3 +1,10 @@
+# - Try to find the QtAV library
+#
+# Once done this will define
+#
+#  QTAV_FOUND        - system has libqtav
+#  QTAV_INCLUDE_DIRS - the libqtav include directory
+#  QTAV_LIBRARIES    - Link these to use libqtav
 
 find_package(Qt5 QUIET REQUIRED NO_MODULE COMPONENTS Core)
 
