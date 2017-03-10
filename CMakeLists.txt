@@ -27,6 +27,11 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 execute_process(
+    COMMAND ${qmake} -query QT_INSTALL_QML
+    OUTPUT_VARIABLE QT_INSTALL_QML
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+execute_process(
     COMMAND ${qmake} -query QT_INSTALL_PREFIX
     OUTPUT_VARIABLE QT_INSTALL_PREFIX
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -51,10 +56,12 @@ if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(QTAV_INSTALL_HEADERS ${QT_INSTALL_HEADERS} CACHE PATH "")
   set(QTAV_INSTALL_LIBS ${QT_INSTALL_LIBS} CACHE PATH "")
   set(QTAV_INSTALL_BINS ${QT_INSTALL_BINS} CACHE PATH "")
+  set(QTAV_INSTALL_QML ${QT_INSTALL_QML} CACHE PATH "")
 else()
   set(QTAV_INSTALL_HEADERS ${CMAKE_INSTALL_PREFIX}/include CACHE PATH "")
   set(QTAV_INSTALL_LIBS ${CMAKE_INSTALL_PREFIX}/lib CACHE PATH "")
   set(QTAV_INSTALL_BINS ${CMAKE_INSTALL_PREFIX}/bin CACHE PATH "")
+  set(QTAV_INSTALL_QML ${CMAKE_INSTALL_PREFIX}/qml CACHE PATH "")
 endif()
 
 message(STATUS "Qt version: ${Qt5Core_VERSION_STRING}")
@@ -62,6 +69,7 @@ message(STATUS "Qt prefix: ${QT_INSTALL_PREFIX}")
 message(STATUS "QtAV headers prefix: ${QTAV_INSTALL_HEADERS}")
 message(STATUS "QtAV libs prefix: ${QTAV_INSTALL_LIBS}")
 message(STATUS "QtAV bins prefix: ${QTAV_INSTALL_BINS}")
+message(STATUS "QtAV qml prefix: ${QTAV_INSTALL_QML}")
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
@@ -79,7 +87,10 @@ find_package(Qt5Widgets)
 if(Qt5Widgets_FOUND)
   add_subdirectory(widgets)
 endif()
-
+find_package(Qt5 COMPONENTS Qml Quick)
+if(Qt5Qml_FOUND AND Qt5Quick_FOUND)
+  add_subdirectory(qml)
+endif()
 
 if(BUILD_EXAMPLES)
   add_subdirectory(examples)
