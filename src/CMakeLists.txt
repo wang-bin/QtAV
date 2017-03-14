@@ -10,7 +10,6 @@ INCLUDE(CheckTypeSize)
 
 # set qt dirs first so we can find depends in qt install dir
 include_directories(${QTDIR}/include) #TODO: remove. use external/include
-
 get_filename_component(QTDIR "${QTDIR}" ABSOLUTE)
 
 list(APPEND EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/external/include)
@@ -471,9 +470,11 @@ SET(RESOURCES ${MODULE}.qrc shaders/shaders.qrc)
 SOURCE_GROUP("Resources" FILES ${RESOURCES})
 QT5_ADD_RESOURCES(RESOURCES_SOURCES ${RESOURCES})
 set_source_files_properties(${RESOURCES_SOURCES} PROPERTIES GENERATED ON)
-
+if(WIN32)
+  set(RC_FILE QtAV.rc)
+endif()
 # add HEADERS for moc
-add_library(${MODULE} SHARED ${SOURCES} ${RESOURCES_SOURCES} ${HEADERS})
+add_library(${MODULE} SHARED ${SOURCES} ${RESOURCES_SOURCES} ${HEADERS} ${RC_FILE})
 
 list(REMOVE_DUPLICATES EXTRA_LIBS)
 # qt5_use_modules(since 2.8.9) is deprecated since cmake 2.8.11
