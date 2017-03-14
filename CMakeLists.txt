@@ -92,6 +92,20 @@ install(FILES
   DESTINATION ${QT_INSTALL_LIBS}/cmake
 )
 
+if(CMAKE_GENERATOR MATCHES "Visual Studio.*")
+  set(UCRT_INCLUDE $ENV{UniversalCRTSDKDir}Include\\$ENV{UCRTVersion}\\ucrt)
+  set(VC_ARCH $ENV{Platform})
+  if(NOT VC_ARCH)
+    set(VC_ARCH x86)
+  endif()
+  set(UCRT_LIB $ENV{UniversalCRTSDKDir}Lib\\$ENV{UCRTVersion}\\ucrt\\${VC_ARCH})
+  if(EXISTS ${UCRT_INCLUDE})
+  message("VS project. ucrt: ${UCRT_LIB}")
+    include_directories(${UCRT_INCLUDE})
+    link_libraries(${CMAKE_LIBRARY_PATH_FLAG}${UCRT_LIB})
+  endif()
+endif()
+
 add_subdirectory(src)
 find_package(Qt5Widgets)
 if(Qt5Widgets_FOUND)
