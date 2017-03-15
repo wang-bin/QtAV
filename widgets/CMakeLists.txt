@@ -42,7 +42,8 @@ endif()
 
 set(HEADERS ${SDK_HEADERS})
 if(WIN32)
-  set(RC_FILE QtAVWidgets.rc)
+  set(RC_FILE ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/QtAV.rc.in ${RC_FILE})
 endif()
 # add HEADERS for moc
 add_library(${MODULE} SHARED ${SOURCES} ${RESOURCES_SOURCES} ${HEADERS} ${RC_FILE})

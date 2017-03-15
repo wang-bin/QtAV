@@ -1,5 +1,5 @@
 set(MODULE QtAV)
-# TODO: translations, rpath, rc template, uchardet, x11extras, android
+# TODO: translations, rpath, uchardet, x11extras, android
 
 include(CheckCCompilerFlag)
 include(CheckCXXSourceCompiles)
@@ -13,6 +13,7 @@ include_directories(${QTDIR}/include) #TODO: remove. use external/include
 get_filename_component(QTDIR "${QTDIR}" ABSOLUTE)
 
 list(APPEND EXTRA_INCLUDE ${CMAKE_SOURCE_DIR}/external/include)
+list(APPEND EXTRA_LIBS ${CMAKE_LIBRARY_PATH_FLAG}${CMAKE_SOURCE_DIR}/external/lib)
 if(APPLE)
     if(IOS)
       #set_xcode_property(myioslib IPHONEOS_DEPLOYMENT_TARGET "8.0")
@@ -471,7 +472,8 @@ SOURCE_GROUP("Resources" FILES ${RESOURCES})
 QT5_ADD_RESOURCES(RESOURCES_SOURCES ${RESOURCES})
 set_source_files_properties(${RESOURCES_SOURCES} PROPERTIES GENERATED ON)
 if(WIN32)
-  set(RC_FILE QtAV.rc)
+  set(RC_FILE ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/QtAV.rc.in ${RC_FILE})
 endif()
 # add HEADERS for moc
 add_library(${MODULE} SHARED ${SOURCES} ${RESOURCES_SOURCES} ${HEADERS} ${RC_FILE})

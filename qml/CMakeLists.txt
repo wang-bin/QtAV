@@ -30,7 +30,11 @@ if(NOT Qt5Qml_VERSION VERSION_LESS 5.2.0)
   list(APPEND SOURCES QuickFBORenderer.cpp)
 endif()
 # add HEADERS for moc
-add_library(${MODULE} SHARED ${SOURCES} ${RESOURCES_SOURCES} ${HEADERS})
+if(WIN32)
+  set(RC_FILE ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/QtAV.rc.in ${RC_FILE})
+endif()
+add_library(${MODULE} SHARED ${SOURCES} ${RESOURCES_SOURCES} ${HEADERS} ${RC_FILE})
 target_link_libraries(${MODULE}
   LINK_PRIVATE ${EXTRA_LIBS}
   LINK_PUBLIC QtAV Qt5::Qml Qt5::Quick
@@ -42,6 +46,7 @@ set_target_properties(${MODULE} PROPERTIES
   MACOSX_RPATH ON
   FRAMEWORK OFF
   LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/QtAV
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/QtAV
 )
 
 #http://stackoverflow.com/questions/19866424/cmake-and-qt5-automoc-error

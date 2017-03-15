@@ -93,16 +93,28 @@ if(Qt5Quick_FOUND)
   set(QMLPLAYER_QRC QMLPlayer/qmlplayer.qrc)
   qt5_add_resources(QMLPLAYER_RES ${QMLPLAYER_QRC})
   set_source_files_properties(${QMLPLAYER_RES} PROPERTIES GENERATED ON)
+  set(MODULE QMLPlayer)
+  if(WIN32)
+    set(RC_FILE ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.rc)
+    configure_file(${CMAKE_SOURCE_DIR}/cmake/QtAV.rc.in ${RC_FILE})
+  endif()
   add_executable(QMLPlayer
       QMLPlayer/main.cpp
       QMLPlayer/qtquick2applicationviewer/qtquick2applicationviewer.cpp
       QMLPlayer/qtquick2applicationviewer/qtquick2applicationviewer.h
-      ${QMLPLAYER_RES})
+      ${QMLPLAYER_RES}
+      ${RC_FILE}
+      )
   target_include_directories(QMLPlayer PRIVATE QMLPlayer/qtquick2applicationviewer)
   target_link_libraries(QMLPlayer Qt5::Quick common)
 endif()
 if(Qt5Widgets_FOUND)
-  add_executable(Player ${PLAYER_SRC} ${PLAYER_HEADERS} ${PLAYER_RES})
+  set(MODULE Player)
+  if(WIN32)
+    set(RC_FILE ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.rc)
+    configure_file(${CMAKE_SOURCE_DIR}/cmake/QtAV.rc.in ${RC_FILE})
+  endif()
+  add_executable(Player ${PLAYER_SRC} ${PLAYER_HEADERS} ${PLAYER_RES} ${RC_FILE})
   target_link_libraries(Player QtAVWidgets common)
 
     SET(FILTERS_QRC filters/res.qrc)
