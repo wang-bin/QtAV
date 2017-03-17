@@ -20,7 +20,7 @@ QML_IMPORT_PATH =
 # MOBILITY +=
 
 RESOURCES += qmlplayer.qrc
-TRANSLATIONS = i18n/QMLPlayer_zh_CN.ts
+TRANSLATIONS = i18n/QMLPlayer_zh_CN.ts i18n/QMLPlayer.ts
 
 # The .cpp file which was generated for your project. Feel free to hack it.
 SOURCES += main.cpp

@@ -3,7 +3,7 @@ TEMPLATE = app
 contains(QT_CONFIG, opengl): QT += opengl
 QT += sql svg
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
-TRANSLATIONS = res/player_zh_CN.ts
+TRANSLATIONS = res/player_zh_CN.ts res/player.ts
 !static:VERSION = $$QTAV_VERSION # vc: will create exp and lib, result in static build error
 
 PROJECTROOT = $$PWD/../..

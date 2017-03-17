@@ -70,7 +70,7 @@ RESOURCES += QtAV.qrc \
 }
 
 OTHER_FILES += $$RC_FILE QtAV.svg
-TRANSLATIONS = i18n/QtAV_zh_CN.ts
+TRANSLATIONS = i18n/QtAV_zh_CN.ts i18n/QtAV.ts
 
 sse4_1 {
   CONFIG += sse2 #only sse4.1 is checked. sse2 now can be disabled if sse4.1 is disabled
