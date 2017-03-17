@@ -1,5 +1,9 @@
 find_package(Qt5Sql REQUIRED)
-
+if(WIN32)
+  set(EXE_TYPE WIN32)
+elseif(APPLE)
+  #set(EXE_TYPE MACOSX_BUNDLE)
+endif()
 set(COMMON_SRC
   common/common.cpp
   common/Config.cpp
@@ -84,6 +88,7 @@ set(PLAYER_HEADERS
     player/config/ShaderPage.h
     player/filters/AVFilterSubtitle.h
 )
+
 SET(PLAYER_QRC player/res/player.qrc)
 SOURCE_GROUP("Resources" FILES ${PLAYER_QRC})
 qt5_add_resources(PLAYER_RES ${PLAYER_QRC})
@@ -98,7 +103,7 @@ if(Qt5Quick_FOUND)
     set(RC_FILE ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.rc)
     configure_file(${CMAKE_SOURCE_DIR}/cmake/QtAV.rc.in ${RC_FILE})
   endif()
-  add_executable(QMLPlayer
+  add_executable(QMLPlayer ${EXE_TYPE}
       QMLPlayer/main.cpp
       QMLPlayer/qtquick2applicationviewer/qtquick2applicationviewer.cpp
       QMLPlayer/qtquick2applicationviewer/qtquick2applicationviewer.h
@@ -114,7 +119,7 @@ if(Qt5Widgets_FOUND)
     set(RC_FILE ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.rc)
     configure_file(${CMAKE_SOURCE_DIR}/cmake/QtAV.rc.in ${RC_FILE})
   endif()
-  add_executable(Player ${PLAYER_SRC} ${PLAYER_HEADERS} ${PLAYER_RES} ${RC_FILE})
+  add_executable(Player ${EXE_TYPE} ${PLAYER_SRC} ${PLAYER_HEADERS} ${PLAYER_RES} ${RC_FILE})
   target_link_libraries(Player QtAVWidgets common)
 
     SET(FILTERS_QRC filters/res.qrc)
