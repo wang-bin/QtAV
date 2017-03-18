@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2015)
 
@@ -34,9 +34,6 @@ QStringList AudioOutputBackend::defaultPriority()
 #if QTAV_HAVE(XAUDIO2)
             << QStringLiteral("XAudio2")
 #endif
-#if QTAV_HAVE(PULSEAUDIO)&& !defined(Q_OS_MAC)
-            << QStringLiteral("Pulse")
-#endif
 #if QTAV_HAVE(OPENSL)
             << QStringLiteral("OpenSL")
 #endif
@@ -45,6 +42,9 @@ QStringList AudioOutputBackend::defaultPriority()
 #endif
 #if QTAV_HAVE(PORTAUDIO)
             << QStringLiteral("PortAudio")
+#endif
+#if QTAV_HAVE(PULSEAUDIO)&& !defined(Q_OS_MAC)
+            << QStringLiteral("Pulse")
 #endif
 #if QTAV_HAVE(DSOUND)
             << QStringLiteral("DirectSound")
