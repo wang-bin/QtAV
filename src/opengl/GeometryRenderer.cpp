@@ -30,6 +30,8 @@ namespace QtAV {
 GeometryRenderer::GeometryRenderer()
     : g(NULL)
     , features_(kVBO|kIBO|kVAO|kMapBuffer)
+    , vbo_size(0)
+    , ibo_size(0)
     , ibo(QOpenGLBuffer::IndexBuffer)
     , stride(0)
 {
@@ -87,6 +89,8 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
 #if QT_VAO
         vao.destroy();
 #endif
+        vbo_size = 0;
+        ibo_size = 0;
         return;
     }
     static int support_map = -1;
@@ -109,7 +113,7 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
     if (ibo.isCreated()) {
         ibo.bind();
         const int bs = g->indexDataSize();
-        if (bs == ibo.size()) {
+        if (bs == ibo_size) {
             void * p = NULL;
             if (support_map && testFeatures(kMapBuffer))
                 p = ibo.map(QOpenGLBuffer::WriteOnly);
@@ -121,6 +125,7 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
             }
         } else {
             ibo.allocate(g->indexData(), bs); // TODO: allocate NULL and then map or BufferSubData?
+            ibo_size = bs;
         }
         ibo.release();
     }
@@ -135,7 +140,7 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
         /* Notes from https://www.opengl.org/sdk/docs/man/html/glBufferSubData.xhtml
            When replacing the entire data store, consider using glBufferSubData rather than completely recreating the data store with glBufferData. This avoids the cost of reallocating the data store.
          */
-        if (bs == vbo.size()) {
+        if (bs == vbo_size) { // vbo.size() error 0x501 on rpi, and query gl value can be slow
             void* p = NULL;
             if (support_map && testFeatures(kMapBuffer))
                 p = vbo.map(QOpenGLBuffer::WriteOnly);
@@ -144,6 +149,7 @@ void GeometryRenderer::updateGeometry(Geometry *geo)
                 vbo.unmap();
             } else {
                 vbo.write(0, g->constVertexData(), bs);
+                vbo_size = bs;
             }
         } else {
             vbo.allocate(g->vertexData(), bs);

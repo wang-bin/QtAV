@@ -72,6 +72,7 @@ protected:
 private:
     Geometry *g;
     int features_;
+    int vbo_size, ibo_size; // QOpenGLBuffer.size() may get error 0x501
     QOpenGLBuffer vbo; //VertexBuffer
 #if QT_VAO
     QOpenGLVertexArrayObject vao;
