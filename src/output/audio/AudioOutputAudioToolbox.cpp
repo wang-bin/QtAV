@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2016-02-11)
 
@@ -65,20 +65,14 @@ typedef AudioOutputAudioToolbox AudioOutputBackendAudioToolbox;
 static const AudioOutputBackendId AudioOutputBackendId_AudioToolbox = mkid::id32base36_2<'A', 'T'>::value;
 FACTORY_REGISTER(AudioOutputBackend, AudioToolbox, kName)
 
-#define AT_ENSURE(FUNC, ...) \
+#define AT_ENSURE(FUNC, ...) AQ_RUN_CHECK(FUNC, return __VA_ARGS__)
+#define AT_WARN(FUNC, ...) AQ_RUN_CHECK(FUNC)
+#define AQ_RUN_CHECK(FUNC, ...) \
     do { \
         OSStatus ret = FUNC; \
         if (ret != noErr) { \
-            qWarning("AudioOutputAudioToolbox Error>>> " #FUNC " (%d)", (int)ret); \
-            return __VA_ARGS__; \
-        } \
-    } while(0)
-
-#define AT_WARN(FUNC, ...) \
-    do { \
-        OSStatus ret = FUNC; \
-        if (ret != noErr) { \
-            qWarning("AudioOutputAudioToolbox Error>>> " #FUNC " (%d)", ret); \
+            qWarning("AudioBackendAudioQueue Error>>> " #FUNC ": %#x", ret); \
+            __VA_ARGS__; \
         } \
     } while(0)
 
@@ -222,8 +216,17 @@ bool AudioOutputAudioToolbox::write(const QByteArray& data)
 
 bool AudioOutputAudioToolbox::play()
 {
-    // no running check is fine
-    AT_ENSURE(AudioQueueStart(m_queue, NULL), false);
+    OSType err = AudioQueueStart(m_queue, nullptr);
+    if (err == '!pla') { //AVAudioSessionErrorCodeCannotStartPlaying
+        qWarning("AudioQueueStart error: AVAudioSessionErrorCodeCannotStartPlaying. May play in background");
+        close();
+        open();
+        return false;
+    }
+    if (err != noErr) {
+        qWarning("AudioQueueStart error: %#x", noErr);
+        return false;
+    }
     return true;
 }
 
