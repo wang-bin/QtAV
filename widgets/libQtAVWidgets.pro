@@ -150,7 +150,7 @@ target.depends *= $${libqtavwidgets.target}
 
 DEB_INSTALL_LIST = $$join(SDK_HEADERS, \\n.$$[QT_INSTALL_HEADERS]/, .$$[QT_INSTALL_HEADERS]/)
 DEB_INSTALL_LIST += .$$[QT_INSTALL_LIBS]/libQt*AVWidgets.prl .$$[QT_INSTALL_LIBS]/libQt*AVWidgets.so
-MKSPECS_DIR=$$[QT_INSTALL_ARCHDATA]/mkspecs
+MKSPECS_DIR=$$[QT_HOST_DATA]/mkspecs
 DEB_INSTALL_LIST += .$${MKSPECS_DIR}/features/avwidgets.prf .$${MKSPECS_DIR}/modules/qt_lib_avwidgets.pri
 qtavwidgets_dev.target = qtav-dev.install #like qtmultimedia5-dev, contains widgets headers
 qtavwidgets_dev.commands = echo \"$$join(DEB_INSTALL_LIST, \\n)\" >>$$PROJECTROOT/debian/$${qtavwidgets_dev.target}
