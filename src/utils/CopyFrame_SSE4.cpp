@@ -18,7 +18,7 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
+#if defined(__SSE__) || defined(_M_IX86) || defined(_M_X64) // gcc, clang defines __SSE__, vc does not
 // for mingw gcc
 #include <smmintrin.h> //stream load
 #include <stdint.h> //intptr_t
@@ -39,3 +39,4 @@ void *memcpy_sse4(void* dst, const void* src, size_t size)
 {
     return sse4::memcpy_sse2(dst, src, size);
 }
+#endif

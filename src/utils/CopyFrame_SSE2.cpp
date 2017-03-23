@@ -18,6 +18,7 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
+#if defined(__SSE__) || defined(_M_IX86) || defined(_M_X64) // gcc, clang defines __SSE__, vc does not
 #ifndef INC_FROM_NAMESPACE
 #include <stdint.h> //intptr_t
 #include <string.h>
@@ -39,7 +40,6 @@
 //
 //  COPIES VIDEO FRAMES FROM USWC MEMORY TO WB SYSTEM MEMORY VIA CACHED BUFFER
 //    ASSUMES PITCH IS A MULTIPLE OF 64B CACHE LINE SIZE, WIDTH MAY NOT BE
-
 #ifndef STREAM_LOAD_SI128
 #define STREAM_LOAD_SI128(x) _mm_load_si128(x)
 #endif //STREAM_LOAD_SI128
@@ -238,3 +238,4 @@ void *memcpy_sse2(void* dst, const void* src, size_t size)
 
     return dst;
 }
+#endif
