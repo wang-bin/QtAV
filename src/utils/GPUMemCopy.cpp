@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -26,6 +26,12 @@
 extern "C" {
 #include <libavutil/cpu.h>
 }
+
+#ifndef Q_PROCESSOR_X86 // qt4
+#if defined(__SSE__) || defined(_M_IX86) || defined(_M_X64)
+#define Q_PROCESSOR_X86
+#endif
+#endif
 // read qsimd_p.h
 #define UINT unsigned int
 void CopyFrame_SSE2(void *pSrc, void *pDest, void *pCacheBlock, UINT width, UINT height, UINT pitch);
@@ -47,11 +53,11 @@ bool detect_sse2() {
 
 bool GPUMemCopy::isAvailable()
 {
-#if QTAV_HAVE(SSE4_1)
+#if QTAV_HAVE(SSE4_1) && defined(Q_PROCESSOR_X86)
     if (detect_sse4())
         return true;
 #endif
-#if QTAV_HAVE(SSE2)
+#if QTAV_HAVE(SSE2) && defined(Q_PROCESSOR_X86)
     if (detect_sse2())
         return true;
 #endif
@@ -61,7 +67,7 @@ bool GPUMemCopy::isAvailable()
 GPUMemCopy::GPUMemCopy()
     : mInitialized(false)
 {
-#if QTAV_HAVE(SSE2)
+#if QTAV_HAVE(SSE2) && defined(Q_PROCESSOR_X86)
     mCache.buffer = 0;
     mCache.size = 0;
 #endif
@@ -81,7 +87,7 @@ bool GPUMemCopy::isReady() const
 bool GPUMemCopy::initCache(unsigned width)
 {
     mInitialized = false;
-#if QTAV_HAVE(SSE2)
+#if QTAV_HAVE(SSE2) && defined(Q_PROCESSOR_X86)
     mCache.size = std::max<size_t>((width + 0x0f) & ~ 0x0f, CACHED_BUFFER_SIZE);
     mCache.buffer = (unsigned char*)qMallocAligned(mCache.size, 16);
     mInitialized = !!mCache.buffer;
@@ -96,7 +102,7 @@ bool GPUMemCopy::initCache(unsigned width)
 void GPUMemCopy::cleanCache()
 {
     mInitialized = false;
-#if QTAV_HAVE(SSE2)
+#if QTAV_HAVE(SSE2) && defined(Q_PROCESSOR_X86)
     if (mCache.buffer) {
         qFreeAligned(mCache.buffer);
     }
@@ -107,10 +113,10 @@ void GPUMemCopy::cleanCache()
 
 void GPUMemCopy::copyFrame(void *pSrc, void *pDest, unsigned width, unsigned height, unsigned pitch)
 {
-#if QTAV_HAVE(SSE4_1)
+#if QTAV_HAVE(SSE4_1) && defined(Q_PROCESSOR_X86)
     if (detect_sse4())
         CopyFrame_SSE4(pSrc, pDest, mCache.buffer, width, height, pitch);
-#elif QTAV_HAVE(SSE2)
+#elif QTAV_HAVE(SSE2) && defined(Q_PROCESSOR_X86)
     if (detect_sse2())
         CopyFrame_SSE2(pSrc, pDest, mCache.buffer, width, height, pitch);
 #else
@@ -124,10 +130,10 @@ void GPUMemCopy::copyFrame(void *pSrc, void *pDest, unsigned width, unsigned hei
 
 void* gpu_memcpy(void *dst, const void *src, size_t size)
 {
-#if QTAV_HAVE(SSE4_1)
+#if QTAV_HAVE(SSE4_1) && defined(Q_PROCESSOR_X86)
     if (detect_sse4())
         return memcpy_sse4(dst, src, size);
-#elif QTAV_HAVE(SSE2)
+#elif QTAV_HAVE(SSE2) && defined(Q_PROCESSOR_X86)
     if (detect_sse2())
         return memcpy_sse2(dst, src, size);
 #endif
