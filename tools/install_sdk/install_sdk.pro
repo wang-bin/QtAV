@@ -54,7 +54,7 @@ DEBUG_SUF=
 mac: DEBUG_SUF=_debug
 win32: DEBUG_SUF=d
 NAME_SUF=
-iphonesimulator: NAME_SUF=_iphonesimulator
+iphonesimulator:!device: NAME_SUF=_iphonesimulator
 defineTest(createForModule) {
   MODULE_NAME = $$1
   MODULE_FULL_NAME = Qt$$MODULE_NAME
