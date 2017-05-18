@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -666,6 +666,8 @@ void AVPlayer::loadInternal()
         qWarning("Load failed!");
         d->audio_tracks = d->getTracksInfo(&d->demuxer, AVDemuxer::AudioStream);
         Q_EMIT internalAudioTracksChanged(d->audio_tracks);
+        d->video_tracks = d->getTracksInfo(&d->demuxer, AVDemuxer::VideoStream);
+        Q_EMIT internalVideoTracksChanged(d->video_tracks);
         d->subtitle_tracks = d->getTracksInfo(&d->demuxer, AVDemuxer::SubtitleStream);
         Q_EMIT internalSubtitleTracksChanged(d->subtitle_tracks);
         return;
@@ -675,6 +677,8 @@ void AVPlayer::loadInternal()
     d->applySubtitleStream(d->subtitle_track, this);
     d->audio_tracks = d->getTracksInfo(&d->demuxer, AVDemuxer::AudioStream);
     Q_EMIT internalAudioTracksChanged(d->audio_tracks);
+    d->video_tracks = d->getTracksInfo(&d->demuxer, AVDemuxer::VideoStream);
+    Q_EMIT internalVideoTracksChanged(d->video_tracks);
     Q_EMIT durationChanged(duration());
     // setup parameters from loaded media
     d->media_start_pts = d->demuxer.startTime();
@@ -715,6 +719,8 @@ void AVPlayer::unload()
     // ??
     d->audio_tracks = d->getTracksInfo(&d->demuxer, AVDemuxer::AudioStream);
     Q_EMIT internalAudioTracksChanged(d->audio_tracks);
+    d->video_tracks = d->getTracksInfo(&d->demuxer, AVDemuxer::VideoStream);
+    Q_EMIT internalVideoTracksChanged(d->video_tracks);
 }
 
 void AVPlayer::setRelativeTimeMode(bool value)
@@ -901,6 +907,11 @@ const QVariantList &AVPlayer::internalAudioTracks() const
     return d->audio_tracks;
 }
 
+const QVariantList &AVPlayer::internalVideoTracks() const
+{
+    return d->video_tracks;
+}
+
 bool AVPlayer::setAudioStream(const QString &file, int n)
 {
     QString path(file);
@@ -1014,17 +1025,20 @@ bool AVPlayer::setVideoStream(int n)
             return false;
     }
     d->video_track = n;
-    if (!isPlaying())
-        return true;
-    // pause demuxer, clear queues, set demuxer stream, set decoder, set ao, resume
-    bool p = isPaused();
-    pause(true);
-    if (!d->setupVideoThread(this)) {
-        stop();
-        return false;
-    }
-    if (!p)
-        pause(false);
+    d->demuxer.setStreamIndex(AVDemuxer::VideoStream, n);
+//    if (!isPlaying())
+//        return true;
+//    // pause demuxer, clear queues, set demuxer stream, set decoder, set ao, resume
+//    bool p = isPaused();
+//    //int bv = bufferValue();
+//    setBufferMode(BufferTime);
+//    pause(true);
+//    if (!d->setupVideoThread(this)) {
+//        stop();
+//        return false;
+//    }
+//    if (!p) pause(false);
+//    //QTimer::singleShot(10000, this, SLOT(setBufferValue(bv)));
     return true;
 }
 

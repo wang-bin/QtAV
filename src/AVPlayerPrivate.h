@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2014-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2014-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -116,9 +116,11 @@ public:
 
     int audio_track, video_track, subtitle_track;
     QVariantList subtitle_tracks;
+    QVariantList video_tracks;
     QString external_audio;
     AVDemuxer audio_demuxer;
-    QVariantList audio_tracks, external_audio_tracks;
+    QVariantList external_audio_tracks;
+    QVariantList audio_tracks;
     BufferMode buffer_mode;
     qint64 buffer_value;
     //the following things are required and must be set not null

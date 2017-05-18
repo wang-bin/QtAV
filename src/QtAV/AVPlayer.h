@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -205,9 +205,10 @@ public:
      */
     const QVariantList& externalAudioTracks() const;
     const QVariantList& internalAudioTracks() const;
+    const QVariantList& internalVideoTracks() const;
     /*!
      * \brief setAudioStream
-     * set an external audio file and stream number as audio track
+     * set an external audio file and stream number as audio track. It will be reset if setFile()/setIODevice()/setInput() is called
      * \param file external audio file. set empty to use internal audio tracks
      * \param n audio stream number n=0, 1, .... n<0: disable audio thread
      * \return false if fail
@@ -226,7 +227,7 @@ public:
      * Set audio stream number in current media or external audio file
      */
     bool setAudioStream(int n);
-    //TODO: n<0, no video thread
+    //TODO: n<0, no video thread. It will be reset if setFile()/setIODevice()/setInput() is called
     bool setVideoStream(int n);
     /*!
      * \brief internalAudioTracks
@@ -566,6 +567,11 @@ Q_SIGNALS:
      * Emitted when media is loaded. \sa internalAudioTracks
      */
     void internalAudioTracksChanged(const QVariantList& tracks);
+    /*!
+     * \brief internalVideoTracksChanged
+     * Emitted when media is loaded. \sa internalVideoTracks
+     */
+    void internalVideoTracksChanged(const QVariantList& tracks);
     void externalAudioTracksChanged(const QVariantList& tracks);
     void internalSubtitleTracksChanged(const QVariantList& tracks);
     /*!
