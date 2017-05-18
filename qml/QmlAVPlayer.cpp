@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2013)
 
@@ -63,6 +63,7 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , m_timeout(30000)
   , m_abort_timeout(true)
   , m_audio_track(0)
+  , m_video_track(0)
   , m_sub_track(0)
   , m_ao(AudioOutput::backendsAvailable())
 {
@@ -76,6 +77,7 @@ void QmlAVPlayer::classBegin()
     mpPlayer = new AVPlayer(this);
     connect(mpPlayer, SIGNAL(internalSubtitleTracksChanged(QVariantList)), SIGNAL(internalSubtitleTracksChanged()));
     connect(mpPlayer, SIGNAL(internalAudioTracksChanged(QVariantList)), SIGNAL(internalAudioTracksChanged()));
+    connect(mpPlayer, SIGNAL(internalVideoTracksChanged(QVariantList)), SIGNAL(internalVideoTracksChanged()));
     connect(mpPlayer, SIGNAL(externalAudioTracksChanged(QVariantList)), SIGNAL(externalAudioTracksChanged()));
     connect(mpPlayer, SIGNAL(durationChanged(qint64)), SIGNAL(durationChanged()));
     connect(mpPlayer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), SLOT(_q_statusChanged()));
@@ -393,6 +395,36 @@ void QmlAVPlayer::setAudioTrack(int value)
         mpPlayer->setAudioStream(value);
 }
 
+int QmlAVPlayer::videoTrack() const
+{
+    return m_video_track;
+}
+
+void QmlAVPlayer::setVideoTrack(int value)
+{
+    if (m_video_track == value)
+        return;
+    m_video_track = value;
+    Q_EMIT videoTrackChanged();
+    if (mpPlayer)
+        mpPlayer->setVideoStream(value);
+}
+
+int QmlAVPlayer::bufferSize() const
+{
+    return mpPlayer->bufferValue();
+}
+
+void QmlAVPlayer::setBufferSize(int value)
+{
+    if (mpPlayer->bufferValue() == value)
+        return;
+    if (mpPlayer) {
+        mpPlayer->setBufferValue(value);
+        Q_EMIT bufferSizeChanged();
+    }
+}
+
 QUrl QmlAVPlayer::externalAudio() const
 {
     return m_audio;
@@ -415,6 +447,11 @@ QVariantList QmlAVPlayer::externalAudioTracks() const
 QVariantList QmlAVPlayer::internalAudioTracks() const
 {
     return mpPlayer ? mpPlayer->internalAudioTracks() : QVariantList();
+}
+
+QVariantList QmlAVPlayer::internalVideoTracks() const
+{
+    return mpPlayer ? mpPlayer->internalVideoTracks() : QVariantList();
 }
 
 int QmlAVPlayer::internalSubtitleTrack() const
@@ -686,6 +723,7 @@ void QmlAVPlayer::setPlaybackState(PlaybackState playbackState)
             mpPlayer->setInterruptOnTimeout(m_abort_timeout);
             mpPlayer->setRepeat(mLoopCount - 1);
             mpPlayer->setAudioStream(m_audio_track);
+            mpPlayer->setVideoStream(m_video_track); // will check in case of error
             mpPlayer->setSubtitleStream(m_sub_track);
             if (!vcodec_opt.isEmpty()) {
                 QVariantHash vcopt;

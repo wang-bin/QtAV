@@ -229,6 +229,7 @@ Module {
         Property { name: "useWallclockAsTimestamps"; type: "bool" }
         Property { name: "videoCapture"; type: "QtAV::VideoCapture"; isReadonly: true; isPointer: true }
         Property { name: "audioTrack"; type: "int" }
+        Property { name: "bufferSize"; type: "int" }
         Property { name: "externalAudio"; type: "QUrl" }
         Property { name: "internalAudioTracks"; type: "QVariantList"; isReadonly: true }
         Property { name: "externalAudioTracks"; type: "QVariantList"; isReadonly: true }

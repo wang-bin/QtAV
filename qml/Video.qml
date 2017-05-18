@@ -84,9 +84,11 @@ Item {
     property alias subtitleText: text_sub // not for ass.
     property alias videoCapture: player.videoCapture
     property alias audioTrack: player.audioTrack
+    property alias videoTrack: player.videoTrack
     property alias externalAudio: player.externalAudio
     property alias internalAudioTracks: player.internalAudioTracks
     property alias externalAudioTracks: player.externalAudioTracks
+    property alias internalVideoTracks: player.internalVideoTracks
     /*** Properties of VideoOutput ***/
     /*!
         \qmlproperty enumeration Video::fillMode
@@ -161,6 +163,13 @@ Item {
         (full).
     */
     property alias bufferProgress:  player.bufferProgress
+
+    /*!
+        \qmlproperty int Video::bufferSize
+
+        This property holds the buffer value.
+    */
+    property alias bufferSize:  player.bufferSize
 
     /*!
         \qmlproperty int Video::duration
@@ -344,6 +353,7 @@ Item {
         anchors.fill: video
         source: player
     }
+
     SubtitleItem {
         id: ass_sub
         rotation: -videoOut.orientation
