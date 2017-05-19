@@ -16,6 +16,7 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
 
 option(BUILD_EXAMPLES "Build examples" ON)
+option(BUILD_PLAYERS "Build players" ON)
 option(BUILD_TESTS "Build tests" ON)
 option(BUILD_QT5OPENGL "Build with Qt5 OpenGL module" ON)
 
@@ -119,7 +120,7 @@ if(Qt5Qml_FOUND AND Qt5Quick_FOUND)
   add_subdirectory(qml)
 endif()
 
-if(BUILD_EXAMPLES)
+if(BUILD_EXAMPLES OR BUILD_PLAYERS)
   add_subdirectory(examples)
 endif()
 

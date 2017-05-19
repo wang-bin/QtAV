@@ -122,6 +122,7 @@ if(Qt5Widgets_FOUND)
   add_executable(Player ${EXE_TYPE} ${PLAYER_SRC} ${PLAYER_HEADERS} ${PLAYER_RES} ${RC_FILE})
   target_link_libraries(Player QtAVWidgets common)
 
+  if(BUILD_EXAMPLES)
     SET(FILTERS_QRC filters/res.qrc)
     SOURCE_GROUP("Resources" FILES ${FILTERS_QRC})
     qt5_add_resources(FILTERS_RES ${FILTERS_QRC})
@@ -155,15 +156,17 @@ if(Qt5Widgets_FOUND)
 
     add_executable(simpletranscode simpletranscode/main.cpp)
     target_link_libraries(simpletranscode QtAV)
+  endif()
 endif()
 
-add_executable(audiopipeline audiopipeline/main.cpp)
-target_link_libraries(audiopipeline QtAV)
+if(BUILD_EXAMPLES)
+  add_executable(audiopipeline audiopipeline/main.cpp)
+  target_link_libraries(audiopipeline QtAV)
 
-add_executable(framereader framereader/main.cpp)
-target_link_libraries(framereader QtAV)
+  add_executable(framereader framereader/main.cpp)
+  target_link_libraries(framereader QtAV)
 
-add_executable(window window/main.cpp)
-target_link_libraries(window QtAV)
-
+  add_executable(window window/main.cpp)
+  target_link_libraries(window QtAV)
+endif()
 
