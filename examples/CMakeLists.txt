@@ -112,6 +112,9 @@ if(Qt5Quick_FOUND)
       )
   target_include_directories(QMLPlayer PRIVATE QMLPlayer/qtquick2applicationviewer)
   target_link_libraries(QMLPlayer Qt5::Quick common)
+  install(TARGETS QMLPlayer
+    RUNTIME DESTINATION ${QTAV_INSTALL_BINS}
+  )
 endif()
 if(Qt5Widgets_FOUND)
   set(MODULE Player)
@@ -122,6 +125,9 @@ if(Qt5Widgets_FOUND)
   add_executable(Player ${EXE_TYPE} ${PLAYER_SRC} ${PLAYER_HEADERS} ${PLAYER_RES} ${RC_FILE})
   target_link_libraries(Player QtAVWidgets common)
 
+  install(TARGETS Player
+    RUNTIME DESTINATION ${QTAV_INSTALL_BINS}
+  )
   if(BUILD_EXAMPLES)
     SET(FILTERS_QRC filters/res.qrc)
     SOURCE_GROUP("Resources" FILES ${FILTERS_QRC})
