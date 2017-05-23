@@ -70,6 +70,11 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
     classBegin();
 }
 
+QmlAVPlayer:: ~QmlAVPlayer(){
+    transcoderThread.quit();
+    transcoderThread.wait();
+}
+
 void QmlAVPlayer::classBegin()
 {
     if (mpPlayer)
@@ -216,6 +221,12 @@ VideoCapture *QmlAVPlayer::videoCapture() const
 {
     return mpPlayer->videoCapture();
 }
+
+AVTranscoder *QmlAVPlayer::videoRecorder() const
+{
+    return recorder;
+}
+
 
 QStringList QmlAVPlayer::videoCodecs() const
 {
@@ -788,6 +799,18 @@ AVPlayer* QmlAVPlayer::player()
     return mpPlayer;
 }
 
+void QmlAVPlayer::setBufferValue(qint64 value){
+    mpPlayer->setBufferValue(value);
+ }
+
+void QmlAVPlayer::setNotifyInterval(int msec){
+    mpPlayer->setNotifyInterval(msec);
+}
+
+void QmlAVPlayer::setFrameRate(qreal value){
+    mpPlayer->setFrameRate(value);
+}
+
 void QmlAVPlayer::play(const QUrl &url)
 {
     if (mSource == url && (playbackState() != StoppedState || m_loading))
@@ -813,6 +836,39 @@ void QmlAVPlayer::pause()
 void QmlAVPlayer::stop()
 {
     setPlaybackState(StoppedState);
+}
+
+void QmlAVPlayer::recordInit(){
+
+    QDateTime now = QDateTime::currentDateTime();
+    QString name = "video_"+now.toString("ddMMyyhhmmss");
+    QString dir = QStandardPaths::writableLocation(QStandardPaths::MoviesLocation);
+    QString path(dir + QStringLiteral("/") + name + QStringLiteral(".mp4"));
+    recorder = new AVTranscoder;
+    recorder->setMediaSource(player);
+    recorder->createVideoEncoder();
+    //recorder->setOutputFormat(QLatin1String("mjpeg"));
+    recorder->videoEncoder()->setCodecName(QLatin1String("mpeg4"));
+    QStringList liste = recorder->videoEncoder()->supportedCodecs();
+    if (liste.isEmpty()){
+            qDebug() << "Y a un probleme la WALABOOK----------------------------------------------------";
+    }
+    else{
+             qDebug() << liste;
+    }
+    recorder->setOutputMedia(path);
+}
+
+void QmlAVPlayer::startRecord(){
+    recorder->moveToThread(&transcoderThread);
+    transcoderThread.start();
+    recorder->start();
+}
+
+void QmlAVPlayer::stopRecord(){
+    recorder->stop();
+    transcoderThread.quit();
+    transcoderThread.wait();
 }
 
 void QmlAVPlayer::stepForward()

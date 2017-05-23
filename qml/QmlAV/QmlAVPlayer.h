@@ -24,12 +24,17 @@
 
 #include <QtCore/QObject>
 #include <QtCore/QStringList> //5.0
+#include <QStandardPaths>
+#include <QDateTime>
+#include <QThread>
 #include <QtQml/QQmlParserStatus>
 #include <QtQml/QQmlListProperty>
 #include <QmlAV/MediaMetaData.h>
 #include <QmlAV/QuickFilter.h>
 #include <QtAV/AVError.h>
 #include <QtAV/VideoCapture.h>
+#include <QtAV/AVPlayer.h>
+#include <QtAV/AVTranscoder.h>
 
 namespace QtAV {
 class AVPlayer;
@@ -38,6 +43,7 @@ using namespace QtAV;
 class QmlAVPlayer : public QObject, public QQmlParserStatus
 {
     Q_OBJECT
+    QThread transcoderThread;
     Q_INTERFACES(QQmlParserStatus)
     Q_PROPERTY(qreal volume READ volume WRITE setVolume NOTIFY volumeChanged)
     Q_PROPERTY(Status status READ status NOTIFY statusChanged)
@@ -77,6 +83,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(QVariantMap avFormatOptions READ avFormatOptions WRITE setAVFormatOptions NOTIFY avFormatOptionsChanged)
     Q_PROPERTY(bool useWallclockAsTimestamps READ useWallclockAsTimestamps WRITE setWallclockAsTimestamps NOTIFY useWallclockAsTimestampsChanged)
     Q_PROPERTY(QtAV::VideoCapture *videoCapture READ videoCapture CONSTANT)
+    Q_PROPERTY(QtAV::AVTranscoder *videoRecorder READ videoRecorder CONSTANT)
     Q_PROPERTY(int audioTrack READ audioTrack WRITE setAudioTrack NOTIFY audioTrackChanged)
     Q_PROPERTY(int videoTrack READ videoTrack WRITE setVideoTrack NOTIFY videoTrackChanged)
     Q_PROPERTY(int bufferSize READ bufferSize WRITE setBufferSize NOTIFY bufferSizeChanged)
@@ -131,6 +138,7 @@ public:
     };
 
     explicit QmlAVPlayer(QObject *parent = 0);
+    ~QmlAVPlayer();
     //derived
     virtual void classBegin();
     virtual void componentComplete();
@@ -182,6 +190,9 @@ public:
     qreal playbackRate() const;
     void setPlaybackRate(qreal s);
     Q_INVOKABLE void play(const QUrl& url);
+    Q_INVOKABLE void setBufferValue(qint64 value);
+    Q_INVOKABLE void setNotifyInterval(int msec);
+    Q_INVOKABLE void setFrameRate(qreal value);
     AVPlayer *player();
 
     bool isAutoLoad() const;
@@ -193,6 +204,8 @@ public:
     MediaMetaData *metaData() const;
     QObject *mediaObject() const;
     QtAV::VideoCapture *videoCapture() const;
+
+    QtAV::AVTranscoder* videoRecorder() const;
 
     // "FFmpeg", "CUDA", "DXVA", "VAAPI" etc
     QStringList videoCodecs() const;
@@ -266,6 +279,9 @@ public Q_SLOTS:
     void seek(int offset);
     void seekForward();
     void seekBackward();
+    void recordInit();
+    void startRecord();
+    void stopRecord();
 
 Q_SIGNALS:
     void volumeChanged();
@@ -353,6 +369,7 @@ private:
     Error mError;
     QString mErrorString;
     QtAV::AVPlayer *mpPlayer;
+    QtAV::AVTranscoder* recorder;
     QUrl mSource;
     QStringList mVideoCodecs;
     ChannelLayout mChannelLayout;

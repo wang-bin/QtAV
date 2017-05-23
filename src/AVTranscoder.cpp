@@ -96,7 +96,7 @@ bool AVTranscoder::isAsync() const
     return d->async;
 }
 
-void AVTranscoder::setMediaSource(AVPlayer *player)
+void AVTranscoder::setMediaSource(AVPlayer* player)
 {
     if (d->source_player) {
         if (d->afilter)

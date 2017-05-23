@@ -190,6 +190,10 @@ void  VideoCapture::capture()
     Q_EMIT requested();
 }
 
+//void  VideoCapture::triggerScan(){
+//    QAndroidJniEnvironment qjniEnv;
+//}
+
 void VideoCapture::start()
 {
     Q_EMIT frameAvailable(frame);
