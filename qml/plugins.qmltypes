@@ -228,6 +228,7 @@ Module {
         Property { name: "avFormatOptions"; type: "QVariantMap" }
         Property { name: "useWallclockAsTimestamps"; type: "bool" }
         Property { name: "videoCapture"; type: "QtAV::VideoCapture"; isReadonly: true; isPointer: true }
+        Property { name: "videoRecorder"; type: "QtAV::AVTranscoder"; isReadonly: true; isPointer: true }
         Property { name: "audioTrack"; type: "int" }
         Property { name: "bufferSize"; type: "int" }
         Property { name: "externalAudio"; type: "QUrl" }
@@ -253,6 +254,9 @@ Module {
         Method { name: "play" }
         Method { name: "pause" }
         Method { name: "stop" }
+        Method { name: "recordInit" }
+        Method { name: "startRecord" }
+        Method { name: "stopRecord" }
         Method { name: "stepForward" }
         Method { name: "stepBackward" }
         Method {
@@ -264,6 +268,18 @@ Module {
         Method {
             name: "play"
             Parameter { name: "url"; type: "QUrl" }
+        }
+        Method {
+            name: "setBufferValue"
+            Parameter { name: "value"; type: "qint64" }
+        }
+        Method {
+            name: "setNotifyInterval"
+            Parameter { name: "msec"; type: "int" }
+        }
+        Method {
+            name: "setFrameRate"
+            Parameter { name: "value"; type: "qreal" }
         }
     }
     Component { name: "QtAV::AudioFilter"; prototype: "QtAV::Filter" }
