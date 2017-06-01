@@ -206,6 +206,12 @@ public:
     const QVariantList& externalAudioTracks() const;
     const QVariantList& internalAudioTracks() const;
     const QVariantList& internalVideoTracks() const;
+
+    /// Added by Calin -- returns the FFmpeg stream id's from the muxer for the set of video tracks for the movie file-- useful if you need to map using libavfilter
+    QList<int> muxerVideoTracks() const;
+    /// Added by Calin -- returns the FFmpeg stream id's from the muxer for the set of audio tracks for the movie file -- useful if you need to map using libavfilter
+    QList<int> muxerAudioTracks() const;
+
     /*!
      * \brief setAudioStream
      * set an external audio file and stream number as audio track. It will be reset if setFile()/setIODevice()/setInput() is called
