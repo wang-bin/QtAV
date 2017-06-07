@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "QtAV/OpenGLVideo.h"
+#include <QtCore/QThreadStorage>
 #include <QtGui/QColor>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QGuiApplication>
@@ -50,6 +51,7 @@ public:
         , valiad_tex_width(1.0)
         , mesh_type(OpenGLVideo::RectMesh)
         , geometry(NULL)
+        , gr(NULL)
         , user_shader(NULL)
     {
     }
@@ -59,11 +61,15 @@ public:
             material = 0;
         }
         delete geometry;
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0) || !defined(Q_COMPILER_LAMBDA)
+        delete gr;
+#endif
     }
 
     void resetGL() {
         ctx = 0;
-        gr.updateGeometry(NULL);
+        if (gr)
+            gr->updateGeometry(NULL);
         if (!manager)
             return;
         manager->setParent(0);
@@ -91,7 +97,7 @@ public:
     QRectF roi; //including invalid padding width
     OpenGLVideo::MeshType mesh_type;
     TexturedGeometry *geometry;
-    GeometryRenderer gr;
+    GeometryRenderer* gr;
     QRectF rect;
     QMatrix4x4 matrix;
     VideoShader *user_shader;
@@ -110,6 +116,24 @@ void OpenGLVideoPrivate::updateGeometry(VideoShader* shader, const QRectF &t, co
     if (tex_target != shader->textureTarget()) {
         tex_target = shader->textureTarget();
         update_geo = true;
+    }
+    bool update_gr = false;
+    static QThreadStorage<bool> new_thread;
+    if (!new_thread.hasLocalData())
+        new_thread.setLocalData(true);
+    
+    update_gr = new_thread.localData();
+    if (!gr || update_gr) { // TODO: only update VAO, not the whole GeometryRenderer
+        update_geo = true;
+        new_thread.setLocalData(false);
+        GeometryRenderer *r = new GeometryRenderer(); // local var is captured by lambda 
+        gr = r;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0) && defined(Q_COMPILER_LAMBDA)
+        QObject::connect(QOpenGLContext::currentContext(), &QOpenGLContext::aboutToBeDestroyed, [r]{
+            qDebug("destroy GeometryRenderer %p", r);
+            delete r;
+        });
+#endif
     }
     // (-1, -1, 2, 2) must flip y
     QRectF target_rect = norm_viewport ? QRectF(-1, 1, 2, -2) : rect;
@@ -146,7 +170,7 @@ void OpenGLVideoPrivate::updateGeometry(VideoShader* shader, const QRectF &t, co
     }
     geometry->create();
     update_geo = false;
-    gr.updateGeometry(geometry);
+    gr->updateGeometry(geometry);
 }
 
 OpenGLVideo::OpenGLVideo() {}
@@ -348,7 +372,7 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     }
     //if (d.mesh_type == OpenGLVideo::SphereMesh)
         //DYGL(glEnable(GL_CULL_FACE)); // required for sphere! FIXME: broken in qml and qgvf
-    d.gr.render();
+    d.gr->render();
     if (blending)
         DYGL(glDisable(GL_BLEND));
     // d.shader->program()->release(); //glUseProgram(0)
