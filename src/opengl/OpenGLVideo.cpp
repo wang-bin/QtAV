@@ -117,24 +117,21 @@ void OpenGLVideoPrivate::updateGeometry(VideoShader* shader, const QRectF &t, co
         tex_target = shader->textureTarget();
         update_geo = true;
     }
-    bool update_gr = false;
-    static QThreadStorage<bool> new_thread;
-    if (!new_thread.hasLocalData())
-        new_thread.setLocalData(true);
-    
-    update_gr = new_thread.localData();
-    if (!gr || update_gr) { // TODO: only update VAO, not the whole GeometryRenderer
+    // unlike thread_local, QThreadStorage<T*> will delete ptr at thread exit, so we store quintptr
+    static QThreadStorage<quintptr> tls_gr; // TODO: only update VAO, not the whole GeometryRenderer
+    if (!tls_gr.hasLocalData()) {
+        qDebug("creating GeometryRenderer...");
+        GeometryRenderer* tls_gr_ptr = new GeometryRenderer(); // local var is captured by lambda
+        tls_gr.setLocalData(quintptr(tls_gr_ptr));
         update_geo = true;
-        new_thread.setLocalData(false);
-        GeometryRenderer *r = new GeometryRenderer(); // local var is captured by lambda 
-        gr = r;
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0) && defined(Q_COMPILER_LAMBDA)
-        QObject::connect(QOpenGLContext::currentContext(), &QOpenGLContext::aboutToBeDestroyed, [r]{
-            qDebug("destroy GeometryRenderer %p", r);
-            delete r;
+        QObject::connect(QOpenGLContext::currentContext(), &QOpenGLContext::aboutToBeDestroyed, [tls_gr_ptr]{
+            qDebug("destroy GeometryRenderer %p", tls_gr_ptr);
+            delete tls_gr_ptr;
         });
 #endif
     }
+    gr = reinterpret_cast<GeometryRenderer*>(tls_gr.localData());
     // (-1, -1, 2, 2) must flip y
     QRectF target_rect = norm_viewport ? QRectF(-1, 1, 2, -2) : rect;
     if (target.isValid()) {
