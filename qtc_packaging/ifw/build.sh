@@ -203,7 +203,7 @@ cd -
 
 ### player
 echo "coping player files..."
-mv $RT_DIR/data/bin/{player${EXE},QMLPlayer${EXE}} $TARGET/packages/com.qtav.product.player/data/bin
+mv $RT_DIR/data/bin/{Player${EXE},QMLPlayer${EXE}} $TARGET/packages/com.qtav.product.player/data/bin
 
 ### examples
 echo "coping examples..."

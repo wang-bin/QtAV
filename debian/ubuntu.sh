@@ -19,7 +19,7 @@ for D in ${DISTRIBUTIONS[@]}; do
   git checkout -- debian/changelog debian/control
   cp -avf debian/control $CONTROL_BAK
   cp -avf debian/changelog $CHANGELOG_BAK
-  VER=1.11.0~`git log -1 --pretty=format:"git${DATE}.%h~${D}" 2> /dev/null`
+  VER=1.12.0~`git log -1 --pretty=format:"git${DATE}.%h~${D}" 2> /dev/null`
   mkchangelog $VER $D
   if [ $idx -gt 3 ]; then
     sed -i 's,qtdeclarative5-controls-plugin,qml-module-qtquick-controls,g' debian/control

@@ -1,3 +1,16 @@
+version 1.12.0 2017-06-20
+
+Changelog
+- CMake support
+- Fix iOS build
+- Fix AVPacket memory leak
+- Geometry & GeometryRenderer class is public
+- PAL8, XYZ color format support
+- Fix OpenGL background color
+- Fix external clock error after pause
+- VA-API encoder support (ffmpeg>=3)
+- Other improvements, fixes, and untested features
+
 version 1.11.0 2016-06-19
 
 Changelog
