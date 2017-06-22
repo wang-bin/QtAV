@@ -221,17 +221,17 @@ void AudioOutputDSound::onCallback()
         //}
        // buffers_free.ref();
     }
-    DWORD status;
-    stream_buf->GetStatus(&status);
+    //DWORD status;
+    //stream_buf->GetStatus(&status);
     //qDebug("status: %lu", status);
-    return;
-    if (status & DSBSTATUS_LOOPING) {
+    //return;
+    //if (status & DSBSTATUS_LOOPING) {
     // sound will loop even if buffer is finished
-    DX_ENSURE(stream_buf->Stop());
+    //DX_ENSURE(stream_buf->Stop());
     // reset positions to ensure the notification positions and played buffer matches
-    DX_ENSURE(stream_buf->SetCurrentPosition(0));
-    write_offset = 0;
-    }
+    //DX_ENSURE(stream_buf->SetCurrentPosition(0));
+    //write_offset = 0;
+    //}
 }
 
 bool AudioOutputDSound::write(const QByteArray &data)
