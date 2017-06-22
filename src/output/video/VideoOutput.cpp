@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -40,7 +40,11 @@ public:
 #if defined(Q_OS_DARWIN)
             avwidgets.setFileName(QStringLiteral("QtAVWidgets.framework/QtAVWidgets")); //no dylib check
 #elif defined(Q_OS_WIN)
-            avwidgets.setFileName(QStringLiteral("QtAVWidgets").append(QString::number(QTAV_VERSION_MAJOR(QtAV_Version()))));
+            avwidgets.setFileName(QStringLiteral("QtAVWidgets")
+# ifndef QT_NO_DEBUG
+            .append("d")
+# endif
+            .append(QString::number(QTAV_VERSION_MAJOR(QtAV_Version()))));
 #else
             avwidgets.setFileNameAndVersion(QStringLiteral("QtAVWidgets"), QTAV_VERSION_MAJOR(QtAV_Version()));
 #endif
