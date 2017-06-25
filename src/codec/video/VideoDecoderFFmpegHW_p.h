@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2013)
 
@@ -65,7 +65,7 @@ public:
     }
 
     virtual bool open() Q_DECL_OVERRIDE { return prepare();}
-    virtual void close() Q_DECL_OVERRIDE {}
+    virtual void close() Q_DECL_OVERRIDE {restore();}
     // return hwaccel_context or null
     virtual void* setup(AVCodecContext* avctx) = 0;
 

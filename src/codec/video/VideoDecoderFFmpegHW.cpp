@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2013)
 
@@ -192,6 +192,7 @@ AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *avct
 end:
     qWarning("hardware acceleration is not available" );
     /* Fallback to default behaviour */
+    avctx->get_buffer2 = avcodec_default_get_buffer2;
     return avcodec_default_get_format(avctx, pi_fmt);
 }
 
