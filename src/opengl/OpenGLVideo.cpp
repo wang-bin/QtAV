@@ -349,7 +349,6 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     DPTR_D(OpenGLVideo);
     Q_ASSERT(d.manager);
     Q_EMIT beforeRendering();
-    DYGL(glViewport(d.rect.x(), d.rect.y(), d.rect.width(), d.rect.height())); // viewport was used in gpu filters is wrong, qt quick fbo item's is right(so must ensure setProjectionMatrixToRect was called correctly)
     const qint64 mt = d.material->type();
     if (d.material_type != mt) {
         qDebug() << "material changed: " << VideoMaterial::typeName(d.material_type) << " => " << VideoMaterial::typeName(mt);
@@ -360,6 +359,7 @@ void OpenGLVideo::render(const QRectF &target, const QRectF& roi, const QMatrix4
     VideoShader *shader = d.user_shader;
     if (!shader)
         shader = d.manager->prepareMaterial(d.material, mt); //TODO: print shader type name if changed. prepareMaterial(,sample_code, pp_code)
+    DYGL(glViewport(d.rect.x(), d.rect.y(), d.rect.width(), d.rect.height())); // viewport was used in gpu filters is wrong, qt quick fbo item's is right(so must ensure setProjectionMatrixToRect was called correctly)
     shader->update(d.material);
     shader->program()->setUniformValue(shader->matrixLocation(), transform*d.matrix);
     // uniform end. attribute begin
