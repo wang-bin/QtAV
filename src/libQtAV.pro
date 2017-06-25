@@ -122,6 +122,10 @@ android {
     QT *= androidextras gui-private #QPlatformNativeInterface get "QtActivity"
     SOURCES *= io/AndroidIO.cpp
     SOURCES *= codec/video/VideoDecoderMediaCodec.cpp
+    exists($$[QT_INSTALL_HEADERS]/MediaCodecTextureStandalone.h) {
+      DEFINES *= MEDIACODEC_TEXTURE
+      LIBS *= -lqtav-mediacodec
+    }
   }
 }
 config_x11 {
