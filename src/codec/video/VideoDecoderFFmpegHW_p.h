@@ -63,6 +63,9 @@ public:
         codec_ctx->reget_buffer = reget_buffer;
 #endif //QTAV_HAVE(AVBUFREF)
     }
+
+    virtual bool open() Q_DECL_OVERRIDE { return prepare();}
+    virtual void close() Q_DECL_OVERRIDE {}
     // return hwaccel_context or null
     virtual void* setup(AVCodecContext* avctx) = 0;
 
