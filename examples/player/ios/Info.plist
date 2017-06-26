@@ -11,13 +11,13 @@
 	<key>CFBundleSignature</key>
         <string>????</string>
 	<key>CFBundleExecutable</key>
-	<string>QMLPlayer</string>
+        <string>Player</string>
 	<key>CFBundleIdentifier</key>
-        <string>org.qtav.qmlplayer</string>
+        <string>org.qtav.player</string>
 	<key>CFBundleDisplayName</key>
-	<string>${PRODUCT_NAME}</string>
+        <string>QtAV Player</string>
 	<key>CFBundleName</key>
-	<string>${PRODUCT_NAME}</string>
+        <string>QtAV Player</string>
 	<key>CFBundleShortVersionString</key>
         <string>1.12</string>
 	<key>CFBundleVersion</key>

@@ -10,10 +10,10 @@ environment:
   matrix:
   - arch: x86
     cc: VS2015
-    qt: 5.8
+    qt: 5.9
     toolchain_version: 14
     mode: release
-    QTDIR: C:\Qt\5.8\msvc2015
+    QTDIR: C:\Qt\5.9\msvc2015
 
   - arch: x64
     cc: VS2013
