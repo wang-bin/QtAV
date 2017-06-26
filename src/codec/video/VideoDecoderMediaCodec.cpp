@@ -70,7 +70,7 @@ public:
     ~VideoDecoderMediaCodecPrivate() {
 #ifdef MEDIACODEC_TEXTURE
         if (pool_)
-            mdk_mediacodec_texture_pool_release(&pool_);
+            api_->texture_pool_release(&pool_);
 #endif
     }
     void close() Q_DECL_OVERRIDE {
@@ -86,12 +86,12 @@ public:
         if (copy_mode != VideoDecoderFFmpegHW::ZeroCopy)
             return nullptr;
 #ifdef MEDIACODEC_TEXTURE
-        mdk_mediacodec_set_jvm(QAndroidJniEnvironment::javaVM());
+        api_->set_jvm(QAndroidJniEnvironment::javaVM());
         if (!pool_)
-            pool_ = mdk_mediacodec_texture_pool_create();
+            pool_ = api_->texture_pool_create();
         av_mediacodec_default_free(avctx);
         AVMediaCodecContext *mc = av_mediacodec_alloc_context();
-        AV_ENSURE(av_mediacodec_default_init(avctx, mc, mdk_mediacodec_texture_pool_ensure_surface(pool_)), nullptr);
+        AV_ENSURE(av_mediacodec_default_init(avctx, mc, api_->texture_pool_ensure_surface(pool_)), nullptr);
 #endif
         return avctx->hwaccel_context; // set in av_mediacodec_default_init
     }
@@ -104,7 +104,8 @@ public:
         return AV_PIX_FMT_NONE;
     }
 #ifdef MEDIACODEC_TEXTURE
-    MdkMediaCodecTexturePool *pool_ = nullptr;
+    const MdkMediaCodecTextureAPI* api_ = mdk_mediacodec_get_api("qtav.nonfree.mediacodec");
+    MdkMediaCodecTextureAPI::TexturePool *pool_ = nullptr;
 #endif
 };
 
@@ -163,26 +164,27 @@ VideoFrame VideoDecoderMediaCodec::frame()
 #ifdef MEDIACODEC_TEXTURE
     class MediaCodecTextureInterop : public VideoSurfaceInterop
     {
-        MdkMediaCodecTexture *tex = nullptr;
+        const MdkMediaCodecTextureAPI* api_ = nullptr;
+        MdkMediaCodecTextureAPI::Texture *tex_ = nullptr;
     public:
-        MediaCodecTextureInterop(MdkMediaCodecTexture *mt) : tex(mt) {}
+        MediaCodecTextureInterop(const MdkMediaCodecTextureAPI *api, MdkMediaCodecTextureAPI::Texture *mt) : api_(api), tex_(mt) {}
         ~MediaCodecTextureInterop() {
-            mdk_mediacodec_texture_release(&tex);
+            api_->texture_release(&tex_);
         }
 
         void* map(SurfaceType, const VideoFormat &, void *handle, int plane) {
             Q_UNUSED(plane);
             GLuint* t = reinterpret_cast<GLuint*>(handle);
-            *t = mdk_mediacodec_texture_to_gl(tex, nullptr, nullptr);
+            *t = api_->texture_to_gl(tex_, nullptr, nullptr);
             return t;
         }
     };
     assert(d.frame->buf[0] && d.frame->data[3] && "No AVMediaCodecBuffer or ref in AVFrame");
     AVBufferRef* bufref = av_buffer_ref(d.frame->buf[0]);
     AVMediaCodecBuffer *mcbuf = (AVMediaCodecBuffer*)d.frame->data[3];
-    MdkMediaCodecTexture* mt = mdk_mediacodec_texture_pool_feed_avbuffer(d.pool_, d.frame->width, d.frame->height, av_mediacodec_buffer_unref, bufref, av_mediacodec_render_buffer, mcbuf);
+    MdkMediaCodecTextureAPI::Texture* mt = d.api_->texture_pool_feed_avbuffer(d.pool_, d.frame->width, d.frame->height, av_mediacodec_buffer_unref, bufref, av_mediacodec_render_buffer, mcbuf);
 
-    MediaCodecTextureInterop *interop = new MediaCodecTextureInterop(mt);
+    MediaCodecTextureInterop *interop = new MediaCodecTextureInterop(d.api_, mt);
     frame.setMetaData(QStringLiteral("surface_interop"), QVariant::fromValue(VideoSurfaceInteropPtr((interop))));
 #endif
     return frame;
