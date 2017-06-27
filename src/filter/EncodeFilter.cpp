@@ -52,9 +52,11 @@ public:
 AudioEncodeFilter::AudioEncodeFilter(QObject *parent)
     : AudioFilter(*new AudioEncodeFilterPrivate(), parent)
 {
-//    connect(this, SIGNAL(requestToEncode(QtAV::AudioFrame)), this, SLOT(encode(QtAV::AudioFrame)));
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    connect(this, SIGNAL(requestToEncode(QtAV::AudioFrame)), this, SLOT(encode(QtAV::AudioFrame)));
+#else
     connect(this, &AudioEncodeFilter::requestToEncode, this, &AudioEncodeFilter::encode);
-
+#endif
     connect(this, SIGNAL(finished()), &d_func().enc_thread, SLOT(quit()));
 }
 
@@ -206,8 +208,11 @@ public:
 VideoEncodeFilter::VideoEncodeFilter(QObject *parent)
     : VideoFilter(*new VideoEncodeFilterPrivate(), parent)
 {
-//    connect(this, SIGNAL(requestToEncode(QtAV::VideoFrame)), this, SLOT(encode(QtAV::VideoFrame)));
+#if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
+    connect(this, SIGNAL(requestToEncode(QtAV::VideoFrame)), this, SLOT(encode(QtAV::VideoFrame)));
+#else
     connect(this, &VideoEncodeFilter::requestToEncode, this, &VideoEncodeFilter::encode);
+#endif
     connect(this, SIGNAL(finished()), &d_func().enc_thread, SLOT(quit()));
 }
 

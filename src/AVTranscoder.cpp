@@ -357,7 +357,7 @@ void AVTranscoder::writeAudio(const QtAV::Packet &packet)
         return;
     // TODO: startpts, duration, encoded size
     d->encoded_frames++;
-    qDebug("encoded frames: %d, pos: %lld (writeAudio)", d->encoded_frames, packet.position);
+    //qDebug("encoded frames: %d, pos: %lld (writeAudio)", d->encoded_frames, packet.position);
 }
 
 void AVTranscoder::writeVideo(const QtAV::Packet &packet)
