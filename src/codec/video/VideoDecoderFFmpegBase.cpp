@@ -57,7 +57,7 @@ static void SetColorDetailsByFFmpeg(VideoFrame *f, AVFrame* frame, AVCodecContex
                 cr = ColorRange_Full;
                 cs = ColorSpace_XYZ; // not here
             } else if (!f->format().isRGB()) {
-                qDebug("prefer limited yuv range");
+                //qDebug("prefer limited yuv range");
                 cr = ColorRange_Limited;
             }
         }

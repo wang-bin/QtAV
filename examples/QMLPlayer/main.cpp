@@ -41,6 +41,7 @@ int main(int argc, char *argv[])
     options.add(QLatin1String("QMLPlayer options"))
             ("scale", 1.0, QLatin1String("scale of graphics context. 0: auto"))
             ;
+    qputenv("QTAV_MEDIACODEC_KEY", ")A0aZ!WIgo2DdCsc#EnR?NAsFtWrnENONeeiiED^OM@6gI+Hew6s5)77p^>$K(Fe");
     options.parse(argc, argv);
     Config::setName(QString::fromLatin1("QMLPlayer"));
     do_common_options_before_qapp(options);
@@ -159,9 +160,12 @@ qDebug() <<  "event dispatcher:" << QCoreApplication::eventDispatcher();
     if (player && !file.isEmpty()) {
         if (!file.startsWith(QLatin1String("file:")) && QFile(file).exists())
             file.prepend(QLatin1String("file:")); //qml use url and will add qrc: if no scheme
+#ifdef Q_OS_WIN
         file.replace(QLatin1String("\\"), QLatin1String("/")); //qurl
+#endif
         //QMetaObject::invokeMethod(player, "play", Q_ARG(QUrl, QUrl(file)));
-        player->setProperty("source", QUrl(file));
+        QUrl url;
+        player->setProperty("source", QUrl(file.toUtf8().toPercentEncoding()));
     }
 #endif
     QObject::connect(&Config::instance(), SIGNAL(changed()), &Config::instance(), SLOT(save()));

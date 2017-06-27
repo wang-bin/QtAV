@@ -112,7 +112,7 @@ bool AudioDecoderFFmpeg::decode(const Packet &packet)
         return false;
     }
     if (!got_frame_ptr) {
-        qWarning("[AudioDecoder] got_frame_ptr=false. decoded: %d, un: %d", ret, d.undecoded_size);
+        qWarning("[AudioDecoder] got_frame_ptr=false. decoded: %d, un: %d %s", ret, d.undecoded_size, av_err2str(ret));
         return !packet.isEOF();
     }
 #if USE_AUDIO_FRAME
