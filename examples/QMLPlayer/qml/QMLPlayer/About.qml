@@ -22,7 +22,7 @@ Page {
             text: "<img src='qrc:/QtAV.svg'><h3>QMLPlayer for " + Qt.platform.os + " " + qsTr("based on") + " QtAV 1.12.0</h3>"
                   + "<p>" + qsTr("QtAV is a cross platform, high performance multimedia framework") + "</p>"
                   + "<p>Distributed under the terms of LGPLv2.1 or later.</p>"
-                  + "<p>Copyright (C) 2012-2016 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p><p>"
+                  + "<p>Copyright (C) 2012-2017 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p><p>"
                   + qsTr("Home page") + ": <a href='http://qtav.org'>http://qtav.org</a></p>"
             + "<p><a href='http://qtav.org/install.html'>"+qsTr("Install QtAV for Windows desktop/store, macOS, Linux and Android")+"</a></p>"
                   + "\n<p>" + qsTr("Double click") + ": " + qsTr("show/hide control bar") + "</p><p>"
