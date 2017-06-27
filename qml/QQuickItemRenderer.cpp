@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
     theoribeiro <theo@fictix.com.br>
 
 *   This file is part of QtAV (from 2013)
@@ -194,10 +194,10 @@ QPointF QQuickItemRenderer::mapPointToItem(const QPointF &point) const
 {
     if (videoFrameSize().isEmpty())
         return QPointF();
-
+    DPTR_D(const QQuickItemRenderer);
     // Just normalize and use that function
     // m_nativeSize is transposed in some orientations
-    if (orientation()%180 == 0)
+    if (d.rotation()%180 == 0)
         return mapNormalizedPointToItem(QPointF(point.x() / videoFrameSize().width(), point.y() / videoFrameSize().height()));
     else
         return mapNormalizedPointToItem(QPointF(point.x() / videoFrameSize().height(), point.y() / videoFrameSize().width()));
@@ -213,7 +213,8 @@ QPointF QQuickItemRenderer::mapNormalizedPointToItem(const QPointF &point) const
 {
     qreal dx = point.x();
     qreal dy = point.y();
-    if (orientation()%180 == 0) {
+    DPTR_D(const QQuickItemRenderer);
+    if (d.rotation()%180 == 0) {
         dx *= contentRect().width();
         dy *= contentRect().height();
     } else {
@@ -221,7 +222,7 @@ QPointF QQuickItemRenderer::mapNormalizedPointToItem(const QPointF &point) const
         dy *= contentRect().width();
     }
 
-    switch (orientation()) {
+    switch (d.rotation()) {
         case 0:
         default:
             return contentRect().topLeft() + QPointF(dx, dy);
@@ -243,7 +244,7 @@ QRectF QQuickItemRenderer::mapNormalizedRectToItem(const QRectF &rectangle) cons
 QPointF QQuickItemRenderer::mapPointToSource(const QPointF &point) const
 {
     QPointF norm = mapPointToSourceNormalized(point);
-    if (orientation()%180 == 0)
+    if (d_func().rotation()%180 == 0)
         return QPointF(norm.x() * videoFrameSize().width(), norm.y() * videoFrameSize().height());
     else
         return QPointF(norm.x() * videoFrameSize().height(), norm.y() * videoFrameSize().width());
@@ -263,7 +264,7 @@ QPointF QQuickItemRenderer::mapPointToSourceNormalized(const QPointF &point) con
     // Normalize the item source point
     qreal nx = (point.x() - contentRect().x()) / contentRect().width();
     qreal ny = (point.y() - contentRect().y()) / contentRect().height();
-    switch (orientation()) {
+    switch (d_func().rotation()) {
         case 0:
         default:
             return QPointF(nx, ny);
@@ -340,7 +341,7 @@ void QQuickItemRenderer::drawFrame()
         if (d.frame_changed)
             sgvn->setCurrentFrame(d.video_frame);
         d.frame_changed = false;
-        sgvn->setTexturedRectGeometry(d.out_rect, normalizedROI(), d.orientation);
+        sgvn->setTexturedRectGeometry(d.out_rect, normalizedROI(), d.rotation());
         return;
     }
     if (!d.frame_changed) {
@@ -357,9 +358,9 @@ void QQuickItemRenderer::drawFrame()
     if (d.texture)
         delete d.texture;
 
-    if (d.orientation == 0) {
+    if (d.rotation() == 0) {
         d.texture = window()->createTextureFromImage(d.image);
-    } else if (d.orientation == 180) {
+    } else if (d.rotation() == 180) {
         d.texture = window()->createTextureFromImage(d.image.mirrored(true, true));
     }
     static_cast<QSGSimpleTextureNode*>(d.node)->setTexture(d.texture);

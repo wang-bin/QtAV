@@ -77,10 +77,10 @@ public:
     void setupAspectRatio() { //TODO: call when out_rect, renderer_size, orientation changed
         matrix.setToIdentity();
         matrix.scale((GLfloat)out_rect.width()/(GLfloat)renderer_width, (GLfloat)out_rect.height()/(GLfloat)renderer_height, 1);
-        if (orientation)
-            matrix.rotate(orientation, 0, 0, 1); // Z axis
+        if (rotation())
+            matrix.rotate(rotation(), 0, 0, 1); // Z axis
         // FIXME: why x/y is mirrored?
-        if (orientation%180)
+        if (rotation()%180)
             matrix.scale(-1, 1);
         else
             matrix.scale(1, -1);
@@ -190,7 +190,7 @@ QPointF QuickFBORenderer::mapPointToItem(const QPointF &point) const
 
     // Just normalize and use that function
     // m_nativeSize is transposed in some orientations
-    if (orientation()%180 == 0)
+    if (d_func().rotation()%180 == 0)
         return mapNormalizedPointToItem(QPointF(point.x() / videoFrameSize().width(), point.y() / videoFrameSize().height()));
     else
         return mapNormalizedPointToItem(QPointF(point.x() / videoFrameSize().height(), point.y() / videoFrameSize().width()));
@@ -206,7 +206,7 @@ QPointF QuickFBORenderer::mapNormalizedPointToItem(const QPointF &point) const
 {
     qreal dx = point.x();
     qreal dy = point.y();
-    if (orientation()%180 == 0) {
+    if (d_func().rotation()%180 == 0) {
         dx *= contentRect().width();
         dy *= contentRect().height();
     } else {
@@ -214,7 +214,7 @@ QPointF QuickFBORenderer::mapNormalizedPointToItem(const QPointF &point) const
         dy *= contentRect().width();
     }
 
-    switch (orientation()) {
+    switch (d_func().rotation()) {
         case 0:
         default:
             return contentRect().topLeft() + QPointF(dx, dy);
@@ -236,7 +236,7 @@ QRectF QuickFBORenderer::mapNormalizedRectToItem(const QRectF &rectangle) const
 QPointF QuickFBORenderer::mapPointToSource(const QPointF &point) const
 {
     QPointF norm = mapPointToSourceNormalized(point);
-    if (orientation()%180 == 0)
+    if (d_func().rotation()%180 == 0)
         return QPointF(norm.x() * videoFrameSize().width(), norm.y() * videoFrameSize().height());
     else
         return QPointF(norm.x() * videoFrameSize().height(), norm.y() * videoFrameSize().width());
@@ -256,7 +256,7 @@ QPointF QuickFBORenderer::mapPointToSourceNormalized(const QPointF &point) const
     // Normalize the item source point
     qreal nx = (point.x() - contentRect().x()) / contentRect().width();
     qreal ny = (point.y() - contentRect().y()) / contentRect().height();
-    switch (orientation()) {
+    switch (d_func().rotation()) {
         case 0:
         default:
             return QPointF(nx, ny);

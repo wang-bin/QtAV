@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -100,7 +100,7 @@ void QPainterRenderer::drawFrame()
     if (d.pixmap.isNull())
         return;
     QRect roi = realROI();
-    if (orientation() == 0) {
+    if (d.rotation() == 0) {
         //assume that the image data is already scaled to out_size(NOT renderer size!)
         if (roi.size() == d.out_rect.size()) {
             d.painter->drawPixmap(d.out_rect.topLeft(), d.pixmap, roi);
@@ -116,11 +116,11 @@ void QPainterRenderer::drawFrame()
     d.painter->save();
     d.painter->translate(rendererWidth()/2, rendererHeight()/2);
     // TODO: why rotate then scale gives wrong result?
-    if (orientation() % 180)
+    if (d.rotation() % 180)
         d.painter->scale((qreal)d.out_rect.width()/(qreal)rendererHeight(), (qreal)d.out_rect.height()/(qreal)rendererWidth());
     else
         d.painter->scale((qreal)d.out_rect.width()/(qreal)rendererWidth(), (qreal)d.out_rect.height()/(qreal)rendererHeight());
-    d.painter->rotate(orientation());
+    d.painter->rotate(d.rotation());
     d.painter->translate(-rendererWidth()/2, -rendererHeight()/2);
     d.painter->drawPixmap(QRect(0, 0, rendererWidth(), rendererHeight()), d.pixmap, roi);
     d.painter->restore();

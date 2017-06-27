@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -28,7 +28,7 @@
 #include <QtCore/QRect>
 #include <QtAV/VideoFrame.h>
 #include <QtGui/QColor>
-
+#include "QtAV/Statistics.h"
 /*TODO:
  * Region of Interest(ROI)
  * use matrix to compute out rect, mapped point etc
@@ -54,7 +54,6 @@ public:
       , out_aspect_ratio_mode(VideoRenderer::VideoAspectRatio)
       , out_aspect_ratio(0)
       , quality(VideoRenderer::QualityBest)
-      , orientation(0)
       , preferred_format(VideoFormat::Format_RGB32)
       , force_preferred(false)
       , brightness(0)
@@ -62,6 +61,7 @@ public:
       , hue(0)
       , saturation(0)
       , bg_color(0, 0, 0)
+      , orientation(0)
     {
         //conv.setInFormat(PIX_FMT_YUV420P);
         //conv.setOutFormat(PIX_FMT_BGR32); //TODO: why not RGB32?
@@ -79,7 +79,11 @@ public:
             return out_rect0 != out_rect;
         }
         // dar: displayed aspect ratio in video renderer orientation
-        const qreal dar = (orientation % 180) ? 1.0/outAspectRatio : outAspectRatio;
+        int rotate = orientation;
+        if (statistics) {
+            rotate += int(statistics->video_only.rotate);
+        }
+        const qreal dar = (rotate % 180) ? 1.0/outAspectRatio : outAspectRatio;
         //qDebug("out rect: %f %dx%d ==>", out_aspect_ratio, out_rect.width(), out_rect.height());
         if (rendererAspectRatio >= dar) { //equals to original video aspect ratio here, also equals to out ratio
             //renderer is too wide, use renderer's height, horizonal align center
@@ -97,6 +101,11 @@ public:
         return out_rect0 != out_rect;
     }
     virtual void setupQuality() {}
+    int rotation() const {
+        if (!statistics)
+            return orientation;
+        return statistics->video_only.rotate + orientation;
+    }
 
     //draw background when necessary, for example, renderer is resized. Then set to false
     bool update_background;
@@ -114,7 +123,6 @@ public:
     //out_rect: the displayed video frame out_rect in the renderer
     QRect out_rect; //TODO: out_out_rect
     QRectF roi;
-    int orientation;
 
     VideoFrame video_frame;
     VideoFormat::PixelFormat preferred_format;
@@ -122,6 +130,9 @@ public:
 
     qreal brightness, contrast, hue, saturation;
     QColor bg_color;
+private:
+    int orientation;
+    friend class VideoRenderer;
 };
 
 } //namespace QtAV

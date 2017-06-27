@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -288,11 +288,11 @@ int VideoRenderer::rendererHeight() const
 
 void VideoRenderer::setOrientation(int value)
 {
+    DPTR_D(VideoRenderer);
     // currently only supports a multiple of 90
     value = (value + 360) % 360;
     if (value % 90)
         return;
-    DPTR_D(VideoRenderer);
     if (d.orientation == value)
         return;
     int old = orientation();
@@ -312,7 +312,8 @@ void VideoRenderer::setOrientation(int value)
 
 int VideoRenderer::orientation() const
 {
-    return d_func().orientation;
+    DPTR_D(const VideoRenderer);
+    return d.orientation;
 }
 
 // only qpainter and opengl based renderers support orientation.
@@ -505,6 +506,7 @@ void VideoRenderer::handlePaintEvent()
          */
         if (d.video_frame.isValid()) {
             drawFrame();
+            //qDebug("render elapsed: %lld", et.elapsed());
             if (d.statistics) {
                 d.statistics->video_only.frameDisplayed(d.video_frame.timestamp());
                 d.statistics->video.current_time = QTime(0, 0, 0).addMSecs(int(d.video_frame.timestamp() * 1000.0));

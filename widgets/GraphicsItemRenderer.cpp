@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -51,8 +51,8 @@ public:
     void setupAspectRatio() {
         matrix.setToIdentity();
         matrix.scale((GLfloat)out_rect.width()/(GLfloat)renderer_width, (GLfloat)out_rect.height()/(GLfloat)renderer_height, 1);
-        if (orientation)
-            matrix.rotate(orientation, 0, 0, 1); // Z axis
+        if (rotation())
+            matrix.rotate(rotation(), 0, 0, 1); // Z axis
     }
     // return true if opengl is enabled and context is ready. may called by non-rendering thread
     bool checkGL() {
