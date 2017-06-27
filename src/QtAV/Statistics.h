@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2013)
 
@@ -106,6 +106,7 @@ public:
          */
         int gop_size;
         QString pix_fmt;
+        int rotate;
         /// return current absolute time (seconds since epcho
         qint64 frameDisplayed(qreal pts); // used to compute currentDisplayFPS()
     private:

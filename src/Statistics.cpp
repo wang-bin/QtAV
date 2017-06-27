@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2013)
 
@@ -56,6 +56,7 @@ Statistics::VideoOnly::VideoOnly():
   , coded_width(0)
   , coded_height(0)
   , gop_size(0)
+  , rotate(0)
   , d(new Private())
 {
 }
@@ -66,6 +67,7 @@ Statistics::VideoOnly::VideoOnly(const VideoOnly& v)
   , coded_width(v.coded_width)
   , coded_height(v.coded_height)
   , gop_size(v.gop_size)
+  , rotate(v.rotate)
   , d(v.d)
 {
 }
@@ -77,6 +79,7 @@ Statistics::VideoOnly& Statistics::VideoOnly::operator =(const VideoOnly& v)
     coded_width = v.coded_width;
     coded_height = v.coded_height;
     gop_size = v.gop_size;
+    rotate = v.rotate;
     d = v.d;
     return *this;
 }

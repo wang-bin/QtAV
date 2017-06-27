@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -28,6 +28,11 @@
 #include "QtAV/MediaIO.h"
 #include "QtAV/VideoCapture.h"
 #include "QtAV/private/AVCompat.h"
+#if AV_MODULE_CHECK(LIBAVFORMAT, 55, 18, 0, 39, 100)
+extern "C" {
+#include <libavutil/display.h>
+}
+#endif
 #include "utils/Logger.h"
 
 namespace QtAV {
@@ -325,6 +330,15 @@ void AVPlayer::Private::initVideoStatistics(int s)
     statistics.video_only.pix_fmt = QLatin1String(av_get_pix_fmt_name(avctx->pix_fmt));
     statistics.video_only.height = avctx->height;
     statistics.video_only.width = avctx->width;
+    statistics.video_only.rotate = 0;
+#if AV_MODULE_CHECK(LIBAVFORMAT, 55, 18, 0, 39, 100)
+    quint8 *sd = av_stream_get_side_data(demuxer.formatContext()->streams[s], AV_PKT_DATA_DISPLAYMATRIX, NULL);
+    if (sd) {
+        double r = av_display_rotation_get((qint32*)sd);
+        if (!qIsNaN(r))
+            statistics.video_only.rotate = ((int)r + 360) % 360;
+    }
+#endif
 }
 // notify statistics change after audio/video thread is set
 bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
