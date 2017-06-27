@@ -1063,6 +1063,17 @@ int AVPlayer::currentAudioStream() const
     return d->demuxer.audioStreams().indexOf(d->demuxer.audioStream());
 }
 
+// added by calin
+QList<int> AVPlayer::muxerAudioTracks() const
+{
+    return d->demuxer.audioStreams();
+}
+// added by calin
+QList<int> AVPlayer::muxerVideoTracks() const
+{
+    return d->demuxer.videoStreams();
+}
+
 int AVPlayer::currentVideoStream() const
 {
     return d->demuxer.videoStreams().indexOf(d->demuxer.videoStream());
