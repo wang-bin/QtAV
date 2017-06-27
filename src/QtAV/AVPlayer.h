@@ -206,6 +206,20 @@ public:
     const QVariantList& externalAudioTracks() const;
     const QVariantList& internalAudioTracks() const;
     const QVariantList& internalVideoTracks() const;
+
+    /*!
+     * \brief muxerVideoTracks
+     * get FFmpeg stream id's (actual track number) from the muxer for the set of video tracks for the movie file -- useful if you need to interface with external libraries
+     * \return a list of track id's for the video tracks (if any) in the source file, eg { 0, 1, 3, 6 } etc
+     */
+    QList<int> muxerVideoTracks() const;
+    /*!
+     * \brief muxerAudioTracks
+     * get FFmpeg stream id's (actual track number) from the muxer for the set of audio tracks for the movie file -- useful if you need to interface with external libraries
+     * \return a list of track id's for the audio tracks (if any) in the source file, eg { 2, 4, 5 } etc
+     */
+    QList<int> muxerAudioTracks() const;
+
     /*!
      * \brief setAudioStream
      * set an external audio file and stream number as audio track. It will be reset if setFile()/setIODevice()/setInput() is called
