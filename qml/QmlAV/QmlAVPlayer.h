@@ -225,7 +225,6 @@ public:
     void setAudioTrack(int value);
     QVariantList internalAudioTracks() const;
     /*!
-    /*!
      * \brief videoTrack
      * The video stream number in current media.
      * Value can be: 0, 1, 2.... 0 means the 1st video stream in current media
