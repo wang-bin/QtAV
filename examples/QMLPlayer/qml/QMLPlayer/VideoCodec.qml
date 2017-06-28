@@ -121,7 +121,7 @@ Page {
             codecMode.append({ name: "VideoToolbox", hardware: true, zcopy: true, description: "VideoToolbox (iOS)" })
         } else if(Qt.platform.os == "android") {
             defaultDecoders.push("MediaCodec")
-            codecMode.append({ name: "MediaCodec", hardware: true, zcopy: false, description: "Android 5.0 MediaCodec (H.264)" })
+            codecMode.append({ name: "MediaCodec", hardware: true, zcopy: false, description: "Android(>=4.1) MediaCodec (H.264)" })
         } else if (Qt.platform.os == "linux") {
             defaultDecoders.push("VAAPI")
             defaultDecoders.push("CUDA")
@@ -135,7 +135,7 @@ Page {
             listView.currentItem.state = "selected"
             return
         }
-        for (var i = 0; i < codecMode.count; ++i) {
+        for (var i = 1; i < codecMode.count; ++i) {
             if (codecMode.get(i).name === PlayerConfig.decoderPriorityNames[0]) {
                 listView.currentIndex = i;
                 d.selectedItem = listView.currentItem

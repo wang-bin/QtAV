@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -304,7 +304,7 @@ void Config::reload()
     setForceFrameRate(settings.value(QString::fromLatin1("force_fps"), 0.0).toReal());
     settings.beginGroup(QString::fromLatin1("decoder"));
     settings.beginGroup(QString::fromLatin1("video"));
-    QString decs_default(QString::fromLatin1("FFmpeg"));
+    QString decs_default(QString::fromLatin1("HW FFmpeg")); // HW is ignored
     setDecoderPriorityNames(settings.value(QString::fromLatin1("priority"), decs_default).toString().split(QString::fromLatin1(" "), QString::SkipEmptyParts));
     setZeroCopy(settings.value(QString::fromLatin1("zeroCopy"), true).toBool());
     settings.endGroup(); //video
