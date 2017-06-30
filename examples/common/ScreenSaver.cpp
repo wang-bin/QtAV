@@ -21,8 +21,14 @@ static fXResetScreenSaver XResetScreenSaver = 0;
 static QLibrary xlib;
 #endif //Q_OS_LINUX
 #if defined(Q_OS_MAC) && !defined(Q_OS_IOS)
+#include <Availability.h>
+#  if MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_8
 //http://www.cocoachina.com/macdev/cocoa/2010/0201/453.html
 #include <CoreServices/CoreServices.h>
+#  else
+/* MAC OSX 10.8+ has deprecated the UpdateSystemActivity stuff in favor of a new API.. */
+#    include <IOKit/pwr_mgt/IOPMLib.h>
+#  endif
 #endif //Q_OS_MAC
 #ifdef Q_OS_WIN
 #include <QAbstractEventDispatcher>
@@ -149,6 +155,7 @@ ScreenSaver::ScreenSaver()
     }
 #endif //Q_OS_LINUX
     ssTimerId = 0;
+    osxIOPMAssertionId = 0U; // mac >=10.8 only
     retrieveState();
 }
 
@@ -158,6 +165,13 @@ ScreenSaver::~ScreenSaver()
 #ifdef Q_OS_LINUX
     if (xlib.isLoaded())
         xlib.unload();
+#elif defined(Q_OS_MAC) && !defined(Q_OS_IOS)
+#  if MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_8
+    if (osxIOPMAssertionId) {
+        IOPMAssertionRelease((IOPMAssertionID)osxIOPMAssertionId);
+        osxIOPMAssertionId = 0U;
+    }
+#  endif
 #endif
 }
 
@@ -310,7 +324,15 @@ void ScreenSaver::timerEvent(QTimerEvent *e)
     if (e->timerId() != ssTimerId)
         return;
 #if defined(Q_OS_MAC) && !defined(Q_OS_IOS)
+#  if MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_8
     UpdateSystemActivity(OverallAct);
+#  else // OSX >= 10.8, use new API
+    IOPMAssertionID assertionId = osxIOPMAssertionId;
+    IOReturn r = IOPMAssertionDeclareUserActivity(CFSTR("QtAVScreenSaver"),kIOPMUserActiveLocal,&assertionId);
+    if (r == kIOReturnSuccess) {
+        osxIOPMAssertionId = assertionId;
+    }
+#  endif
     return;
 #endif //Q_OS_MAC
 #ifdef Q_OS_LINUX
