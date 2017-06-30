@@ -34,6 +34,7 @@ typedef float GLfloat;
 #include <QEvent>
 #include <QKeyEvent>
 #include <QGraphicsSceneEvent>
+#include <QtCore/QCoreApplication>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
 #include <QtGui/QSurface>
 #endif
@@ -126,7 +127,9 @@ bool GraphicsItemRenderer::receiveFrame(const VideoFrame& frame)
     {
         preparePixmap(frame);
     }
-    scene()->update(sceneBoundingRect()); //TODO: thread?
+	// moved to event
+    // scene()->update(sceneBoundingRect()); //TODO: thread?
+    QCoreApplication::postEvent(this, new QEvent(QEvent::User));
     //update(); //does not cause an immediate paint. my not redraw.
     return true;
 }
@@ -173,7 +176,16 @@ void GraphicsItemRenderer::paint(QPainter *painter, const QStyleOptionGraphicsIt
     } else {
         qWarning("FilterContext not available!");
     }
+    // save painter state, switch to native opengl painting
+	painter->save();
+    painter->beginNativePainting();
+	
     handlePaintEvent();
+	
+	// end native painting, restore state
+    painter->endNativePainting();
+    painter->restore();
+	
     d.painter = 0; //painter may be not available outside this function
     if (ctx)
         ctx->painter = 0;
@@ -290,15 +302,27 @@ bool GraphicsItemRenderer::onSetSaturation(qreal s)
 #if CONFIG_GRAPHICSWIDGET
 bool GraphicsItemRenderer::event(QEvent *event)
 {
-    setFocus(); //WHY: Force focus
-    QEvent::Type type = event->type();
-    qDebug("GraphicsItemRenderer event type = %d", type);
-    if (type == QEvent::KeyPress) {
-        qDebug("KeyPress Event. key=%d", static_cast<QKeyEvent*>(event)->key());
+    if (e->type() == QEvent::User) {
+		scene()->update(sceneBoundingRect());äääää
     }
+	else {
+        setFocus(); //WHY: Force focus
+        QEvent::Type type = event->type();
+        qDebug("GraphicsItemRenderer event type = %d", type);
+        if (type == QEvent::KeyPress) {
+            qDebug("KeyPress Event. key=%d", static_cast<QKeyEvent*>(event)->key());
+        }
+	}	
     return true;
 }
 #else
+bool GraphicsItemRenderer::event(QEvent *event)
+{
+    if (event->type() != QEvent::User)
+        return GraphicsWidget::event(event);
+	scene()->update(sceneBoundingRect());
+    return true;
+}
 /*simply passes event to QGraphicsWidget::event(). you should not have to
  *reimplement sceneEvent() in a subclass of QGraphicsWidget.
  */

@@ -104,6 +104,7 @@ protected:
 #if CONFIG_GRAPHICSWIDGET
     bool event(QEvent *event) Q_DECL_OVERRIDE;
 #else
+    bool event(QEvent *event) Q_DECL_OVERRIDE;
     //bool sceneEvent(QEvent *event) Q_DECL_OVERRIDE;
 #endif //CONFIG_GRAPHICSWIDGET
 
