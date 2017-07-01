@@ -33,6 +33,7 @@ private:
     int allowExposures;
 #endif //Q_OS_LINUX
     int ssTimerId; //for mac
+    quint32 osxIOPMAssertionId; // for mac OSX >= 10.8
 };
 
 #endif // SCREENSAVER_H
