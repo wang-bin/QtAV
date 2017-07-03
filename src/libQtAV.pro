@@ -187,7 +187,7 @@ mac|ios {
   CONFIG *= config_openal
   SOURCES += output/audio/AudioOutputAudioToolbox.cpp
   LIBS += -framework AudioToolbox
-  LIBS += -Wl,-unexported_symbols_list $$PWD/unexport.list
+  LIBS += -Wl,-unexported_symbols_list,$$PWD/unexport.list
 } else:!win32 {
   #LIBS += -Wl,--exclude-libs,ALL
 }
