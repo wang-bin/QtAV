@@ -122,50 +122,57 @@ bool FilterManager::unregisterAudioFilter(Filter *filter, AVPlayer *player)
 {
     DPTR_D(FilterManager);
     QList<Filter*>& fs = d.afilter_player_map[player];
+    bool ret = false;
     if (fs.removeAll(filter) > 0) {
-        if (fs.isEmpty())
-            d.afilter_player_map.remove(player);
-        return true;
+        ret = true;
     }
-    return false;
+    if (fs.isEmpty())
+        d.afilter_player_map.remove(player);
+    return ret;
 }
 
 bool FilterManager::unregisterVideoFilter(Filter *filter, AVPlayer *player)
 {
     DPTR_D(FilterManager);
     QList<Filter*>& fs = d.vfilter_player_map[player];
+    bool ret = false;
     if (fs.removeAll(filter) > 0) {
-        if (fs.isEmpty())
-            d.vfilter_player_map.remove(player);
-        return true;
+        ret = true;
     }
-    return false;
+    if (fs.isEmpty())
+        d.vfilter_player_map.remove(player);
+    return ret;
 }
 
 bool FilterManager::unregisterFilter(Filter *filter, AVOutput *output)
 {
     DPTR_D(FilterManager);
     QList<Filter*>& fs = d.filter_out_map[output];
-    return fs.removeAll(filter) > 0;
+    bool ret = fs.removeAll(filter) > 0;
+    if (fs.isEmpty()) d.filter_out_map.remove(output);
+    return ret;
 }
 
 bool FilterManager::uninstallFilter(Filter *filter)
 {
     DPTR_D(FilterManager);
-    QMap<AVPlayer*, QList<Filter*> >::iterator it = d.vfilter_player_map.begin();
-    while (it != d.vfilter_player_map.end()) {
+    QMap<AVPlayer*, QList<Filter*> > map1(d.vfilter_player_map); // NB: copy it for iteration because called code may modify map -- which caused crashes
+    QMap<AVPlayer*, QList<Filter*> >::iterator it = map1.begin();
+    while (it != map1.end()) {
         if (uninstallVideoFilter(filter, it.key()))
             return true;
         ++it;
     }
-    it = d.afilter_player_map.begin();
-    while (it != d.afilter_player_map.end()) {
+    QMap<AVPlayer *, QList<Filter *> > map2(d.afilter_player_map); // copy to avoid crashes when called-code modifies map
+    it = map2.begin();
+    while (it != map2.end()) {
         if (uninstallAudioFilter(filter, it.key()))
             return true;
         ++it;
     }
-    QMap<AVOutput*, QList<Filter*> >::iterator it2 = d.filter_out_map.begin();
-    while (it2 != d.filter_out_map.end()) {
+    QMap<AVOutput*, QList<Filter*> > map3(d.filter_out_map); // copy to avoid crashes
+    QMap<AVOutput*, QList<Filter*> >::iterator it2 = map3.begin();
+    while (it2 != map3.end()) {
         if (uninstallFilter(filter, it2.key()))
             return true;
         ++it2;
