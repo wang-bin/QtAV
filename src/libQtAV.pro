@@ -166,6 +166,7 @@ config_avdevice { #may depends on avfilter
 config_avfilter {
     DEFINES += QTAV_HAVE_AVFILTER=1
     LIBS += -lavfilter
+    mac:!ios:static_ffmpeg: LIBS += -framework AppKit
 }
 config_ipp {
     DEFINES += QTAV_HAVE_IPP=1
