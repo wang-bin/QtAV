@@ -192,7 +192,9 @@ AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *avct
 end:
     qWarning("hardware acceleration is not available" );
     /* Fallback to default behaviour */
+#if QTAV_HAVE(AVBUFREF)
     avctx->get_buffer2 = avcodec_default_get_buffer2;
+#endif
     return avcodec_default_get_format(avctx, pi_fmt);
 }
 
