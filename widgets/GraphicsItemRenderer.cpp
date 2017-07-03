@@ -303,7 +303,7 @@ bool GraphicsItemRenderer::onSetSaturation(qreal s)
 bool GraphicsItemRenderer::event(QEvent *event)
 {
     if (e->type() == QEvent::User) {
-		scene()->update(sceneBoundingRect());äääää
+		scene()->update(sceneBoundingRect());
     }
 	else {
         setFocus(); //WHY: Force focus
