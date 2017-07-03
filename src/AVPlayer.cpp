@@ -1088,6 +1088,18 @@ int AVPlayer::subtitleStreamCount() const
     return d->demuxer.subtitleStreams().size();
 }
 
+// added by calin
+QList<int> AVPlayer::muxerAudioTracks() const
+{
+    return d->demuxer.audioStreams();
+}
+
+// added by calin
+QList<int> AVPlayer::muxerVideoTracks() const
+{
+    return d->demuxer.videoStreams();
+}
+
 AVPlayer::State AVPlayer::state() const
 {
     return d->state;
