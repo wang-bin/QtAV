@@ -199,12 +199,30 @@ public:
     /*!
      * \brief externalAudioTracks
      * A list of QVariantMap. Using QVariantMap and QVariantList is mainly for QML support.
-     * [ {id: 0, file: abc.dts, language: eng, title: xyz}, ...]
+     * [ {id: 0, stream_index: 2, file: abc.dts, language: eng, title: xyz}, ...]
      * id: used for setAudioStream(id)
+     * stream_index: the actual muxer stream index -- not used by API to this class but possibly
+     *               useful for interop with external libs that require absolute stream_index
      * \sa externalAudioTracksChanged
      */
     const QVariantList& externalAudioTracks() const;
+    /*!
+     * \brief internalAudioTracks
+     * A list of QVariantMap. Using QVariantMap and QVariantList is mainly for QML support.
+     * [ {id: 0, stream_index: 2, file: abc.dts, language: eng, title: xyz}, ...]
+     * id: used for setAudioStream(id)
+     * stream_index: the actual muxer stream index -- not used by API to this class but possibly
+     *               useful for interop with external libs that require absolute stream_index
+     */
     const QVariantList& internalAudioTracks() const;
+    /*!
+     * \brief internalVideoTracks
+     * A list of QVariantMap. Using QVariantMap and QVariantList is mainly for QML support.
+     * [ {id: 0, stream_index: 2, file: abc.dts, language: eng, title: xyz}, ...]
+     * id: used for setAudioStream(id)
+     * stream_index: the actual muxer stream index -- not used by API to this class but possibly
+     *               useful for interop with external libs that require absolute stream_index
+     */
     const QVariantList& internalVideoTracks() const;
     /*!
      * \brief setAudioStream
