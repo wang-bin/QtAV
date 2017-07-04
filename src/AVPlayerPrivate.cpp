@@ -459,6 +459,8 @@ QVariantList AVPlayer::Private::getTracksInfo(AVDemuxer *demuxer, AVDemuxer::Str
         QVariantMap t;
         t[QStringLiteral("id")] = info.size();
         t[QStringLiteral("file")] = demuxer->fileName();
+        t[QStringLiteral("stream_index")] = QVariant(s);
+
         AVStream *stream = demuxer->formatContext()->streams[s];
         AVCodecContext *ctx = stream->codec;
         if (ctx) {

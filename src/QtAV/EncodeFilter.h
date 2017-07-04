@@ -82,7 +82,7 @@ Q_SIGNALS:
     void frameEncoded(const QtAV::Packet& packet);
     void startTimeChanged(qint64 value);
     // internal use only
-    void requestToEncode(const AudioFrame& frame);
+    void requestToEncode(const QtAV::AudioFrame& frame);
 protected Q_SLOTS:
     void encode(const QtAV::AudioFrame& frame = AudioFrame());
 protected:
