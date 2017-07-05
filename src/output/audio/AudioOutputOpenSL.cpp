@@ -324,7 +324,11 @@ bool AudioOutputOpenSL::open()
     // Volume interface
     //SL_ENSURE((*m_playerObject)->GetInterface(m_playerObject, SL_IID_VOLUME, &m_volumeItf), false);
 
-    sem.release(buffer_count - sem.available());
+    /*
+     * DO NOT call sem.release(buffer_count - sem.available()) because playInitialData() will enqueue buffers and then sem.release() is called in callback.
+     * Otherwise, Enqueue() the 1st(or more) real buffer may report SL_RESULT_BUFFER_INSUFFICIENT and noise will be played.
+     * Can not Enqueue() internally here because buffers are managed in AudioOutput to ensure 0-copy
+     */
     return true;
 }
 
