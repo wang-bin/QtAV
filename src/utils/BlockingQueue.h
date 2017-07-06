@@ -48,8 +48,26 @@ public:
      */
     void setThreshold(int min); //wake up and enqueue
 
-    void put(const T& t);
-    T take();
+    /*! \brief put
+     *  put t into the queue. Will block if blockFull is set to true (and optionally can specify a wait timeout in ms).
+     *  \param t the item to copy into the queue
+     *  \param wait_timeout_ms this parameter is used if blockFull == true (the default).
+     *         If the queue is full, optionally wait for the queue to not be full a maximum of wait_timeout_ms milliseconds,
+     *         and return false if timeout expires. ULONG_MAX means wait indefinitely.
+     *  \return true if item was successfully placed in the queue and the queue was not full.
+     *          false is returned if the queue is (still) full. The item is still placed into a full queue!
+     *          Note that even a 'full' queue will accept new items and t WILL be placed in the queue regardless of return value.
+     */
+    bool put(const T& t, unsigned long wait_timeout_ms = ULONG_MAX);
+    /*! \brief take
+     *   Dequeue 1 item from queue, optionally blocking.
+     * \param wait_timeout_ms this parameter is used if blockEmpty == true (the default).
+     *         If the queue is empty, optionally wait for the queue to not be empty a maximum of wait_timeout_ms milliseconds.
+     *         ULONG_MAX means wait indefinitely.
+     * \param isValid a pointer to a bool (optional).  If isValid is set to true after a call, the returned item is valid. False means the queue was empty or the timeout expired.
+     * \return the item taken.  It may not be valid if the queue was empty and timeout expired. Check optional isValid flag to determine if that is the case.
+     */
+    T take(unsigned long wait_timeout_ms = ULONG_MAX, bool *isValid = 0);
     void setBlocking(bool block); //will wake if false. called when no more data can enqueue
     void blockEmpty(bool block);
     void blockFull(bool block);
@@ -133,17 +151,21 @@ void BlockingQueue<T, Container>::setThreshold(int min)
 }
 
 template <typename T, template <typename> class Container>
-void BlockingQueue<T, Container>::put(const T& t)
+bool BlockingQueue<T, Container>::put(const T& t, unsigned long timeout_ms)
 {
+    bool ret = true;
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
     if (checkFull()) {
+        ret = false;
         //qDebug("queue full"); //too frequent
         if (full_callback) {
             full_callback->call();
         }
         if (block_full)
-            cond_full.wait(&lock);
+            ret = cond_full.wait(&lock, timeout_ms);
+        // uncomment here to reject placing items into a full queue -- update API docs if you do this.
+        // if (!ret) return false;
     }
     queue.enqueue(t);
     onPut(t); // emit bufferProgressChanged here if buffering
@@ -153,11 +175,13 @@ void BlockingQueue<T, Container>::put(const T& t)
     } else {
         //qDebug("buffering: %d/%d~%d", queue.size(), thres, cap);
     }
+    return ret;
 }
 
 template <typename T, template <typename> class Container>
-T BlockingQueue<T, Container>::take()
+T BlockingQueue<T, Container>::take(unsigned long timeout_ms, bool *isValid)
 {
+    if (isValid) *isValid = false;
     QWriteLocker locker(&lock);
     Q_UNUSED(locker);
     if (checkEmpty()) {//TODO:always block?
@@ -166,7 +190,7 @@ T BlockingQueue<T, Container>::take()
             empty_callback->call();
         }
         if (block_empty)
-            cond_empty.wait(&lock); //block when empty only
+            cond_empty.wait(&lock,timeout_ms); //block when empty only
     }
     if (checkEmpty()) {
         //qWarning("Queue is still empty");
@@ -176,6 +200,7 @@ T BlockingQueue<T, Container>::take()
         return T();
     }
     T t(queue.dequeue());
+    if (isValid) *isValid = true;
     cond_full.wakeOne();
     onTake(t); // emit start buffering here if empty
     return t;
