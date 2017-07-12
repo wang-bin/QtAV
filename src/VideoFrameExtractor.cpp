@@ -127,7 +127,6 @@ public:
         , seek_count(0)
         , position(-2*kDefaultPrecision)
         , precision(kDefaultPrecision)
-        , mut(QMutex::Recursive)
         , decoder(0)
     {
         QVariantHash opt;
@@ -162,7 +161,6 @@ public:
         releaseResourceInternal();
     }
     bool checkAndOpen() {
-        QMutexLocker l(&mut); Q_UNUSED(l); // need lock here because reading 'source' and other vars which main thread may also write-to
         const bool loaded = demuxer.fileName() == source && demuxer.isLoaded();
         if (loaded && decoder)// && !demuxer.atEnd()) //we may seek back later when eof got. TODO: remove demuxer.atEnd()
             return true;
@@ -212,11 +210,6 @@ public:
 
     // return the key frame position
     bool extractInPrecision(qint64 value, int range, QString & err, bool & aborted) {
-        // Below mutex -- not needed: the member vars we write to are either never really accessed in another
-        // thread, or if they are they are volatile bools and the like which are pretty much atomic anyway.
-        // If that condition changes, uncomment the below line.
-        // QMutexLocker l(&mut); Q_UNUSED(l);
-
         abort_seek = false;
         err = "";
         aborted = false;
@@ -394,10 +387,9 @@ public:
     bool auto_extract;
     bool auto_precision;
     int seek_count;
-    qint64 position; ///< only written-to by holder of the mutex
-    int precision;
-    QString source; ///< important: only write to this when holding the mutex
-    mutable QMutex mut;
+    qint64 position; ///< only read/written by this->thread(), never read by extractor thread so no lock necessary
+    volatile int precision; ///< is volatile because may be written by this->thread() and read by extractor thread but typical use is to not modify it while extract is running
+    QString source; ///< is written-to by this->thread() but may be read by extractor thread; important: apparently two threads accessing QString is supported by Qt according to wang-bin, so we aren't guarding this with a lock
     AVDemuxer demuxer;
     QScopedPointer<VideoDecoder> decoder;
     VideoFrame frame; ///< important: we only allow the extract thread to modify this value
@@ -421,18 +413,14 @@ void VideoFrameExtractor::setSource(const QString url)
     DPTR_D(VideoFrameExtractor);
     if (url == d.source)
         return;
-    {
-        QMutexLocker l(&d.mut); Q_UNUSED(l);
-        d.source = url;
-        d.has_video = true;
-    }
+    d.source = url;
+    d.has_video = true;
     Q_EMIT sourceChanged();
     d.safeReleaseResource();
 }
 
 QString VideoFrameExtractor::source() const
 {
-    QMutexLocker l(&d_func().mut); Q_UNUSED(l);
     return d_func().source;
 }
 
@@ -472,9 +460,7 @@ void VideoFrameExtractor::setPosition(qint64 value)
     if (qAbs(value - d.position) < precision()) {
         return;
     }
-    d.mut.lock();
     d.position = value;
-    d.mut.unlock();
     Q_EMIT positionChanged();
     if (!autoExtract())
         return;
@@ -483,7 +469,6 @@ void VideoFrameExtractor::setPosition(qint64 value)
 
 qint64 VideoFrameExtractor::position() const
 {
-    QMutexLocker l(&d_func().mut); Q_UNUSED(l);
     return d_func().position;
 }
 
@@ -496,7 +481,6 @@ void VideoFrameExtractor::setPrecision(int value)
     // explain why value (p0) is used but not the actual decoded position (p)
     // it's key frame finding rule
     if (value >= 0) {
-        QMutexLocker l(&d.mut); Q_UNUSED(l);
         d.precision = value;
     }
     Q_EMIT precisionChanged();
@@ -504,7 +488,6 @@ void VideoFrameExtractor::setPrecision(int value)
 
 int VideoFrameExtractor::precision() const
 {
-    QMutexLocker l(&d_func().mut); Q_UNUSED(l);
     return d_func().precision;
 }
 
