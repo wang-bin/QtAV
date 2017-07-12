@@ -28,7 +28,8 @@ QuickVideoPreview::QuickVideoPreview(QQuickItem *parent) : BaseQuickRenderer(par
 {
     connect(&m_extractor, SIGNAL(positionChanged()), this, SIGNAL(timestampChanged()));
     connect(&m_extractor, SIGNAL(frameExtracted(QtAV::VideoFrame)), SLOT(displayFrame(QtAV::VideoFrame)));
-    connect(&m_extractor, SIGNAL(error()), SLOT(displayNoFrame()));
+    connect(&m_extractor, SIGNAL(error(const QString &)), SLOT(displayNoFrame()));
+    connect(&m_extractor, SIGNAL(aborted(const QString &)), SLOT(displayNoFrame()));
     connect(this, SIGNAL(fileChanged()), SLOT(displayNoFrame()));
 }
 

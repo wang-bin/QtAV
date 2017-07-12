@@ -67,12 +67,12 @@ public:
     void setPosition(qint64 value);
     qint64 position() const;
 
-    virtual bool event(QEvent *e);
 Q_SIGNALS:
     void frameExtracted(const QtAV::VideoFrame& frame); // parameter: VideoFrame, bool changed?
     void sourceChanged();
     void asyncChanged();
-    void error(); // clear preview image in a slot
+    void error(const QString &errorMessage); ///< emitted with a helpful error message -- connect to this to show empty image in preview widget
+    void aborted(const QString &abortMessage);  ///< emitted when aborting the current preview -- if user requested a new preview this usually gets emitted.  connect to this to show empty preview
     void autoExtractChanged();
     /*!
      * \brief positionChanged
@@ -80,8 +80,6 @@ Q_SIGNALS:
      */
     void positionChanged();
     void precisionChanged();
-
-    void aboutToExtract(qint64 pos);
 
 public Q_SLOTS:
     /*!

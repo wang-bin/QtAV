@@ -29,6 +29,7 @@ namespace QtAV {
 VideoPreviewWidget::VideoPreviewWidget(QWidget *parent)
     : QWidget(parent)
     , m_keep_ar(false)
+    , m_auto_display(false) // set to false initially to trigger connections in setAutoDisplayFrame() below -- will default to true
     , m_extractor(new VideoFrameExtractor(this))
     , m_out(new VideoOutput(VideoRendererId_Widget, this))
     // FIXME: opengl may crash, so use software renderer here
@@ -37,10 +38,27 @@ VideoPreviewWidget::VideoPreviewWidget(QWidget *parent)
     Q_ASSERT_X(m_out->widget(), "VideoPreviewWidget()", "widget based renderer is not found");
     m_out->widget()->setParent(this);
     connect(m_extractor, SIGNAL(positionChanged()), this, SIGNAL(timestampChanged()));
-    connect(m_extractor, SIGNAL(frameExtracted(QtAV::VideoFrame)), SLOT(displayFrame(QtAV::VideoFrame)));
-    connect(m_extractor, SIGNAL(error()), SLOT(displayNoFrame()));
-    connect(this, SIGNAL(fileChanged()), SLOT(displayNoFrame()));
+    connect(m_extractor, SIGNAL(error(const QString &)), this, SIGNAL(gotError(const QString &)));
+    connect(m_extractor, SIGNAL(aborted(const QString &)), this, SIGNAL(gotAbort(const QString &)));
     m_extractor->setAutoExtract(false);
+    m_auto_display = false;
+    setAutoDisplayFrame(true); // set up frame-related connections, defaulting autoDisplayFrame to true
+}
+
+void VideoPreviewWidget::setAutoDisplayFrame(bool b)
+{
+    if (!!b == !!m_auto_display) return; // avoid reduntant connect/disconnect calls
+    if (b) {
+        connect(m_extractor, SIGNAL(frameExtracted(QtAV::VideoFrame)), SLOT(displayFrame(QtAV::VideoFrame)));
+        connect(m_extractor, SIGNAL(error(const QString &)), SLOT(displayNoFrame()));
+        connect(m_extractor, SIGNAL(aborted(const QString &)), SLOT(displayNoFrame()));
+        connect(this, SIGNAL(fileChanged()), SLOT(displayNoFrame()));
+    } else {
+        disconnect(m_extractor, SIGNAL(frameExtracted(QtAV::VideoFrame)), this, SLOT(displayFrame(QtAV::VideoFrame)));
+        disconnect(m_extractor, SIGNAL(error(const QString &)), this, SLOT(displayNoFrame()));
+        disconnect(m_extractor, SIGNAL(aborted(const QString &)), this, SLOT(displayNoFrame()));
+        disconnect(this, SIGNAL(fileChanged()), this, SLOT(displayNoFrame()));
+    }
 }
 
 void VideoPreviewWidget::resizeEvent(QResizeEvent *e)
@@ -83,8 +101,8 @@ void VideoPreviewWidget::displayFrame(const QtAV::VideoFrame &frame)
     if (diff > m_extractor->precision()) {
         //qWarning("timestamp difference (%d/%lld) is too large! ignore", diff);
     }
-    if (m_out->isSupported(frame.format().pixelFormat())) {
-        m_out->receive(frame);
+    if (!frame.isValid()) {
+        displayNoFrame();
         return;
     }
     QSize s = m_out->widget()->rect().size();
@@ -93,10 +111,17 @@ void VideoPreviewWidget::displayFrame(const QtAV::VideoFrame &frame)
         fs.scale(s, Qt::KeepAspectRatio);
         s = fs;
     }
-    VideoFrame f(frame.to(VideoFormat::Format_RGB32, s));
-    if (!f.isValid())
+    // make sure frame is the same size as the output widget size, and of the desired format
+    // if not, convert & scale
+    VideoFrame f(frame.pixelFormat() == m_out->preferredPixelFormat() && frame.size() == s
+                 ? frame
+                 : frame.to(m_out->preferredPixelFormat(), s)
+                 );
+    if (!f.isValid()) {
         return;
+    }
     m_out->receive(f);
+    Q_EMIT gotFrame(f);
 }
 
 void VideoPreviewWidget::displayNoFrame()

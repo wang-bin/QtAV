@@ -45,19 +45,35 @@ public:
     void setFile(const QString& file);
     QString file() const;
     // default is false
-    void setKeepAspectRatio(bool value = true);
-    bool isKeepAspectRatio() const;
+    void setKeepAspectRatio(bool value = true) { m_keep_ar = value; }
+    bool isKeepAspectRatio() const { return m_keep_ar; }
+    /// AutoDisplayFrame -- default is true. if true, new frames from underlying extractor will update display widget automatically.
+    bool isAutoDisplayFrame() const { return m_auto_display; }
+    /// If false, new frames (or frame errors) won't automatically update widget
+    /// (caller must ensure to call displayFrame()/displayFrame(frame) for this if false).
+    /// set to false only if you want to do your own frame caching magic with preview frames.
+    void setAutoDisplayFrame(bool b=true);
+public Q_SLOTS: // these were previously private but made public to allow calling code to cache some preview frames and directly display frames to this class
+    void displayFrame(const QtAV::VideoFrame& frame); //parameter VideoFrame
+    void displayNoFrame();
 Q_SIGNALS:
     void timestampChanged();
     void fileChanged();
+    /// emitted on real decode error -- in that case displayNoFrame() will be automatically called
+    void gotError(const QString &);
+    /// usually emitted when a new request for a frame came in and current request was aborted. displayNoFrame() will be automatically called
+    void gotAbort(const QString &);
+    /// useful if calling code is interested in keeping stats on good versus bad frame counts,
+    /// or if it wants to cache preview frames. Keeping counts helps caller decide if
+    /// preview is working reliably or not for the designated file.
+    /// parameter frame will always have: frame.isValid() == true, and will be
+    /// already-scaled and in the right format to fit in the preview widget
+    void gotFrame(const QtAV::VideoFrame & frame);
 protected:
     virtual void resizeEvent(QResizeEvent *);
-private Q_SLOTS:
-    void displayFrame(const QtAV::VideoFrame& frame); //parameter VideoFrame
-    void displayNoFrame();
 
 private:
-    bool m_keep_ar;
+    bool m_keep_ar, m_auto_display;
     QString m_file;
     VideoFrameExtractor *m_extractor;
     VideoOutput *m_out;
