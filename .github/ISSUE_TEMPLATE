@@ -1,0 +1,17 @@
+### QtAV, Qt version and platform
+
+or commit id if not using release version
+
+### Reproduction steps
+
+### Expected behavior
+
+### Actual behavior
+
+### Log file
+
+set environment var `QTAV_LOG=all` or C++ api `QtAV::setLogLevel(All)` to enable log.
+
+For Player and QMLPlayer example app, choose log level `all` in config page.
+
+### Sample files (optional)

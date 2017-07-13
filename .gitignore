@@ -1,9 +1,18 @@
 CVS
 .#*
 
+*.patch
+*.diff
+*.orig
+#*.rej
+contrib/include
+*~
+*.mak
+
 # Hidden files are ignored by default with exceptions
 .*
 !/.gitignore
+!/.github
 !/.gitmodules
 !/.qmake.conf
 !/.travis.yml
