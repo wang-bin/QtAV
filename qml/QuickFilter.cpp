@@ -32,6 +32,7 @@ class QuickVideoFilterPrivate : public VideoFilterPrivate
 {
 public:
     QuickVideoFilterPrivate() : type(QuickVideoFilter::AVFilter)
+      , user_filter(NULL)
       , avfilter(new LibAVFilterVideo())
       , glslfilter(new GLSLFilter())
     {
@@ -40,7 +41,7 @@ public:
 
     QuickVideoFilter::FilterType type;
     VideoFilter *filter;
-    QScopedPointer<VideoFilter> user_filter;
+    VideoFilter *user_filter; // life time is managed by qml
     QScopedPointer<LibAVFilterVideo> avfilter;
     QScopedPointer<GLSLFilter> glslfilter;
 };
@@ -76,7 +77,7 @@ void QuickVideoFilter::setType(FilterType value)
     else if (value == AVFilter)
         d.filter = d.avfilter.data();
     else
-        d.filter = d.user_filter.data();
+        d.filter = d.user_filter;
     Q_EMIT typeChanged();
 }
 
@@ -97,17 +98,17 @@ void QuickVideoFilter::setAVFilter(const QString &options)
 
 VideoFilter* QuickVideoFilter::userFilter() const
 {
-    return d_func().user_filter.data();
+    return d_func().user_filter;
 }
 
 void QuickVideoFilter::setUserFilter(VideoFilter *f)
 {
     DPTR_D(QuickVideoFilter);
-    if (d.user_filter.data() == f)
+    if (d.user_filter == f)
         return;
-    d.user_filter.reset(f);
+    d.user_filter = f;
     if (d.type == UserFilter)
-        d.filter = d.user_filter.data();
+        d.filter = d.user_filter;
     Q_EMIT userFilterChanged();
 }
 
@@ -138,6 +139,7 @@ class QuickAudioFilterPrivate : public AudioFilterPrivate
 public:
     QuickAudioFilterPrivate() : AudioFilterPrivate()
       , type(QuickAudioFilter::AVFilter)
+      , user_filter(NULL)
       , avfilter(new LibAVFilterAudio())
     {
         filter = avfilter.data();
@@ -145,7 +147,7 @@ public:
 
     QuickAudioFilter::FilterType type;
     AudioFilter *filter;
-    QScopedPointer<AudioFilter> user_filter;
+    AudioFilter* user_filter; // life time is managed by qml
     QScopedPointer<LibAVFilterAudio> avfilter;
 };
 
@@ -170,7 +172,7 @@ void QuickAudioFilter::setType(FilterType value)
     if (value == AVFilter)
         d.filter = d.avfilter.data();
     else
-        d.filter = d.user_filter.data();
+        d.filter = d.user_filter;
     Q_EMIT typeChanged();
 }
 
@@ -191,17 +193,17 @@ void QuickAudioFilter::setAVFilter(const QString &options)
 
 AudioFilter *QuickAudioFilter::userFilter() const
 {
-    return d_func().user_filter.data();
+    return d_func().user_filter;
 }
 
 void QuickAudioFilter::setUserFilter(AudioFilter *f)
 {
     DPTR_D(QuickAudioFilter);
-    if (d.user_filter.data() == f)
+    if (d.user_filter == f)
         return;
-    d.user_filter.reset(f);
+    d.user_filter = f;
     if (d.type == UserFilter)
-        d.filter = d.user_filter.data();
+        d.filter = d.user_filter;
     Q_EMIT userFilterChanged();
 }
 
