@@ -84,8 +84,8 @@ IDirect3DDevice9* CreateDevice9Ex(HINSTANCE dll, IDirect3D9Ex** d3d9ex, D3DADAPT
     D3DPRESENT_PARAMETERS d3dpp;
     InitParameters(&d3dpp);
     // D3DCREATE_MULTITHREADED is required by gl interop. https://www.opengl.org/registry/specs/NV/DX_interop.txt
-    // D3DCREATE_SOFTWARE_VERTEXPROCESSING in other dxva decoders. D3DCREATE_HARDWARE_VERTEXPROCESSING in cuda samples
-    DWORD flags = D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_MIXED_VERTEXPROCESSING;
+    // D3DCREATE_SOFTWARE_VERTEXPROCESSING in other dxva decoders. D3DCREATE_HARDWARE_VERTEXPROCESSING is required by cuda in cuD3D9CtxCreate()
+    DWORD flags = D3DCREATE_FPU_PRESERVE | D3DCREATE_MULTITHREADED | D3DCREATE_HARDWARE_VERTEXPROCESSING;
     IDirect3DDevice9Ex *d3d9dev = NULL;
     // mpv:
     /* Direct3D needs a HWND to create a device, even without using ::Present
