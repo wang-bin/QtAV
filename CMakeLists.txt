@@ -1,4 +1,7 @@
 cmake_minimum_required(VERSION 2.8.11 FATAL_ERROR)
+
+project(QTAV)
+
 set(QTAV_MAJOR 1)
 set(QTAV_MINOR 11)
 set(QTAV_PATCH 0)

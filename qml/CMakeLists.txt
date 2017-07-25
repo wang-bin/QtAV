@@ -32,7 +32,7 @@ endif()
 # add HEADERS for moc
 if(WIN32)
   set(RC_FILE ${CMAKE_CURRENT_BINARY_DIR}/${MODULE}.rc)
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/QtAV.rc.in ${RC_FILE})
+  configure_file(${QTAV_SOURCE_DIR}/cmake/QtAV.rc.in ${RC_FILE})
 endif()
 add_library(${MODULE} SHARED ${SOURCES} ${RESOURCES_SOURCES} ${HEADERS} ${RC_FILE})
 target_link_libraries(${MODULE}
