@@ -24,7 +24,7 @@ copy /y bin\*portaudio*.dll %QTDIR%\bin
 xcopy /syi  include %QTDIR%\include
 copy /y lib\*Qt*AV*.lib %QTDIR%\lib
 copy /y lib\*Qt*AV*.a %QTDIR%\lib
-xcopy /syi  qml\QtAV %QTDIR%\qml\QtAV
+xcopy /syi  bin\QtAV %QTDIR%\qml\QtAV
 xcopy /syi mkspecs %QTDIR%\mkspecs
 @echo QtAV SDK is installed
 goto END
