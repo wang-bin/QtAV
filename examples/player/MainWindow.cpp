@@ -1333,8 +1333,18 @@ void MainWindow::onTimeSliderHover(int pos, int value)
 
 void MainWindow::onTimeSliderLeave()
 {
-    if (m_preview && m_preview->isVisible())
-        m_preview->hide();
+    /*if (m_preview && m_preview->isVisible())
+        m_preview->hide();*/
+    if (!m_preview)
+    {
+        return;
+    }
+    if (m_preview->isVisible())
+    {
+        m_preview->close();
+    }
+    delete m_preview;
+    m_preview = nullptr;
 }
 
 void MainWindow::handleError(const AVError &e)
