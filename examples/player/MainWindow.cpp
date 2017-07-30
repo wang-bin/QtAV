@@ -1325,7 +1325,7 @@ void MainWindow::onTimeSliderHover(int pos, int value)
     m_preview->preview();
     const int w = Config::instance().previewWidth();
     const int h = Config::instance().previewHeight();
-    m_preview->setWindowFlags(m_preview->windowFlags() |Qt::FramelessWindowHint|Qt::WindowStaysOnTopHint);
+    m_preview->setWindowFlags(Qt::Tool |Qt::FramelessWindowHint|Qt::WindowStaysOnTopHint);
     m_preview->resize(w, h);
     m_preview->move(gpos - QPoint(w/2, h));
     m_preview->show();
