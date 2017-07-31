@@ -1344,7 +1344,7 @@ void MainWindow::onTimeSliderLeave()
         m_preview->close();
     }
     delete m_preview;
-    m_preview = nullptr;
+    m_preview = NULL;
 }
 
 void MainWindow::handleError(const AVError &e)
