@@ -853,12 +853,12 @@ void AVPlayer::setPosition(qint64 position)
     qint64 pos_pts = position;
     if (pos_pts < 0)
         pos_pts = 0;
+    masterClock()->updateExternalClock(pos_pts); //in msec. ignore usec part using t/1000
     // position passed in is relative to the start pts in relative time mode
     if (relativeTimeMode())
         pos_pts += absoluteMediaStartPosition();
     d->seeking = true;
     masterClock()->updateValue(double(pos_pts)/1000.0); //what is duration == 0
-    masterClock()->updateExternalClock(pos_pts); //in msec. ignore usec part using t/1000
     d->read_thread->seek(pos_pts, seekType());
 
     Q_EMIT positionChanged(position); //emit relative position
