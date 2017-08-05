@@ -93,21 +93,6 @@ AVPlayer::AVPlayer(QObject *parent) :
     connect(d->read_thread, SIGNAL(seekFinished(qint64)), this, SLOT(onSeekFinished(qint64)), Qt::DirectConnection);
     connect(d->read_thread, SIGNAL(internalSubtitlePacketRead(int, QtAV::Packet)), this, SIGNAL(internalSubtitlePacketRead(int, QtAV::Packet)), Qt::DirectConnection);
     d->vcapture = new VideoCapture(this);
-
-    connect(this,&AVPlayer::bufferProgressChanged,this,[this](qreal value){
-        if(d->buffer_value>1)
-        {
-            if(value<=0.1)
-                d->clock->pause(true);
-            else if(d->clock->isPaused())
-                d->clock->pause(false);
-
-            if(value>=1)
-                d->clock->setSpeed(1.25);
-            else if(d->clock->speed()>1)
-                d->clock->setSpeed(1);
-        }
-    });
 }
 
 AVPlayer::~AVPlayer()
@@ -1375,6 +1360,10 @@ void AVPlayer::updateMediaStatus(QtAV::MediaStatus status)
     if (status == d->status)
         return;
     d->status = status;
+    if(status!=BufferedMedia)
+        d->clock->pause(true);
+    else
+        d->clock->pause(false);
     Q_EMIT mediaStatusChanged(d->status);
 }
 
