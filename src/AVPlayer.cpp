@@ -101,6 +101,11 @@ AVPlayer::AVPlayer(QObject *parent) :
                 d->clock->pause(true);
             else if(d->clock->isPaused())
                 d->clock->pause(false);
+
+            if(value>=1)
+                d->clock->setSpeed(1.25);
+            else if(d->clock->speed()>1)
+                d->clock->setSpeed(1);
         }
     });
 }
