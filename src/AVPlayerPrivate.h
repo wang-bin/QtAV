@@ -28,6 +28,8 @@
 #include "VideoThread.h"
 #include "AVDemuxThread.h"
 #include "utils/Logger.h"
+#include <QTimer>
+#include <queue>
 
 namespace QtAV {
 
@@ -100,6 +102,8 @@ public:
         }
     }
 
+    void applyAdaptiveBuffer(AVPlayer *player);
+
     bool auto_load;
     bool async_load;
     // can be QString, QIODevice*
@@ -155,6 +159,10 @@ public:
     AVPlayer::State state;
     MediaEndAction end_action;
     QMutex load_mutex;
+
+    bool adaptive_buffer;
+    QTimer adaptiveBuffer_timer;
+    std::deque<qint64> bufferHistory;
 };
 
 } //namespace QtAV

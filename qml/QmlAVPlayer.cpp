@@ -425,6 +425,21 @@ void QmlAVPlayer::setBufferSize(int value)
     }
 }
 
+int QmlAVPlayer::adaptiveBuffer() const
+{
+    return mpPlayer->adaptiveBuffer();
+}
+
+void QmlAVPlayer::setAdaptiveBuffer(bool value)
+{
+    if (mpPlayer->adaptiveBuffer() == value)
+        return;
+    if (mpPlayer) {
+        mpPlayer->setAdaptiveBuffer(value);
+        Q_EMIT adaptiveBufferChanged();
+    }
+}
+
 QUrl QmlAVPlayer::externalAudio() const
 {
     return m_audio;
