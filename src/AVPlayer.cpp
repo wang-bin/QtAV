@@ -466,6 +466,20 @@ void AVPlayer::setMediaEndAction(MediaEndAction value)
     d->read_thread->setMediaEndAction(value);
 }
 
+bool AVPlayer::adaptiveBuffer() const
+{
+    return d->adaptive_buffer;
+}
+
+void AVPlayer::setAdaptiveBuffer(bool value)
+{
+    if (d->adaptive_buffer == value)
+        return;
+    d->adaptive_buffer = value;
+    d->applyAdaptiveBuffer(this);
+    Q_EMIT adaptiveBufferChanged(value);
+}
+
 MediaEndAction AVPlayer::mediaEndAction() const
 {
     return d->end_action;
@@ -1387,6 +1401,18 @@ void AVPlayer::tryClearVideoRenderers()
     if (!(mediaEndAction() & MediaEndAction_KeepDisplay)) {
         d->vthread->clearRenderers();
     }
+}
+
+void AVPlayer::updateAdaptiveBuffer()
+{
+    d->bufferHistory.push_back(buffered());
+    if(d->bufferHistory.size()>50)
+        d->bufferHistory.pop_front();
+
+    qint64 bufferMax = *std::max_element(d->bufferHistory.begin(), d->bufferHistory.end());
+    qint64 bufferVal = qMin(qMax(bufferMax, (qint64)1), (qint64)128);
+
+    setBufferValue(bufferVal);
 }
 
 void AVPlayer::stop()

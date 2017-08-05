@@ -82,6 +82,7 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(State state READ state WRITE setState NOTIFY stateChanged)
     Q_PROPERTY(QtAV::MediaStatus mediaStatus READ mediaStatus NOTIFY mediaStatusChanged)
     Q_PROPERTY(QtAV::MediaEndAction mediaEndAction READ mediaEndAction WRITE setMediaEndAction NOTIFY mediaEndActionChanged)
+    Q_PROPERTY(bool adaptiveBuffer READ adaptiveBuffer WRITE setAdaptiveBuffer NOTIFY adaptiveBufferChanged)
     Q_ENUMS(State)
 public:
     /*!
@@ -409,6 +410,12 @@ public:
      */
     MediaEndAction mediaEndAction() const;
     void setMediaEndAction(MediaEndAction value);
+    /*!
+     * \brief adaptiveBuffer
+     * adaptive buffer size based on bit rate.
+     */
+    bool adaptiveBuffer() const;
+    void setAdaptiveBuffer(bool value);
 
 public Q_SLOTS:
     /*!
@@ -545,6 +552,7 @@ Q_SIGNALS:
     void loaded(); // == mediaStatusChanged(QtAV::LoadedMedia)
     void mediaStatusChanged(QtAV::MediaStatus status); //explictly use QtAV::MediaStatus
     void mediaEndActionChanged(QtAV::MediaEndAction action);
+    void adaptiveBufferChanged(bool);
     /*!
      * \brief durationChanged emit when media is loaded/unloaded
      */
@@ -611,6 +619,7 @@ private Q_SLOTS:
     void updateMediaStatus(QtAV::MediaStatus status);
     void onSeekFinished(qint64 value);
     void tryClearVideoRenderers();
+    void updateAdaptiveBuffer();
 protected:
     // TODO: set position check timer interval
     virtual void timerEvent(QTimerEvent *);
