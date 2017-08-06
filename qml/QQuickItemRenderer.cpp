@@ -156,7 +156,16 @@ void QQuickItemRenderer::setSource(QObject *source)
     Q_EMIT sourceChanged();
     if (!source)
         return;
-    ((QmlAVPlayer*)source)->player()->addVideoRenderer(this);
+    AVPlayer* p = qobject_cast<AVPlayer*>(source);
+    if (!p) {
+        QmlAVPlayer* qp = qobject_cast<QmlAVPlayer*>(source);
+        if (!qp) {
+            qWarning("source MUST be of type AVPlayer or QmlAVPlayer");
+            return;
+        }
+        p = qp->player();
+    }
+    p->addVideoRenderer(this);
 }
 
 QQuickItemRenderer::FillMode QQuickItemRenderer::fillMode() const
