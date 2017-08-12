@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
     theoribeiro <theo@fictix.com.br>
 
 *   This file is part of QtAV (from 2013)
@@ -60,6 +60,10 @@ public:
     bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
 
     QObject *source() const;
+    /*!
+     * \brief setSource
+     * \param source nullptr, an object of type AVPlayer or QmlAVPlayer
+     */
     void setSource(QObject *source);
 
     FillMode fillMode() const;

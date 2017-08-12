@@ -33,7 +33,7 @@ QtAV can meet your most demands
 - Multiple video outputs for 1 player
 - Video eq(software and OpenGL): brightness, contrast, saturation, hue
 - QML support. Most playback APIs are compatible with QtMultimedia module
-- Compatiblity: QtAV can be built with both Qt4 and Qt5, FFmpeg(>=1.0) and [Libav](http://libav.org) (>=9.0). Latest FFmpeg release is recommended.
+- Compatibility: QtAV can be built with both Qt4 and Qt5, FFmpeg(>=1.0) and [Libav](http://libav.org) (>=9.0). Latest FFmpeg release is recommended.
 
 
 ### Extensible Framework
