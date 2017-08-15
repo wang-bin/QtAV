@@ -620,6 +620,7 @@ private Q_SLOTS:
     void onSeekFinished(qint64 value);
     void tryClearVideoRenderers();
     void updateAdaptiveBuffer();
+    void updateAutoPlay();
 protected:
     // TODO: set position check timer interval
     virtual void timerEvent(QTimerEvent *);

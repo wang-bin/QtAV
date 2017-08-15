@@ -104,6 +104,8 @@ public:
 
     void applyAdaptiveBuffer(AVPlayer *player);
 
+    void applyAutoPlay(AVPlayer *player);
+
     bool auto_load;
     bool async_load;
     // can be QString, QIODevice*
@@ -163,6 +165,8 @@ public:
     bool adaptive_buffer;
     QTimer adaptiveBuffer_timer;
     std::deque<qint64> bufferHistory;
+
+    QTimer autoPlay_timer;
 };
 
 } //namespace QtAV

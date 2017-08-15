@@ -663,4 +663,10 @@ void AVPlayer::Private::applyAdaptiveBuffer(AVPlayer *player)
         adaptiveBuffer_timer.disconnect();
 }
 
+void AVPlayer::Private::applyAutoPlay(AVPlayer *player)
+{
+    autoPlay_timer.setInterval(3000);
+    connect(&autoPlay_timer,SIGNAL(timeout()),player,SLOT(updateAutoPlay()));
+}
+
 } //namespace QtAV
