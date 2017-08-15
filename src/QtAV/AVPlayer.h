@@ -621,6 +621,7 @@ private Q_SLOTS:
     void tryClearVideoRenderers();
     void updateAdaptiveBuffer();
     void updateAutoPlay();
+    void onMediaStatusChanged(QtAV::MediaStatus status);
 protected:
     // TODO: set position check timer interval
     virtual void timerEvent(QTimerEvent *);
