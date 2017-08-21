@@ -1414,6 +1414,11 @@ void AVPlayer::updateAdaptiveBuffer()
     qint64 bufferVal = qMin(qMax(qMin(bufferMax, last), (qint64)1), (qint64)4000);
 
     setBufferValue(bufferVal);
+
+    if(buffered()>bufferValue())
+        setSpeed(2);
+    else if(speed()>1 && buffered()<(0.5*bufferValue()))
+        setSpeed(1);
 }
 
 void AVPlayer::updateAutoPlay()
@@ -1438,11 +1443,6 @@ void AVPlayer::onMediaStatusChanged(MediaStatus status)
         d->clock->pause(false);
 
         d->autoPlay_timer.stop();
-
-        if(buffered()>=(0.9*bufferValue()))
-            setSpeed(1.5);
-        else if(buffered()<(0.5*bufferValue()))
-            setSpeed(1);
     }
 }
 
