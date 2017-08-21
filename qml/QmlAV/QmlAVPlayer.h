@@ -79,6 +79,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(QtAV::VideoCapture *videoCapture READ videoCapture CONSTANT)
     Q_PROPERTY(int audioTrack READ audioTrack WRITE setAudioTrack NOTIFY audioTrackChanged)
     Q_PROPERTY(int videoTrack READ videoTrack WRITE setVideoTrack NOTIFY videoTrackChanged)
+    Q_PROPERTY(int buffered READ buffered)
     Q_PROPERTY(int bufferSize READ bufferSize WRITE setBufferSize NOTIFY bufferSizeChanged)
     Q_PROPERTY(bool adaptiveBuffer READ adaptiveBuffer WRITE setAdaptiveBuffer NOTIFY adaptiveBufferChanged)
     Q_PROPERTY(QUrl externalAudio READ externalAudio WRITE setExternalAudio NOTIFY externalAudioChanged)
@@ -233,6 +234,8 @@ public:
     int videoTrack() const;
     void setVideoTrack(int value);
     QVariantList internalVideoTracks() const;
+
+    int buffered() const;
 
     int bufferSize() const;
     void setBufferSize(int value);

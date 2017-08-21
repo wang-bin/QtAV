@@ -410,6 +410,11 @@ void QmlAVPlayer::setVideoTrack(int value)
         mpPlayer->setVideoStream(value);
 }
 
+int QmlAVPlayer::buffered() const
+{
+    return mpPlayer->buffered();
+}
+
 int QmlAVPlayer::bufferSize() const
 {
     return mpPlayer->bufferValue();
