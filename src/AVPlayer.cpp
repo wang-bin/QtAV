@@ -1438,6 +1438,11 @@ void AVPlayer::onMediaStatusChanged(MediaStatus status)
         d->clock->pause(false);
 
         d->autoPlay_timer.stop();
+
+        if(buffered()>=(0.9*bufferValue()))
+            setSpeed(1.5);
+        else if(buffered()<(0.5*bufferValue()))
+            setSpeed(1);
     }
 }
 
