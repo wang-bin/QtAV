@@ -1405,12 +1405,13 @@ void AVPlayer::tryClearVideoRenderers()
 
 void AVPlayer::updateAdaptiveBuffer()
 {
-    d->bufferHistory.push_back(buffered());
+    qint64 last = buffered();
+    d->bufferHistory.push_back(last);
     if(d->bufferHistory.size()>50)
         d->bufferHistory.pop_front();
 
     qint64 bufferMax = *std::max_element(d->bufferHistory.begin(), d->bufferHistory.end());
-    qint64 bufferVal = qMin(qMax(bufferMax, (qint64)1), (qint64)128);
+    qint64 bufferVal = qMin(qMax(qMin(bufferMax, last), (qint64)1), (qint64)4000);
 
     setBufferValue(bufferVal);
 }
