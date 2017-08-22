@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
@@ -82,6 +82,7 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(State state READ state WRITE setState NOTIFY stateChanged)
     Q_PROPERTY(QtAV::MediaStatus mediaStatus READ mediaStatus NOTIFY mediaStatusChanged)
     Q_PROPERTY(QtAV::MediaEndAction mediaEndAction READ mediaEndAction WRITE setMediaEndAction NOTIFY mediaEndActionChanged)
+    Q_PROPERTY(qint64 chapters READ chapters NOTIFY chaptersChanged)
     Q_ENUMS(State)
 public:
     /*!
@@ -374,6 +375,7 @@ public:
     int contrast() const;
     int hue() const; //not implemented
     int saturation() const;
+    unsigned int chapters() const;
     /*!
      * \sa AVDemuxer::setOptions()
      * example:
@@ -489,6 +491,8 @@ public Q_SLOTS:
     void seek(qint64 pos); //ms. same as setPosition(pos)
     void seekForward();
     void seekBackward();
+    void seekNextChapter();
+    void seekPreviousChapter();
     void setSeekType(SeekType type);
     SeekType seekType() const;
 
@@ -579,6 +583,7 @@ Q_SIGNALS:
     void contrastChanged(int val);
     void hueChanged(int val);
     void saturationChanged(int val);
+    void chaptersChanged(unsigned int val);
     void subtitleStreamChanged(int value);
     /*!
      * \brief internalAudioTracksChanged
@@ -611,6 +616,7 @@ private Q_SLOTS:
     void updateMediaStatus(QtAV::MediaStatus status);
     void onSeekFinished(qint64 value);
     void tryClearVideoRenderers();
+    void seekChapter(int incr);
 protected:
     // TODO: set position check timer interval
     virtual void timerEvent(QTimerEvent *);
