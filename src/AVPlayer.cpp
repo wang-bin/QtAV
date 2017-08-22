@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
@@ -45,6 +45,9 @@
 #include "QtAV/private/AVCompat.h"
 #include "utils/internal.h"
 #include "utils/Logger.h"
+extern "C" {
+#include <libavutil/mathematics.h>
+}
 
 #define EOF_ISSUE_SOLVED 0
 namespace QtAV {
@@ -680,6 +683,7 @@ void AVPlayer::loadInternal()
     d->video_tracks = d->getTracksInfo(&d->demuxer, AVDemuxer::VideoStream);
     Q_EMIT internalVideoTracksChanged(d->video_tracks);
     Q_EMIT durationChanged(duration());
+    Q_EMIT chaptersChanged(chapters());
     // setup parameters from loaded media
     d->media_start_pts = d->demuxer.startTime();
     // TODO: what about other proctols? some vob duration() == 0
@@ -715,6 +719,7 @@ void AVPlayer::unload()
         d->vdec = 0;
     }
     d->demuxer.unload();
+    Q_EMIT chaptersChanged(0);
     Q_EMIT durationChanged(0LL); // for ui, slider is invalid. use stopped instead, and remove this signal here?
     // ??
     d->audio_tracks = d->getTracksInfo(&d->demuxer, AVDemuxer::AudioStream);
@@ -1385,6 +1390,42 @@ void AVPlayer::tryClearVideoRenderers()
     }
 }
 
+void AVPlayer::seekChapter(int incr)
+{
+    if (!chapters())
+        return;
+
+    qint64 pos = masterClock()->value() * AV_TIME_BASE;
+    int i = 0;
+
+    AVFormatContext *ic = d->demuxer.formatContext();
+
+    AVRational av_time_base_q;
+    av_time_base_q.num = 1;
+    av_time_base_q.den = AV_TIME_BASE;
+
+    /* find the current chapter */
+    for (i = 0; i < chapters(); ++i) {
+        AVChapter *ch = ic->chapters[i];
+        if (av_compare_ts(pos, av_time_base_q, ch->start, ch->time_base) < 0) {
+            --i;
+            break;
+        }
+    }
+
+    i += incr;
+    //i = FFMAX(i, 0);
+    if (i <= 0)
+        i = 0;
+    if (i >= chapters())
+        return;
+
+    //av_log(NULL, AV_LOG_VERBOSE, "Seeking to chapter %d.\n", i);
+    qDebug() << QString::fromLatin1("Seeking to chapter : ") << QString::number(i);
+    setPosition(av_rescale_q(ic->chapters[i]->start, ic->chapters[i]->time_base,
+                             av_time_base_q) / 1000);
+}
+
 void AVPlayer::stop()
 {
     // check d->timer_id, <0 return?
@@ -1532,6 +1573,20 @@ void AVPlayer::seekBackward()
     seek(position() - kSeekMS);
 }
 
+void AVPlayer::seekNextChapter()
+{
+    if (chapters() <= 1)
+        return;
+    seekChapter(1);
+}
+
+void AVPlayer::seekPreviousChapter()
+{
+    if (chapters() <= 1)
+        return;
+    seekChapter(-1);
+}
+
 void AVPlayer::setSeekType(SeekType type)
 {
     d->seek_type = type;
@@ -1633,6 +1688,11 @@ void AVPlayer::setHue(int val)
 int AVPlayer::saturation() const
 {
     return d->saturation;
+}
+
+unsigned int AVPlayer::chapters() const
+{
+    return d->demuxer.formatContext()->nb_chapters;
 }
 
 void AVPlayer::setSaturation(int val)
