@@ -79,7 +79,9 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(QtAV::VideoCapture *videoCapture READ videoCapture CONSTANT)
     Q_PROPERTY(int audioTrack READ audioTrack WRITE setAudioTrack NOTIFY audioTrackChanged)
     Q_PROPERTY(int videoTrack READ videoTrack WRITE setVideoTrack NOTIFY videoTrackChanged)
+    Q_PROPERTY(int buffered READ buffered)
     Q_PROPERTY(int bufferSize READ bufferSize WRITE setBufferSize NOTIFY bufferSizeChanged)
+    Q_PROPERTY(bool adaptiveBuffer READ adaptiveBuffer WRITE setAdaptiveBuffer NOTIFY adaptiveBufferChanged)
     Q_PROPERTY(QUrl externalAudio READ externalAudio WRITE setExternalAudio NOTIFY externalAudioChanged)
     Q_PROPERTY(QVariantList internalAudioTracks READ internalAudioTracks NOTIFY internalAudioTracksChanged)
     Q_PROPERTY(QVariantList internalVideoTracks READ internalVideoTracks NOTIFY internalVideoTracksChanged)
@@ -233,8 +235,13 @@ public:
     void setVideoTrack(int value);
     QVariantList internalVideoTracks() const;
 
+    int buffered() const;
+
     int bufferSize() const;
     void setBufferSize(int value);
+
+    int adaptiveBuffer() const;
+    void setAdaptiveBuffer(bool value);
     /*!
      * \brief externalAudio
      * If externalAudio url is valid, player will use audioTrack of external audio as audio source.
@@ -306,6 +313,7 @@ Q_SIGNALS:
     void internalSubtitleTrackChanged();
     void internalSubtitleTracksChanged();
     void bufferSizeChanged();
+    void adaptiveBufferChanged();
 
     void errorChanged();
     void error(Error error, const QString &errorString);

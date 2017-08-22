@@ -410,6 +410,11 @@ void QmlAVPlayer::setVideoTrack(int value)
         mpPlayer->setVideoStream(value);
 }
 
+int QmlAVPlayer::buffered() const
+{
+    return mpPlayer->buffered();
+}
+
 int QmlAVPlayer::bufferSize() const
 {
     return mpPlayer->bufferValue();
@@ -422,6 +427,21 @@ void QmlAVPlayer::setBufferSize(int value)
     if (mpPlayer) {
         mpPlayer->setBufferValue(value);
         Q_EMIT bufferSizeChanged();
+    }
+}
+
+int QmlAVPlayer::adaptiveBuffer() const
+{
+    return mpPlayer->adaptiveBuffer();
+}
+
+void QmlAVPlayer::setAdaptiveBuffer(bool value)
+{
+    if (mpPlayer->adaptiveBuffer() == value)
+        return;
+    if (mpPlayer) {
+        mpPlayer->setAdaptiveBuffer(value);
+        Q_EMIT adaptiveBufferChanged();
     }
 }
 

@@ -96,6 +96,10 @@ AVPlayer::AVPlayer(QObject *parent) :
     connect(d->read_thread, SIGNAL(seekFinished(qint64)), this, SLOT(onSeekFinished(qint64)), Qt::DirectConnection);
     connect(d->read_thread, SIGNAL(internalSubtitlePacketRead(int, QtAV::Packet)), this, SIGNAL(internalSubtitlePacketRead(int, QtAV::Packet)), Qt::DirectConnection);
     d->vcapture = new VideoCapture(this);
+
+    connect(this, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SLOT(onMediaStatusChanged(QtAV::MediaStatus)));
+
+    d->applyAutoPlay(this);
 }
 
 AVPlayer::~AVPlayer()
@@ -467,6 +471,20 @@ void AVPlayer::setMediaEndAction(MediaEndAction value)
     d->end_action = value;
     Q_EMIT mediaEndActionChanged(value);
     d->read_thread->setMediaEndAction(value);
+}
+
+bool AVPlayer::adaptiveBuffer() const
+{
+    return d->adaptive_buffer;
+}
+
+void AVPlayer::setAdaptiveBuffer(bool value)
+{
+    if (d->adaptive_buffer == value)
+        return;
+    d->adaptive_buffer = value;
+    d->applyAdaptiveBuffer(this);
+    Q_EMIT adaptiveBufferChanged(value);
 }
 
 MediaEndAction AVPlayer::mediaEndAction() const
@@ -1387,6 +1405,49 @@ void AVPlayer::tryClearVideoRenderers()
     }
     if (!(mediaEndAction() & MediaEndAction_KeepDisplay)) {
         d->vthread->clearRenderers();
+    }
+}
+
+void AVPlayer::updateAdaptiveBuffer()
+{
+    qint64 last = buffered();
+    d->bufferHistory.push_back(last);
+    if(d->bufferHistory.size()>50)
+        d->bufferHistory.pop_front();
+
+    qint64 bufferMax = *std::max_element(d->bufferHistory.begin(), d->bufferHistory.end());
+    qint64 bufferVal = qMin(qMax(qMin(bufferMax, last), (qint64)1), (qint64)4000);
+
+    setBufferValue(bufferVal);
+
+    if(buffered()>bufferValue())
+        setSpeed(2);
+    else if(speed()>1 && buffered()<(0.5*bufferValue()))
+        setSpeed(1);
+}
+
+void AVPlayer::updateAutoPlay()
+{
+    if(state()!=StoppedState)
+        stop();
+    load();
+    play();
+}
+
+void AVPlayer::onMediaStatusChanged(MediaStatus status)
+{
+    if(status!=BufferedMedia)
+    {
+        d->clock->pause(true);
+
+        if(!d->autoPlay_timer.isActive())
+             d->autoPlay_timer.start();
+    }
+    else
+    {
+        d->clock->pause(false);
+
+        d->autoPlay_timer.stop();
     }
 }
 

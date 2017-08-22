@@ -111,6 +111,7 @@ AVPlayer::Private::Private()
     , status(NoMedia)
     , state(AVPlayer::StoppedState)
     , end_action(MediaEndAction_Default)
+    ,adaptive_buffer(false)
 {
     demuxer.setInterruptTimeout(interrupt_timeout);
     /*
@@ -646,6 +647,27 @@ void AVPlayer::Private::updateBufferValue()
         updateBufferValue(athread->packetQueue());
     if (vthread)
         updateBufferValue(vthread->packetQueue());
+}
+
+void AVPlayer::Private::applyAdaptiveBuffer(AVPlayer *player)
+{
+    if(adaptive_buffer)
+    {
+        buffer_mode = BufferTime;
+        bufferHistory.clear();
+        adaptiveBuffer_timer.setInterval(100);
+        connect(&adaptiveBuffer_timer,SIGNAL(timeout()),player,SLOT(updateAdaptiveBuffer()));
+        connect(player,SIGNAL(started()),&adaptiveBuffer_timer,SLOT(start()));
+        connect(player,SIGNAL(stopped()),&adaptiveBuffer_timer,SLOT(stop()));
+    }
+    else
+        adaptiveBuffer_timer.disconnect();
+}
+
+void AVPlayer::Private::applyAutoPlay(AVPlayer *player)
+{
+    autoPlay_timer.setInterval(3000);
+    connect(&autoPlay_timer,SIGNAL(timeout()),player,SLOT(updateAutoPlay()));
 }
 
 } //namespace QtAV
