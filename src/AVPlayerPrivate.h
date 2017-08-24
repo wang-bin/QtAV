@@ -104,7 +104,7 @@ public:
 
     void applyAdaptiveBuffer(AVPlayer *player);
 
-    void applyAutoPlay(AVPlayer *player);
+    void applyAutoPlay(AVPlayer *player, bool autoPlay);
 
     bool auto_load;
     bool async_load;
