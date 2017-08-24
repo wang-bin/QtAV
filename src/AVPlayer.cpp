@@ -95,8 +95,6 @@ AVPlayer::AVPlayer(QObject *parent) :
     d->vcapture = new VideoCapture(this);
 
     connect(this, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SLOT(onMediaStatusChanged(QtAV::MediaStatus)));
-
-    d->applyAutoPlay(this);
 }
 
 AVPlayer::~AVPlayer()
@@ -1175,6 +1173,8 @@ bool AVPlayer::load()
 
 void AVPlayer::play()
 {
+    d->applyAutoPlay(this, true);
+
     //FIXME: bad delay after play from here
     if (isPlaying()) {
         qDebug("play() when playing");
@@ -1448,6 +1448,8 @@ void AVPlayer::onMediaStatusChanged(MediaStatus status)
 
 void AVPlayer::stop()
 {
+    d->applyAutoPlay(this, false);
+
     // check d->timer_id, <0 return?
     if (d->reset_state) {
         /*
