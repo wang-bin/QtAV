@@ -13,19 +13,27 @@ void VUMeterFilter::process(Statistics *statistics, AudioFrame *frame)
 {
     if (!frame)
         return;
-    const uchar* data = frame->constBits();
+    const AudioFormat& af = frame->format();
+    int step = frame->channelCount();
+    const quint8* data[2];
+    data[0] = frame->constBits(0);
+    if (frame->planeCount() > 0) {
+        step = 1;
+        data[1] = frame->constBits(1);
+    } else {
+        data[1] = data[0] + step*af.sampleSize();
+    }
     const int s = frame->samplesPerChannel();
-    const int cn = frame->channelCount();
     const int r = 1;
     float level[2];
-    const AudioFormat& af = frame->format();
     if (af.isFloat()) {
         float max[2];
         max[0] = max[1] = 0;
-        const float *p = (float*)data;
-        for (int i = 0; i < s; i+=cn) {
-            max[0] = qMax(max[0], qAbs(p[i]));
-            max[1] = qMax(max[1], qAbs(p[i+r]));
+        const float *p0 = (float*)data[0];
+        const float *p1 = (float*)data[1];
+        for (int i = 0; i < s; i+=step) {
+            max[0] = qMax(max[0], qAbs(p0[i]));
+            max[1] = qMax(max[1], qAbs(p1[i]));
         }
         level[0] = 20.0f * log10(max[0]);
         level[1] = 20.0f * log10(max[1]);
@@ -34,10 +42,11 @@ void VUMeterFilter::process(Statistics *statistics, AudioFrame *frame)
         if (b == 2) {
             qint16 max[2];
             max[0] = max[1] = 0;
-            const qint16 *p = (qint16*)data;
-            for (int i = 0; i < s; i+=cn) {
-                max[0] = qMax(max[0], qAbs(p[i]));
-                max[1] = qMax(max[1], qAbs(p[i+r]));
+            const qint16 *p0 = (qint16*)data[0];
+            const qint16 *p1 = (qint16*)data[1];
+            for (int i = 0; i < s; i+=step) {
+                max[0] = qMax(max[0], qAbs(p0[i]));
+                max[1] = qMax(max[1], qAbs(p1[i]));
             }
             level[0] = 20.0f * log10((double)max[0]/(double)INT16_MAX);
             level[1] = 20.0f * log10((double)max[1]/(double)INT16_MAX);
@@ -51,4 +60,5 @@ void VUMeterFilter::process(Statistics *statistics, AudioFrame *frame)
         mRight = level[1];
         Q_EMIT leftLevelChanged(mRight);
     }
+    //qDebug("db: %d --- %d", mLeft, mRight);
 }
