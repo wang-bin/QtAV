@@ -651,6 +651,9 @@ void AVPlayer::Private::updateBufferValue()
 
 void AVPlayer::Private::applyAdaptiveBuffer(AVPlayer *player)
 {
+    disconnect(&adaptiveBuffer_timer,SIGNAL(timeout()),player,SLOT(updateAdaptiveBuffer()));
+    disconnect(player,SIGNAL(started()),&adaptiveBuffer_timer,SLOT(start()));
+    disconnect(player,SIGNAL(stopped()),&adaptiveBuffer_timer,SLOT(stop()));
     if(adaptive_buffer)
     {
         buffer_mode = BufferTime;
@@ -660,19 +663,16 @@ void AVPlayer::Private::applyAdaptiveBuffer(AVPlayer *player)
         connect(player,SIGNAL(started()),&adaptiveBuffer_timer,SLOT(start()));
         connect(player,SIGNAL(stopped()),&adaptiveBuffer_timer,SLOT(stop()));
     }
-    else
-        adaptiveBuffer_timer.disconnect();
 }
 
 void AVPlayer::Private::applyAutoPlay(AVPlayer *player, bool autoPlay)
 {
+    disconnect(&autoPlay_timer,SIGNAL(timeout()),player,SLOT(updateAutoPlay()));
     if(autoPlay)
     {
         autoPlay_timer.setInterval(3000);
         connect(&autoPlay_timer,SIGNAL(timeout()),player,SLOT(updateAutoPlay()));
     }
-    else
-        disconnect(&autoPlay_timer,SIGNAL(timeout()),player,SLOT(updateAutoPlay()));
 }
 
 } //namespace QtAV
