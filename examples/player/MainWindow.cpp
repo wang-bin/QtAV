@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
@@ -80,6 +80,11 @@ const qreal kVolumeInterval = 0.04;
 extern QStringList idsToNames(QVector<VideoDecoderId> ids);
 extern QVector<VideoDecoderId> idsFromNames(const QStringList& names);
 
+static bool canShowPreviewWindow = false;
+
+static QPoint mCurrentCursorPosition = QPoint();
+static int mTimeSliderHoverValue = 0;
+
 void QLabelSetElideText(QLabel *label, QString text, int W = 0)
 {
     QFontMetrics metrix(label->font());
@@ -111,6 +116,8 @@ MainWindow::MainWindow(QWidget *parent) :
   , mpSubtitle(0)
   , m_preview(0)
   , m_shader(NULL)
+  , mTimeSliderHoverTimer(0)
+  , mTimeSliderLeaveTimer(0)
 {
     #if defined(Q_OS_MACX) && QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
         QApplication::setStyle(QStyleFactory::create("Fusion"));
@@ -913,13 +920,7 @@ void MainWindow::seek(int value)
 {
     mpPlayer->setSeekType(AccurateSeek);
     mpPlayer->seek((qint64)value);
-    if (!m_preview || !Config::instance().previewEnabled())
-        return;
-    m_preview->setTimestamp(value);
-    m_preview->preview();
-    m_preview->setWindowFlags(m_preview->windowFlags() |Qt::FramelessWindowHint|Qt::WindowStaysOnTopHint);
-    m_preview->resize(Config::instance().previewWidth(), Config::instance().previewHeight());
-    m_preview->show();
+    showPreviewWindow();
 }
 
 void MainWindow::seek()
@@ -973,6 +974,17 @@ void MainWindow::timerEvent(QTimerEvent *e)
         if (mpControl->isVisible())
             return;
         setCursor(Qt::BlankCursor);
+    } else if (e->timerId() == mTimeSliderHoverTimer) {
+        if (!canShowPreviewWindow) {
+            canShowPreviewWindow = true;
+            showPreviewWindow();
+        }
+    } else if (e->timerId() == mTimeSliderLeaveTimer) {
+        if (mTimeSliderLeaveTimer) {
+            killTimer(mTimeSliderLeaveTimer);
+            mTimeSliderLeaveTimer = 0;
+        }
+        closePreviewWindow();
     }
 }
 
@@ -1314,37 +1326,32 @@ void MainWindow::showInfo()
 
 void MainWindow::onTimeSliderHover(int pos, int value)
 {
-    QPoint gpos = mapToGlobal(mpTimeSlider->pos() + QPoint(pos, 0));
-    QToolTip::showText(gpos, QTime(0, 0, 0).addMSecs(value).toString(QString::fromLatin1("HH:mm:ss")));
-    if (!Config::instance().previewEnabled())
-        return;
-    if (!m_preview)
-        m_preview = new VideoPreviewWidget();
-    m_preview->setFile(mpPlayer->file());
-    m_preview->setTimestamp(value);
-    m_preview->preview();
-    const int w = Config::instance().previewWidth();
-    const int h = Config::instance().previewHeight();
-    m_preview->setWindowFlags(Qt::Tool |Qt::FramelessWindowHint|Qt::WindowStaysOnTopHint);
-    m_preview->resize(w, h);
-    m_preview->move(gpos - QPoint(w/2, h));
-    m_preview->show();
+    mTimeSliderHoverValue = value;
+    mCurrentCursorPosition = mapToGlobal(mpTimeSlider->pos() + QPoint(pos, 0));
+    if (mTimeSliderLeaveTimer) {
+        killTimer(mTimeSliderLeaveTimer);
+        mTimeSliderLeaveTimer = 0;
+    }
+    if (mTimeSliderHoverTimer == 0)
+        mTimeSliderHoverTimer = startTimer(700);
+    if (canShowPreviewWindow)
+        showPreviewWindow();
 }
 
 void MainWindow::onTimeSliderLeave()
 {
-    /*if (m_preview && m_preview->isVisible())
-        m_preview->hide();*/
-    if (!m_preview)
-    {
-        return;
+    if (m_preview && m_preview->isVisible())
+        m_preview->hide();
+    if (mTimeSliderHoverTimer) {
+        killTimer(mTimeSliderHoverTimer);
+        mTimeSliderHoverTimer = 0;
     }
-    if (m_preview->isVisible())
-    {
-        m_preview->close();
+    if (mTimeSliderLeaveTimer) {
+        killTimer(mTimeSliderLeaveTimer);
+        mTimeSliderLeaveTimer = 0;
     }
-    delete m_preview;
-    m_preview = NULL;
+    mTimeSliderLeaveTimer = startTimer(5000);
+    canShowPreviewWindow = false;
 }
 
 void MainWindow::handleError(const AVError &e)
@@ -1624,6 +1631,47 @@ void MainWindow::syncVolumeUi(qreal value)
     if (mpVolumeSlider->value() == v)
         return;
     mpVolumeSlider->setValue(v);
+}
+
+void MainWindow::showPreviewWindow()
+{
+    QToolTip::showText(mCurrentCursorPosition, QTime(0, 0, 0).addMSecs(mTimeSliderHoverValue).toString(QString::fromLatin1("HH:mm:ss")));
+    if (!Config::instance().previewEnabled())
+        return;
+    if (!canShowPreviewWindow)
+        return;
+    const int w = Config::instance().previewWidth();
+    const int h = Config::instance().previewHeight();
+    if (!m_preview) {
+        m_preview = new VideoPreviewWidget();
+        m_preview->setWindowFlags(Qt::Tool | Qt::FramelessWindowHint
+                                  | Qt::WindowStaysOnTopHint);
+        m_preview->resize(w, h);
+        m_preview->setFile(mpPlayer->file());
+    }
+    const qint64 interval = 5000;
+    qint64 currentTimestamp = m_preview->timestamp();
+    if (currentTimestamp >= mTimeSliderHoverValue - interval
+            && currentTimestamp <= mTimeSliderHoverValue + interval)
+        return;
+    m_preview->setTimestamp(mTimeSliderHoverValue);
+    m_preview->preview();
+    m_preview->move(mCurrentCursorPosition - QPoint(w/2, h));
+    m_preview->show();
+}
+
+void MainWindow::closePreviewWindow()
+{
+    if (mTimeSliderHoverTimer) {
+        killTimer(mTimeSliderHoverTimer);
+        mTimeSliderHoverTimer = 0;
+    }
+    canShowPreviewWindow = false;
+    if (!m_preview)
+        return;
+    m_preview->close();
+    delete m_preview;
+    m_preview = NULL;
 }
 
 void MainWindow::workaroundRendererSize()
