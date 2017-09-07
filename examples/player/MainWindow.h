@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
     Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
 
@@ -147,6 +147,10 @@ private slots:
 
     void changeClockType(QAction* action);
     void syncVolumeUi(qreal value);
+
+    void showPreviewWindow();
+    void closePreviewWindow();
+
 protected:
     virtual void closeEvent(QCloseEvent *e);
     virtual void resizeEvent(QResizeEvent *);
@@ -163,7 +167,7 @@ private:
 private:
     bool mIsReady, mHasPendingPlay;
     bool mControlOn;
-    int mCursorTimer;
+    int mCursorTimer, mTimeSliderHoverTimer, mTimeSliderLeaveTimer;
     int mShowControl; //0: can hide, 1: show and playing, 2: always show(not playing)
     int mRepeateMax;
     QStringList mAudioBackends;
