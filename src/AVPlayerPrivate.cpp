@@ -680,6 +680,8 @@ void AVPlayer::Private::applyRateCalculation(AVPlayer *player)
     rate_timer.setInterval(1000);
     connect(&rate_timer,&QTimer::timeout,[this,player](){
         const PacketBuffer* buf = read_thread->buffer();
+        if(!buf)
+            return;
         auto total = buf->totalReceiveSize();
         if(total==0)
         {
