@@ -98,6 +98,8 @@ AVPlayer::AVPlayer(QObject *parent) :
     d->vcapture = new VideoCapture(this);
 
     connect(this, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SLOT(onMediaStatusChanged(QtAV::MediaStatus)));
+
+    d->applyRateCalculation(this);
 }
 
 AVPlayer::~AVPlayer()
@@ -483,6 +485,11 @@ void AVPlayer::setAdaptiveBuffer(bool value)
     d->adaptive_buffer = value;
     d->applyAdaptiveBuffer(this);
     Q_EMIT adaptiveBufferChanged(value);
+}
+
+double AVPlayer::rate() const
+{
+    return d->rate;
 }
 
 MediaEndAction AVPlayer::mediaEndAction() const

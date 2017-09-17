@@ -29,6 +29,7 @@
 #include "AVDemuxThread.h"
 #include "utils/Logger.h"
 #include <QTimer>
+#include <QElapsedTimer>
 #include <queue>
 
 namespace QtAV {
@@ -106,6 +107,8 @@ public:
 
     void applyAutoPlay(AVPlayer *player, bool autoPlay);
 
+    void applyRateCalculation(AVPlayer *player);
+
     bool auto_load;
     bool async_load;
     // can be QString, QIODevice*
@@ -167,6 +170,11 @@ public:
     std::deque<qint64> bufferHistory;
 
     QTimer autoPlay_timer;
+
+    double rate;
+    QTimer rate_timer;
+    QElapsedTimer elapsedTimer;
+    quint64 lastTotalReceiveSize = 0;
 };
 
 } //namespace QtAV

@@ -675,4 +675,24 @@ void AVPlayer::Private::applyAutoPlay(AVPlayer *player, bool autoPlay)
     }
 }
 
+void AVPlayer::Private::applyRateCalculation(AVPlayer *player)
+{
+    rate_timer.setInterval(1000);
+    connect(&rate_timer,&QTimer::timeout,[this,player](){
+        const PacketBuffer* buf = read_thread->buffer();
+        auto total = buf->totalReceiveSize();
+        if(total==0)
+        {
+            elapsedTimer.start();
+            return;
+        }
+        double diff = total-lastTotalReceiveSize;
+        rate = (diff/elapsedTimer.elapsed())*1000;
+        elapsedTimer.start();
+        lastTotalReceiveSize = total;
+        emit player->rateChanged(rate);
+    });
+    rate_timer.start();
+}
+
 } //namespace QtAV

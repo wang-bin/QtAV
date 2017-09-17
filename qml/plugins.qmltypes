@@ -232,6 +232,7 @@ Module {
         Property { name: "buffered"; type: "int" }
         Property { name: "bufferSize"; type: "int" }
         Property { name: "adaptiveBuffer"; type: "bool" }
+        Property { name: "rate"; type: "double" }
         Property { name: "externalAudio"; type: "QUrl" }
         Property { name: "internalAudioTracks"; type: "QVariantList"; isReadonly: true }
         Property { name: "externalAudioTracks"; type: "QVariantList"; isReadonly: true }
