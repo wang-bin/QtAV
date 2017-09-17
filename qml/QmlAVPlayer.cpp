@@ -111,6 +111,8 @@ void QmlAVPlayer::componentComplete()
             mpPlayer->play();
     }
 
+    connect(mpPlayer, &QtAV::AVPlayer::rateChanged, this, &QmlAVPlayer::rateChanged);
+
     m_complete = true;
 }
 
@@ -443,6 +445,11 @@ void QmlAVPlayer::setAdaptiveBuffer(bool value)
         mpPlayer->setAdaptiveBuffer(value);
         Q_EMIT adaptiveBufferChanged();
     }
+}
+
+double QmlAVPlayer::rate() const
+{
+    return mpPlayer->rate();
 }
 
 QUrl QmlAVPlayer::externalAudio() const

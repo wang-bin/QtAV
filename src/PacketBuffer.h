@@ -77,6 +77,8 @@ public:
      */
     qreal bufferSpeed() const;
     qreal bufferSpeedInBytes() const;
+
+    quint64 totalReceiveSize() const;
 protected:
     bool checkEnough() const Q_DECL_OVERRIDE;
     bool checkFull() const Q_DECL_OVERRIDE;
@@ -104,6 +106,8 @@ private:
         qint64 t;
     } BufferInfo;
     ring<BufferInfo> m_history;
+
+    quint64 totalSize = 0;
 };
 
 } //namespace QtAV
