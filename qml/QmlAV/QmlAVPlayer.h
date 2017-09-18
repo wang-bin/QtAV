@@ -30,6 +30,7 @@
 #include <QmlAV/QuickFilter.h>
 #include <QtAV/AVError.h>
 #include <QtAV/VideoCapture.h>
+#include <QTimer>
 
 namespace QtAV {
 class AVPlayer;
@@ -83,6 +84,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(int bufferSize READ bufferSize WRITE setBufferSize NOTIFY bufferSizeChanged)
     Q_PROPERTY(bool adaptiveBuffer READ adaptiveBuffer WRITE setAdaptiveBuffer NOTIFY adaptiveBufferChanged)
     Q_PROPERTY(double rate READ rate NOTIFY rateChanged)
+    Q_PROPERTY(double currentDisplayFPS READ currentDisplayFPS NOTIFY currentDisplayFPSChanged)
     Q_PROPERTY(QUrl externalAudio READ externalAudio WRITE setExternalAudio NOTIFY externalAudioChanged)
     Q_PROPERTY(QVariantList internalAudioTracks READ internalAudioTracks NOTIFY internalAudioTracksChanged)
     Q_PROPERTY(QVariantList internalVideoTracks READ internalVideoTracks NOTIFY internalVideoTracksChanged)
@@ -245,6 +247,8 @@ public:
     void setAdaptiveBuffer(bool value);
 
     double rate() const;
+
+    double currentDisplayFPS() const;
     /*!
      * \brief externalAudio
      * If externalAudio url is valid, player will use audioTrack of external audio as audio source.
@@ -318,6 +322,7 @@ Q_SIGNALS:
     void bufferSizeChanged();
     void adaptiveBufferChanged();
     void rateChanged();
+    void currentDisplayFPSChanged();
 
     void errorChanged();
     void error(Error error, const QString &errorString);
@@ -381,6 +386,9 @@ private:
     QList<QuickAudioFilter*> m_afilters;
     QList<QuickVideoFilter*> m_vfilters;
     QStringList m_ao;
+
+    QTimer fpsTimer;
+    double lastDisplayFPS = 0;
 };
 
 #endif // QTAV_QML_AVPLAYER_H
