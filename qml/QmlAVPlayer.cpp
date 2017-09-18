@@ -113,6 +113,15 @@ void QmlAVPlayer::componentComplete()
 
     connect(mpPlayer, &QtAV::AVPlayer::rateChanged, this, &QmlAVPlayer::rateChanged);
 
+    fpsTimer.setInterval(1000);
+    connect(&fpsTimer, &QTimer::timeout, this, [this](){
+        auto cur = currentDisplayFPS();
+        if(cur!=lastDisplayFPS)
+            emit currentDisplayFPSChanged();
+        lastDisplayFPS = cur;
+    });
+    fpsTimer.start();
+
     m_complete = true;
 }
 
@@ -450,6 +459,11 @@ void QmlAVPlayer::setAdaptiveBuffer(bool value)
 double QmlAVPlayer::rate() const
 {
     return mpPlayer->rate();
+}
+
+double QmlAVPlayer::currentDisplayFPS() const
+{
+    return mpPlayer->statistics().video_only.currentDisplayFPS();
 }
 
 QUrl QmlAVPlayer::externalAudio() const
