@@ -39,6 +39,7 @@ class LibAVFilterVideo;
 class SubtitleFilter;
 class VideoPreviewWidget;
 class DynamicShaderObject;
+class GLSLFilter;
 }
 QT_BEGIN_NAMESPACE
 class QMenu;
@@ -213,6 +214,7 @@ private:
     QtAV::SubtitleFilter *mpSubtitle;
     QtAV::VideoPreviewWidget *m_preview;
     QtAV::DynamicShaderObject *m_shader;
+    QtAV::GLSLFilter *m_glsl;
 };
 
 
