@@ -1412,6 +1412,9 @@ void AVPlayer::tryClearVideoRenderers()
 
 void AVPlayer::updateAdaptiveBuffer()
 {
+    if((d->status!=BufferedMedia) || duration()>0)
+        return;
+
     qint64 last = buffered();
     d->bufferHistory.push_back(last);
     if(d->bufferHistory.size()>50)
