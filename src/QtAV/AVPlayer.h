@@ -84,6 +84,7 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(QtAV::MediaEndAction mediaEndAction READ mediaEndAction WRITE setMediaEndAction NOTIFY mediaEndActionChanged)
     Q_PROPERTY(bool adaptiveBuffer READ adaptiveBuffer WRITE setAdaptiveBuffer NOTIFY adaptiveBufferChanged)
     Q_PROPERTY(double rate READ rate NOTIFY rateChanged)
+    Q_PROPERTY(double currentDisplayFPS READ currentDisplayFPS NOTIFY currentDisplayFPSChanged)
     Q_PROPERTY(unsigned int chapters READ chapters NOTIFY chaptersChanged)
     Q_ENUMS(State)
 public:
@@ -422,6 +423,8 @@ public:
 
     double rate() const;
 
+    double currentDisplayFPS() const;
+
 public Q_SLOTS:
     /*!
      * \brief load
@@ -561,6 +564,7 @@ Q_SIGNALS:
     void mediaEndActionChanged(QtAV::MediaEndAction action);
     void adaptiveBufferChanged(bool);
     void rateChanged(double);
+    void currentDisplayFPSChanged(double);
     /*!
      * \brief durationChanged emit when media is loaded/unloaded
      */

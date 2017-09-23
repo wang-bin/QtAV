@@ -109,6 +109,8 @@ public:
 
     void applyRateCalculation(AVPlayer *player);
 
+    void applyFPSCalculation(AVPlayer *player);
+
     bool auto_load;
     bool async_load;
     // can be QString, QIODevice*
@@ -175,6 +177,9 @@ public:
     QTimer rate_timer;
     QElapsedTimer elapsedTimer;
     quint64 lastTotalReceiveSize = 0;
+
+    QTimer fpsTimer;
+    double lastDisplayFPS = 0;
 };
 
 } //namespace QtAV

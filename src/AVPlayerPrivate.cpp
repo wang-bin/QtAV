@@ -682,19 +682,34 @@ void AVPlayer::Private::applyRateCalculation(AVPlayer *player)
         const PacketBuffer* buf = read_thread->buffer();
         if(!buf)
             return;
-        auto total = buf->totalReceiveSize();
-        if(total==0)
+        if(!elapsedTimer.isValid())
         {
             elapsedTimer.start();
             return;
         }
-        double diff = total-lastTotalReceiveSize;
-        rate = (diff/elapsedTimer.elapsed())*1000;
+        auto elapsed = elapsedTimer.elapsed();
+        auto total = buf->totalReceiveSize();
         elapsedTimer.start();
+        if(elapsed==0)
+            return;
+        double diff = total-lastTotalReceiveSize;
+        rate = (diff/elapsed)*1000;
         lastTotalReceiveSize = total;
         emit player->rateChanged(rate);
     });
     rate_timer.start();
+}
+
+void AVPlayer::Private::applyFPSCalculation(AVPlayer *player)
+{
+    fpsTimer.setInterval(1000);
+    connect(&fpsTimer, &QTimer::timeout, [this,player](){
+        auto cur = player->currentDisplayFPS();
+        if(!qFuzzyCompare(cur,lastDisplayFPS))
+            emit player->currentDisplayFPSChanged(cur);
+        lastDisplayFPS = cur;
+    });
+    fpsTimer.start();
 }
 
 } //namespace QtAV
