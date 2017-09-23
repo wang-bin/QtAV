@@ -386,9 +386,6 @@ private:
     QList<QuickAudioFilter*> m_afilters;
     QList<QuickVideoFilter*> m_vfilters;
     QStringList m_ao;
-
-    QTimer fpsTimer;
-    double lastDisplayFPS = 0;
 };
 
 #endif // QTAV_QML_AVPLAYER_H

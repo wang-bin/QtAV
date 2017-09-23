@@ -700,4 +700,16 @@ void AVPlayer::Private::applyRateCalculation(AVPlayer *player)
     rate_timer.start();
 }
 
+void AVPlayer::Private::applyFPSCalculation(AVPlayer *player)
+{
+    fpsTimer.setInterval(1000);
+    connect(&fpsTimer, &QTimer::timeout, [this,player](){
+        auto cur = player->currentDisplayFPS();
+        if(!qFuzzyCompare(cur,lastDisplayFPS))
+            emit player->currentDisplayFPSChanged(cur);
+        lastDisplayFPS = cur;
+    });
+    fpsTimer.start();
+}
+
 } //namespace QtAV

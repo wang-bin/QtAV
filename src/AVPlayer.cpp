@@ -97,6 +97,8 @@ AVPlayer::AVPlayer(QObject *parent) :
     connect(this, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SLOT(onMediaStatusChanged(QtAV::MediaStatus)));
 
     d->applyRateCalculation(this);
+
+    d->applyFPSCalculation(this);
 }
 
 AVPlayer::~AVPlayer()
@@ -487,6 +489,11 @@ void AVPlayer::setAdaptiveBuffer(bool value)
 double AVPlayer::rate() const
 {
     return d->rate;
+}
+
+double AVPlayer::currentDisplayFPS() const
+{
+    return d->statistics.video_only.currentDisplayFPS();
 }
 
 MediaEndAction AVPlayer::mediaEndAction() const
