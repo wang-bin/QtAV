@@ -111,6 +111,7 @@ MainWindow::MainWindow(QWidget *parent) :
   , mpSubtitle(0)
   , m_preview(0)
   , m_shader(NULL)
+  , m_glsl(NULL)
 {
     #if defined(Q_OS_MACX) && QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
         QApplication::setStyle(QStyleFactory::create("Fusion"));
@@ -549,6 +550,7 @@ void MainWindow::setupUi()
     connect(mpTimeSlider, SIGNAL(onLeave()), SLOT(onTimeSliderLeave()));
     connect(mpTimeSlider, SIGNAL(onHover(int,int)), SLOT(onTimeSliderHover(int,int)));
     connect(&Config::instance(), SIGNAL(userShaderEnabledChanged()), SLOT(onUserShaderChanged()));
+    connect(&Config::instance(), SIGNAL(intermediateFBOChanged()), SLOT(onUserShaderChanged()));
     connect(&Config::instance(), SIGNAL(fragHeaderChanged()), SLOT(onUserShaderChanged()));
     connect(&Config::instance(), SIGNAL(fragSampleChanged()), SLOT(onUserShaderChanged()));
     connect(&Config::instance(), SIGNAL(fragPostProcessChanged()), SLOT(onUserShaderChanged()));
@@ -1543,6 +1545,14 @@ void MainWindow::onUserShaderChanged()
         return;
 #ifndef QT_NO_OPENGL
     if (Config::instance().userShaderEnabled()) {
+        if (Config::instance().intermediateFBO()) {
+            if (!m_glsl)
+                m_glsl = new GLSLFilter(this);
+            m_glsl->installTo(mpRenderer);
+        } else {
+            if (m_glsl)
+                m_glsl->uninstall();
+        }
         if (!m_shader)
             m_shader = new DynamicShaderObject(this);
         m_shader->setHeader(Config::instance().fragHeader());
