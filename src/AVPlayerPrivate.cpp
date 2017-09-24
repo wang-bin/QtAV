@@ -703,11 +703,11 @@ void AVPlayer::Private::applyRateCalculation(AVPlayer *player)
 void AVPlayer::Private::applyFPSCalculation(AVPlayer *player)
 {
     fpsTimer.setInterval(1000);
-    connect(&fpsTimer, &QTimer::timeout, [this,player](){
-        auto cur = player->currentDisplayFPS();
-        if(!qFuzzyCompare(cur,lastDisplayFPS))
-            emit player->currentDisplayFPSChanged(cur);
-        lastDisplayFPS = cur;
+    connect(&fpsTimer, &QTimer::timeout, [this, player]() {
+        displayFPS = statistics.video_only.currentDisplayFPS();
+        if (!qFuzzyCompare(displayFPS, lastDisplayFPS))
+            emit player->currentDisplayFPSChanged(displayFPS);
+        lastDisplayFPS = displayFPS;
     });
     fpsTimer.start();
 }

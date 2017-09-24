@@ -178,6 +178,7 @@ public:
     QElapsedTimer elapsedTimer;
     quint64 lastTotalReceiveSize = 0;
 
+    double displayFPS = 0;
     QTimer fpsTimer;
     double lastDisplayFPS = 0;
 };

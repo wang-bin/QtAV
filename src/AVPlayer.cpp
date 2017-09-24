@@ -493,7 +493,7 @@ double AVPlayer::rate() const
 
 double AVPlayer::currentDisplayFPS() const
 {
-    return d->statistics.video_only.currentDisplayFPS();
+    return d->displayFPS;
 }
 
 MediaEndAction AVPlayer::mediaEndAction() const
