@@ -173,7 +173,7 @@ public:
 
     QTimer autoPlay_timer;
 
-    double rate;
+    double rate = 0;
     QTimer rate_timer;
     QElapsedTimer elapsedTimer;
     quint64 lastTotalReceiveSize = 0;
