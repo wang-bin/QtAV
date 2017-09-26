@@ -234,6 +234,7 @@ Module {
         Property { name: "adaptiveBuffer"; type: "bool" }
         Property { name: "rate"; type: "double" }
         Property { name: "currentDisplayFPS"; type: "double" }
+        Property { name: "totalFrames"; type: "qint64" }
         Property { name: "droppedPackets"; type: "qint64" }
         Property { name: "droppedFrames"; type: "qint64" }
         Property { name: "externalAudio"; type: "QUrl" }

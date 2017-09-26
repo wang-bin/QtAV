@@ -514,6 +514,7 @@ void VideoThread::run()
         if (!pkt.isEOF())
             pkt.skip(pkt.data.size() - dec->undecodedSize());
         VideoFrame frame = dec->frame();
+        d.statistics->totalFrames++;
         if (!frame.isValid()) {
             d.statistics->droppedFrames++;
             qWarning("invalid video frame from decoder. undecoded data size: %d", pkt.data.size());

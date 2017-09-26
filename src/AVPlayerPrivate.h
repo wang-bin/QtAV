@@ -111,7 +111,7 @@ public:
 
     void applyFPSCalculation(AVPlayer *player);
 
-    void applyDropsNotifications(AVPlayer *player);
+    void applyNotifications(AVPlayer *player);
 
     bool auto_load;
     bool async_load;
@@ -184,7 +184,8 @@ public:
     QTimer fpsTimer;
     double lastDisplayFPS = 0;
 
-    QTimer dropsTimer;
+    QTimer notificationsTimer;
+    qint64 lastTotalFrames = 0;
     qint64 lastDroppedPackets = 0;
     qint64 lastDroppedFrames = 0;
 };

@@ -85,6 +85,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(bool adaptiveBuffer READ adaptiveBuffer WRITE setAdaptiveBuffer NOTIFY adaptiveBufferChanged)
     Q_PROPERTY(double rate READ rate NOTIFY rateChanged)
     Q_PROPERTY(double currentDisplayFPS READ currentDisplayFPS NOTIFY currentDisplayFPSChanged)
+    Q_PROPERTY(qint64 totalFrames READ totalFrames NOTIFY totalFramesChanged)
     Q_PROPERTY(qint64 droppedPackets READ droppedPackets NOTIFY droppedPacketsChanged)
     Q_PROPERTY(qint64 droppedFrames READ droppedFrames NOTIFY droppedFramesChanged)
     Q_PROPERTY(QUrl externalAudio READ externalAudio WRITE setExternalAudio NOTIFY externalAudioChanged)
@@ -253,7 +254,10 @@ public:
     double currentDisplayFPS() const;
 
     qint64 droppedPackets() const;
+
     qint64 droppedFrames() const;
+
+    qint64 totalFrames() const;
 
     /*!
      * \brief externalAudio
@@ -329,6 +333,7 @@ Q_SIGNALS:
     void adaptiveBufferChanged();
     void rateChanged();
     void currentDisplayFPSChanged();
+    void totalFramesChanged(qint64);
     void droppedPacketsChanged();
     void droppedFramesChanged();
 
