@@ -712,4 +712,21 @@ void AVPlayer::Private::applyFPSCalculation(AVPlayer *player)
     fpsTimer.start();
 }
 
+void AVPlayer::Private::applyDropsNotifications(AVPlayer *player)
+{
+    dropsTimer.setInterval(1000);
+    connect(&dropsTimer, &QTimer::timeout, [this, player]() {
+        auto droppedPackets = player->droppedPackets();
+        if (droppedPackets!=lastDroppedPackets)
+            emit player->droppedPacketsChanged(droppedPackets);
+        lastDroppedPackets = droppedPackets;
+
+        auto droppedFrames = player->droppedFrames();
+        if (droppedFrames!=lastDroppedFrames)
+            emit player->droppedFramesChanged(droppedFrames);
+        lastDroppedFrames= droppedFrames;
+    });
+    dropsTimer.start();
+}
+
 } //namespace QtAV

@@ -99,6 +99,8 @@ AVPlayer::AVPlayer(QObject *parent) :
     d->applyRateCalculation(this);
 
     d->applyFPSCalculation(this);
+
+    d->applyDropsNotifications(this);
 }
 
 AVPlayer::~AVPlayer()
@@ -494,6 +496,16 @@ double AVPlayer::rate() const
 double AVPlayer::currentDisplayFPS() const
 {
     return d->displayFPS;
+}
+
+qint64 AVPlayer::droppedPackets() const
+{
+    return d->statistics.droppedPackets;
+}
+
+qint64 AVPlayer::droppedFrames() const
+{
+    return d->statistics.droppedFrames;
 }
 
 MediaEndAction AVPlayer::mediaEndAction() const
@@ -1205,6 +1217,9 @@ void AVPlayer::play()
         return;
     }
     connect(this, SIGNAL(loaded()), this, SLOT(playInternal()));
+
+    d->statistics.droppedFrames = 0;
+    d->statistics.droppedPackets = 0;
 }
 
 void AVPlayer::playInternal()

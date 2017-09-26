@@ -85,6 +85,8 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(bool adaptiveBuffer READ adaptiveBuffer WRITE setAdaptiveBuffer NOTIFY adaptiveBufferChanged)
     Q_PROPERTY(double rate READ rate NOTIFY rateChanged)
     Q_PROPERTY(double currentDisplayFPS READ currentDisplayFPS NOTIFY currentDisplayFPSChanged)
+    Q_PROPERTY(qint64 droppedPackets READ droppedPackets NOTIFY droppedPacketsChanged)
+    Q_PROPERTY(qint64 droppedFrames READ droppedFrames NOTIFY droppedFramesChanged)
     Q_PROPERTY(QUrl externalAudio READ externalAudio WRITE setExternalAudio NOTIFY externalAudioChanged)
     Q_PROPERTY(QVariantList internalAudioTracks READ internalAudioTracks NOTIFY internalAudioTracksChanged)
     Q_PROPERTY(QVariantList internalVideoTracks READ internalVideoTracks NOTIFY internalVideoTracksChanged)
@@ -249,6 +251,10 @@ public:
     double rate() const;
 
     double currentDisplayFPS() const;
+
+    qint64 droppedPackets() const;
+    qint64 droppedFrames() const;
+
     /*!
      * \brief externalAudio
      * If externalAudio url is valid, player will use audioTrack of external audio as audio source.
@@ -323,6 +329,8 @@ Q_SIGNALS:
     void adaptiveBufferChanged();
     void rateChanged();
     void currentDisplayFPSChanged();
+    void droppedPacketsChanged();
+    void droppedFramesChanged();
 
     void errorChanged();
     void error(Error error, const QString &errorString);

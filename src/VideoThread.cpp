@@ -318,6 +318,7 @@ void VideoThread::run()
             //qDebug() << pkt.position << " pts:" <<pkt.pts;
             //Compare to the clock
             if (!pkt.isValid()) {
+                d.statistics->droppedPackets++;
                 // may be we should check other information. invalid packet can come from
                 wait_key_frame = true;
                 qDebug("Invalid packet! flush video codec context!!!!!!!!!! video packet queue size: %d", d.packets.size());  
@@ -514,6 +515,7 @@ void VideoThread::run()
             pkt.skip(pkt.data.size() - dec->undecodedSize());
         VideoFrame frame = dec->frame();
         if (!frame.isValid()) {
+            d.statistics->droppedFrames++;
             qWarning("invalid video frame from decoder. undecoded data size: %d", pkt.data.size());
             if (pkt_data == pkt.data.constData()) //FIXME: for libav9. what about other versions?
                 pkt = Packet();
