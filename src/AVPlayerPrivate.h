@@ -111,6 +111,8 @@ public:
 
     void applyFPSCalculation(AVPlayer *player);
 
+    void applyDropsNotifications(AVPlayer *player);
+
     bool auto_load;
     bool async_load;
     // can be QString, QIODevice*
@@ -181,6 +183,10 @@ public:
     double displayFPS = 0;
     QTimer fpsTimer;
     double lastDisplayFPS = 0;
+
+    QTimer dropsTimer;
+    qint64 lastDroppedPackets = 0;
+    qint64 lastDroppedFrames = 0;
 };
 
 } //namespace QtAV

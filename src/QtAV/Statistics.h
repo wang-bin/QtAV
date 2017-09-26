@@ -113,6 +113,9 @@ public:
         class Private;
         QExplicitlySharedDataPointer<Private> d;
     } video_only;
+
+    qint64 droppedPackets = 0;
+    qint64 droppedFrames = 0;
 };
 
 } //namespace QtAV
