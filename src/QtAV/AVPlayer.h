@@ -85,6 +85,7 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(bool adaptiveBuffer READ adaptiveBuffer WRITE setAdaptiveBuffer NOTIFY adaptiveBufferChanged)
     Q_PROPERTY(double rate READ rate NOTIFY rateChanged)
     Q_PROPERTY(double currentDisplayFPS READ currentDisplayFPS NOTIFY currentDisplayFPSChanged)
+    Q_PROPERTY(qint64 totalFrames READ totalFrames NOTIFY totalFramesChanged)
     Q_PROPERTY(qint64 droppedPackets READ droppedPackets NOTIFY droppedPacketsChanged)
     Q_PROPERTY(qint64 droppedFrames READ droppedFrames NOTIFY droppedFramesChanged)
     Q_PROPERTY(unsigned int chapters READ chapters NOTIFY chaptersChanged)
@@ -431,6 +432,8 @@ public:
 
     qint64 droppedFrames() const;
 
+    qint64 totalFrames() const;
+
 public Q_SLOTS:
     /*!
      * \brief load
@@ -571,6 +574,7 @@ Q_SIGNALS:
     void adaptiveBufferChanged(bool);
     void rateChanged(double);
     void currentDisplayFPSChanged(double);
+    void totalFramesChanged(qint64);
     void droppedPacketsChanged(qint64);
     void droppedFramesChanged(qint64);
     /*!

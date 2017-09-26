@@ -103,7 +103,7 @@ AVPlayer::AVPlayer(QObject *parent) :
 
     d->applyFPSCalculation(this);
 
-    d->applyDropsNotifications(this);
+    d->applyNotifications(this);
 }
 
 AVPlayer::~AVPlayer()
@@ -509,6 +509,11 @@ qint64 AVPlayer::droppedPackets() const
 qint64 AVPlayer::droppedFrames() const
 {
     return d->statistics.droppedFrames;
+}
+
+qint64 AVPlayer::totalFrames() const
+{
+    return d->statistics.totalFrames;
 }
 
 MediaEndAction AVPlayer::mediaEndAction() const
@@ -1223,6 +1228,7 @@ void AVPlayer::play()
     }
     connect(this, SIGNAL(loaded()), this, SLOT(playInternal()));
 
+    d->statistics.totalFrames = 0;
     d->statistics.droppedFrames = 0;
     d->statistics.droppedPackets = 0;
 }

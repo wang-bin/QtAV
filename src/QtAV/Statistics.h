@@ -114,6 +114,7 @@ public:
         QExplicitlySharedDataPointer<Private> d;
     } video_only;
 
+    qint64 totalFrames = 0;
     qint64 droppedPackets = 0;
     qint64 droppedFrames = 0;
 };
