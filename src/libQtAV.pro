@@ -17,6 +17,11 @@ CONFIG *= qtav-buildlib
 static: CONFIG *= static_ffmpeg
 INCLUDEPATH += $$[QT_INSTALL_HEADERS] # TODO: ffmpeg dir
 
+mac {
+    INCLUDEPATH += /usr/local/include/
+    LIBS += -L/usr/local/lib
+}
+
 #mac: simd.prf will load qt_build_config and the result is soname will prefixed with QT_INSTALL_LIBS and link flag will append soname after QMAKE_LFLAGS_SONAME
 config_libcedarv: CONFIG *= neon config_simd #need by qt4 addSimdCompiler(). neon or config_neon is required because tests/arch can not detect neon
 ## sse2 sse4_1 may be defined in Qt5 qmodule.pri but is not included. Qt4 defines sse and sse2
