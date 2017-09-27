@@ -111,11 +111,7 @@ void QmlAVPlayer::componentComplete()
             mpPlayer->play();
     }
 
-    connect(mpPlayer, &QtAV::AVPlayer::rateChanged, this, &QmlAVPlayer::rateChanged);
-    connect(mpPlayer, &QtAV::AVPlayer::currentDisplayFPSChanged, this, &QmlAVPlayer::currentDisplayFPSChanged);
-    connect(mpPlayer, &QtAV::AVPlayer::totalFramesChanged, this, &QmlAVPlayer::totalFramesChanged);
-    connect(mpPlayer, &QtAV::AVPlayer::droppedPacketsChanged, this, &QmlAVPlayer::droppedPacketsChanged);
-    connect(mpPlayer, &QtAV::AVPlayer::droppedFramesChanged, this, &QmlAVPlayer::droppedFramesChanged);
+    connect(mpPlayer, &QtAV::AVPlayer::mediaDataChanged, this, &QmlAVPlayer::mediaDataChanged);
 
     m_complete = true;
 }
@@ -451,29 +447,9 @@ void QmlAVPlayer::setAdaptiveBuffer(bool value)
     }
 }
 
-double QmlAVPlayer::rate() const
+QVariantMap QmlAVPlayer::mediaData() const
 {
-    return mpPlayer->rate();
-}
-
-double QmlAVPlayer::currentDisplayFPS() const
-{
-    return mpPlayer->currentDisplayFPS();
-}
-
-qint64 QmlAVPlayer::droppedPackets() const
-{
-    return mpPlayer->droppedPackets();
-}
-
-qint64 QmlAVPlayer::droppedFrames() const
-{
-    return mpPlayer->droppedFrames();
-}
-
-qint64 QmlAVPlayer::totalFrames() const
-{
-    return mpPlayer->totalFrames();
+    return mpPlayer->mediaData();
 }
 
 QUrl QmlAVPlayer::externalAudio() const

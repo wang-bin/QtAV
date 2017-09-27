@@ -96,11 +96,7 @@ AVPlayer::AVPlayer(QObject *parent) :
 
     connect(this, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SLOT(onMediaStatusChanged(QtAV::MediaStatus)));
 
-    d->applyRateCalculation(this);
-
-    d->applyFPSCalculation(this);
-
-    d->applyNotifications(this);
+    d->applyMediaDataCalculation(this);
 }
 
 AVPlayer::~AVPlayer()
@@ -488,29 +484,9 @@ void AVPlayer::setAdaptiveBuffer(bool value)
     Q_EMIT adaptiveBufferChanged(value);
 }
 
-double AVPlayer::rate() const
+QVariantMap AVPlayer::mediaData() const
 {
-    return d->rate;
-}
-
-double AVPlayer::currentDisplayFPS() const
-{
-    return d->displayFPS;
-}
-
-qint64 AVPlayer::droppedPackets() const
-{
-    return d->statistics.droppedPackets;
-}
-
-qint64 AVPlayer::droppedFrames() const
-{
-    return d->statistics.droppedFrames;
-}
-
-qint64 AVPlayer::totalFrames() const
-{
-    return d->statistics.totalFrames;
+    return d->mediaData;
 }
 
 MediaEndAction AVPlayer::mediaEndAction() const

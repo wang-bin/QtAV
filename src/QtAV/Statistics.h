@@ -114,6 +114,8 @@ public:
         QExplicitlySharedDataPointer<Private> d;
     } video_only;
 
+    double bandwidthRate = 0;
+    double displayFPS = 0;
     qint64 totalFrames = 0;
     qint64 droppedPackets = 0;
     qint64 droppedFrames = 0;
