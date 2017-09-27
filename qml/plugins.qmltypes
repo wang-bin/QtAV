@@ -232,11 +232,7 @@ Module {
         Property { name: "buffered"; type: "int" }
         Property { name: "bufferSize"; type: "int" }
         Property { name: "adaptiveBuffer"; type: "bool" }
-        Property { name: "rate"; type: "double" }
-        Property { name: "currentDisplayFPS"; type: "double" }
-        Property { name: "totalFrames"; type: "qint64" }
-        Property { name: "droppedPackets"; type: "qint64" }
-        Property { name: "droppedFrames"; type: "qint64" }
+        Property { name: "mediaData"; type: "QVariantMap" }
         Property { name: "externalAudio"; type: "QUrl" }
         Property { name: "internalAudioTracks"; type: "QVariantList"; isReadonly: true }
         Property { name: "externalAudioTracks"; type: "QVariantList"; isReadonly: true }

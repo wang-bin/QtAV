@@ -675,64 +675,45 @@ void AVPlayer::Private::applyAutoPlay(AVPlayer *player, bool autoPlay)
     }
 }
 
-void AVPlayer::Private::applyRateCalculation(AVPlayer *player)
+void AVPlayer::Private::calcBandwidthRate()
 {
-    rate_timer.setInterval(1000);
-    connect(&rate_timer,&QTimer::timeout,[this,player](){
-        const PacketBuffer* buf = read_thread->buffer();
-        if(!buf)
-            return;
-        if(!elapsedTimer.isValid())
-        {
-            elapsedTimer.start();
-            return;
-        }
-        auto elapsed = elapsedTimer.elapsed();
-        auto total = buf->totalReceiveSize();
+    const PacketBuffer* buf = read_thread->buffer();
+    if(!buf)
+        return;
+    if(!elapsedTimer.isValid())
+    {
         elapsedTimer.start();
-        if(elapsed==0)
-            return;
-        double diff = total-lastTotalReceiveSize;
-        rate = (diff/elapsed)*1000;
-        lastTotalReceiveSize = total;
-        emit player->rateChanged(rate);
-    });
-    rate_timer.start();
+        return;
+    }
+    auto elapsed = elapsedTimer.elapsed();
+    auto total = buf->totalReceiveSize();
+    elapsedTimer.start();
+    if(elapsed==0)
+        return;
+    double diff = total-lastTotalReceiveSize;
+    statistics.bandwidthRate = (diff/elapsed)*1000;
+    lastTotalReceiveSize = total;
 }
 
-void AVPlayer::Private::applyFPSCalculation(AVPlayer *player)
+void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
 {
-    fpsTimer.setInterval(1000);
-    connect(&fpsTimer, &QTimer::timeout, [this, player]() {
-        displayFPS = statistics.video_only.currentDisplayFPS();
-        if (!qFuzzyCompare(displayFPS, lastDisplayFPS))
-            emit player->currentDisplayFPSChanged(displayFPS);
-        lastDisplayFPS = displayFPS;
+    mediaDataTimer.setInterval(1000);
+    connect(&mediaDataTimer, &QTimer::timeout, [this, player]() {
+
+        calcBandwidthRate();
+
+        statistics.displayFPS = statistics.video_only.currentDisplayFPS();
+
+        mediaData["bandwidthRate"] = statistics.bandwidthRate;
+        mediaData["displayFPS"] = statistics.displayFPS;
+        mediaData["totalFrames"] = statistics.totalFrames;
+        mediaData["droppedPackets"] = statistics.droppedPackets;
+        mediaData["droppedFrames"] = statistics.droppedFrames;
+
+        emit player->mediaDataChanged(mediaData);
+
     });
-    fpsTimer.start();
-}
-
-void AVPlayer::Private::applyNotifications(AVPlayer *player)
-{
-    notificationsTimer.setInterval(1000);
-    connect(&notificationsTimer, &QTimer::timeout, [this, player]() {
-
-        auto totalFrames = player->totalFrames();
-        if (totalFrames!=lastTotalFrames)
-            emit player->totalFramesChanged(totalFrames);
-        lastTotalFrames= totalFrames;
-
-        auto droppedPackets = player->droppedPackets();
-        if (droppedPackets!=lastDroppedPackets)
-            emit player->droppedPacketsChanged(droppedPackets);
-        lastDroppedPackets = droppedPackets;
-
-        auto droppedFrames = player->droppedFrames();
-        if (droppedFrames!=lastDroppedFrames)
-            emit player->droppedFramesChanged(droppedFrames);
-        lastDroppedFrames= droppedFrames;
-    });
-    notificationsTimer.start();
+    mediaDataTimer.start();
 }
 
 } //namespace QtAV

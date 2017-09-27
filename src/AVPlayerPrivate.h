@@ -107,11 +107,9 @@ public:
 
     void applyAutoPlay(AVPlayer *player, bool autoPlay);
 
-    void applyRateCalculation(AVPlayer *player);
+    void calcBandwidthRate();
 
-    void applyFPSCalculation(AVPlayer *player);
-
-    void applyNotifications(AVPlayer *player);
+    void applyMediaDataCalculation(AVPlayer *player);
 
     bool auto_load;
     bool async_load;
@@ -175,19 +173,11 @@ public:
 
     QTimer autoPlay_timer;
 
-    double rate = 0;
-    QTimer rate_timer;
     QElapsedTimer elapsedTimer;
     quint64 lastTotalReceiveSize = 0;
 
-    double displayFPS = 0;
-    QTimer fpsTimer;
-    double lastDisplayFPS = 0;
-
-    QTimer notificationsTimer;
-    qint64 lastTotalFrames = 0;
-    qint64 lastDroppedPackets = 0;
-    qint64 lastDroppedFrames = 0;
+    QTimer mediaDataTimer;
+    QVariantMap mediaData;
 };
 
 } //namespace QtAV
