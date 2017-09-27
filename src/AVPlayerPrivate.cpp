@@ -675,7 +675,7 @@ void AVPlayer::Private::applyAutoPlay(AVPlayer *player, bool autoPlay)
     }
 }
 
-void AVPlayer::Private::calcBandwidthRate()
+void AVPlayer::Private::calcRates()
 {
     const PacketBuffer* buf = read_thread->buffer();
     if(!buf)
@@ -686,13 +686,19 @@ void AVPlayer::Private::calcBandwidthRate()
         return;
     }
     auto elapsed = elapsedTimer.elapsed();
-    auto total = buf->totalReceiveSize();
+    auto totalReceiveSize = buf->totalReceiveSize();
+    auto totalFrames = statistics.totalFrames;
     elapsedTimer.start();
     if(elapsed==0)
         return;
-    double diff = total-lastTotalReceiveSize;
-    statistics.bandwidthRate = (diff/elapsed)*1000;
-    lastTotalReceiveSize = total;
+
+    double diff1 = totalReceiveSize-lastTotalReceiveSize;
+    statistics.bandwidthRate = (diff1/elapsed)*1000;
+    lastTotalReceiveSize = totalReceiveSize;
+
+    double diff2 = totalFrames-lastTotalFrames;
+    statistics.fps = (diff2/elapsed)*1000;
+    lastTotalFrames = totalFrames;
 }
 
 void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
@@ -700,11 +706,12 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
     mediaDataTimer.setInterval(1000);
     connect(&mediaDataTimer, &QTimer::timeout, [this, player]() {
 
-        calcBandwidthRate();
+        calcRates();
 
         statistics.displayFPS = statistics.video_only.currentDisplayFPS();
 
         mediaData["bandwidthRate"] = statistics.bandwidthRate;
+        mediaData["fps"] = statistics.fps;
         mediaData["displayFPS"] = statistics.displayFPS;
         mediaData["totalPackets"] = statistics.totalPackets;
         mediaData["totalFrames"] = statistics.totalFrames;
