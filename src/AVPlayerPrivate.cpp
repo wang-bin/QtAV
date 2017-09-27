@@ -706,6 +706,7 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
 
         mediaData["bandwidthRate"] = statistics.bandwidthRate;
         mediaData["displayFPS"] = statistics.displayFPS;
+        mediaData["totalPackets"] = statistics.totalPackets;
         mediaData["totalFrames"] = statistics.totalFrames;
         mediaData["droppedPackets"] = statistics.droppedPackets;
         mediaData["droppedFrames"] = statistics.droppedFrames;
