@@ -107,7 +107,7 @@ public:
 
     void applyAutoPlay(AVPlayer *player, bool autoPlay);
 
-    void calcBandwidthRate();
+    void calcRates();
 
     void applyMediaDataCalculation(AVPlayer *player);
 
@@ -175,6 +175,7 @@ public:
 
     QElapsedTimer elapsedTimer;
     quint64 lastTotalReceiveSize = 0;
+    qint64 lastTotalFrames = 0;
 
     QTimer mediaDataTimer;
     QVariantMap mediaData;
