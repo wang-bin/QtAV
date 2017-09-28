@@ -1199,7 +1199,7 @@ void AVPlayer::play()
     }
     connect(this, SIGNAL(loaded()), this, SLOT(playInternal()));
 
-    d->statistics.totalPackets = 0;
+    d->demuxer.totalPackets = 0;
     d->statistics.totalFrames = 0;
     d->statistics.droppedFrames = 0;
     d->statistics.droppedPackets = 0;
