@@ -209,6 +209,7 @@ private:
 
 public:
     qint64 totalPackets = 0;
+    qint64 totalKeyFrames = 0;
 };
 
 } //namespace QtAV

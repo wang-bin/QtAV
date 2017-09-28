@@ -510,6 +510,10 @@ void VideoThread::run()
             v_a = 0; //?
             continue;
         }
+
+        if(pkt.hasKeyFrame)
+            d.statistics->totalKeyFrames++;
+
         // reduce here to ensure to decode the rest data in the next loop
         if (!pkt.isEOF())
             pkt.skip(pkt.data.size() - dec->undecodedSize());
