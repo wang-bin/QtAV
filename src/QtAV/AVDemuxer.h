@@ -206,6 +206,9 @@ private:
     QScopedPointer<Private> d;
     class InterruptHandler;
     friend class InterruptHandler;
+
+public:
+    qint64 totalPackets = 0;
 };
 
 } //namespace QtAV

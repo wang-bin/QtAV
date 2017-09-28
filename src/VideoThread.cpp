@@ -309,7 +309,6 @@ void VideoThread::run()
         }
         if(!pkt.isValid() && !pkt.isEOF()) { // can't seek back if eof packet is read
             pkt = d.packets.take(); //wait to dequeue
-            d.statistics->totalPackets++;
            // TODO: push pts history here and reorder
         }
         if (pkt.isEOF()) {
