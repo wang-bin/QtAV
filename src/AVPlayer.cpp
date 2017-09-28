@@ -1203,6 +1203,7 @@ void AVPlayer::play()
     d->statistics.totalFrames = 0;
     d->statistics.droppedFrames = 0;
     d->statistics.droppedPackets = 0;
+    d->statistics.totalKeyFrames = 0;
 }
 
 void AVPlayer::playInternal()

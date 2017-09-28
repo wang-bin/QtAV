@@ -717,6 +717,7 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
         mediaData["totalFrames"] = statistics.totalFrames;
         mediaData["droppedPackets"] = statistics.droppedPackets;
         mediaData["droppedFrames"] = statistics.droppedFrames;
+        mediaData["totalKeyFrames"] = statistics.totalKeyFrames;
 
         emit player->mediaDataChanged(mediaData);
 
