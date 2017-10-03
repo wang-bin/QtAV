@@ -466,7 +466,13 @@ bool AVDemuxer::readFrame()
         av_packet_unref(&packet); //important!
         return false;
     }
+
     totalPackets++;
+    if( packet.stream_index==videoStream())
+        totalVideoPackets++;
+    else if( packet.stream_index==audioStream())
+        totalAudioPackets++;
+
     d->stream = packet.stream_index;
     //check whether the 1st frame is alreay got. emit only once
     if (!d->started) {

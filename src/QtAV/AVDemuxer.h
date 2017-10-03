@@ -209,6 +209,8 @@ private:
 
 public:
     qint64 totalPackets = 0;
+    qint64 totalVideoPackets = 0;
+    qint64 totalAudioPackets = 0;
     qint64 totalKeyFrames = 0;
 };
 

@@ -714,6 +714,8 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
         mediaData["fps"] = statistics.fps;
         mediaData["displayFPS"] = statistics.displayFPS;
         mediaData["totalPackets"] = demuxer.totalPackets;
+        mediaData["totalVideoPackets"] = demuxer.totalVideoPackets;
+        mediaData["totalAudioPackets"] = demuxer.totalAudioPackets;
         mediaData["totalFrames"] = statistics.totalFrames;
         mediaData["droppedPackets"] = statistics.droppedPackets;
         mediaData["droppedFrames"] = statistics.droppedFrames;
