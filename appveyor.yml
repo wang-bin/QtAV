@@ -8,6 +8,13 @@ branches:
 environment:
 
   matrix:
+  - arch: x64
+    qt: 5.9
+    cc: VS2017
+    mode: desktop
+    QTDIR: C:\Qt\5.9\msvc2017_64
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+
   - arch: x86
     cc: VS2015
     qt: 5.9
@@ -52,7 +59,11 @@ cache:
 init:
   - set vcarch=%arch%
   - if "%arch%" == "x64" set vcarch=amd64
-  - if not %cc%==MinGW call "C:\Program Files (x86)\Microsoft Visual Studio %toolchain_version%.0\VC\vcvarsall.bat" %vcarch%
+  - if %cc%==VS2017 (
+      call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" %vcarch%
+    ) else if not %cc%==MinGW (
+      call "C:\Program Files (x86)\Microsoft Visual Studio %toolchain_version%.0\VC\vcvarsall.bat" %vcarch%
+    )
   - echo NUMBER_OF_PROCESSORS=%NUMBER_OF_PROCESSORS%
   - echo PROCESSOR_IDENTIFIER=%PROCESSOR_IDENTIFIER%
   - echo QTDIR=%QTDIR%
@@ -90,4 +101,4 @@ deploy:
   active_mode: false
   on:
     mode: release
-    cc: VS2015
+    cc: VS2017
