@@ -23,7 +23,11 @@ copy /y bin\*openal*.dll %QTDIR%\bin
 copy /y bin\*portaudio*.dll %QTDIR%\bin
 xcopy /syi  include %QTDIR%\include
 copy /y lib\*Qt*AV*.lib %QTDIR%\lib
+copy /y lib\QtAV1.lib %QTDIR%\lib\Qt5AV.lib
+copy /y lib\QtAVWidgets1.lib %QTDIR%\lib\Qt5AVWidgets.lib
 copy /y lib\*Qt*AV*.a %QTDIR%\lib
+copy /y lib\libQtAV1.a %QTDIR%\lib\libQt5AV.a
+copy /y lib\libQtAVWidgets1.a %QTDIR%\lib\libQt5AVWidgets.a
 xcopy /syi  bin\QtAV %QTDIR%\qml\QtAV
 xcopy /syi mkspecs %QTDIR%\mkspecs
 @echo QtAV SDK is installed
