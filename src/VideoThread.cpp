@@ -512,7 +512,11 @@ void VideoThread::run()
         }
 
         if(pkt.hasKeyFrame)
+        {
             d.statistics->totalKeyFrames++;
+            if(d.statistics->totalKeyFrames==1)
+                d.statistics->droppedPackets = 0;
+        }
 
         // reduce here to ensure to decode the rest data in the next loop
         if (!pkt.isEOF())
