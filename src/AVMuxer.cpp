@@ -116,8 +116,6 @@ AVStream *AVMuxer::Private::addStream(AVFormatContext* ctx, const QString &codec
     // set by avformat if unset
     s->id = ctx->nb_streams - 1;
     s->time_base = kTB;
-    // Set avg_frame_rate based on encoder frame_rate
-    s->avg_frame_rate = av_d2q(1.0/venc->frameRate(), venc->frameRate()*1001.0+2);
     AVCodecContext *c = s->codec;
     c->codec_id = codec->id;
     // Using codec->time_base is deprecated, but needed for older lavf.
@@ -145,6 +143,10 @@ bool AVMuxer::Private::prepareStreams()
             c->height = venc->height();
             /// MUST set after encoder is open to ensure format is valid and the same
             c->pix_fmt = (AVPixelFormat)VideoFormat::pixelFormatToFFmpeg(venc->pixelFormat());
+
+            // Set avg_frame_rate based on encoder frame_rate
+            s->avg_frame_rate = av_d2q(venc->frameRate(), venc->frameRate()*1001.0+2);
+
             video_streams.push_back(s->id);
         }
     }
