@@ -159,6 +159,14 @@ bool AVMuxer::Private::prepareStreams()
             c->channel_layout = aenc->audioFormat().channelLayoutFFmpeg();
             c->channels = aenc->audioFormat().channels();
             c->bits_per_raw_sample = aenc->audioFormat().bytesPerSample()*8; // need??
+
+            AVCodecContext *avctx = (AVCodecContext *) aenc->codecContext();
+            c->initial_padding = avctx->initial_padding;
+            if (avctx->extradata_size) {
+                c->extradata = avctx->extradata;
+                c->extradata_size = avctx->extradata_size;
+            }
+
             audio_streams.push_back(s->id);
         }
     }
