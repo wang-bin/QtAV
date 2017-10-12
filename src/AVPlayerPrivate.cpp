@@ -111,7 +111,7 @@ AVPlayer::Private::Private()
     , status(NoMedia)
     , state(AVPlayer::StoppedState)
     , end_action(MediaEndAction_Default)
-    ,adaptive_buffer(false)
+    , adaptive_buffer(false)
 {
     demuxer.setInterruptTimeout(interrupt_timeout);
     /*
@@ -119,6 +119,8 @@ AVPlayer::Private::Private()
      * must be the same value at the end of stop(), and must be different from value in
      * stopFromDemuxerThread()(which is false), so the initial value must be true
      */
+
+    mediaDataTimer.setInterval(1000);
 
     vc_ids
 #if QTAV_HAVE(DXVA)
@@ -707,7 +709,10 @@ void AVPlayer::Private::calcRates()
 
 void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
 {
-    mediaDataTimer.setInterval(1000);
+    connect(player,&AVPlayer::mediaDataTimerStarted,player,[this](){
+        mediaDataTimer.start();
+        QMetaObject::invokeMethod(&mediaDataTimer,"timeout");
+    });
     connect(&mediaDataTimer, &QTimer::timeout, [this, player]() {
 
         calcRates();
@@ -725,10 +730,9 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
         mediaData["droppedFrames"] = statistics.droppedFrames;
         mediaData["totalKeyFrames"] = statistics.totalKeyFrames;
 
-        emit player->mediaDataChanged(mediaData);
+        emit player->mediaDataTimerTriggered(mediaData);
 
     });
-    mediaDataTimer.start();
 }
 
 } //namespace QtAV

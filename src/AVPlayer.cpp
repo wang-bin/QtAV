@@ -492,6 +492,16 @@ QVariantMap AVPlayer::mediaData() const
     return d->mediaData;
 }
 
+int AVPlayer::mediaDataTimerInterval() const
+{
+    return d->mediaDataTimer.interval();
+}
+
+void AVPlayer::setMediaDataTimerInterval(int value)
+{
+    d->mediaDataTimer.setInterval(value);
+}
+
 MediaEndAction AVPlayer::mediaEndAction() const
 {
     return d->end_action;
@@ -1204,6 +1214,7 @@ void AVPlayer::play()
     }
     connect(this, SIGNAL(loaded()), this, SLOT(playInternal()));
 
+    d->mediaDataTimer.stop();
     d->demuxer.totalPackets = 0;
     d->demuxer.totalVideoPackets = 0;
     d->demuxer.totalAudioPackets = 0;

@@ -33,6 +33,7 @@
 #include "QtAV/private/AVCompat.h"
 #include <QtCore/QFileInfo>
 #include "utils/Logger.h"
+#include "AVPlayer.h"
 
 namespace QtAV {
 
@@ -69,6 +70,7 @@ public:
 VideoThread::VideoThread(QObject *parent) :
     AVThread(*new VideoThreadPrivate(), parent)
 {
+    player = qobject_cast<AVPlayer*>(parent);
 }
 
 //it is called in main thread usually, but is being used in video thread,
@@ -512,7 +514,11 @@ void VideoThread::run()
         }
 
         if(pkt.hasKeyFrame)
+        {
             d.statistics->totalKeyFrames++;
+            if(d.statistics->totalKeyFrames==2)
+                emit player->mediaDataTimerStarted();
+        }
 
         // reduce here to ensure to decode the rest data in the next loop
         if (!pkt.isEOF())

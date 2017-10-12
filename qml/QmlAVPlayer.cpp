@@ -111,7 +111,8 @@ void QmlAVPlayer::componentComplete()
             mpPlayer->play();
     }
 
-    connect(mpPlayer, &QtAV::AVPlayer::mediaDataChanged, this, &QmlAVPlayer::mediaDataChanged);
+    connect(mpPlayer, &QtAV::AVPlayer::mediaDataTimerTriggered, this, &QmlAVPlayer::mediaDataTimerTriggered);
+    connect(mpPlayer, &QtAV::AVPlayer::mediaDataTimerStarted, this, &QmlAVPlayer::mediaDataTimerStarted);
 
     m_complete = true;
 }
@@ -450,6 +451,21 @@ void QmlAVPlayer::setAdaptiveBuffer(bool value)
 QVariantMap QmlAVPlayer::mediaData() const
 {
     return mpPlayer->mediaData();
+}
+
+int QmlAVPlayer::mediaDataTimerInterval() const
+{
+    return mpPlayer->mediaDataTimerInterval();
+}
+
+void QmlAVPlayer::setMediaDataTimerInterval(int value)
+{
+    if (mpPlayer->mediaDataTimerInterval() == value)
+        return;
+    if (mpPlayer) {
+        mpPlayer->setMediaDataTimerInterval(value);
+        Q_EMIT mediaDataTimerIntervalChanged();
+    }
 }
 
 QUrl QmlAVPlayer::externalAudio() const

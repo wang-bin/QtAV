@@ -233,6 +233,7 @@ Module {
         Property { name: "bufferSize"; type: "int" }
         Property { name: "adaptiveBuffer"; type: "bool" }
         Property { name: "mediaData"; type: "QVariantMap" }
+        Property { name: "mediaDataTimerInterval"; type: "int" }
         Property { name: "externalAudio"; type: "QUrl" }
         Property { name: "internalAudioTracks"; type: "QVariantList"; isReadonly: true }
         Property { name: "externalAudioTracks"; type: "QVariantList"; isReadonly: true }
@@ -248,6 +249,8 @@ Module {
         Signal { name: "stopped" }
         Signal { name: "playing" }
         Signal { name: "seekFinished" }
+        Signal { name: "mediaDataTimerStarted" }
+        Signal { name: "mediaDataTimerTriggered" }
         Signal {
             name: "error"
             Parameter { name: "error"; type: "Error" }

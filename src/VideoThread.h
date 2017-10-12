@@ -57,6 +57,9 @@ protected:
     bool deliverVideoFrame(VideoFrame &frame);
     virtual void run();
     // wait for value msec. every usleep is a small time, then process next task and get new delay
+
+private:
+    AVPlayer * player;
 };
 
 
