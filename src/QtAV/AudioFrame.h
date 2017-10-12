@@ -57,6 +57,7 @@ public:
      * then you can use clone().
      */
     AudioFrame clone() const;
+    AudioFrame mid(int pos, int len = -1) const;
     AudioFormat format() const;
     void setSamplesPerChannel(int samples);
     // may change after resampling
