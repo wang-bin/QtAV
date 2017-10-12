@@ -80,4 +80,8 @@ const AudioFormat& AudioEncoder::audioFormat() const
     return d_func().format_used;
 }
 
+int AudioEncoder::frameSize() const
+{
+    return d_func().frame_size;
+}
 } //namespace QtAV

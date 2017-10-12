@@ -64,6 +64,8 @@ public:
      */
     const AudioFormat& audioFormat() const;
     void setAudioFormat(const AudioFormat& format);
+
+    int frameSize() const;
 Q_SIGNALS:
     void audioFormatChanged();
 public:
