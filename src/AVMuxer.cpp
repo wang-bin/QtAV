@@ -43,6 +43,7 @@ public:
         , started(false)
         , eof(false)
         , media_changed(true)
+        , open(false)
         , format_ctx(0)
         , format(0)
         , io(0)
@@ -73,6 +74,7 @@ public:
     bool started;
     bool eof;
     bool media_changed;
+    bool open;
     AVFormatContext *format_ctx;
     //copy the info, not parse the file when constructed, then need member vars
     QString file;
@@ -394,6 +396,7 @@ bool AVMuxer::open()
     // d->format_ctx->start_time_realtime
     AV_ENSURE_OK(avformat_write_header(d->format_ctx, &d->dict), false);
     d->started = false;
+    d->open = true;
 
     return true;
 }
@@ -402,6 +405,7 @@ bool AVMuxer::close()
 {
     if (!isOpen())
         return true;
+    d->open = false;
     av_write_trailer(d->format_ctx);
     // close AVCodecContext* in encoder
     // custom io will call avio_close in ~MediaIO()
@@ -423,7 +427,7 @@ bool AVMuxer::close()
 
 bool AVMuxer::isOpen() const
 {
-    return d->format_ctx;
+    return d->open;
 }
 
 bool AVMuxer::writeAudio(const QtAV::Packet& packet)
