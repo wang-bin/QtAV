@@ -691,6 +691,10 @@ void AVPlayer::Private::calcRates()
     elapsedTimer.start();
     if(elapsed==0)
         return;
+    if(totalReceiveSize<=lastTotalReceiveSize)
+        lastTotalReceiveSize = totalReceiveSize;
+    if(totalFrames<=lastTotalFrames)
+        lastTotalFrames = totalFrames;
 
     double diff1 = totalReceiveSize-lastTotalReceiveSize;
     statistics.bandwidthRate = (diff1/elapsed)*1000;
