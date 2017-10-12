@@ -286,7 +286,9 @@ void AVTranscoder::stop()
     // uninstall encoder filters first then encoders can be closed safely
     if (sourcePlayer()) {
         sourcePlayer()->uninstallFilter(d->afilter);
+        disconnect(sourcePlayer(), SIGNAL(stopped()), d->afilter, SLOT(finish()));
         sourcePlayer()->uninstallFilter(d->vfilter);
+        disconnect(sourcePlayer(), SIGNAL(stopped()), d->vfilter, SLOT(finish()));
     }
     if (d->afilter)
         d->afilter->finish(); //FIXME: thread of sync mode
