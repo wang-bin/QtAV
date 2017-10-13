@@ -34,7 +34,7 @@ namespace QtAV {
 class AudioEncodeFilterPrivate Q_DECL_FINAL : public AudioFilterPrivate
 {
 public:
-    AudioEncodeFilterPrivate() : enc(0), start_time(0), async(false), finishing(0) {}
+    AudioEncodeFilterPrivate() : enc(0), start_time(0), async(false), finishing(0), leftOverAudio() {}
     ~AudioEncodeFilterPrivate() {
         if (enc) {
             enc->close();
@@ -47,6 +47,7 @@ public:
     bool async;
     QAtomicInt finishing;
     QThread enc_thread;
+    AudioFrame leftOverAudio;
 };
 
 AudioEncodeFilter::AudioEncodeFilter(QObject *parent)
@@ -174,16 +175,35 @@ void AudioEncodeFilter::encode(const AudioFrame& frame)
     AudioFrame f(frame);
     if (f.format() != d.enc->audioFormat())
         f = f.to(d.enc->audioFormat());
-    if (!d.enc->encode(f)) {
-        if (f.timestamp() == std::numeric_limits<qreal>::max()) {
-            Q_EMIT finished();
-            d.finishing = 0;
-        }
-        return;
+
+    if (d.leftOverAudio.isValid()) {
+        f.prepend(d.leftOverAudio);
     }
-    if (!d.enc->encoded().isValid())
-        return;
-    Q_EMIT frameEncoded(d.enc->encoded());
+
+    int frameSizeEncoder = d.enc->frameSize();
+    int frameSize = f.samplesPerChannel();
+
+    QList<AudioFrame> audioFrames;
+    for (int i = 0; i < frameSize; i += frameSizeEncoder) {
+        if (frameSize - i >= frameSizeEncoder) {
+            audioFrames.append(f.mid(i, frameSizeEncoder));
+        } else {
+            d.leftOverAudio = f.mid(i);
+        }
+    }
+
+    for (int i = 0; i < audioFrames.length(); i++) {
+        if (!d.enc->encode(audioFrames.at(i))) {
+            if (f.timestamp() == std::numeric_limits<qreal>::max()) {
+                Q_EMIT finished();
+                d.finishing = 0;
+            }
+            return;
+        }
+        if (!d.enc->encoded().isValid())
+            return;
+        Q_EMIT frameEncoded(d.enc->encoded());
+    }
 }
 
 
