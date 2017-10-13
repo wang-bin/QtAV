@@ -58,6 +58,7 @@ public:
      */
     AudioFrame clone() const;
     AudioFrame mid(int pos, int len = -1) const;
+    void prepend(AudioFrame &other);
     AudioFormat format() const;
     void setSamplesPerChannel(int samples);
     // may change after resampling

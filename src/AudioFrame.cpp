@@ -180,6 +180,24 @@ AudioFrame AudioFrame::mid(int pos, int len) const
     return f;
 }
 
+void AudioFrame::prepend(AudioFrame &other)
+{
+    Q_D(AudioFrame);
+
+    if (d->format != other.format()) {
+        qWarning() << "To prepend a frame it must have the same audio format";
+        return;
+    }
+
+    d->data.prepend(other.data());
+    d->samples_per_ch += other.samplesPerChannel();
+    d->timestamp = other.timestamp();
+
+    for (int i = 0; i < planeCount(); i++) {
+        d->line_sizes[i] += other.bytesPerLine(i);
+    }
+}
+
 AudioFormat AudioFrame::format() const
 {
     return d_func()->format;
