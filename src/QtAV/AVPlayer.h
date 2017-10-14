@@ -83,7 +83,7 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(QtAV::MediaStatus mediaStatus READ mediaStatus NOTIFY mediaStatusChanged)
     Q_PROPERTY(QtAV::MediaEndAction mediaEndAction READ mediaEndAction WRITE setMediaEndAction NOTIFY mediaEndActionChanged)
     Q_PROPERTY(bool adaptiveBuffer READ adaptiveBuffer WRITE setAdaptiveBuffer NOTIFY adaptiveBufferChanged)
-    Q_PROPERTY(QVariantMap mediaData READ mediaData)
+    Q_PROPERTY(QVariantMap mediaData READ mediaData NOTIFY mediaDataTimerTriggered)
     Q_PROPERTY(int mediaDataTimerInterval READ mediaDataTimerInterval WRITE setMediaDataTimerInterval NOTIFY mediaDataTimerIntervalChanged)
     Q_PROPERTY(unsigned int chapters READ chapters NOTIFY chaptersChanged)
     Q_ENUMS(State)
