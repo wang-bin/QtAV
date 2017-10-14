@@ -711,7 +711,7 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
 {
     connect(player,&AVPlayer::mediaDataTimerStarted,player,[this](){
         mediaDataTimer.start();
-        QMetaObject::invokeMethod(&mediaDataTimer,"timeout");
+        QMetaObject::invokeMethod(&mediaDataTimer,"timeout", Qt::QueuedConnection);
     });
     connect(&mediaDataTimer, &QTimer::timeout, [this, player]() {
 
