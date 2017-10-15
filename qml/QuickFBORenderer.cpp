@@ -151,6 +151,17 @@ void QuickFBORenderer::setSource(QObject *source)
     DPTR_D(QuickFBORenderer);
     if (d.source == source)
         return;
+
+    AVPlayer* p0 = 0;
+    p0 = qobject_cast<AVPlayer*>(d.source);
+    if (!p0) {
+        QmlAVPlayer* qp0 = qobject_cast<QmlAVPlayer*>(d.source);
+        if (qp0)
+            p0 = qp0->player();
+    }
+    if(p0)
+        p0->removeVideoRenderer(this);
+
     d.source = source;
     Q_EMIT sourceChanged();
     if (!source)
