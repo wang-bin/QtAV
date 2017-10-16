@@ -329,14 +329,13 @@ config_libcedarv {
 }
 mac {
   HEADERS *= codec/video/SurfaceInteropCV.h
-  SOURCES *= codec/video/SurfaceInteropCV.cpp
+  SOURCES *= codec/video/SurfaceInteropCV.cpp \
+             codec/video/SurfaceInteropIOSurface.mm
   ios {
     OBJECTIVE_SOURCES *= codec/video/SurfaceInteropCVOpenGLES.mm
   } else {
-    CONFIG += config_vda
-    SOURCES *= codec/video/SurfaceInteropIOSurface.cpp
+    #CONFIG += config_vda
     #SOURCES *= codec/video/SurfaceInteropCVOpenGL.cpp
-    LIBS += -framework IOSurface
   }
   LIBS += -framework CoreVideo -framework CoreFoundation
 }
