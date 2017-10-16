@@ -71,6 +71,7 @@ class AudioEncoderPrivate : public AVEncoderPrivate
 public:
     AudioEncoderPrivate()
         : AVEncoderPrivate()
+        , frame_size(0)
     {
         bit_rate = 64000;
     }
@@ -79,6 +80,8 @@ public:
 
     AudioResampler *resampler;
     AudioFormat format, format_used;
+
+    int frame_size; // used if avctx->frame_size == 0
 };
 
 class Q_AV_PRIVATE_EXPORT VideoEncoderPrivate : public AVEncoderPrivate

@@ -133,24 +133,69 @@ int AudioFrame::channelCount() const
 
 AudioFrame AudioFrame::clone() const
 {
+    return mid(0, -1);
+}
+
+AudioFrame AudioFrame::mid(int pos, int len) const
+{
     Q_D(const AudioFrame);
+
     if (d->format.sampleFormatFFmpeg() == AV_SAMPLE_FMT_NONE
-            || d->format.channels() <= 0)
+            || d->format.channels() <= 0) {
         return AudioFrame();
-    if (d->samples_per_ch <= 0 || bytesPerLine(0) <= 0)
-        return AudioFrame(format());
-    QByteArray buf(bytesPerLine()*planeCount(), 0);
-    char *dst = buf.data(); //must before buf is shared, otherwise data will be detached.
-    for (int i = 0; i < planeCount(); ++i) {
-        const int plane_size = bytesPerLine(i);
-        memcpy(dst, constBits(i), plane_size);
-        dst += plane_size;
     }
+
+    if (d->samples_per_ch <= 0 || bytesPerLine(0) <= 0 || len == 0) {
+        return AudioFrame(format());
+    }
+
+    int bufSize = bytesPerLine();
+    int posBytes = 0;
+    if (pos > 0) {
+        posBytes = pos * d->format.bytesPerSample();
+        bufSize -= posBytes;
+    } else {
+        pos = 0;
+    }
+
+    int lenBytes = len * d->format.bytesPerSample();
+    if (len > 0 && lenBytes < bufSize) {
+        bufSize = lenBytes;
+    } else {
+        lenBytes = bufSize;
+    }
+
+    QByteArray buf(bufSize * planeCount(), 0);
+    char *dst = buf.data(); //must before buf is shared, otherwise data will be detached.
+
+    for (int i = 0; i < planeCount(); ++i) {
+        memcpy(dst, constBits(i) + posBytes, lenBytes);
+        dst += lenBytes;
+    }
+
     AudioFrame f(d->format, buf);
-    f.setSamplesPerChannel(samplesPerChannel());
-    f.setTimestamp(timestamp());
+    f.setSamplesPerChannel(bufSize / d->format.bytesPerSample());
+    f.setTimestamp(d->timestamp + (qreal) d->format.durationForBytes(posBytes) / AudioFormat::kHz);
     // meta data?
     return f;
+}
+
+void AudioFrame::prepend(AudioFrame &other)
+{
+    Q_D(AudioFrame);
+
+    if (d->format != other.format()) {
+        qWarning() << "To prepend a frame it must have the same audio format";
+        return;
+    }
+
+    d->data.prepend(other.data());
+    d->samples_per_ch += other.samplesPerChannel();
+    d->timestamp = other.timestamp();
+
+    for (int i = 0; i < planeCount(); i++) {
+        d->line_sizes[i] += other.bytesPerLine(i);
+    }
 }
 
 AudioFormat AudioFrame::format() const

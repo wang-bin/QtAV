@@ -68,6 +68,9 @@ public:
         ChannelLayout_Stereo,
         ChannelLayout_Unsupported //ok. now it's not complete
     };
+
+    static const qint64 kHz = 1000000LL;
+
     //typedef qint64 ChannelLayout; //currently use latest FFmpeg's
     // TODO: constexpr
     friend int RawSampleSize(SampleFormat fmt) { return fmt & ((1<<(kSize+1)) - 1); }
