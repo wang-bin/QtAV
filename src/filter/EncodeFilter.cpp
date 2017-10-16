@@ -180,7 +180,7 @@ void AudioEncodeFilter::encode(const AudioFrame& frame)
         f.prepend(d.leftOverAudio);
     }
 
-    int frameSizeEncoder = d.enc->frameSize();
+    int frameSizeEncoder = d.enc->frameSize() ? d.enc->frameSize() : f.samplesPerChannel();
     int frameSize = f.samplesPerChannel();
 
     QList<AudioFrame> audioFrames;
