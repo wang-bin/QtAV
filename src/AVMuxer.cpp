@@ -341,6 +341,11 @@ bool AVMuxer::setMedia(QIODevice* device)
         d->format_forced.clear();
     }
     d->io->setProperty("device", QVariant::fromValue(device)); //open outside?
+
+    if (device->isWritable()) {
+        d->io->setAccessMode(MediaIO::Write);
+    }
+
     return d->media_changed;
 }
 
