@@ -31,8 +31,6 @@
 
 namespace QtAV {
 
-const qint64 kHz = 1000000LL;
-
 typedef struct {
     AVSampleFormat avfmt;
     AudioFormat::SampleFormat fmt;
