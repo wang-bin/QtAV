@@ -1,0 +1,2 @@
+ffmpeg32/** filter=lfs diff=lfs merge=lfs -text
+ffmpeg64/** filter=lfs diff=lfs merge=lfs -text

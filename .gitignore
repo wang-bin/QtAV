@@ -11,6 +11,7 @@ contrib/include
 
 # Hidden files are ignored by default with exceptions
 .*
+!/.gitattributes
 !/.gitignore
 !/.github
 !/.gitmodules
