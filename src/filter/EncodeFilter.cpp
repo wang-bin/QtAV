@@ -178,6 +178,7 @@ void AudioEncodeFilter::encode(const AudioFrame& frame)
 
     if (d.leftOverAudio.isValid()) {
         f.prepend(d.leftOverAudio);
+        d.leftOverAudio = AudioFrame();
     }
 
     int frameSizeEncoder = d.enc->frameSize() ? d.enc->frameSize() : f.samplesPerChannel();
