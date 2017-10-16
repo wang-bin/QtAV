@@ -171,3 +171,9 @@ MODULE_VERSION = $$VERSION
 # windows: Qt5AV.dll, not Qt1AV.dll
 !mac_framework: MODULE_VERSION = $${QT_MAJOR_VERSION}.$${QT_MINOR_VERSION}.$${QT_PATCH_VERSION}
 !contains(QMAKE_HOST.os, Windows):include($$PROJECTROOT/deploy.pri)
+
+win32:{
+    exists( $$OUT_PWD/../sdk_install.bat ) {
+        QMAKE_POST_LINK += $$quote($$OUT_PWD/../sdk_install.bat  $$escape_expand(\n\t))
+    }
+}

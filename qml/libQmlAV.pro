@@ -6,6 +6,12 @@ CONFIG *= qmlav-buildlib
 #QMAKE_RPATHLINKDIR
 #CONFIG *= qml_module relative_qt_rpath
 
+win32:{
+    exists( $$OUT_PWD/../sdk_install.bat ) {
+        QMAKE_POST_LINK += $$quote($$OUT_PWD/../sdk_install.bat  $$escape_expand(\n\t))
+    }
+}
+
 #var with '_' can not pass to pri?
 PROJECTROOT = $$PWD/..
 !include($$PROJECTROOT/src/libQtAV.pri): error("could not find libQtAV.pri")

@@ -376,3 +376,9 @@ greaterThan(QT_MAJOR_VERSION, 4) {
     write_file($$BUILD_DIR/sdk_uninstall.$$SCRIPT_SUFFIX, sdk_qml_uninstall.commands, append)
   }
 }
+
+win32:{
+    exists( $$OUT_PWD/../../sdk_install.bat ) {
+        QMAKE_POST_LINK += $$quote($$OUT_PWD/../../sdk_install.bat  $$escape_expand(\n\t))
+    }
+}
