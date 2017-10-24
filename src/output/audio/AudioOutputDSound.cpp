@@ -88,7 +88,7 @@ private:
                     //qWarning("WaitForSingleObjectEx for ao->notify_event error: %#lx", dwResult);
                     continue;
                }
-               ao->onCallback();
+               if (ao->available) ao->onCallback();
             }
         }
     };
@@ -192,6 +192,7 @@ bool AudioOutputDSound::close()
 {
     available = false;
     destroy();
+    SetEvent(notify_event);
     CloseHandle(notify_event); // FIXME: is it ok if thread is still waiting?
     return true;
 }
