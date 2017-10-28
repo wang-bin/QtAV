@@ -713,6 +713,8 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
     connect(player,&AVPlayer::mediaDataTimerStarted,player,[this](){
         QTimer::singleShot(0,&demuxer,[this](){
             demuxer.clearStatistics();
+            read_thread->buffer()->cleartStatistics();
+            totalElapsedTimer.start();
             mediaDataTimer.start();
             QMetaObject::invokeMethod(&mediaDataTimer,"timeout", Qt::QueuedConnection);
         });
@@ -734,6 +736,16 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
         mediaData["droppedPackets"] = statistics.droppedPackets;
         mediaData["droppedFrames"] = statistics.droppedFrames;
         mediaData["totalKeyFrames"] = statistics.totalKeyFrames;
+
+        if(read_thread->buffer())
+            mediaData["totalBandwidth"] = read_thread->buffer()->totalReceiveSize();
+
+        auto totalElapsed = totalElapsedTimer.elapsed();
+        if(totalElapsed>0)
+        {
+            mediaData["averageFps"] = (static_cast<double>(statistics.totalFrames)/totalElapsed)*1000;
+            mediaData["averageBandwidth"] = (static_cast<double>(read_thread->buffer()->totalReceiveSize())/totalElapsed)*1000;
+        }
 
         emit player->mediaDataTimerTriggered(mediaData);
 

@@ -174,6 +174,7 @@ public:
     QTimer autoPlay_timer;
 
     QElapsedTimer elapsedTimer;
+    QElapsedTimer totalElapsedTimer;
     quint64 lastTotalReceiveSize = 0;
     qint64 lastTotalFrames = 0;
 

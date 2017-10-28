@@ -114,6 +114,11 @@ quint64 PacketBuffer::totalReceiveSize() const
     return totalSize;
 }
 
+void PacketBuffer::cleartStatistics()
+{
+    totalSize = 0;
+}
+
 bool PacketBuffer::checkEnough() const
 {
     return buffered() >= bufferValue();

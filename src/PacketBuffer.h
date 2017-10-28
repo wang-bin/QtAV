@@ -79,6 +79,7 @@ public:
     qreal bufferSpeedInBytes() const;
 
     quint64 totalReceiveSize() const;
+    void cleartStatistics();
 protected:
     bool checkEnough() const Q_DECL_OVERRIDE;
     bool checkFull() const Q_DECL_OVERRIDE;
