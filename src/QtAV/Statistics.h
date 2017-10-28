@@ -120,7 +120,7 @@ public:
     qint64 totalFrames = 0;
     qint64 droppedPackets = 0;
     qint64 droppedFrames = 0;
-    qint64 totalKeyFrames = 0;
+    qint64 totalKeyFrames = -1;
 };
 
 } //namespace QtAV

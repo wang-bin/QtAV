@@ -207,6 +207,9 @@ private:
     class InterruptHandler;
     friend class InterruptHandler;
 
+public slots:
+    void clearStatistics();
+
 public:
     qint64 totalPackets = 0;
     qint64 totalVideoPackets = 0;

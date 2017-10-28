@@ -677,26 +677,25 @@ void AVPlayer::Private::applyAutoPlay(AVPlayer *player, bool autoPlay)
     }
 }
 
-void AVPlayer::Private::calcRates()
+bool AVPlayer::Private::calcRates()
 {
     const PacketBuffer* buf = read_thread->buffer();
     if(!buf)
-        return;
+        return false;
     if(!elapsedTimer.isValid())
-    {
         elapsedTimer.start();
-        return;
-    }
+
     auto elapsed = elapsedTimer.elapsed();
     auto totalReceiveSize = buf->totalReceiveSize();
     auto totalFrames = statistics.totalFrames;
     elapsedTimer.start();
-    if(elapsed==0)
-        return;
-    if(totalReceiveSize<=lastTotalReceiveSize)
+
+    if(elapsed<100 || totalReceiveSize<lastTotalReceiveSize || totalFrames<lastTotalFrames)
+    {
         lastTotalReceiveSize = totalReceiveSize;
-    if(totalFrames<=lastTotalFrames)
         lastTotalFrames = totalFrames;
+        return false;
+    }
 
     double diff1 = totalReceiveSize-lastTotalReceiveSize;
     statistics.bandwidthRate = (diff1/elapsed)*1000;
@@ -705,17 +704,23 @@ void AVPlayer::Private::calcRates()
     double diff2 = totalFrames-lastTotalFrames;
     statistics.fps = (diff2/elapsed)*1000;
     lastTotalFrames = totalFrames;
+
+    return true;
 }
 
 void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
 {
     connect(player,&AVPlayer::mediaDataTimerStarted,player,[this](){
-        mediaDataTimer.start();
-        QMetaObject::invokeMethod(&mediaDataTimer,"timeout", Qt::QueuedConnection);
+        QTimer::singleShot(0,&demuxer,[this](){
+            demuxer.clearStatistics();
+            mediaDataTimer.start();
+            QMetaObject::invokeMethod(&mediaDataTimer,"timeout", Qt::QueuedConnection);
+        });
     });
     connect(&mediaDataTimer, &QTimer::timeout, [this, player]() {
 
-        calcRates();
+        if(!calcRates())
+            return;
 
         statistics.displayFPS = statistics.video_only.currentDisplayFPS();
 

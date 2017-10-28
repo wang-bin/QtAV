@@ -107,7 +107,7 @@ public:
 
     void applyAutoPlay(AVPlayer *player, bool autoPlay);
 
-    void calcRates();
+    bool calcRates();
 
     void applyMediaDataCalculation(AVPlayer *player);
 

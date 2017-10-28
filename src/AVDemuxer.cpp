@@ -1242,6 +1242,13 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
     *errorCode = ec;
 }
 
+void AVDemuxer::clearStatistics()
+{
+    totalPackets = 0;
+    totalVideoPackets = 0;
+    totalAudioPackets = 0;
+}
+
 bool AVDemuxer::Private::setStream(AVDemuxer::StreamType st, int streamValue)
 {
     if (streamValue < -1)

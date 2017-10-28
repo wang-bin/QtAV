@@ -516,8 +516,13 @@ void VideoThread::run()
         if(pkt.hasKeyFrame)
         {
             d.statistics->totalKeyFrames++;
-            if(d.statistics->totalKeyFrames==2)
+            if(d.statistics->totalKeyFrames==1)
+            {
+                d.statistics->totalFrames = 0;
+                d.statistics->droppedFrames = 0;
+                d.statistics->droppedPackets = 0;
                 emit player->mediaDataTimerStarted();
+            }
         }
 
         // reduce here to ensure to decode the rest data in the next loop
@@ -526,8 +531,7 @@ void VideoThread::run()
         VideoFrame frame = dec->frame();
         d.statistics->totalFrames++;
         if (!frame.isValid()) {
-            if(d.statistics->totalKeyFrames>1)
-                d.statistics->droppedFrames++;
+            d.statistics->droppedFrames++;
             qWarning("invalid video frame from decoder. undecoded data size: %d", pkt.data.size());
             if (pkt_data == pkt.data.constData()) //FIXME: for libav9. what about other versions?
                 pkt = Packet();
