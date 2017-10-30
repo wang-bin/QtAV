@@ -109,16 +109,6 @@ qreal PacketBuffer::bufferSpeedInBytes() const
     return calc_speed(true);
 }
 
-quint64 PacketBuffer::totalReceiveSize() const
-{
-    return totalSize;
-}
-
-void PacketBuffer::cleartStatistics()
-{
-    totalSize = 0;
-}
-
 bool PacketBuffer::checkEnough() const
 {
     return buffered() >= bufferValue();
@@ -131,8 +121,6 @@ bool PacketBuffer::checkFull() const
 
 void PacketBuffer::onPut(const Packet &p)
 {
-    totalSize+=static_cast<quint64>(p.data.size());
-
     if (m_mode == BufferTime) {
         m_value1 = qint64(p.pts*1000.0); // FIXME: what if no pts
         m_value0 = qint64(queue[0].pts*1000.0); // must compute here because it is reset to 0 if take from empty

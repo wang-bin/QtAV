@@ -467,11 +467,18 @@ bool AVDemuxer::readFrame()
         return false;
     }
 
+    totalBandwidth+=static_cast<quint64>(packet.size);
     totalPackets++;
     if( packet.stream_index==videoStream())
+    {
+        totalVideoBandwidth+=static_cast<quint64>(packet.size);
         totalVideoPackets++;
+    }
     else if( packet.stream_index==audioStream())
+    {
+        totalAudioBandwidth+=static_cast<quint64>(packet.size);
         totalAudioPackets++;
+    }
 
     d->stream = packet.stream_index;
     //check whether the 1st frame is alreay got. emit only once
@@ -1244,6 +1251,9 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
 
 void AVDemuxer::clearStatistics()
 {
+    totalBandwidth = 0;
+    totalVideoBandwidth = 0;
+    totalAudioBandwidth = 0;
     totalPackets = 0;
     totalVideoPackets = 0;
     totalAudioPackets = 0;

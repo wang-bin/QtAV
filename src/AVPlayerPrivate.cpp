@@ -679,31 +679,26 @@ void AVPlayer::Private::applyAutoPlay(AVPlayer *player, bool autoPlay)
 
 bool AVPlayer::Private::calcRates()
 {
-    const PacketBuffer* buf = read_thread->buffer();
-    if(!buf)
-        return false;
     if(!elapsedTimer.isValid())
-        elapsedTimer.start();
-
-    auto elapsed = elapsedTimer.elapsed();
-    auto totalReceiveSize = buf->totalReceiveSize();
-    auto totalFrames = statistics.totalFrames;
-    elapsedTimer.start();
-
-    if(elapsed<100 || totalReceiveSize<lastTotalReceiveSize || totalFrames<lastTotalFrames)
     {
-        lastTotalReceiveSize = totalReceiveSize;
-        lastTotalFrames = totalFrames;
+        elapsedTimer.start();
         return false;
     }
 
-    double diff1 = totalReceiveSize-lastTotalReceiveSize;
-    statistics.bandwidthRate = (diff1/elapsed)*1000;
-    lastTotalReceiveSize = totalReceiveSize;
+    auto elapsed = elapsedTimer.elapsed();
+    elapsedTimer.start();
 
-    double diff2 = totalFrames-lastTotalFrames;
-    statistics.fps = (diff2/elapsed)*1000;
-    lastTotalFrames = totalFrames;
+    statistics.bandwidthRate = (static_cast<double>(demuxer.totalBandwidth-lastTotalBandwidth)/elapsed)*1000;
+    lastTotalBandwidth = demuxer.totalBandwidth;
+
+    statistics.videoBandwidthRate = (static_cast<double>(demuxer.totalVideoBandwidth-lastTotalVideoBandwidth)/elapsed)*1000;
+    lastTotalVideoBandwidth = demuxer.totalVideoBandwidth;
+
+    statistics.audioBandwidthRate = (static_cast<double>(demuxer.totalAudioBandwidth-lastTotalAudioBandwidth)/elapsed)*1000;
+    lastTotalAudioBandwidth = demuxer.totalAudioBandwidth;
+
+    statistics.fps = (static_cast<double>(statistics.totalFrames-lastTotalFrames)/elapsed)*1000;
+    lastTotalFrames = statistics.totalFrames;
 
     return true;
 }
@@ -713,22 +708,30 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
     connect(player,&AVPlayer::mediaDataTimerStarted,player,[this](){
         QTimer::singleShot(0,&demuxer,[this](){
             demuxer.clearStatistics();
-            read_thread->buffer()->cleartStatistics();
+            lastTotalBandwidth = 0;
+            lastTotalVideoBandwidth = 0;
+            lastTotalAudioBandwidth = 0;
+            lastTotalFrames = 0;
+            elapsedTimer.invalidate();
             totalElapsedTimer.start();
             mediaDataTimer.start();
             QMetaObject::invokeMethod(&mediaDataTimer,"timeout", Qt::QueuedConnection);
         });
     });
     connect(&mediaDataTimer, &QTimer::timeout, [this, player]() {
-
         if(!calcRates())
             return;
 
         statistics.displayFPS = statistics.video_only.currentDisplayFPS();
 
         mediaData["bandwidthRate"] = statistics.bandwidthRate;
+        mediaData["videoBandwidthRate"] = statistics.videoBandwidthRate;
+        mediaData["audioBandwidthRate"] = statistics.audioBandwidthRate;
         mediaData["fps"] = statistics.fps;
         mediaData["displayFPS"] = statistics.displayFPS;
+        mediaData["totalBandwidth"] = demuxer.totalBandwidth;
+        mediaData["totalVideoBandwidth"] = demuxer.totalVideoBandwidth;
+        mediaData["totalAudioBandwidth"] = demuxer.totalAudioBandwidth;
         mediaData["totalPackets"] = demuxer.totalPackets;
         mediaData["totalVideoPackets"] = demuxer.totalVideoPackets;
         mediaData["totalAudioPackets"] = demuxer.totalAudioPackets;
@@ -737,14 +740,13 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
         mediaData["droppedFrames"] = statistics.droppedFrames;
         mediaData["totalKeyFrames"] = statistics.totalKeyFrames;
 
-        if(read_thread->buffer())
-            mediaData["totalBandwidth"] = read_thread->buffer()->totalReceiveSize();
-
         auto totalElapsed = totalElapsedTimer.elapsed();
         if(totalElapsed>0)
         {
             mediaData["averageFps"] = (static_cast<double>(statistics.totalFrames)/totalElapsed)*1000;
-            mediaData["averageBandwidth"] = (static_cast<double>(read_thread->buffer()->totalReceiveSize())/totalElapsed)*1000;
+            mediaData["averageBandwidth"] = (static_cast<double>(demuxer.totalBandwidth)/totalElapsed)*1000;
+            mediaData["averageVideoBandwidth"] = (static_cast<double>(demuxer.totalVideoBandwidth)/totalElapsed)*1000;
+            mediaData["averageAudioBandwidth"] = (static_cast<double>(demuxer.totalAudioBandwidth)/totalElapsed)*1000;
         }
 
         emit player->mediaDataTimerTriggered(mediaData);

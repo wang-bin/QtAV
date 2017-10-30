@@ -211,6 +211,9 @@ public slots:
     void clearStatistics();
 
 public:
+    quint64 totalBandwidth = 0;
+    quint64 totalVideoBandwidth = 0;
+    quint64 totalAudioBandwidth = 0;
     qint64 totalPackets = 0;
     qint64 totalVideoPackets = 0;
     qint64 totalAudioPackets = 0;

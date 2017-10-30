@@ -175,7 +175,9 @@ public:
 
     QElapsedTimer elapsedTimer;
     QElapsedTimer totalElapsedTimer;
-    quint64 lastTotalReceiveSize = 0;
+    quint64 lastTotalBandwidth = 0;
+    quint64 lastTotalVideoBandwidth = 0;
+    quint64 lastTotalAudioBandwidth = 0;
     qint64 lastTotalFrames = 0;
 
     QTimer mediaDataTimer;

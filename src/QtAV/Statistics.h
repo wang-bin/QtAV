@@ -115,6 +115,8 @@ public:
     } video_only;
 
     double bandwidthRate = 0;
+    double videoBandwidthRate = 0;
+    double audioBandwidthRate = 0;
     double fps = 0;
     double displayFPS = 0;
     qint64 totalFrames = 0;
