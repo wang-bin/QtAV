@@ -297,6 +297,21 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
         }
     }
         break;
+
+    case QEvent:: QEvent::MouseButtonDblClick: {
+          QMouseEvent *me = static_cast<QMouseEvent*>(event);
+          Qt::MouseButton mbt = me->button();
+          QWidget *mpWindow =  static_cast<QWidget*>(player->parent());
+        if (mbt == Qt::LeftButton) {
+            if (Qt::WindowFullScreen ==mpWindow->windowState()){
+               mpWindow->setWindowState(mpWindow->windowState() ^ Qt::WindowFullScreen);
+            }else{
+               mpWindow->showFullScreen();
+            }
+        }
+        break;
+    }
+
     case QEvent::GraphicsSceneContextMenu: {
         QGraphicsSceneContextMenuEvent *e = static_cast<QGraphicsSceneContextMenuEvent*>(event);
         showMenu(e->screenPos());
@@ -346,6 +361,7 @@ bool WindowEventFilter::eventFilter(QObject *watched, QEvent *event)
         }
         return false;
     }
+
     if (event->type() ==  QEvent::MouseButtonPress) {
         QMouseEvent *me = static_cast<QMouseEvent*>(event);
         Qt::MouseButton mbt = me->button();
