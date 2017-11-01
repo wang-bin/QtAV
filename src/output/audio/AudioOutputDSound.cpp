@@ -26,6 +26,7 @@
 #include <QtCore/QLibrary>
 #include <QtCore/QSemaphore>
 #include <QtCore/QThread>
+#include <QtCore/QPointer>
 #include <math.h>
 #define DIRECTSOUND_VERSION 0x0600
 #include <dsound.h>
@@ -58,7 +59,13 @@ private:
     bool unloadDll();
     bool init();
     bool destroy() {
-        SafeRelease(&notify);
+        if (notify_event) {
+            SetEvent(notify_event);
+            SafeRelease(&notify);
+            watcher.wait();
+            CloseHandle( notify_event ); // FIXME: is it ok if thread is still waiting?
+            notify_event = NULL;
+        }
         SafeRelease(&prim_buf);
         SafeRelease(&stream_buf);
         SafeRelease(&dsound);
@@ -77,18 +84,18 @@ private:
     int write_offset;               ///offset of the write cursor in the direct sound buffer
     QAtomicInt buffers_free;
     class PositionWatcher : public QThread {
-        AudioOutputDSound *ao;
+        QPointer<AudioOutputDSound> ao;
     public:
         PositionWatcher(AudioOutputDSound* dsound) : ao(dsound) {}
         void run() Q_DECL_OVERRIDE {
             DWORD dwResult = 0;
-            while (ao->available) {
+            while (ao && ao->available) {
                dwResult = WaitForSingleObjectEx(ao->notify_event, 2000, FALSE);
                if (dwResult != WAIT_OBJECT_0) {
                     //qWarning("WaitForSingleObjectEx for ao->notify_event error: %#lx", dwResult);
                     continue;
                }
-               if (ao->available) ao->onCallback();
+               if (ao && ao->available) ao->onCallback();
             }
         }
     };
@@ -192,8 +199,6 @@ bool AudioOutputDSound::close()
 {
     available = false;
     destroy();
-    SetEvent(notify_event);
-    CloseHandle(notify_event); // FIXME: is it ok if thread is still waiting?
     return true;
 }
 
