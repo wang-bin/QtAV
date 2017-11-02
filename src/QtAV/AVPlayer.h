@@ -426,6 +426,9 @@ public:
     int mediaDataTimerInterval() const;
     void setMediaDataTimerInterval(int value);
 
+    void startRecording(const QString &filePath);
+    void stopRecording();
+
 public Q_SLOTS:
     /*!
      * \brief load

@@ -502,6 +502,16 @@ void AVPlayer::setMediaDataTimerInterval(int value)
     d->mediaDataTimer.setInterval(value);
 }
 
+void AVPlayer::startRecording(const QString& filePath)
+{
+    d->demuxer.startRecording(filePath);
+}
+
+void AVPlayer::stopRecording()
+{
+    d->demuxer.stopRecording();
+}
+
 MediaEndAction AVPlayer::mediaEndAction() const
 {
     return d->end_action;

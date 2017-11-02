@@ -316,6 +316,14 @@ public:
 
     AVDemuxer::InterruptHandler *interrupt_hanlder;
     QMutex mutex; //TODO: remove if load, read, seek is called in 1 thread
+
+    // for recording stream
+    AVOutputFormat* fmt;
+    AVFormatContext* oc;
+    AVStream* ostream;
+
+    QElapsedTimer elapsed;
+    bool recording = false;
 };
 
 AVDemuxer::AVDemuxer(QObject *parent)
@@ -473,6 +481,42 @@ bool AVDemuxer::readFrame()
     {
         totalVideoBandwidth+=static_cast<quint64>(packet.size);
         totalVideoPackets++;
+
+        if(d->recording)
+        {
+            if(d->ostream == nullptr){//create stream in file
+                if(packet.flags & AV_PKT_FLAG_KEY)
+                {
+                    d->elapsed.start();
+                    d->ostream = avformat_new_stream(d->oc, d->format_ctx->streams[videoStream()]->codec->codec);
+                    avcodec_copy_context(d->ostream->codec,d->format_ctx->streams[videoStream()]->codec);
+                    d->ostream->sample_aspect_ratio = d->format_ctx->streams[videoStream()]->codec->sample_aspect_ratio;
+                    d->ostream->sample_aspect_ratio.num = d->format_ctx->streams[videoStream()]->codec->sample_aspect_ratio.num;
+                    d->ostream->sample_aspect_ratio.den = d->format_ctx->streams[videoStream()]->codec->sample_aspect_ratio.den;
+
+                    d->ostream->time_base = av_inv_q( d->ostream->r_frame_rate );
+                    d->ostream->codec->time_base = d->ostream->time_base;
+                    avformat_write_header(d->oc,nullptr);
+                }
+            }
+            if(d->ostream != nullptr){
+                int temp1 = packet.stream_index;
+                int64_t temp2 = packet.pts;
+                int64_t temp3 = packet.dts;
+
+                packet.stream_index = d->ostream->id;
+                packet.pts = av_rescale_q(d->elapsed.elapsed(), {1,1000} , d->ostream->time_base);
+                packet.dts = packet.pts;
+
+                //av_interleaved_write_frame( d->oc, &packet );
+
+                av_write_frame(d->oc,&packet);
+
+                packet.stream_index = temp1;
+                packet.pts = temp2;
+                packet.dts = temp3;
+            }
+        }
     }
     else if( packet.stream_index==audioStream())
     {
@@ -1257,6 +1301,24 @@ void AVDemuxer::clearStatistics()
     totalPackets = 0;
     totalVideoPackets = 0;
     totalAudioPackets = 0;
+}
+
+void AVDemuxer::startRecording(const QString &filePath)
+{
+    d->fmt = av_guess_format(nullptr,filePath.toLatin1(),nullptr);
+    d->oc = avformat_alloc_context();
+    d->oc->oformat = d->fmt;
+    avio_open2(&d->oc->pb, filePath.toLatin1(), AVIO_FLAG_WRITE,nullptr,nullptr);
+    d->ostream=nullptr;
+    d->recording = true;
+}
+
+void AVDemuxer::stopRecording()
+{
+    d->recording = false;
+    av_write_trailer(d->oc);
+    avio_close(d->oc->pb);
+    avformat_free_context(d->oc);
 }
 
 bool AVDemuxer::Private::setStream(AVDemuxer::StreamType st, int streamValue)

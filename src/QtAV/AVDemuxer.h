@@ -211,6 +211,9 @@ public slots:
     void clearStatistics();
 
 public:
+    void startRecording(const QString& filePath);
+    void stopRecording();
+
     quint64 totalBandwidth = 0;
     quint64 totalVideoBandwidth = 0;
     quint64 totalAudioBandwidth = 0;
