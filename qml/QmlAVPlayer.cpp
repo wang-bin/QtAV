@@ -468,7 +468,7 @@ void QmlAVPlayer::setMediaDataTimerInterval(int value)
     }
 }
 
-void QmlAVPlayer::startRecording(const QString &filePath)
+void QmlAVPlayer::startRecording(QString filePath)
 {
     mpPlayer->startRecording(filePath);
 }
