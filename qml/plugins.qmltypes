@@ -268,9 +268,10 @@ Module {
         Method { name: "seekForward" }
         Method { name: "seekBackward" }
         Method {
-            name: "play"
-            Parameter { name: "url"; type: "QUrl" }
+            name: "startRecording"
+            Parameter { name: "filePath"; type: "string" }
         }
+        Method { name: "stopRecording" }
     }
     Component { name: "QtAV::AudioFilter"; prototype: "QtAV::Filter" }
     Component {

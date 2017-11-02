@@ -468,6 +468,16 @@ void QmlAVPlayer::setMediaDataTimerInterval(int value)
     }
 }
 
+void QmlAVPlayer::startRecording(const QString &filePath)
+{
+    mpPlayer->startRecording(filePath);
+}
+
+void QmlAVPlayer::stopRecording()
+{
+    mpPlayer->stopRecording();
+}
+
 QUrl QmlAVPlayer::externalAudio() const
 {
     return m_audio;

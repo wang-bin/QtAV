@@ -1305,6 +1305,8 @@ void AVDemuxer::clearStatistics()
 
 void AVDemuxer::startRecording(const QString &filePath)
 {
+    if(d->recording)
+        return;
     d->fmt = av_guess_format(nullptr,filePath.toLatin1(),nullptr);
     d->oc = avformat_alloc_context();
     d->oc->oformat = d->fmt;
@@ -1315,6 +1317,8 @@ void AVDemuxer::startRecording(const QString &filePath)
 
 void AVDemuxer::stopRecording()
 {
+    if(!d->recording)
+        return;
     d->recording = false;
     av_write_trailer(d->oc);
     avio_close(d->oc->pb);

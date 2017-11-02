@@ -251,6 +251,9 @@ public:
     int mediaDataTimerInterval() const;
     void setMediaDataTimerInterval(int value);
 
+    void startRecording(const QString &filePath);
+    void stopRecording();
+
     /*!
      * \brief externalAudio
      * If externalAudio url is valid, player will use audioTrack of external audio as audio source.
