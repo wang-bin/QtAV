@@ -1320,7 +1320,8 @@ void AVDemuxer::stopRecording()
     if(!d->recording)
         return;
     d->recording = false;
-    av_write_trailer(d->oc);
+    if(d->ostream != nullptr)
+        av_write_trailer(d->oc);
     avio_close(d->oc->pb);
     avformat_free_context(d->oc);
 }
