@@ -160,7 +160,10 @@ void QuickFBORenderer::setSource(QObject *source)
             p0 = qp0->player();
     }
     if(p0)
+    {
         p0->removeVideoRenderer(this);
+        receiveFrame(VideoFrame());
+    }
 
     d.source = source;
     Q_EMIT sourceChanged();
