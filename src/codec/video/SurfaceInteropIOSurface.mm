@@ -32,9 +32,10 @@
 - (BOOL)texImageIOSurface:(IOSurfaceRef)ioSurface target:(NSUInteger)target internalFormat:(NSUInteger)internalFormat width:(uint32_t)width height:(uint32_t)height format:(NSUInteger)format type:(NSUInteger)type plane:(uint32_t)plane invert:(BOOL)invert NS_AVAILABLE_IOS(4_0); // confirmed in iOS5.1
 @end
 # endif //COREVIDEO_SUPPORTS_IOSURFACE
+#else
+#include <IOSurface/IOSurface.h>
 #endif //Q_OS_IOS
 
-#include <IOSurface/IOSurface.h>
 #include "QtAV/VideoFrame.h"
 #include "opengl/OpenGLHelper.h"
 

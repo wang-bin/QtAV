@@ -298,7 +298,7 @@ bool EventFilter::eventFilter(QObject *watched, QEvent *event)
     }
         break;
 
-    case QEvent:: QEvent::MouseButtonDblClick: {
+    case QEvent::MouseButtonDblClick: {
           QMouseEvent *me = static_cast<QMouseEvent*>(event);
           Qt::MouseButton mbt = me->button();
           QWidget *mpWindow =  static_cast<QWidget*>(player->parent());
