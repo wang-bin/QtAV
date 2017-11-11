@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2016)
 
@@ -61,16 +61,15 @@ extern InteropResource* CreateInteropCVOpenGLES();
 InteropResource* InteropResource::create(InteropType type)
 {
     if (type == InteropAuto) {
-#ifdef Q_OS_MACX
+#if defined(Q_OS_MACX) || defined(__IPHONE_11_0)
         type = InteropIOSurface;
 #else
-        type = InteropCVPixelBuffer;
         type = InteropCVOpenGLES;
 #endif
     }
     switch (type) {
     case InteropCVPixelBuffer: return CreateInteropCVPixelbuffer();
-#ifdef Q_OS_MACX
+#if defined(Q_OS_MACX) || defined(__IPHONE_11_0)
     case InteropIOSurface: return CreateInteropIOSurface();
     //case InteropCVOpenGL: return CreateInteropCVOpenGL();
 #else
