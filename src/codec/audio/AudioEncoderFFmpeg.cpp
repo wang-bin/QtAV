@@ -151,8 +151,8 @@ bool AudioEncoderFFmpegPrivate::open()
     } else {
         buffer_size = frame_size*format_used.bytesPerSample()*format_used.channels()*2+200;
     }
-    if (buffer_size < FF_MIN_BUFFER_SIZE)
-        buffer_size = FF_MIN_BUFFER_SIZE;
+    if (buffer_size < AV_INPUT_BUFFER_MIN_SIZE)
+        buffer_size = AV_INPUT_BUFFER_MIN_SIZE;
     buffer.resize(buffer_size);
     return true;
 }

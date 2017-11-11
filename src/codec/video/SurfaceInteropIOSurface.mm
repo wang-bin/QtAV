@@ -144,7 +144,7 @@ bool InteropResourceIOSurface::map(CVPixelBufferRef buf, GLuint *tex, int w, int
 # endif //__IPHONE_11_0
         ok = [[EAGLContext currentContext] texImageIOSurface:surface target:target internalFormat:iformat width:planeW height:planeH format:format type:dtype plane:plane invert:NO];
     if (!ok) {
-         qWarning("error creating IOSurface texture at plane %d", i);
+         qWarning("error creating IOSurface texture at plane %d", plane);
     }
 #else
     CGLError err = CGLTexImageIOSurface2D(CGLGetCurrentContext(), target, iformat, planeW, planeH, format, dtype, surface, plane);
