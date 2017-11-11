@@ -249,7 +249,7 @@ bool SubtitleProcessorFFmpeg::processHeader(const QByteArray &codec, const QByte
     codec_ctx->time_base.den = 1000;
     if (!data.isEmpty()) {
         av_free(codec_ctx->extradata);
-        codec_ctx->extradata = (uint8_t*)av_mallocz(data.size() + FF_INPUT_BUFFER_PADDING_SIZE);
+        codec_ctx->extradata = (uint8_t*)av_mallocz(data.size() + AV_INPUT_BUFFER_PADDING_SIZE);
         if (!codec_ctx->extradata)
             return false;
         codec_ctx->extradata_size = data.size();

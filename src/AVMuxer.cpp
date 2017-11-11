@@ -124,7 +124,7 @@ AVStream *AVMuxer::Private::addStream(AVFormatContext* ctx, const QString &codec
     c->time_base = s->time_base;
     /* Some formats want stream headers to be separate. */
     if (ctx->oformat->flags & AVFMT_GLOBALHEADER)
-        c->flags |= CODEC_FLAG_GLOBAL_HEADER;
+        c->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     // expose avctx to encoder and set properties in encoder?
     // list codecs for a given format in ui
     return s;

@@ -245,7 +245,7 @@ bool VideoEncoderFFmpegPrivate::open()
     applyOptionsForContext();
     AV_ENSURE_OK(avcodec_open2(avctx, codec, &dict), false);
     // from mpv ao_lavc
-    const int buffer_size = qMax<int>(qMax<int>(width*height*6+200, FF_MIN_BUFFER_SIZE), sizeof(AVPicture));//??
+    const int buffer_size = qMax<int>(qMax<int>(width*height*6+200, AV_INPUT_BUFFER_MIN_SIZE), sizeof(AVPicture));//??
     buffer.resize(buffer_size);
     return true;
 }
