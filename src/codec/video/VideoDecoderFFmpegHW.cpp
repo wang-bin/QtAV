@@ -155,6 +155,9 @@ bool VideoDecoderFFmpegHWPrivate::prepare()
 
 AVPixelFormat VideoDecoderFFmpegHWPrivate::getFormat(struct AVCodecContext *avctx, const AVPixelFormat *pi_fmt)
 {
+#ifdef AV_HWACCEL_FLAG_ALLOW_SOFTWARE
+    avctx->hwaccel_flags |= AV_HWACCEL_FLAG_ALLOW_SOFTWARE;
+#endif
     bool can_hwaccel = false;
     for (size_t i = 0; pi_fmt[i] != QTAV_PIX_FMT_C(NONE); i++) {
         const AVPixFmtDescriptor *dsc = av_pix_fmt_desc_get(pi_fmt[i]);
