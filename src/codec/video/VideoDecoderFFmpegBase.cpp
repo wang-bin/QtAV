@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -132,7 +132,7 @@ bool VideoDecoderFFmpegBase::decode(const Packet &packet)
     //qDebug("pic_type=%c", av_get_picture_type_char(d.frame->pict_type));
     d.undecoded_size = qMin(packet.data.size() - ret, packet.data.size());
     if (ret < 0) {
-        qWarning("[VideoDecoderFFmpegBase] %s", av_err2str(ret));
+        //qWarning("[VideoDecoderFFmpegBase] %s", av_err2str(ret));
         return false;
     }
     if (!got_frame_ptr) {
@@ -148,4 +148,23 @@ bool VideoDecoderFFmpegBase::decode(const Packet &packet)
     return true;
 }
 
+VideoFrame VideoDecoderFFmpegBase::frame()
+{
+    DPTR_D(VideoDecoderFFmpegBase);
+    if (d.frame->width <= 0 || d.frame->height <= 0 || !d.codec_ctx)
+        return VideoFrame();
+    // it's safe if width, height, pixfmt will not change, only data change
+    VideoFrame frame(d.frame->width, d.frame->height, VideoFormat((int)d.codec_ctx->pix_fmt));
+    frame.setDisplayAspectRatio(d.getDAR(d.frame));
+    frame.setBits(d.frame->data);
+    frame.setBytesPerLine(d.frame->linesize);
+    // in s. TODO: what about AVFrame.pts? av_frame_get_best_effort_timestamp? move to VideoFrame::from(AVFrame*)
+    frame.setTimestamp((double)d.frame->pkt_pts/1000.0);
+    frame.setMetaData(QStringLiteral("avbuf"), QVariant::fromValue(AVFrameBuffersRef(new AVFrameBuffers(d.frame))));
+    d.updateColorDetails(&frame);
+    if (frame.format().hasPalette()) {
+        frame.setMetaData(QStringLiteral("pallete"), QByteArray((const char*)d.frame->data[1], 256*4));
+    }
+    return frame;
+}
 } //namespace QtAV
