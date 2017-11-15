@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2015)
 
@@ -148,7 +148,9 @@ static const char* cv_err_str(int err)
 VideoDecoderVideoToolbox::VideoDecoderVideoToolbox()
     : VideoDecoderFFmpegHW(*new VideoDecoderVideoToolboxPrivate())
 {
+#if 1//!AV_MODULE_CHECK(LIBAVCODEC, 57, 30, 1, 89, 100) // ffmpeg3.3
     setProperty("threads", 1); // to avoid crash at av_videotoolbox_alloc_context/av_videotoolbox_default_free. I have no idea how the are called
+#endif
     // dynamic properties about static property details. used by UI
     setProperty("detail_format", tr("Output pixel format from decoder. Performance NV12 > UYVY > BGRA > YUV420P > YUYV.\nOSX < 10.7 only supports UYVY, BGRA and YUV420p"));
     setProperty("detail_interop"
@@ -174,6 +176,9 @@ QString VideoDecoderVideoToolbox::description() const
 VideoFrame VideoDecoderVideoToolbox::frame()
 {
     DPTR_D(VideoDecoderVideoToolbox);
+    if (!d.codec_ctx->hwaccel_context) {
+        return VideoDecoderFFmpegBase::frame();
+    }
     CVPixelBufferRef cv_buffer = (CVPixelBufferRef)d.frame->data[3];
     if (!cv_buffer) {
         qDebug("Frame buffer is empty.");
@@ -286,6 +291,7 @@ void* VideoDecoderVideoToolboxPrivate::setup(AVCodecContext *avctx)
 
 bool VideoDecoderVideoToolboxPrivate::getBuffer(void **opaque, uint8_t **data)
 {
+    qDebug("vt getbuffer");
     *data = (uint8_t *)1; // dummy. it's AVFrame.data[0], must be non null required by ffmpeg
     Q_UNUSED(opaque);
     return true;

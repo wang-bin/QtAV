@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -491,7 +491,7 @@ void VideoThread::run()
             dec->setOptions(*dec_opt);
         if (!dec->decode(pkt)) {
             d.pts_history.push_back(d.pts_history.back());
-            qWarning("Decode video failed. undecoded: %d/%d", dec->undecodedSize(), pkt.data.size());
+            //qWarning("Decode video failed. undecoded: %d/%d", dec->undecodedSize(), pkt.data.size());
             if (pkt.isEOF()) {
                 Q_EMIT eofDecoded();
                 qDebug("video decode eof done. d.render_pts0: %.3f", d.render_pts0);
