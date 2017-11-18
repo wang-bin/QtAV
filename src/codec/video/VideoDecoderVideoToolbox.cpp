@@ -320,6 +320,7 @@ bool VideoDecoderVideoToolboxPrivate::open()
         break;
     }
     switch (codec_ctx->codec_id) {
+    case AV_CODEC_ID_HEVC:
     case AV_CODEC_ID_H264:
     case AV_CODEC_ID_H263:
     case AV_CODEC_ID_MPEG4:
