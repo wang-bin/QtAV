@@ -705,6 +705,26 @@ bool AVPlayer::Private::calcRates()
 
 void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
 {
+    mediaData["bandwidthRate"] = 0;
+    mediaData["videoBandwidthRate"] = 0;
+    mediaData["audioBandwidthRate"] = 0;
+    mediaData["fps"] = 0;
+    mediaData["displayFPS"] = 0;
+    mediaData["totalBandwidth"] = 0;
+    mediaData["totalVideoBandwidth"] = 0;
+    mediaData["totalAudioBandwidth"] = 0;
+    mediaData["totalPackets"] = 0;
+    mediaData["totalVideoPackets"] = 0;
+    mediaData["totalAudioPackets"] = 0;
+    mediaData["totalFrames"] = 0;
+    mediaData["droppedPackets"] = 0;
+    mediaData["droppedFrames"] = 0;
+    mediaData["totalKeyFrames"] = 0;
+    mediaData["averageFps"] = 0;
+    mediaData["averageBandwidth"] = 0;
+    mediaData["averageVideoBandwidth"] = 0;
+    mediaData["averageAudioBandwidth"] = 0;
+
     connect(player,&AVPlayer::mediaDataTimerStarted,player,[this](){
         QTimer::singleShot(0,&demuxer,[this](){
             statistics.totalFrames = 0;
