@@ -707,6 +707,9 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
 {
     connect(player,&AVPlayer::mediaDataTimerStarted,player,[this](){
         QTimer::singleShot(0,&demuxer,[this](){
+            statistics.totalFrames = 0;
+            statistics.droppedFrames = 0;
+            statistics.droppedPackets = 0;
             demuxer.clearStatistics();
             lastTotalBandwidth = 0;
             lastTotalVideoBandwidth = 0;

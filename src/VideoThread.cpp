@@ -517,12 +517,7 @@ void VideoThread::run()
         {
             d.statistics->totalKeyFrames++;
             if(d.statistics->totalKeyFrames==1)
-            {
-                d.statistics->totalFrames = 0;
-                d.statistics->droppedFrames = 0;
-                d.statistics->droppedPackets = 0;
                 emit player->mediaDataTimerStarted();
-            }
         }
 
         // reduce here to ensure to decode the rest data in the next loop
