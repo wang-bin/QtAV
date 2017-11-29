@@ -282,7 +282,7 @@ public Q_SLOTS:
     void seekForward();
     void seekBackward();
 
-    void startRecording(QString filePath);
+    void startRecording(QString filePath, int duration = -1);
     void stopRecording();
 
 Q_SIGNALS:

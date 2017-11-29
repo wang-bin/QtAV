@@ -426,7 +426,7 @@ public:
     int mediaDataTimerInterval() const;
     void setMediaDataTimerInterval(int value);
 
-    void startRecording(const QString &filePath);
+    void startRecording(const QString &filePath, int duration = -1);
     void stopRecording();
 
 public Q_SLOTS:

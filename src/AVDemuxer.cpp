@@ -324,6 +324,7 @@ public:
 
     QElapsedTimer elapsed;
     bool recording = false;
+    int recordDuration = -1;
 };
 
 AVDemuxer::AVDemuxer(QObject *parent)
@@ -515,6 +516,9 @@ bool AVDemuxer::readFrame()
                 packet.stream_index = temp1;
                 packet.pts = temp2;
                 packet.dts = temp3;
+
+                if(d->recordDuration>0 && (d->elapsed.elapsed()/1000)>=d->recordDuration)
+                    stopRecording();
             }
         }
     }
@@ -1303,7 +1307,7 @@ void AVDemuxer::clearStatistics()
     totalAudioPackets = 0;
 }
 
-void AVDemuxer::startRecording(const QString &filePath)
+void AVDemuxer::startRecording(const QString &filePath, int duration)
 {
     if(d->recording)
         return;
@@ -1313,6 +1317,7 @@ void AVDemuxer::startRecording(const QString &filePath)
     avio_open2(&d->oc->pb, filePath.toLatin1(), AVIO_FLAG_WRITE,nullptr,nullptr);
     d->ostream=nullptr;
     d->recording = true;
+    d->recordDuration = duration;
 }
 
 void AVDemuxer::stopRecording()

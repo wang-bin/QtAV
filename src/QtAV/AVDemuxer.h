@@ -211,7 +211,7 @@ public slots:
     void clearStatistics();
 
 public:
-    void startRecording(const QString& filePath);
+    void startRecording(const QString& filePath, int duration = -1);
     void stopRecording();
 
     quint64 totalBandwidth = 0;

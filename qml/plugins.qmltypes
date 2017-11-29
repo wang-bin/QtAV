@@ -270,6 +270,7 @@ Module {
         Method {
             name: "startRecording"
             Parameter { name: "filePath"; type: "string" }
+            Parameter { name: "duration"; type: "int" }
         }
         Method { name: "stopRecording" }
     }
