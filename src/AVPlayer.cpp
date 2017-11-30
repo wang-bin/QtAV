@@ -1463,7 +1463,7 @@ void AVPlayer::updateAdaptiveBuffer()
     setBufferValue(bufferVal);
 
     if(buffered()>bufferValue())
-        setSpeed(2);
+        setSpeed(qMin(speed()*2, 8.0));
     else if(speed()>1 && buffered()<(0.5*bufferValue()))
         setSpeed(1);
 }
