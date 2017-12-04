@@ -1239,6 +1239,13 @@ void AVPlayer::play()
 
 void AVPlayer::playInternal()
 {
+    if(duration()<=0)
+    {
+        //audio()->setBackends(QStringList()<<"null");
+        masterClock()->setClockAuto(false);
+        masterClock()->setClockType(AVClock::ExternalClock);
+    }
+
     {
     QMutexLocker lock(&d->load_mutex);
     Q_UNUSED(lock);
