@@ -1464,13 +1464,12 @@ void AVPlayer::updateAdaptiveBuffer()
     if(d->bufferHistory.size()>5)
         d->bufferHistory.pop_front();
 
-    qint64 bufferMean = std::accumulate(d->bufferHistory.begin(), d->bufferHistory.end(), 0)/d->bufferHistory.size();
-    qint64 bufferVal = qMin(qMax(bufferMean, (qint64)1), (qint64)60);
+    qint64 bufferMax = *std::max_element(d->bufferHistory.begin(), d->bufferHistory.end());
+    qint64 bufferVal = qMin(qMax(qMin(bufferMax, last), (qint64)2), (qint64)60);
 
-    //setBufferValue(bufferVal);
-    d->buffer_value = bufferVal;
+    setBufferValue(bufferVal);
 
-    if(buffered()>1.5*bufferValue())
+    if(buffered()>bufferValue())
         setSpeed(2);
     else if(speed()>1 && buffered()<(0.5*bufferValue()))
         setSpeed(1);
