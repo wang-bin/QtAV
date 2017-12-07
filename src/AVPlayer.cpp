@@ -99,6 +99,8 @@ AVPlayer::AVPlayer(QObject *parent) :
 
     connect(this, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SLOT(onMediaStatusChanged(QtAV::MediaStatus)));
 
+    //audio()->setBackends(QStringList()<<"null");
+
     d->applyMediaDataCalculation(this);
 }
 
@@ -740,6 +742,9 @@ void AVPlayer::loadInternal()
     d->initStatistics();
     if (interval != qAbs(d->notify_interval))
         Q_EMIT notifyIntervalChanged();
+
+    if(duration()<=0)
+        setAudioStream(-1);
 }
 
 void AVPlayer::unload()
@@ -1239,13 +1244,6 @@ void AVPlayer::play()
 
 void AVPlayer::playInternal()
 {
-    if(duration()<=0)
-    {
-        //audio()->setBackends(QStringList()<<"null");
-        masterClock()->setClockAuto(false);
-        masterClock()->setClockType(AVClock::ExternalClock);
-    }
-
     {
     QMutexLocker lock(&d->load_mutex);
     Q_UNUSED(lock);
