@@ -1487,16 +1487,11 @@ void AVPlayer::onMediaStatusChanged(MediaStatus status)
     {
         if(masterClock()->clockType()==AVClock::ExternalClock)
             d->clock->pause(true);
-
-        if(!d->autoPlay_timer.isActive())
-             d->autoPlay_timer.start();
     }
     else
     {
         if(masterClock()->clockType()==AVClock::ExternalClock)
             d->clock->pause(false);
-
-        d->autoPlay_timer.stop();
     }
 }
 
