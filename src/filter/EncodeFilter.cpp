@@ -321,8 +321,12 @@ void VideoEncodeFilter::encode(const VideoFrame& frame)
         return;
     // encode delayed frames can pass an invalid frame
     if (!d.enc->isOpen() && frame.isValid()) {
-        d.enc->setWidth(frame.width());
-        d.enc->setHeight(frame.height());
+        if (d.enc->width() == 0) {
+            d.enc->setWidth(frame.width());
+        }
+        if (d.enc->height() == 0) {
+            d.enc->setHeight(frame.height());
+        }
         if (!d.enc->open()) { // TODO: error()
             qWarning("Failed to open video encoder");
             return;
@@ -339,16 +343,12 @@ void VideoEncodeFilter::encode(const VideoFrame& frame)
         d.finishing = 0;
         return;
     }
-    if (d.enc->width() != frame.width() || d.enc->height() != frame.height()) {
-        qWarning("Frame size (%dx%d) and video encoder size (%dx%d) mismatch! Close encoder please.", d.enc->width(), d.enc->height(), frame.width(), frame.height());
-        return;
-    }
     if (frame.timestamp()*1000.0 < startTime())
         return;
     // TODO: async
     VideoFrame f(frame);
-    if (f.pixelFormat() != d.enc->pixelFormat())
-        f = f.to(d.enc->pixelFormat());
+    if (f.pixelFormat() != d.enc->pixelFormat() || d.enc->width() != f.width() || d.enc->height() != f.height())
+        f = f.to(d.enc->pixelFormat(), QSize(d.enc->width(), d.enc->height()));
     if (!d.enc->encode(f)) {
         if (f.timestamp() == std::numeric_limits<qreal>::max()) {
             Q_EMIT finished();

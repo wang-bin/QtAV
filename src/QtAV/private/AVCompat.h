@@ -59,6 +59,7 @@ extern "C"
 #include <libavutil/parseutils.h>
 #include <libavutil/pixdesc.h>
 #include <libavutil/avstring.h>
+#include <libavfilter/version.h>
 
 #if !FFMPEG_MODULE_CHECK(LIBAVUTIL, 51, 73, 101)
 #include <libavutil/channel_layout.h>
@@ -79,8 +80,11 @@ extern "C"
 #endif //QTAV_HAVE(AVRESAMPLE)
 
 #if QTAV_HAVE(AVFILTER)
+#if LIBAVFILTER_VERSION_INT < AV_VERSION_INT(3,8,0)
 #include <libavfilter/avfiltergraph.h> /*code is here for old version*/
+#else
 #include <libavfilter/avfilter.h>
+#endif
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
 #endif //QTAV_HAVE(AVFILTER)
