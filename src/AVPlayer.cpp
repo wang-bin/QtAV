@@ -1457,24 +1457,17 @@ void AVPlayer::updateAdaptiveBuffer()
     if((d->status!=BufferedMedia) || duration()>0)
         return;
 
-    qint64 last = buffered();
-    d->bufferHistory.push_back(last);
-    if(d->bufferHistory.size()>50)
+
+    if(buffered()>=bufferValue())
     {
-        qint64 bufferMax = *std::max_element(d->bufferHistory.begin(), d->bufferHistory.end());
-        d->bufferHistory.clear();
-
-        if(bufferMax>0.9*bufferValue())
-            setBufferValue(qMin(bufferValue()*1.5, 60.0));
-        else if(bufferMax<0.5*bufferValue())
-            setBufferValue(qMax(bufferValue()*0.5, 2.0));
+        setSpeed(1.1);
+        setBufferValue(qMin(bufferValue()+1, 60));
     }
-
-
-    if(buffered()>bufferValue())
-        setSpeed(2);
-    else if(speed()>1 && buffered()<(0.75*bufferValue()))
+    else if(buffered()<bufferValue())
+    {
         setSpeed(1);
+        setBufferValue(qMax(bufferValue()-1,2));
+    }
 }
 
 void AVPlayer::updateAutoPlay()

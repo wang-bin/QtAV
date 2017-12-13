@@ -169,7 +169,6 @@ public:
 
     bool adaptive_buffer;
     QTimer adaptiveBuffer_timer;
-    std::deque<qint64> bufferHistory;
 
     QTimer autoPlay_timer;
 

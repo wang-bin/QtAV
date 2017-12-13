@@ -659,8 +659,7 @@ void AVPlayer::Private::applyAdaptiveBuffer(AVPlayer *player)
     if(adaptive_buffer)
     {
         //buffer_mode = BufferTime;
-        bufferHistory.clear();
-        adaptiveBuffer_timer.setInterval(100);
+        adaptiveBuffer_timer.setInterval(30);
         player->setBufferValue(5);
         connect(&adaptiveBuffer_timer,SIGNAL(timeout()),player,SLOT(updateAdaptiveBuffer()));
         connect(player,SIGNAL(started()),&adaptiveBuffer_timer,SLOT(start()));
