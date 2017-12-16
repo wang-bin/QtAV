@@ -522,7 +522,7 @@ bool AVDemuxer::readFrame()
             }
         }
     }
-    else if( packet.stream_index==audioStream())
+    else if( packet.stream_index==audioStream() || packet.stream_index==audioStreamIndex)
     {
         totalAudioBandwidth+=static_cast<quint64>(packet.size);
         totalAudioPackets++;

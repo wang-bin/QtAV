@@ -744,7 +744,10 @@ void AVPlayer::loadInternal()
         Q_EMIT notifyIntervalChanged();
 
     if(duration()<=0)
+    {
+        d->demuxer.audioStreamIndex = d->demuxer.audioStream();
         setAudioStream(-1);
+    }
 }
 
 void AVPlayer::unload()
