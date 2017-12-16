@@ -743,6 +743,7 @@ void AVPlayer::loadInternal()
     if (interval != qAbs(d->notify_interval))
         Q_EMIT notifyIntervalChanged();
 
+    d->demuxer.audioStreamIndex = -1;
     if(duration()<=0)
     {
         d->demuxer.audioStreamIndex = d->demuxer.audioStream();
