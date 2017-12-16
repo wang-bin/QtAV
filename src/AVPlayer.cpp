@@ -504,6 +504,21 @@ void AVPlayer::setMediaDataTimerInterval(int value)
     d->mediaDataTimer.setInterval(value);
 }
 
+void AVPlayer::resetMediaData()
+{
+    d->mediaDataTimer.stop();
+    d->demuxer.totalBandwidth = 0;
+    d->demuxer.totalVideoBandwidth = 0;
+    d->demuxer.totalAudioBandwidth= 0;
+    d->demuxer.totalPackets = 0;
+    d->demuxer.totalVideoPackets = 0;
+    d->demuxer.totalAudioPackets = 0;
+    d->statistics.totalFrames = 0;
+    d->statistics.droppedFrames = 0;
+    d->statistics.droppedPackets = 0;
+    d->statistics.totalKeyFrames = -1;
+}
+
 void AVPlayer::startRecording(const QString& filePath, int duration)
 {
     d->demuxer.startRecording(filePath, duration);
@@ -1232,18 +1247,6 @@ void AVPlayer::play()
         return;
     }
     connect(this, SIGNAL(loaded()), this, SLOT(playInternal()));
-
-    d->mediaDataTimer.stop();
-    d->demuxer.totalBandwidth = 0;
-    d->demuxer.totalVideoBandwidth = 0;
-    d->demuxer.totalAudioBandwidth= 0;
-    d->demuxer.totalPackets = 0;
-    d->demuxer.totalVideoPackets = 0;
-    d->demuxer.totalAudioPackets = 0;
-    d->statistics.totalFrames = 0;
-    d->statistics.droppedFrames = 0;
-    d->statistics.droppedPackets = 0;
-    d->statistics.totalKeyFrames = -1;
 }
 
 void AVPlayer::playInternal()

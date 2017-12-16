@@ -478,6 +478,11 @@ void QmlAVPlayer::stopRecording()
     mpPlayer->stopRecording();
 }
 
+void QmlAVPlayer::resetMediaData()
+{
+    mpPlayer->resetMediaData();
+}
+
 QUrl QmlAVPlayer::externalAudio() const
 {
     return m_audio;

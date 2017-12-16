@@ -285,6 +285,8 @@ public Q_SLOTS:
     void startRecording(QString filePath, int duration = -1);
     void stopRecording();
 
+    void resetMediaData();
+
 Q_SIGNALS:
     void volumeChanged();
     void mutedChanged();

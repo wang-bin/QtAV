@@ -273,6 +273,7 @@ Module {
             Parameter { name: "duration"; type: "int" }
         }
         Method { name: "stopRecording" }
+        Method { name: "resetMediaData" }
     }
     Component { name: "QtAV::AudioFilter"; prototype: "QtAV::Filter" }
     Component {

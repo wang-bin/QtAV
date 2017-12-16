@@ -426,6 +426,8 @@ public:
     int mediaDataTimerInterval() const;
     void setMediaDataTimerInterval(int value);
 
+    void resetMediaData();
+
     void startRecording(const QString &filePath, int duration = -1);
     void stopRecording();
 
