@@ -745,7 +745,7 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
             lastTotalFrames = 0;
             mediaData["realResolution"] = statistics.realResolution;
             mediaData["connected"] = true;
-            mediaData["protocol"] = player->file().mid(0,player->file().indexOf(":"));
+            mediaData["protocol"] = player->file().mid(0,player->file().indexOf(":")).toUpper();
             elapsedTimer.invalidate();
             totalElapsedTimer.start();
             mediaDataTimer.start();
