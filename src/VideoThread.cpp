@@ -519,7 +519,7 @@ void VideoThread::run()
             if(d.statistics->totalKeyFrames==1)
             {
                 d.statistics->realResolution = QSize(dec->frame().width(), dec->frame().height());
-                emit player->mediaDataTimerStarted();
+                emit player->firstKeyFrameReceived();
             }
         }
 

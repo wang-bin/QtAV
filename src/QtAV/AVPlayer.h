@@ -569,6 +569,7 @@ Q_SIGNALS:
     void mediaStatusChanged(QtAV::MediaStatus status); //explictly use QtAV::MediaStatus
     void mediaEndActionChanged(QtAV::MediaEndAction action);
     void adaptiveBufferChanged(bool);
+    void firstKeyFrameReceived();
     void mediaDataTimerTriggered(QVariantMap);
     void mediaDataTimerStarted();
     void mediaDataTimerIntervalChanged(int);

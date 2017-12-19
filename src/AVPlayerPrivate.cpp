@@ -733,7 +733,7 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
         mediaDataTimer.stop();
     });
 
-    connect(player,&AVPlayer::mediaDataTimerStarted,player,[this, player](){
+    connect(player,&AVPlayer::firstKeyFrameReceived,player,[this, player](){
         QTimer::singleShot(0,&demuxer,[this, player](){
             statistics.totalFrames = 0;
             statistics.droppedFrames = 0;
@@ -750,6 +750,7 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
             totalElapsedTimer.start();
             mediaDataTimer.start();
             QMetaObject::invokeMethod(&mediaDataTimer,"timeout", Qt::QueuedConnection);
+            emit player->mediaDataTimerStarted();
         });
     });
     connect(&mediaDataTimer, &QTimer::timeout, [this, player]() {
