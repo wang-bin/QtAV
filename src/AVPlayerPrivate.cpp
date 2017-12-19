@@ -724,9 +724,17 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
     mediaData["averageBandwidth"] = 0;
     mediaData["averageVideoBandwidth"] = 0;
     mediaData["averageAudioBandwidth"] = 0;
+    mediaData["realResolution"] = QSize(0,0);
+    mediaData["connected"] = false;
+    mediaData["protocol"] = QString();
 
-    connect(player,&AVPlayer::mediaDataTimerStarted,player,[this](){
-        QTimer::singleShot(0,&demuxer,[this](){
+    connect(player,&AVPlayer::stopped,player,[this](){
+        mediaData["connected"] = false;
+        mediaDataTimer.stop();
+    });
+
+    connect(player,&AVPlayer::mediaDataTimerStarted,player,[this, player](){
+        QTimer::singleShot(0,&demuxer,[this, player](){
             statistics.totalFrames = 0;
             statistics.droppedFrames = 0;
             statistics.droppedPackets = 0;
@@ -735,6 +743,9 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
             lastTotalVideoBandwidth = 0;
             lastTotalAudioBandwidth = 0;
             lastTotalFrames = 0;
+            mediaData["realResolution"] = statistics.realResolution;
+            mediaData["connected"] = true;
+            mediaData["protocol"] = player->file().mid(0,player->file().indexOf(":"));
             elapsedTimer.invalidate();
             totalElapsedTimer.start();
             mediaDataTimer.start();

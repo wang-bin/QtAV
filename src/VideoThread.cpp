@@ -517,7 +517,10 @@ void VideoThread::run()
         {
             d.statistics->totalKeyFrames++;
             if(d.statistics->totalKeyFrames==1)
+            {
+                d.statistics->realResolution = QSize(dec->frame().width(), dec->frame().height());
                 emit player->mediaDataTimerStarted();
+            }
         }
 
         // reduce here to ensure to decode the rest data in the next loop
