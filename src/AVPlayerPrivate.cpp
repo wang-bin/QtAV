@@ -730,7 +730,6 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
 
     connect(player,&AVPlayer::stopped,player,[this](){
         mediaData["connected"] = false;
-        mediaDataTimer.stop();
     });
 
     connect(player,&AVPlayer::firstKeyFrameReceived,player,[this, player](){
