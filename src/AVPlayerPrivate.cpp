@@ -731,6 +731,9 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
     connect(player,&AVPlayer::stopped,player,[this](){
         mediaData["connected"] = false;
     });
+    connect(player,&AVPlayer::started,player,[this](){
+        mediaData["connected"] = true;
+    });
 
     connect(player,&AVPlayer::firstKeyFrameReceived,player,[this, player](){
         QTimer::singleShot(0,&demuxer,[this, player](){
