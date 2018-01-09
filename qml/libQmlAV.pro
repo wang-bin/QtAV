@@ -16,7 +16,7 @@ preparePaths($$OUT_PWD/../out)
 # mkspecs/features/qml_plugin.prf mkspecs/features/qml_module.prf
 TARGETPATH = QtAV
 URI = $$replace(TARGETPATH, "/", ".")
-QMAKE_MOC_OPTIONS += -Muri=$$URI
+qtAtLeast(5, 3): QMAKE_MOC_OPTIONS += -Muri=$$URI
 
 static: CONFIG += builtin_resources
 
