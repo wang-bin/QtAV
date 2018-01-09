@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/qt-project.org/imports/QtAV">
+        <file>qmldir</file>
+        <file>Video.qml</file>
+    </qresource>
+</RCC>
