@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -110,6 +110,11 @@ inline int _ConvertSMVer2Cores(int major, int minor)
         { 0x37, 192}, // Kepler Generation (SM 3.7) GK21x class
         { 0x50, 128}, // Maxwell Generation (SM 5.0) GM10x class
         { 0x52, 128}, // Maxwell Generation (SM 5.2) GM20x class //enc: h264 yuv444p, hevc (libavcodec/nvenc.c)
+        { 0x53, 128}, // Maxwell Generation (SM 5.3) GM20x class
+        { 0x60, 64 }, // Pascal Generation (SM 6.0) GP100 class
+        { 0x61, 128}, // Pascal Generation (SM 6.1) GP10x class
+        { 0x62, 128}, // Pascal Generation (SM 6.2) GP10x class
+        { 0x70, 64 }, // Volta Generation (SM 7.0) GV100 class
         {   -1, -1 }
     };
     int index = 0;
@@ -120,7 +125,7 @@ inline int _ConvertSMVer2Cores(int major, int minor)
         ++index;
     }
     // If we don't find the values, we default use the previous one to run properly
-    printf("MapSMtoCores for SM %d.%d is undefined.  Default to use %d Cores/SM\n", major, minor, nGpuArchCoresPerSM[7].Cores);
+    printf("MapSMtoCores for SM %d.%d is undefined.  Default to use %d Cores/SM\n", major, minor, nGpuArchCoresPerSM[index-1].Cores);
     return nGpuArchCoresPerSM[index - 1].Cores;
 }
 
