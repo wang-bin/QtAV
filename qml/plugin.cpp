@@ -32,6 +32,12 @@
 #include "QmlAV/QuickFBORenderer.h"
 #endif
 
+inline void initResources() {
+#ifdef BUILD_QMLAV_STATIC
+    Q_INIT_RESOURCE(libQmlAV);
+#endif
+}
+
 namespace QtAV {
 
 class QtAVQmlPlugin : public QQmlExtensionPlugin
@@ -39,6 +45,9 @@ class QtAVQmlPlugin : public QQmlExtensionPlugin
     Q_OBJECT
     Q_PLUGIN_METADATA(IID "org.qt-project.Qt.QQmlExtensionInterface")
 public:
+    QtAVQmlPlugin() {
+        initResources();
+    }
     void registerTypes(const char *uri)
     {
         Q_ASSERT(QLatin1String(uri) == QLatin1String("QtAV"));
