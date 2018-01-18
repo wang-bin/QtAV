@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -382,7 +382,10 @@ void AVThread::waitAndCheck(ulong value, qreal pts)
             us = qMin(us, ulong((double)(qMax<qreal>(0, pts - d.clock->value()))*1000000.0));
         //qDebug("us: %lu/%lu, pts: %f, clock: %f", us, ms-et.elapsed(), pts, d.clock->value());
         processNextTask();
-        us = qMin<ulong>(us, (ms-d.wait_timer.elapsed())*1000);
+        const qint64 left = qint64(ms) - d.wait_timer.elapsed();
+        if (left <= 0)
+            break;
+        us = qMin<ulong>(us, left*1000);
     }
     if (us > 0)
         usleep(us);
