@@ -25,14 +25,14 @@ win32:{
     else: archName = 64
 
     clear(file_pathes)
-    file_pathes += $$PWD/ffmpeg$${archName}/bin/avcodec-57.dll
-    file_pathes += $$PWD/ffmpeg$${archName}/bin/avdevice-57.dll
-    file_pathes += $$PWD/ffmpeg$${archName}/bin/avfilter-6.dll
-    file_pathes += $$PWD/ffmpeg$${archName}/bin/avformat-57.dll
-    file_pathes += $$PWD/ffmpeg$${archName}/bin/avresample-3.dll
-    file_pathes += $$PWD/ffmpeg$${archName}/bin/avutil-55.dll
-    file_pathes += $$PWD/ffmpeg$${archName}/bin/swresample-2.dll
-    file_pathes += $$PWD/ffmpeg$${archName}/bin/swscale-4.dll
+    file_pathes += $$PWD/ffmpegBin/win/$${archName}/bin/avcodec-57.dll
+    file_pathes += $$PWD/ffmpegBin/win/$${archName}/bin/avdevice-57.dll
+    file_pathes += $$PWD/ffmpegBin/win/$${archName}/bin/avfilter-6.dll
+    file_pathes += $$PWD/ffmpegBin/win/$${archName}/bin/avformat-57.dll
+    file_pathes += $$PWD/ffmpegBin/win/$${archName}/bin/avresample-3.dll
+    file_pathes += $$PWD/ffmpegBin/win/$${archName}/bin/avutil-55.dll
+    file_pathes += $$PWD/ffmpegBin/win/$${archName}/bin/swresample-2.dll
+    file_pathes += $$PWD/ffmpegBin/win/$${archName}/bin/swscale-4.dll
 
     clear(destination_pathes)
     destination_pathes += $$QT.core.bins
