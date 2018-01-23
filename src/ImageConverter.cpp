@@ -216,7 +216,7 @@ bool ImageConverter::prepareData()
     d.bits.resize(nb_planes);
     d.pitchs.resize(nb_planes);
     // alignment is 16. sws in ffmpeg is 16, libav10 is 8
-    const int kAlign = 16;
+    const int kAlign = 8;
     AV_ENSURE(av_image_fill_linesizes((int*)d.pitchs.constData(), d.fmt_out, kAlign > 7 ? FFALIGN(d.w_out, 8) : d.w_out), false);
     for (int i = 0; i < d.pitchs.size(); ++i)
         d.pitchs[i] = FFALIGN(d.pitchs[i], kAlign);
