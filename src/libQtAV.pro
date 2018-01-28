@@ -118,8 +118,9 @@ config_gl|config_opengl {
 DEFINES += __STDC_CONSTANT_MACROS
 android {
   CONFIG *= config_opensl
-  !no_gui_private:qtHaveModule(androidextras) { #qt5.2 has QAndroidJniObject
-    QT *= androidextras gui-private #QPlatformNativeInterface get "QtActivity"
+  SOURCES *= jmi/jmi.cpp
+  qtHaveModule(androidextras) { #qt5.2 has QAndroidJniObject
+    QT *= androidextras #QPlatformNativeInterface get "QtActivity"
     SOURCES *= io/AndroidIO.cpp
     SOURCES *= codec/video/VideoDecoderMediaCodec.cpp
     exists($$[QT_INSTALL_HEADERS]/MediaCodecTextureStandalone.h) {
