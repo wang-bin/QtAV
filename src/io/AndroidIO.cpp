@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2015)
 
@@ -24,10 +24,10 @@
 #include "QtAV/private/mkid.h"
 #include "QtAV/private/factory.h"
 #include <QtCore/QFile>
-#include <qpa/qplatformnativeinterface.h>
 #include <QtGui/QGuiApplication>
 #include <QtAndroidExtras>
 #include "utils/Logger.h"
+#include "jmi/jmi.h"
 
 // TODO: how to get filename and find subtitles?
 //http://stackoverflow.com/questions/5657411/android-getting-a-file-uri-from-a-content-uri
@@ -46,7 +46,7 @@ public:
     QString name() const Q_DECL_OVERRIDE { return QLatin1String(kName);}
     const QStringList& protocols() const Q_DECL_OVERRIDE
     {
-        static QStringList p = QStringList() << QStringLiteral("content"); // "file:" is supported too but we use QFile
+        static QStringList p = QStringList() << QStringLiteral("content") << QStringLiteral("android.resource"); // "file:" is supported too but we use QFile
         return p;
     }
     virtual bool isSeekable() const Q_DECL_OVERRIDE;
@@ -63,7 +63,6 @@ protected:
     void onUrlChanged() Q_DECL_OVERRIDE;
 
 private:
-    QAndroidJniObject app_ctx;
     QFile qt_file;
     // if use Java.io.InputStream, record pos
 };
@@ -74,9 +73,7 @@ FACTORY_REGISTER(MediaIO, Android, kName)
 AndroidIO::AndroidIO()
     : MediaIO()
 {
-    QPlatformNativeInterface *interface = QGuiApplication::platformNativeInterface();
-    jobject activity = (jobject)interface->nativeResourceForIntegration("QtActivity");
-    app_ctx = QAndroidJniObject(activity).callObjectMethod("getApplicationContext","()Landroid/content/Context;");
+    jmi::javaVM(QAndroidJniEnvironment::javaVM()); // nativeResourceForIntegration("javaVM")
 }
 
 bool AndroidIO::isSeekable() const
@@ -106,22 +103,45 @@ qint64 AndroidIO::position() const
 void AndroidIO::onUrlChanged()
 {
     qt_file.close();
-    QAndroidJniObject content_resolver = app_ctx.callObjectMethod("getContentResolver", "()Landroid/content/ContentResolver;");
-    if (!content_resolver.isValid()) {
-        qWarning("getContentResolver error");
+    if (url().isEmpty())
+        return;
+    struct Application final: jmi::ClassTag { static std::string name() {return "android/app/Application";}};
+    jmi::JObject<Application> app_ctx(jmi::android::application());
+
+    struct ContentResolver final: jmi::ClassTag { static std::string name() { return "android/content/ContentResolver";}};
+	struct GetContentResolver final: jmi::MethodTag { static const char* name() {return "getContentResolver";}};
+    jmi::JObject<ContentResolver> cr = app_ctx.call<jmi::JObject<ContentResolver>, GetContentResolver>();
+    if (!cr.error().empty()) {
+        qWarning("getContentResolver error: %s", cr.error().data());
         return;
     }
-    QAndroidJniObject s = QAndroidJniObject::fromString(url());
-    QAndroidJniObject uri = QAndroidJniObject::callStaticObjectMethod("android/net/Uri", "parse", "(Ljava/lang/String;)Landroid/net/Uri;", s.object<jstring>());
-    //input_stream = content_resolver.callObjectMethod("openInputStream", "(Landroid.net.Uri;)Ljava.io.InputStream;", uri.object<jobject>()); // TODO: why error?
-    //qDebug() << "onUrlChanged InputStream: " << input_stream.toString();
-    s = QAndroidJniObject::fromString(QStringLiteral("r"));
-    QAndroidJniObject pfd = content_resolver.callObjectMethod("openFileDescriptor", "(Landroid/net/Uri;Ljava/lang/String;)Landroid/os/ParcelFileDescriptor;", uri.object<jobject>(), s.object<jstring>());
-    if (!pfd.isValid()) {
-        qWarning("openFileDescriptor error");
+    struct Uri final: jmi::ClassTag { static std::string name() { return "android/net/Uri";}};
+	struct Parse final: jmi::MethodTag { static const char* name() {return "parse";}};
+    jmi::JObject<Uri> uri = jmi::JObject<Uri>::callStatic<jmi::JObject<Uri>, Parse>(url().toUtf8().constData()); // move?
+    // openInputStream?
+    struct ParcelFileDescriptor final: jmi::ClassTag { static std::string name() { return "android/os/ParcelFileDescriptor";}};
+    // AssetFileDescriptor supported schemes: content, android.resource, file
+    // ParcelFileDescriptor supported schemes: content, file
+#if 1
+    struct AssetFileDescriptor final: jmi::ClassTag { static std::string name() { return "android/content/res/AssetFileDescriptor";}};
+	struct OpenAssetFileDescriptor final: jmi::MethodTag { static const char* name() {return "openAssetFileDescriptor";}};
+    jmi::JObject<AssetFileDescriptor> afd = cr.call<jmi::JObject<AssetFileDescriptor>, OpenAssetFileDescriptor>(std::move(uri), "r"); // TODO: rw
+    if (!afd.error().empty()) {
+        qWarning("openAssetFileDescriptor error: %s", afd.error().data());
         return;
     }
-    int fd = pfd.callMethod<int>("detachFd", "()I");
+	struct GetParcelFileDescriptor final: jmi::MethodTag { static const char* name() {return "getParcelFileDescriptor";}};
+    jmi::JObject<ParcelFileDescriptor> pfd = afd.call<jmi::JObject<ParcelFileDescriptor>, GetParcelFileDescriptor>();
+#else
+	struct OpenFileDescriptor final: jmi::MethodTag { static const char* name() {return "openFileDescriptor";}};
+    jmi::JObject<ParcelFileDescriptor> pfd = cr.call<jmi::JObject<ParcelFileDescriptor>, OpenFileDescriptor>(std::move(uri), "r");
+#endif
+    if (!pfd.error().empty()) {
+        qWarning("get ParcelFileDescriptor error: %s", pfd.error().data());
+        return;
+    }
+	struct DetachFd final: jmi::MethodTag { static const char* name() {return "detachFd";}};
+    int fd = pfd.call<int,DetachFd>();
     qt_file.open(fd, QIODevice::ReadOnly);
 }
 } //namespace QtAV
