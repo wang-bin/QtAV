@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -173,7 +173,12 @@ void OpenGLVideoPrivate::updateGeometry(VideoShader* shader, const QRectF &t, co
     gr->updateGeometry(geometry);
 }
 
-OpenGLVideo::OpenGLVideo() {}
+OpenGLVideo::OpenGLVideo() {
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
+// TODO: system resolution change
+    connect(QGuiApplication::instance(), SIGNAL(primaryScreenChanged(QScreen*)), this, SLOT(updateViewport()));
+#endif
+}
 
 bool OpenGLVideo::isSupported(VideoFormat::PixelFormat pixfmt)
 {
@@ -206,16 +211,8 @@ void OpenGLVideo::setOpenGLContext(QOpenGLContext *ctx)
     d.material->setSaturation(s);
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     d.manager = ctx->findChild<ShaderManager*>(QStringLiteral("__qtav_shader_manager"));
-    QSizeF surfaceSize = ctx->surface()->size();
-#if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
-    surfaceSize *= ctx->screen()->devicePixelRatio();
-#else
-    surfaceSize *= qApp->devicePixelRatio(); //TODO: window()->devicePixelRatio() is the window screen's
 #endif
-#else
-    QSizeF surfaceSize = QSizeF(ctx->device()->width(), ctx->device()->height());
-#endif
-    setProjectionMatrixToRect(QRectF(QPointF(), surfaceSize));
+    updateViewport();
     if (d.manager)
         return;
     // TODO: what if ctx is delete?
@@ -387,4 +384,21 @@ void OpenGLVideo::resetGL()
     d_func().resetGL();
 }
 
+void OpenGLVideo::updateViewport()
+{
+    DPTR_D(OpenGLVideo);
+    if (!d.ctx)
+        return;
+#if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
+    QSizeF surfaceSize = d.ctx->surface()->size();
+#if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
+    surfaceSize *= d.ctx->screen()->devicePixelRatio();
+#else
+    surfaceSize *= qApp->devicePixelRatio(); //TODO: window()->devicePixelRatio() is the window screen's
+#endif
+#else
+    QSizeF surfaceSize = QSizeF(d.ctx->device()->width(), d.ctx->device()->height());
+#endif
+    setProjectionMatrixToRect(QRectF(QPointF(), surfaceSize));
+}
 } //namespace QtAV
