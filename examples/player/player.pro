@@ -3,6 +3,10 @@ TEMPLATE = app
 contains(QT_CONFIG, opengl): QT += opengl
 QT += sql svg
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+
+# on linux QMAKE_POST_LINK is run only in app TEMPLATE
+linux: include(../../runSdkInstall.pri)
+
 TRANSLATIONS = res/player_zh_CN.ts res/player.ts
 !static:VERSION = $$QTAV_VERSION # vc: will create exp and lib, result in static build error
 
