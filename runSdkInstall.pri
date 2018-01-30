@@ -60,6 +60,7 @@ else:linux:{
 
     clear(destination_pathes)
     destination_pathes += $$QT.core.bins
+    destination_pathes += $$QT.core.libs
 
     copyFiles($$file_pathes)
 }
