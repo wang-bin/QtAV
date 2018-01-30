@@ -31,6 +31,7 @@ namespace QtAV {
 class VideoCapture;
 class VideoFrame;
 class VideoThreadPrivate;
+class AVPlayer;
 class VideoThread : public AVThread
 {
     Q_OBJECT
