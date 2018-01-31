@@ -59,7 +59,6 @@ else:linux:{
     file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libswscale.so.4
 
     clear(destination_pathes)
-    destination_pathes += $$QT.core.bins
     destination_pathes += $$QT.core.libs
 
     copyFiles($$file_pathes)
