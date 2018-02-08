@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2013)
 
@@ -36,6 +36,7 @@ class FramePrivate : public QSharedData
 public:
     FramePrivate()
         : timestamp(0)
+        , data_align(1)
     {}
     virtual ~FramePrivate() {}
 
@@ -44,6 +45,7 @@ public:
     QVariantMap metadata;
     QByteArray data;
     qreal timestamp;
+    int data_align;
 };
 
 } //namespace QtAV

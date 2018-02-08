@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -154,11 +154,12 @@ VideoFrame::VideoFrame()
 {
 }
 
-VideoFrame::VideoFrame(int width, int height, const VideoFormat &format, const QByteArray& data)
+VideoFrame::VideoFrame(int width, int height, const VideoFormat &format, const QByteArray& data, int alignment)
     : Frame(new VideoFramePrivate(width, height, format))
 {
     Q_D(VideoFrame);
     d->data = data;
+    d->data_align = alignment;
 }
 
 VideoFrame::VideoFrame(const QImage& image)
@@ -353,7 +354,7 @@ QImage VideoFrame::toImage(QImage::Format fmt, const QSize& dstSize, const QRect
     VideoFrame f(to(VideoFormat(VideoFormat::pixelFormatFromImageFormat(fmt)), dstSize, roi));
     if (!f)
         return QImage();
-    QImage image((const uchar*)f.frameData().constData(), f.width(), f.height(), f.bytesPerLine(0), fmt);
+    QImage image(f.frameDataPtr(), f.width(), f.height(), f.bytesPerLine(0), fmt);
     return image.copy();
 }
 
@@ -395,7 +396,7 @@ VideoFrame VideoFrame::to(const VideoFormat &fmt, const QSize& dstSize, const QR
         qWarning() << "VideoFrame::to error: " << format() << "=>" << fmt;
         return VideoFrame();
     }
-    VideoFrame f(w, h, fmt, conv.outData());
+    VideoFrame f(w, h, fmt, conv.outData(), ImageConverter::DataAlignment);
     f.setBits(conv.outPlanes());
     f.setBytesPerLine(conv.outLineSizes());
     if (fmt.isRGB()) {

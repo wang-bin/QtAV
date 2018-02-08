@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -52,7 +52,8 @@ public:
     VideoFrame();
     //must set planes and linesize manually if data is empty
     // must set planes and linesize manually
-    VideoFrame(int width, int height, const VideoFormat& format, const QByteArray& data = QByteArray());
+    // alignment: data ptr alignment
+    VideoFrame(int width, int height, const VideoFormat& format, const QByteArray& data = QByteArray(), int alignment = 1);
     VideoFrame(const QImage& image);
     VideoFrame(const VideoFrame &other);
     ~VideoFrame();

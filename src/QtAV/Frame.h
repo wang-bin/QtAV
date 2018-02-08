@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -61,7 +61,17 @@ public:
      */
     int bytesPerLine(int plane = 0) const;
     // the whole frame data. may be empty unless clone() or allocate is called
+    // real data starts with dataAlignment() aligned address
     QByteArray frameData() const;
+    int dataAlignment() const;
+    uchar* frameDataPtr(int* size = NULL) const {
+        const int a = dataAlignment();
+        uchar* p = (uchar*)frameData().constData();
+        const int offset = (a - ((uintptr_t)p & (a-1))) & (a-1);
+        if (size)
+            *size = frameData().size() - offset;
+        return p+offset;
+    }
     // deep copy 1 plane data
     QByteArray data(int plane = 0) const;
     uchar* bits(int plane = 0);
