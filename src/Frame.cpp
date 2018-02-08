@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -57,6 +57,11 @@ int Frame::bytesPerLine(int plane) const
 QByteArray Frame::frameData() const
 {
     return d_func()->data;
+}
+
+int Frame::dataAlignment() const
+{
+    return d_func()->data_align;
 }
 
 QByteArray Frame::data(int plane) const

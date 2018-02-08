@@ -1,6 +1,6 @@
 /******************************************************************************
     ImageConverter: Base class for image resizing & color model convertion
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -35,9 +35,12 @@ class ImageConverter //export is not needed
 {
     DPTR_DECLARE_PRIVATE(ImageConverter)
 public:
+    enum { DataAlignment = 16 };
+
     ImageConverter();
     virtual ~ImageConverter();
 
+    // the real data starts with DataAlignment (16bit) aligned address
     QByteArray outData() const;
     // return false if i/o format not supported, or size is not valid.
     // TODO: use isSupported(i/o format);

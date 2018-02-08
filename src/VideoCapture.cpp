@@ -1,6 +1,6 @@
 /******************************************************************************
     VideoCapture.cpp: description
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
     
 *   This file is part of QtAV
 
@@ -84,7 +84,9 @@ public:
                 QMetaObject::invokeMethod(cap, "failed");
                 return;
             }
-            if (file.write(frame.frameData()) <= 0) {
+            int sz = 0;
+            const char* data = (const char*)frame.frameDataPtr(&sz);
+            if (file.write(data, sz) <= 0) {
                 qWarning("VideoCapture is failed to write captured frame with original format");
                 QMetaObject::invokeMethod(cap, "failed");
                 file.close();

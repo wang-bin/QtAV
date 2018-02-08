@@ -46,7 +46,7 @@ ImageConverter::~ImageConverter()
 QByteArray ImageConverter::outData() const
 {
     DPTR_D(const ImageConverter);
-    return QByteArray::fromRawData(d.data_out.constData()+d.out_offset, d.data_out.size() - d.out_offset);
+    return d.data_out;
 }
 
 bool ImageConverter::check() const
@@ -216,8 +216,8 @@ bool ImageConverter::prepareData()
     const int nb_planes = qMax(av_pix_fmt_count_planes(d.fmt_out), 0);
     d.bits.resize(nb_planes);
     d.pitchs.resize(nb_planes);
-    // alignment is 16. sws in ffmpeg is 16, libav10 is 8
-    const int kAlign = 16;
+    // alignment is 16. sws in ffmpeg is 16, libav10 is 8. if not aligned sws will print warnings and go slow code paths
+    const int kAlign = DataAlignment;
     AV_ENSURE(av_image_fill_linesizes((int*)d.pitchs.constData(), d.fmt_out, kAlign > 7 ? FFALIGN(d.w_out, 8) : d.w_out), false);
     for (int i = 0; i < d.pitchs.size(); ++i)
         d.pitchs[i] = FFALIGN(d.pitchs[i], kAlign);
