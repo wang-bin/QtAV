@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -43,6 +43,7 @@ public:
         , contrast(0)
         , saturation(0)
         , update_data(true)
+        , out_offset(0)
     {
         bits.reserve(8);
         pitchs.reserve(8);
@@ -57,6 +58,7 @@ public:
     ColorRange range_in, range_out;
     int brightness, contrast, saturation;
     bool update_data;
+    int out_offset;
     QByteArray data_out;
     QVector<quint8*> bits;
     QVector<int> pitchs;
