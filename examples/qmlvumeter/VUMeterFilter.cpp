@@ -58,7 +58,7 @@ void VUMeterFilter::process(Statistics *statistics, AudioFrame *frame)
     }
     if (!qFuzzyCompare(level[1], mRight)) {
         mRight = level[1];
-        Q_EMIT leftLevelChanged(mRight);
+        Q_EMIT rightLevelChanged(mRight);
     }
     //qDebug("db: %d --- %d", mLeft, mRight);
 }
