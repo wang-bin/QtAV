@@ -51,6 +51,7 @@ public:
     EGLInteropResource()
         : egl(new EGL())
         , vp(0)
+        , boundTex(0)
     {}
     ~EGLInteropResource();
     VideoFormat::PixelFormat format(DXGI_FORMAT) const Q_DECL_OVERRIDE { return VideoFormat::Format_RGB32;}
@@ -63,6 +64,7 @@ private:
     EGL* egl;
     dx::D3D11VP *vp;
     ComPtr<ID3D11Texture2D> d3dtex;
+    GLuint boundTex;
 };
 
 InteropResource* CreateInteropEGL() { return new EGLInteropResource();}
@@ -164,9 +166,14 @@ bool EGLInteropResource::map(ComPtr<ID3D11Texture2D> surface, int index, GLuint 
     vp->setSourceRect(QRect(0, 0, w, h));
     if (!vp->process(surface.Get(), index))
         return false;
+    if (boundTex == tex)
+        return true;
     DYGL(glBindTexture(GL_TEXTURE_2D, tex));
-    eglBindTexImage(egl->dpy, egl->surface, EGL_BACK_BUFFER);
+    if (boundTex)
+        EGL_WARN(eglReleaseTexImage(egl->dpy, egl->surface, EGL_BACK_BUFFER));
+    EGL_WARN(eglBindTexImage(egl->dpy, egl->surface, EGL_BACK_BUFFER));
     DYGL(glBindTexture(GL_TEXTURE_2D, 0));
+    boundTex = tex;
     return true;
 }
 } //namespace d3d11
