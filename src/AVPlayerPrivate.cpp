@@ -672,7 +672,7 @@ void AVPlayer::Private::applyAutoPlay(AVPlayer *player, bool autoPlay)
     disconnect(&autoPlay_timer,SIGNAL(timeout()),player,SLOT(updateAutoPlay()));
     if(autoPlay)
     {
-        autoPlay_timer.setInterval(5000);
+        autoPlay_timer.setInterval(disconnectTimeout);
         connect(&autoPlay_timer,SIGNAL(timeout()),player,SLOT(updateAutoPlay()));
     }
 }
@@ -791,7 +791,11 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
         if(statistics.bandwidthRate>0)
         {
             if(autoPlay_timer.isActive())
+            {
                 autoPlay_timer.stop();
+                if(autoPlay_timer.interval()!=disconnectTimeout)
+                    autoPlay_timer.setInterval(disconnectTimeout);
+            }
         }
         else
         {

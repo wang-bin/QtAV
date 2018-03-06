@@ -468,6 +468,21 @@ void QmlAVPlayer::setMediaDataTimerInterval(int value)
     }
 }
 
+int QmlAVPlayer::disconnectTimeout() const
+{
+    return mpPlayer->disconnectTimeout();
+}
+
+void QmlAVPlayer::setDisconnectTimeout(int value)
+{
+    if (mpPlayer->disconnectTimeout() == value)
+        return;
+    if (mpPlayer) {
+        mpPlayer->setDisconnectTimeout(value);
+        Q_EMIT disconnectTimeoutChanged();
+    }
+}
+
 void QmlAVPlayer::startRecording(QString filePath, int duration)
 {
     mpPlayer->startRecording(filePath, duration);

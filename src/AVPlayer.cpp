@@ -504,6 +504,20 @@ void AVPlayer::setMediaDataTimerInterval(int value)
     d->mediaDataTimer.setInterval(value);
 }
 
+int AVPlayer::disconnectTimeout() const
+{
+    return d->disconnectTimeout;
+}
+
+void AVPlayer::setDisconnectTimeout(int value)
+{
+    if (d->disconnectTimeout == value)
+        return;
+    d->disconnectTimeout = value;
+    d->autoPlay_timer.setInterval(value);
+    Q_EMIT disconnectTimeoutChanged(value);
+}
+
 void AVPlayer::resetMediaData()
 {
     d->mediaDataTimer.stop();
@@ -1483,6 +1497,8 @@ void AVPlayer::updateAutoPlay()
         stop();
     load();
     play();
+    if(d->autoPlay_timer.interval()!=5000)
+        d->autoPlay_timer.setInterval(5000);// to try reconnecting in 5 seconds
 }
 
 void AVPlayer::onMediaStatusChanged(MediaStatus status)
@@ -1501,6 +1517,8 @@ void AVPlayer::onMediaStatusChanged(MediaStatus status)
             d->clock->pause(false);
 
         d->autoPlay_timer.stop();
+        if(d->autoPlay_timer.interval()!=d->disconnectTimeout)
+            d->autoPlay_timer.setInterval(d->disconnectTimeout);
     }
 }
 

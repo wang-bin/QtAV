@@ -181,6 +181,8 @@ public:
 
     QTimer mediaDataTimer;
     QVariantMap mediaData;
+
+    int disconnectTimeout = 5000;
 };
 
 } //namespace QtAV
