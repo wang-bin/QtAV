@@ -67,7 +67,7 @@ public:
     uchar* frameDataPtr(int* size = NULL) const {
         const int a = dataAlignment();
         uchar* p = (uchar*)frameData().constData();
-        const int offset = (a - ((uintptr_t)p & (a-1))) & (a-1);
+        const int offset = (a - ((quintptr)p & (a-1))) & (a-1);
         if (size)
             *size = frameData().size() - offset;
         return p+offset;
