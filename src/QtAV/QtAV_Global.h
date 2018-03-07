@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -168,11 +168,9 @@ Q_DECLARE_METATYPE(QtAV::MediaEndAction)
 #ifndef QByteArrayLiteral
 #define QByteArrayLiteral(str) QByteArray(str, sizeof(str) - 1)
 #endif
-/*
- * msvc sucks! can not deal with (defined(QTAV_HAVE_##FEATURE) && QTAV_HAVE_##FEATURE)
- */
+
 // TODO: internal use. move to a private header
-#define QTAV_HAVE(FEATURE) (defined QTAV_HAVE_##FEATURE && QTAV_HAVE_##FEATURE)
+#define QTAV_HAVE(FEATURE) (QTAV_HAVE_##FEATURE+0)
 
 #ifndef Q_DECL_OVERRIDE
 #define Q_DECL_OVERRIDE

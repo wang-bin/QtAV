@@ -12,7 +12,7 @@ qtav ($1) $2; urgency=low
 EOF
 }
 
-DISTRIBUTIONS=(artful trusty vivid wily xenial yakkety zesty)
+DISTRIBUTIONS=(trusty vivid wily xenial yakkety zesty artful)
 DATE=`date -d @$(git log -n1 --format="%at") +%Y%m%d`
 idx=0
 for D in ${DISTRIBUTIONS[@]}; do
