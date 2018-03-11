@@ -748,10 +748,9 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
             mediaData["realResolution"] = statistics.realResolution;
             mediaData["connected"] = true;
             mediaData["protocol"] = player->file().mid(0,player->file().indexOf(":")).toUpper();
-            elapsedTimer.invalidate();
+            elapsedTimer.start();
             totalElapsedTimer.start();
             mediaDataTimer.start();
-            QMetaObject::invokeMethod(&mediaDataTimer,"timeout", Qt::QueuedConnection);
             emit player->mediaDataTimerStarted();
         });
     });
