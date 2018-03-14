@@ -10,6 +10,9 @@ folder_01.target = qml
 #will copy to target path
 #DEPLOYMENTFOLDERS = folder_01
 
+# on linux QMAKE_POST_LINK is run only in app TEMPLATE
+linux: include(../../runSdkInstall.pri)
+
 # Additional import path used to resolve QML modules in Creator's code model
 QML_IMPORT_PATH =
 

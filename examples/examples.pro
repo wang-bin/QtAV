@@ -2,29 +2,30 @@ TEMPLATE = subdirs
 
 SUBDIRS = common
 !android:!ios:!winrt {
-  SUBDIRS += audiopipeline
+  #SUBDIRS += audiopipeline
 !no-widgets {
-  SUBDIRS += \
-    sharedoutput \
-    simpletranscode \
-    simpleplayer \
-    player \
-    filters \
-    framereader \
-    videocapture \
-    videographicsitem \
-    videogroup \
-    videowall
-contains(QT_CONFIG, opengl): SUBDIRS += \
-    shader \
-    glslfilter
+#  SUBDIRS += \
+    #sharedoutput \
+    #simpletranscode \
+    #simpleplayer \
+    #player \
+    #filters \
+    #framereader \
+    #videocapture \
+    #videographicsitem \
+    #videogroup \
+    #videowall
+#contains(QT_CONFIG, opengl): SUBDIRS += \
+    #shader \
+    #glslfilter
 
-  player.depends += common
+  #player.depends += common
+
 
   sdk_build {
-    SUBDIRS *= \
-        simpleplayer/simpleplayer_sdk.pro \
-        player/player_sdk.pro
+    #SUBDIRS *= \
+        #simpleplayer/simpleplayer_sdk.pro \
+        #player/player_sdk.pro
   }
 }
 }
