@@ -593,9 +593,9 @@ Module {
         Property { name: "userFilter"; type: "VideoFilter"; isPointer: true }
         Property { name: "shader"; type: "QtAV::DynamicShaderObject"; isPointer: true }
         Property { name: "type"; type: "FilterType" }
-        Property { name: "emitFrameReceived"; type: "bool" }
+        Property { name: "makeQImage"; type: "bool" }
         Signal {
-            name: "frameReceived"
+            name: "imageReady"
             Parameter { name: "image"; type: "QImage" }
         }
     }

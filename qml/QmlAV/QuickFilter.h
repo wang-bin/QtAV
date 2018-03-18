@@ -35,7 +35,7 @@ class QuickVideoFilter : public VideoFilter
     Q_PROPERTY(VideoFilter* userFilter READ userFilter WRITE setUserFilter NOTIFY userFilterChanged)
     Q_PROPERTY(QtAV::DynamicShaderObject* shader READ shader WRITE setShader NOTIFY shaderChanged)
     Q_PROPERTY(FilterType type READ type WRITE setType NOTIFY typeChanged)
-    Q_PROPERTY(bool emitFrameReceived READ emitFrameReceived WRITE setEmitFrameReceived NOTIFY emitFrameReceivedChanged)
+    Q_PROPERTY(bool makeQImage READ makeQImage WRITE setMakeQImage NOTIFY makeQImageChanged)
     Q_ENUMS(FilterType)
 public:
     enum FilterType {
@@ -61,16 +61,16 @@ public:
     DynamicShaderObject* shader() const;
     void setShader(DynamicShaderObject* value);
 
-    bool emitFrameReceived() const;
-    void setEmitFrameReceived(bool value);
+    bool makeQImage() const;
+    void setMakeQImage(bool value);
 
 Q_SIGNALS:
     void avfilterChanged();
     void userFilterChanged();
     void shaderChanged();
     void typeChanged();
-    void emitFrameReceivedChanged();
-    void frameReceived(QImage image);
+    void makeQImageChanged();
+    void imageReady(const QImage& image);
 protected:
     void process(Statistics* statistics, VideoFrame* frame = 0) Q_DECL_OVERRIDE;
 };

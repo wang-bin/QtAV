@@ -44,7 +44,7 @@ public:
     VideoFilter *user_filter; // life time is managed by qml
     QScopedPointer<LibAVFilterVideo> avfilter;
     QScopedPointer<GLSLFilter> glslfilter;
-    bool emitFrameReceived = false;
+    bool makeQImage = false;
 };
 
 QuickVideoFilter::QuickVideoFilter(QObject *parent)
@@ -127,25 +127,25 @@ void QuickVideoFilter::setShader(DynamicShaderObject *value)
     Q_EMIT shaderChanged();
 }
 
-bool QuickVideoFilter::emitFrameReceived() const
+bool QuickVideoFilter::makeQImage() const
 {
-    return d_func().emitFrameReceived;
+    return d_func().makeQImage;
 }
 
-void QuickVideoFilter::setEmitFrameReceived(bool value)
+void QuickVideoFilter::setMakeQImage(bool value)
 {
     DPTR_D(QuickVideoFilter);
-    if (emitFrameReceived() == value)
+    if (makeQImage() == value)
         return;
-    d.emitFrameReceived = value;
-    emit emitFrameReceivedChanged();
+    d.makeQImage = value;
+    emit makeQImage();
 }
 
 void QuickVideoFilter::process(Statistics *statistics, VideoFrame *frame)
 {
     DPTR_D(QuickVideoFilter);
-    if(d.emitFrameReceived)
-        emit frameReceived(frame->toImage());
+    if(d.makeQImage)
+        emit imageReady(frame->toImage());
     if (!d.filter)
         return;
     d.filter->apply(statistics, frame);
