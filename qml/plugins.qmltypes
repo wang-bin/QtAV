@@ -598,5 +598,12 @@ Module {
             name: "imageReady"
             Parameter { name: "image"; type: "QImage" }
         }
+        Signal {
+            name: "frameReady"
+            Parameter { name: "frameHeight"; type: "int" }
+            Parameter { name: "frameWidth"; type: "int" }
+            Parameter { name: "frameData"; type: "QByteArray" }
+            Parameter { name: "bytesPerLine"; type: "int" }
+        }
     }
 }
