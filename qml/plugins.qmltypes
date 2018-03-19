@@ -593,7 +593,7 @@ Module {
         Property { name: "userFilter"; type: "VideoFilter"; isPointer: true }
         Property { name: "shader"; type: "QtAV::DynamicShaderObject"; isPointer: true }
         Property { name: "type"; type: "FilterType" }
-        Property { name: "makeQImage"; type: "bool" }
+        Property { name: "makeImage"; type: "bool" }
         Signal {
             name: "imageReady"
             Parameter { name: "image"; type: "QImage" }
