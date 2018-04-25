@@ -727,6 +727,7 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
     mediaData["realResolution"] = QSize(0,0);
     mediaData["connected"] = false;
     mediaData["protocol"] = QString();
+    mediaData["imageBufferSize"] = 0;
 
     connect(player,&AVPlayer::stopped,player,[this](){
         mediaData["connected"] = false;
@@ -748,6 +749,7 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
             mediaData["realResolution"] = statistics.realResolution;
             mediaData["connected"] = true;
             mediaData["protocol"] = player->file().mid(0,player->file().indexOf(":")).toUpper();
+            mediaData["imageBufferSize"] = statistics.imageBufferSize;
             elapsedTimer.start();
             totalElapsedTimer.start();
             mediaDataTimer.start();

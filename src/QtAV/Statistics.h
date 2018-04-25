@@ -125,6 +125,7 @@ public:
     qint64 droppedFrames = 0;
     qint64 totalKeyFrames = -1;
     QSize realResolution = QSize(0,0);
+    int imageBufferSize = 0;
 };
 
 } //namespace QtAV
