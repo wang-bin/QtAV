@@ -49,14 +49,14 @@ else:linux:{
     else: archName = 64
 
     clear(file_pathes)
-    file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libavcodec.so.57
-    file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libavdevice.so.57
-    file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libavfilter.so.6
-    file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libavformat.so.57
-    file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libavresample.so.3
-    file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libavutil.so.55
-    file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libswresample.so.2
-    file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libswscale.so.4
+    file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libavcodec.so.58
+    file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libavdevice.so.58
+    file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libavfilter.so.7
+    file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libavformat.so.58
+    file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libavresample.so.4
+    file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libavutil.so.56
+    file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libswresample.so.3
+    file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libswscale.so.5
 
     clear(destination_pathes)
     destination_pathes += $$QT.core.libs
