@@ -123,6 +123,7 @@ public:
     qint64 totalFrames = 0;
     qint64 droppedPackets = 0;
     qint64 droppedFrames = 0;
+    qint64 lostFrames = 0;
     qint64 totalKeyFrames = -1;
     QSize realResolution = QSize(0,0);
     int imageBufferSize = 0;
