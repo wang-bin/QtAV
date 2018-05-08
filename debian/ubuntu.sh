@@ -22,7 +22,7 @@ for D in ${DISTRIBUTIONS[@]}; do
   VER=1.12.0~`git log -1 --pretty=format:"git${DATE}.%h~${D}" 2> /dev/null`
   mkchangelog $VER $D
   if [ $idx -gt 3 ]; then
-    sed -i 's,qtdeclarative5-controls-plugin,qml-module-qtquick-controls,g;s,qtdeclarative5-folderlistmodel-plugin,qml-module-qt-labs-folderlistmodel,g;s,qtdeclarative5-dialogs-plugin,qml-module-qtquick-dialogs,g' debian/control
+    sed -i 's,qtdeclarative5-controls-plugin,qml-module-qtquick-controls,g;s,qtdeclarative5-folderlistmodel-plugin,qml-module-qt-labs-folderlistmodel,g;s,qtdeclarative5-settings-plugin,qml-module-qt-labs-settings,g;s,qtdeclarative5-dialogs-plugin,qml-module-qtquick-dialogs,g' debian/control
   fi
   debuild -S -sa
   dput -f ppa:wbsecg1/qtav ../qtav_${VER}_source.changes
