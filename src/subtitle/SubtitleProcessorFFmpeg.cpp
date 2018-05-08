@@ -91,8 +91,14 @@ QStringList ffmpeg_supported_sub_extensions_by_codec()
         if (c->type != AVMEDIA_TYPE_SUBTITLE)
             continue;
         qDebug("sub codec: %s", c->name);
-        AVInputFormat *i = av_iformat_next(NULL);
-        while (i) {
+        const AVInputFormat *i = NULL;
+#if AVFORMAT_STATIC_REGISTER
+        void* it2 = NULL;
+        while ((i = av_demuxer_iterate(&it2))) {
+#else
+        av_register_all(); // MUST register all input/output formats
+        while ((i = av_iformat_next(i))) {
+#endif
             if (!strcmp(i->name, c->name)) {
                 qDebug("found iformat");
                 if (i->extensions) {
@@ -103,7 +109,6 @@ QStringList ffmpeg_supported_sub_extensions_by_codec()
                 }
                 break;
             }
-            i = av_iformat_next(i);
         }
         if (!i) {
             //qDebug("codec name '%s' is not found in AVInputFormat, just append codec name", c->name);
@@ -116,8 +121,14 @@ QStringList ffmpeg_supported_sub_extensions_by_codec()
 QStringList ffmpeg_supported_sub_extensions()
 {
     QStringList exts;
-    AVInputFormat *i = NULL;
+    const AVInputFormat *i = NULL;
+#if AVFORMAT_STATIC_REGISTER
+    void* it = NULL;
+    while ((i = av_demuxer_iterate(&it))) {
+#else
+    av_register_all(); // MUST register all input/output formats
     while ((i = av_iformat_next(i))) {
+#endif
         // strstr parameters can not be null
         if (i->long_name && strstr(i->long_name, "subtitle")) {
             if (i->extensions) {
@@ -131,7 +142,7 @@ QStringList ffmpeg_supported_sub_extensions()
     QStringList codecs;
     const AVCodec* c = NULL;
 #if AVCODEC_STATIC_REGISTER
-    void* it = NULL;
+    it = NULL;
     while ((c = av_codec_iterate(&it))) {
 #else
     avcodec_register_all();
