@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -190,7 +190,7 @@ QString aboutQtAV_HTML()
 {
     static QString about = QString::fromLatin1("<img src='qrc:/QtAV.svg'><h3>QtAV " QTAV_VERSION_STR_LONG "</h3>\n"
             "<p>%1</p><p>%2</p><p>%3 </p>"
-            "<p>Copyright (C) 2012-2017 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>\n"
+            "<p>Copyright (C) 2012-2018 Wang Bin (aka. Lucas Wang) <a href='mailto:wbsecg1@gmail.com'>wbsecg1@gmail.com</a></p>\n"
             "<p>%4: <a href='http://qtav.org/donate.html'>http://qtav.org/donate.html</a></p>\n"
             "<p>%5: <a href='https://github.com/wang-bin/QtAV'>https://github.com/wang-bin/QtAV</a></p>\n"
             "<p>%6: <a href='http://qtav.org'>http://qtav.org</a></p>"
@@ -305,9 +305,14 @@ QString avcodecOptions()
     void* obj = const_cast<void*>(reinterpret_cast<const void*>(avcodec_get_class()));
     opts = Internal::optionsToString((void*)&obj);
     opts.append(ushort('\n'));
+    const AVCodec* c = NULL;
+#if AVCODEC_STATIC_REGISTER
+    void* it = NULL;
+    while ((c = av_codec_iterate(&it))) {
+#else
     avcodec_register_all();
-    AVCodec* c = NULL;
-    while ((c=av_codec_next(c))) {
+    while ((c = av_codec_next(c))) {
+#endif
         QString opt(Internal::optionsToString((void*)&c->priv_class).trimmed());
         if (opt.isEmpty())
             continue;

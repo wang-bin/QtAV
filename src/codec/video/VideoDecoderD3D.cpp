@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2016)
 
@@ -34,7 +34,9 @@ namespace QtAV {
 
 static bool check_ffmpeg_hevc_dxva2()
 {
+#if !AVCODEC_STATIC_REGISTER
     avcodec_register_all();
+#endif
     AVHWAccel *hwa = av_hwaccel_next(0);
     while (hwa) {
         if (strncmp("hevc_dxva2", hwa->name, 10) == 0)

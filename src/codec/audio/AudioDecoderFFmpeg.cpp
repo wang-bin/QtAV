@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -63,7 +63,9 @@ public:
         : AudioDecoderPrivate()
         , frame(av_frame_alloc())
     {
+#if !AVCODEC_STATIC_REGISTER
         avcodec_register_all();
+#endif
     }
     ~AudioDecoderFFmpegPrivate() {
         if (frame) {

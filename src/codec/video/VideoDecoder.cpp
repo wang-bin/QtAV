@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -93,9 +93,14 @@ QStringList VideoDecoder::supportedCodecs()
     static QStringList codecs;
     if (!codecs.isEmpty())
         return codecs;
+    const AVCodec* c = NULL;
+#if AVCODEC_STATIC_REGISTER
+    void* it = NULL;
+    while ((c = av_codec_iterate(&it))) {
+#else
     avcodec_register_all();
-    AVCodec* c = NULL;
-    while ((c=av_codec_next(c))) {
+    while ((c = av_codec_next(c))) {
+#endif
         if (!av_codec_is_decoder(c) || c->type != AVMEDIA_TYPE_VIDEO)
             continue;
         codecs.append(QString::fromLatin1(c->name));

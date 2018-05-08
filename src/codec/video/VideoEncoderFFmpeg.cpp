@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2015)
 
@@ -90,7 +90,9 @@ public:
         : VideoEncoderPrivate()
         , nb_encoded(0)
     {
+#if !AVCODEC_STATIC_REGISTER
         avcodec_register_all();
+#endif
         // NULL: codec-specific defaults won't be initialized, which may result in suboptimal default settings (this is important mainly for encoders, e.g. libx264).
         avctx = avcodec_alloc_context3(NULL);
     }

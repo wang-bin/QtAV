@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -80,12 +80,16 @@ QString SubtitleProcessorFFmpeg::name() const
 QStringList ffmpeg_supported_sub_extensions_by_codec()
 {
     QStringList exts;
-    AVCodec *c = av_codec_next(NULL);
-    while (c) {
-        if (c->type != AVMEDIA_TYPE_SUBTITLE) {
-            c = av_codec_next(c);
+    const AVCodec* c = NULL;
+#if AVCODEC_STATIC_REGISTER
+    void* it = NULL;
+    while ((c = av_codec_iterate(&it))) {
+#else
+    avcodec_register_all();
+    while ((c = av_codec_next(c))) {
+#endif
+        if (c->type != AVMEDIA_TYPE_SUBTITLE)
             continue;
-        }
         qDebug("sub codec: %s", c->name);
         AVInputFormat *i = av_iformat_next(NULL);
         while (i) {
@@ -105,7 +109,6 @@ QStringList ffmpeg_supported_sub_extensions_by_codec()
             //qDebug("codec name '%s' is not found in AVInputFormat, just append codec name", c->name);
             //exts.append(c->name);
         }
-        c = av_codec_next(c);
     }
     return exts;
 }
@@ -127,7 +130,13 @@ QStringList ffmpeg_supported_sub_extensions()
     // AVCodecDescriptor.name and AVCodec.name may be different. avcodec_get_name() use AVCodecDescriptor if possible
     QStringList codecs;
     const AVCodec* c = NULL;
+#if AVCODEC_STATIC_REGISTER
+    void* it = NULL;
+    while ((c = av_codec_iterate(&it))) {
+#else
+    avcodec_register_all();
     while ((c = av_codec_next(c))) {
+#endif
         if (c->type == AVMEDIA_TYPE_SUBTITLE)
             codecs.append(QString::fromLatin1(c->name));
     }

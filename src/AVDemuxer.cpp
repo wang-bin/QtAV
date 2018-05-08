@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -326,7 +326,9 @@ AVDemuxer::AVDemuxer(QObject *parent)
     class AVInitializer {
     public:
         AVInitializer() {
+#if !AVCODEC_STATIC_REGISTER
             avcodec_register_all();
+#endif
 #if QTAV_HAVE(AVDEVICE)
             avdevice_register_all();
 #endif
