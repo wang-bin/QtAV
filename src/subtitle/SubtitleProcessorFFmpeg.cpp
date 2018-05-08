@@ -91,12 +91,13 @@ QStringList ffmpeg_supported_sub_extensions_by_codec()
         if (c->type != AVMEDIA_TYPE_SUBTITLE)
             continue;
         qDebug("sub codec: %s", c->name);
-        const AVInputFormat *i = NULL;
 #if AVFORMAT_STATIC_REGISTER
+        const AVInputFormat *i = NULL;
         void* it2 = NULL;
         while ((i = av_demuxer_iterate(&it2))) {
 #else
         av_register_all(); // MUST register all input/output formats
+        AVInputFormat *i = NULL;
         while ((i = av_iformat_next(i))) {
 #endif
             if (!strcmp(i->name, c->name)) {
@@ -121,12 +122,13 @@ QStringList ffmpeg_supported_sub_extensions_by_codec()
 QStringList ffmpeg_supported_sub_extensions()
 {
     QStringList exts;
-    const AVInputFormat *i = NULL;
 #if AVFORMAT_STATIC_REGISTER
+    const AVInputFormat *i = NULL;
     void* it = NULL;
     while ((i = av_demuxer_iterate(&it))) {
 #else
     av_register_all(); // MUST register all input/output formats
+    AVInputFormat *i = NULL;
     while ((i = av_iformat_next(i))) {
 #endif
         // strstr parameters can not be null

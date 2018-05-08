@@ -275,11 +275,12 @@ QString avformatOptions()
     void* obj =  const_cast<void*>(reinterpret_cast<const void*>(avformat_get_class()));
     opts = Internal::optionsToString((void*)&obj);
     opts.append(ushort('\n'));
-    const AVInputFormat *i = NULL;
 #if AVFORMAT_STATIC_REGISTER
+    const AVInputFormat *i = NULL;
     void* it = NULL;
     while ((i = av_demuxer_iterate(&it))) {
 #else
+    AVInputFormat *i = NULL;
     av_register_all(); // MUST register all input/output formats
     while ((i = av_iformat_next(i))) {
 #endif
@@ -290,12 +291,13 @@ QString avformatOptions()
                     .arg(QLatin1String(i->name))
                     .arg(opt));
     }
-    const AVOutputFormat *o = NULL;
 #if AVFORMAT_STATIC_REGISTER
+    const AVOutputFormat *o = NULL;
     it = NULL;
     while ((o = av_muxer_iterate(&it))) {
 #else
     av_register_all(); // MUST register all input/output formats
+    AVOutputFormat *o = NULL;
     while ((o = av_oformat_next(o))) {
 #endif
         QString opt(Internal::optionsToString((void*)&o->priv_class).trimmed());

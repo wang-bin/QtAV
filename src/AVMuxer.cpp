@@ -189,12 +189,13 @@ static void getFFmpegOutputFormats(QStringList* formats, QStringList* extensions
     static QStringList fmts;
     if (exts.isEmpty() && fmts.isEmpty()) {
         QStringList e, f;
-        const AVOutputFormat *o = NULL;
 #if AVFORMAT_STATIC_REGISTER
+        const AVOutputFormat *o = NULL;
         void* it = NULL;
         while ((o = av_muxer_iterate(&it))) {
 #else
         av_register_all(); // MUST register all input/output formats
+        AVOutputFormat *o = NULL;
         while ((o = av_oformat_next(o))) {
 #endif
             if (o->extensions)
