@@ -14,6 +14,9 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 if(POLICY CMP0063) # visibility. since 3.3
   cmake_policy(SET CMP0063 NEW)
 endif()
+if(POLICY CMP0071)
+  cmake_policy(SET CMP0071 NEW)
+endif()
 set(CMAKE_CXX_VISIBILITY_PRESET hidden) #use with -fdata-sections -ffunction-sections to reduce target size
 set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 
