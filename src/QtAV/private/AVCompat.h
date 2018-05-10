@@ -1,7 +1,7 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
 	solve the version problem and diffirent api in FFmpeg and libav
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -60,6 +60,9 @@ extern "C"
 #include <libavutil/pixdesc.h>
 #include <libavutil/avstring.h>
 #include <libavfilter/version.h>
+
+#define AVCODEC_STATIC_REGISTER FFMPEG_MODULE_CHECK(LIBAVCODEC, 58, 10, 100)
+#define AVFORMAT_STATIC_REGISTER FFMPEG_MODULE_CHECK(LIBAVFORMAT, 58, 9, 100)
 
 #if !FFMPEG_MODULE_CHECK(LIBAVUTIL, 51, 73, 101)
 #include <libavutil/channel_layout.h>

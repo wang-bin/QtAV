@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -47,7 +47,9 @@ static AVCodec* get_codec(const QString &name, const QString& hwa, AVCodecID cid
 AVDecoder::AVDecoder(AVDecoderPrivate &d)
     :DPTR_INIT(&d)
 {
+#if !AVCODEC_STATIC_REGISTER
     avcodec_register_all(); // avcodec_find_decoder will always be used
+#endif
 }
 
 AVDecoder::~AVDecoder()

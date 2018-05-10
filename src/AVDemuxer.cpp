@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -335,11 +335,15 @@ AVDemuxer::AVDemuxer(QObject *parent)
     class AVInitializer {
     public:
         AVInitializer() {
+#if !AVCODEC_STATIC_REGISTER
             avcodec_register_all();
+#endif
 #if QTAV_HAVE(AVDEVICE)
             avdevice_register_all();
 #endif
+#if !AVFORMAT_STATIC_REGISTER
             av_register_all();
+#endif
             avformat_network_init();
         }
         ~AVInitializer() {
@@ -361,10 +365,16 @@ static void getFFmpegInputFormats(QStringList* formats, QStringList* extensions)
     static QStringList exts;
     static QStringList fmts;
     if (exts.isEmpty() && fmts.isEmpty()) {
-        av_register_all(); // MUST register all input/output formats
-        AVInputFormat *i = NULL;
         QStringList e, f;
+#if AVFORMAT_STATIC_REGISTER
+        const AVInputFormat *i = NULL;
+        void* it = NULL;
+        while ((i = av_demuxer_iterate(&it))) {
+#else
+        AVInputFormat *i = NULL;
+        av_register_all(); // MUST register all input/output formats
         while ((i = av_iformat_next(i))) {
+#endif
             if (i->extensions)
                 e << QString::fromLatin1(i->extensions).split(QLatin1Char(','), QString::SkipEmptyParts);
             if (i->name)
@@ -409,7 +419,9 @@ const QStringList &AVDemuxer::supportedProtocols()
 #if QTAV_HAVE(AVDEVICE)
     protocols << QStringLiteral("avdevice");
 #endif
+#if !AVFORMAT_STATIC_REGISTER
     av_register_all(); // MUST register all input/output formats
+#endif
     void* opq = 0;
     const char* protocol = avio_enum_protocols(&opq, 0);
     while (protocol) {

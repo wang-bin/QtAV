@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Media play library based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -18,11 +18,14 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
+#ifndef __APPLE__
+#error apple only
+#endif
 extern "C" {
 #include <libavcodec/videotoolbox.h>
 }
 int main()
 {
-    av_videotoolbox_alloc_context();
+    //av_videotoolbox_alloc_context();
     return 0;
 }

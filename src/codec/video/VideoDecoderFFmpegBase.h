@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -51,7 +51,9 @@ public:
         , width(0)
         , height(0)
     {
+#if !AVCODEC_STATIC_REGISTER
         avcodec_register_all();
+#endif
         frame = av_frame_alloc();
     }
     virtual ~VideoDecoderFFmpegBasePrivate() {

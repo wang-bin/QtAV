@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -80,15 +80,26 @@ QString SubtitleProcessorFFmpeg::name() const
 QStringList ffmpeg_supported_sub_extensions_by_codec()
 {
     QStringList exts;
-    AVCodec *c = av_codec_next(NULL);
-    while (c) {
-        if (c->type != AVMEDIA_TYPE_SUBTITLE) {
-            c = av_codec_next(c);
+    const AVCodec* c = NULL;
+#if AVCODEC_STATIC_REGISTER
+    void* it = NULL;
+    while ((c = av_codec_iterate(&it))) {
+#else
+    avcodec_register_all();
+    while ((c = av_codec_next(c))) {
+#endif
+        if (c->type != AVMEDIA_TYPE_SUBTITLE)
             continue;
-        }
         qDebug("sub codec: %s", c->name);
-        AVInputFormat *i = av_iformat_next(NULL);
-        while (i) {
+#if AVFORMAT_STATIC_REGISTER
+        const AVInputFormat *i = NULL;
+        void* it2 = NULL;
+        while ((i = av_demuxer_iterate(&it2))) {
+#else
+        av_register_all(); // MUST register all input/output formats
+        AVInputFormat *i = NULL;
+        while ((i = av_iformat_next(i))) {
+#endif
             if (!strcmp(i->name, c->name)) {
                 qDebug("found iformat");
                 if (i->extensions) {
@@ -99,13 +110,11 @@ QStringList ffmpeg_supported_sub_extensions_by_codec()
                 }
                 break;
             }
-            i = av_iformat_next(i);
         }
         if (!i) {
             //qDebug("codec name '%s' is not found in AVInputFormat, just append codec name", c->name);
             //exts.append(c->name);
         }
-        c = av_codec_next(c);
     }
     return exts;
 }
@@ -113,8 +122,15 @@ QStringList ffmpeg_supported_sub_extensions_by_codec()
 QStringList ffmpeg_supported_sub_extensions()
 {
     QStringList exts;
+#if AVFORMAT_STATIC_REGISTER
+    const AVInputFormat *i = NULL;
+    void* it = NULL;
+    while ((i = av_demuxer_iterate(&it))) {
+#else
+    av_register_all(); // MUST register all input/output formats
     AVInputFormat *i = NULL;
     while ((i = av_iformat_next(i))) {
+#endif
         // strstr parameters can not be null
         if (i->long_name && strstr(i->long_name, "subtitle")) {
             if (i->extensions) {
@@ -127,7 +143,13 @@ QStringList ffmpeg_supported_sub_extensions()
     // AVCodecDescriptor.name and AVCodec.name may be different. avcodec_get_name() use AVCodecDescriptor if possible
     QStringList codecs;
     const AVCodec* c = NULL;
+#if AVCODEC_STATIC_REGISTER
+    it = NULL;
+    while ((c = av_codec_iterate(&it))) {
+#else
+    avcodec_register_all();
     while ((c = av_codec_next(c))) {
+#endif
         if (c->type == AVMEDIA_TYPE_SUBTITLE)
             codecs.append(QString::fromLatin1(c->name));
     }
