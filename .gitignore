@@ -70,6 +70,14 @@ Release
 *.Debug
 *.Release
 
+# Ignore temporary Python files
+python/PyQtAV.api
+python/PyQtAV.pro
+python/QtAV.pyi
+python/QtAVWidgets.pyi
+python/QtAV
+python/QtAVWidgets
+
 *.fuse*
 
 #qt
