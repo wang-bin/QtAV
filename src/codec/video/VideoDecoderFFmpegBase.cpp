@@ -167,4 +167,10 @@ VideoFrame VideoDecoderFFmpegBase::frame()
     }
     return frame;
 }
+
+AVFrame* VideoDecoderFFmpegBase::avframe()
+{
+    DPTR_D(VideoDecoderFFmpegBase);
+    return d.frame;
+}
 } //namespace QtAV
