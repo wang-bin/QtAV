@@ -919,6 +919,9 @@ bool AVDemuxer::load()
         qWarning() << "User interupted: " << msg;
         return false;
     }
+
+    timeBase = av_q2d(d->format_ctx->streams[videoStream()]->time_base);
+
     return true;
 }
 

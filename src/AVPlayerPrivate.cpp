@@ -594,6 +594,7 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
     QObject::connect(vdec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
     if (!vthread) {
         vthread = new VideoThread(player);
+        vthread->timeBase = demuxer.timeBase;
         vthread->setClock(clock);
         vthread->setStatistics(&statistics);
         vthread->setVideoCapture(vcapture);

@@ -61,6 +61,9 @@ protected:
 
 private:
     AVPlayer * player;
+public:
+    double timeBase = -1;
+
 };
 
 
