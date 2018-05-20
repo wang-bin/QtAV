@@ -34,6 +34,7 @@
 #include <QtCore/QFileInfo>
 #include "utils/Logger.h"
 #include "AVPlayer.h"
+#include "codec/video/VideoDecoderFFmpegBase.h"
 
 namespace QtAV {
 
@@ -532,6 +533,14 @@ void VideoThread::run()
         if (!pkt.isEOF())
             pkt.skip(pkt.data.size() - dec->undecodedSize());
         VideoFrame frame = dec->frame();
+
+        ///sample code for accessing ffmpeg decoder and avframe
+//        if(dec->name()=="FFmpeg")
+//        {
+//           auto ffmpegDec = static_cast<VideoDecoderFFmpegBase*>(dec);
+//           auto avframe = ffmpegDec->avframe();
+//        }
+
         d.statistics->totalFrames++;
         if (!frame.isValid()) {
             d.statistics->droppedFrames++;
