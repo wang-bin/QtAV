@@ -221,7 +221,6 @@ public:
     qint64 totalVideoPackets = 0;
     qint64 totalAudioPackets = 0;
     int audioStreamIndex = -1;
-    double timeBase= -1;
 };
 
 } //namespace QtAV

@@ -920,8 +920,6 @@ bool AVDemuxer::load()
         return false;
     }
 
-    timeBase = av_q2d(d->format_ctx->streams[videoStream()]->time_base);
-
     return true;
 }
 
