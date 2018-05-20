@@ -713,6 +713,8 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
     mediaData["totalBandwidth"] = 0;
     mediaData["totalVideoBandwidth"] = 0;
     mediaData["totalAudioBandwidth"] = 0;
+    mediaData["totalKeyFrameSize"] = 0;
+    mediaData["totalPFrameSize"] = 0;
     mediaData["totalPackets"] = 0;
     mediaData["totalVideoPackets"] = 0;
     mediaData["totalAudioPackets"] = 0;
