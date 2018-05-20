@@ -527,9 +527,9 @@ void AVPlayer::resetMediaData()
     d->demuxer.totalPackets = 0;
     d->demuxer.totalVideoPackets = 0;
     d->demuxer.totalAudioPackets = 0;
+    d->demuxer.lostFrames = 0;
     d->statistics.totalFrames = 0;
     d->statistics.droppedFrames = 0;
-    d->statistics.lostFrames = 0;
     d->statistics.droppedPackets = 0;
     d->statistics.totalKeyFrames = -1;
 }

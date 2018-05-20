@@ -325,6 +325,8 @@ public:
     QElapsedTimer elapsed;
     bool recording = false;
     int recordDuration = -1;
+
+    qreal lastPts = -1;
 };
 
 AVDemuxer::AVDemuxer(QObject *parent)
@@ -494,6 +496,11 @@ bool AVDemuxer::readFrame()
     {
         totalVideoBandwidth+=static_cast<quint64>(packet.size);
         totalVideoPackets++;
+
+        auto t = packet.pts* av_q2d(d->format_ctx->streams[videoStream()]->time_base);
+        if((t-d->lastPts)>1.0)
+            lostFrames++;
+        d->lastPts = t;
 
         if(d->recording)
         {
@@ -1318,6 +1325,7 @@ void AVDemuxer::clearStatistics()
     totalPackets = 0;
     totalVideoPackets = 0;
     totalAudioPackets = 0;
+    lostFrames = 0;
 }
 
 void AVDemuxer::startRecording(const QString &filePath, int duration)

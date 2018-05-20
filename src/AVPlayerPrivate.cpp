@@ -741,7 +741,6 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
         QTimer::singleShot(0,&demuxer,[this, player](){
             statistics.totalFrames = 0;
             statistics.droppedFrames = 0;
-            statistics.lostFrames = 0;
             statistics.droppedPackets = 0;
             demuxer.clearStatistics();
             lastTotalBandwidth = 0;
@@ -778,7 +777,7 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
         mediaData["totalFrames"] = statistics.totalFrames;
         mediaData["droppedPackets"] = statistics.droppedPackets;
         mediaData["droppedFrames"] = statistics.droppedFrames;
-        mediaData["lostFrames"] = statistics.lostFrames;
+        mediaData["lostFrames"] = demuxer.lostFrames;
         mediaData["totalKeyFrames"] = statistics.totalKeyFrames;
 
         auto totalElapsed = totalElapsedTimer.elapsed();
