@@ -771,6 +771,8 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
         mediaData["totalBandwidth"] = demuxer.totalBandwidth;
         mediaData["totalVideoBandwidth"] = demuxer.totalVideoBandwidth;
         mediaData["totalAudioBandwidth"] = demuxer.totalAudioBandwidth;
+        mediaData["totalKeyFrameSize"] = demuxer.totalKeyFrameSize;
+        mediaData["totalPFrameSize"] = demuxer.totalPFrameSize;
         mediaData["totalPackets"] = demuxer.totalPackets;
         mediaData["totalVideoPackets"] = demuxer.totalVideoPackets;
         mediaData["totalAudioPackets"] = demuxer.totalAudioPackets;

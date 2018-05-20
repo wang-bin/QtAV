@@ -497,6 +497,11 @@ bool AVDemuxer::readFrame()
         totalVideoBandwidth+=static_cast<quint64>(packet.size);
         totalVideoPackets++;
 
+        if(packet.flags & AV_PKT_FLAG_KEY)
+            totalKeyFrameSize += static_cast<quint64>(packet.size);
+        else
+            totalPFrameSize += static_cast<quint64>(packet.size);
+
         auto t = packet.pts* av_q2d(d->format_ctx->streams[videoStream()]->time_base);
         if((t-d->lastPts)>1.0)
             lostFrames++;
@@ -1322,6 +1327,8 @@ void AVDemuxer::clearStatistics()
     totalBandwidth = 0;
     totalVideoBandwidth = 0;
     totalAudioBandwidth = 0;
+    totalKeyFrameSize = 0;
+    totalPFrameSize = 0;
     totalPackets = 0;
     totalVideoPackets = 0;
     totalAudioPackets = 0;

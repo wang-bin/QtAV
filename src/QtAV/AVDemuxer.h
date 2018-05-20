@@ -217,6 +217,8 @@ public:
     quint64 totalBandwidth = 0;
     quint64 totalVideoBandwidth = 0;
     quint64 totalAudioBandwidth = 0;
+    quint64 totalKeyFrameSize = 0;
+    quint64 totalPFrameSize = 0;
     qint64 totalPackets = 0;
     qint64 totalVideoPackets = 0;
     qint64 totalAudioPackets = 0;
