@@ -327,6 +327,13 @@ public:
     int recordDuration = -1;
 
     qreal lastPts = -1;
+
+    int calculatePacketSize(const AVPacket* packet){
+        auto dataSize = packet->size;
+        for(auto i=0;i<packet->side_data_elems;++i)
+            dataSize+=packet->side_data[i].size;
+        return dataSize;
+    }
 };
 
 AVDemuxer::AVDemuxer(QObject *parent)
@@ -490,17 +497,19 @@ bool AVDemuxer::readFrame()
         return false;
     }
 
-    totalBandwidth+=static_cast<quint64>(packet.size);
+    auto packetSize = d->calculatePacketSize(&packet);
+
+    totalBandwidth+=static_cast<quint64>(packetSize);
     totalPackets++;
     if( packet.stream_index==videoStream())
     {
-        totalVideoBandwidth+=static_cast<quint64>(packet.size);
+        totalVideoBandwidth+=static_cast<quint64>(packetSize);
         totalVideoPackets++;
 
         if(packet.flags & AV_PKT_FLAG_KEY)
-            totalKeyFrameSize += static_cast<quint64>(packet.size);
+            totalKeyFrameSize += static_cast<quint64>(packetSize);
         else
-            totalPFrameSize += static_cast<quint64>(packet.size);
+            totalPFrameSize += static_cast<quint64>(packetSize);
 
         auto t = packet.pts* av_q2d(d->format_ctx->streams[videoStream()]->time_base);
         if((t-d->lastPts)>1.0)
@@ -548,7 +557,7 @@ bool AVDemuxer::readFrame()
     }
     else if( packet.stream_index==audioStream() || packet.stream_index==audioStreamIndex)
     {
-        totalAudioBandwidth+=static_cast<quint64>(packet.size);
+        totalAudioBandwidth+=static_cast<quint64>(packetSize);
         totalAudioPackets++;
     }
 
