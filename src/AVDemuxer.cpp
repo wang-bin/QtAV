@@ -514,9 +514,10 @@ bool AVDemuxer::readFrame()
 
         //auto time = packet.pts* av_q2d(d->format_ctx->streams[videoStream()]->time_base);
         auto ptsDiff = packet.pts-d->lastPts;
-        d->averagePtsDiff += (ptsDiff-d->averagePtsDiff)/totalVideoPackets;
         if(totalVideoPackets>100 && ptsDiff>(10*d->averagePtsDiff))
             lostFrames+=(ptsDiff/d->averagePtsDiff);
+        else
+            d->averagePtsDiff += (ptsDiff-d->averagePtsDiff)/totalVideoPackets;
         d->lastPts = packet.pts;
 
         if(d->recording)
