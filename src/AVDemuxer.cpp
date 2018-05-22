@@ -1346,6 +1346,7 @@ void AVDemuxer::clearStatistics()
     totalVideoPackets = 0;
     totalAudioPackets = 0;
     lostFrames = 0;
+    d->averagePtsDiff = 0;
 }
 
 void AVDemuxer::startRecording(const QString &filePath, int duration)
