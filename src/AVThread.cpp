@@ -364,7 +364,7 @@ bool AVThread::waitForStarted(int msec)
 void AVThread::waitAndCheck(ulong value, qreal pts)
 {
     DPTR_D(AVThread);
-    if (value <= 0)
+    if (value <= 0 || pts < 0)
         return;
     value += d.wait_err;
     d.wait_timer.restart();
@@ -383,8 +383,10 @@ void AVThread::waitAndCheck(ulong value, qreal pts)
         //qDebug("us: %lu/%lu, pts: %f, clock: %f", us, ms-et.elapsed(), pts, d.clock->value());
         processNextTask();
         const qint64 left = qint64(ms) - d.wait_timer.elapsed();
-        if (left <= 0)
+        if (left <= 0) {
+            us = 0;
             break;
+        }
         us = qMin<ulong>(us, left*1000);
     }
     if (us > 0)
