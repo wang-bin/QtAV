@@ -22,7 +22,11 @@
 #include "QtAVWidgets/GraphicsItemRenderer.h"
 #include "QtAV/private/QPainterRenderer_p.h"
 #include "QtAV/FilterContext.h"
-#define QTAV_HAVE_OPENGL (!defined QT_NO_OPENGL && (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0) || defined(QT_OPENGL_LIB)))
+#if !defined QT_NO_OPENGL && (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0) || defined(QT_OPENGL_LIB))
+#define QTAV_HAVE_OPENGL 1
+#else
+#define QTAV_HAVE_OPENGL 0
+#endif
 #if QTAV_HAVE(OPENGL)
 #include "QtAV/OpenGLVideo.h"
 #else
