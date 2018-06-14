@@ -523,7 +523,7 @@ void VideoThread::run()
             continue;
         }
         pkt_data = pkt.data.constData();
-        if (frame.timestamp() <= 0)
+        if (frame.timestamp() < 0)
             frame.setTimestamp(pkt.pts); // pkt.pts is wrong. >= real timestamp
         const qreal pts = frame.timestamp();
         d.pts_history.push_back(pts);
