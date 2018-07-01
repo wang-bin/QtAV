@@ -21,7 +21,7 @@
 #ifndef QTAV_GEOMETRYRENDERER_H
 #define QTAV_GEOMETRYRENDERER_H
 #include <QtAV/Geometry.h>
-#define QT_VAO (QT_VERSION >= QT_VERSION_CHECK(5, 1, 0))
+#define QT_VAO (QT_VERSION >= QT_VERSION_CHECK(5, 1, 0)) && !DISABLE_QT_VAO
 #if QT_VAO
 #include <QtGui/QOpenGLVertexArrayObject>
 #endif //QT_VAO
