@@ -82,6 +82,8 @@ AVDemuxThread::AVDemuxThread(QObject *parent) :
   , audio_thread(0)
   , video_thread(0)
   , clock_type(-1)
+  , m_repeat_current(0)
+  , m_repeat_max(0)
 {
     seek_tasks.setCapacity(1);
     seek_tasks.blockFull(false);
@@ -95,6 +97,8 @@ AVDemuxThread::AVDemuxThread(AVDemuxer *dmx, QObject *parent) :
   , m_buffer(0)
   , audio_thread(0)
   , video_thread(0)
+  , m_repeat_current(0)
+  , m_repeat_max(0)
 {
     setDemuxer(dmx);
     seek_tasks.setCapacity(1);
@@ -556,6 +560,14 @@ void AVDemuxThread::run()
         //vthread maybe changed by AVPlayer.setPriority() from no dec case
         vqueue = video_thread ? video_thread->packetQueue() : 0;
         if (demuxer->atEnd()) {
+            if (getRepeatCurrent() < 0 || (getRepeatCurrent() >= m_repeat_max && m_repeat_max >= 0)) {
+                m_repeat_current = -1;
+            } else {
+                m_repeat_current++;
+                qDebug() << " m_repeat_current = " << m_repeat_current;
+                qDebug() << " m_repeat_max = " << m_repeat_max;
+                seek(qint64(0), AccurateSeek);
+            }
             // if avthread may skip 1st eof packet because of a/v sync
             const int kMaxEof = 1;//if buffer packet, we can use qMax(aqueue->bufferValue(), vqueue->bufferValue()) and not call blockEmpty(false);
             if (aqueue && (!was_end || aqueue->isEmpty())) {
@@ -731,4 +743,27 @@ bool AVDemuxThread::tryPause(unsigned long timeout)
     cond.wait(&buffer_mutex, timeout);
     return true;
 }
+
+int AVDemuxThread::getRepeatCurrent()
+{
+    return m_repeat_current;
+}
+
+void AVDemuxThread::setRepeatCurrent(int repeat_current)
+{
+    m_repeat_current = repeat_current;
+}
+
+int AVDemuxThread::getRepeatMax()
+{
+    return m_repeat_max;
+}
+
+void AVDemuxThread::setRepeatMax(int repeat_max)
+{
+    m_repeat_max = repeat_max;
+    if (m_repeat_max < 0)
+        m_repeat_max = std::numeric_limits<int>::max();
+}
+
 } //namespace QtAV
