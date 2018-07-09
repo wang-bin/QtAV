@@ -94,7 +94,7 @@ Rectangle {
         id: player
         objectName: "player"
         //loops: MediaPlayer.Infinite
-        //autoLoad: true
+        //autoLoad: true // just for test
         autoPlay: true
         videoCodecPriority: PlayerConfig.decoderPriorityNames
         onPositionChanged: control.setPlayingProgress(position/duration)
