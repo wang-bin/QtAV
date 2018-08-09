@@ -804,7 +804,7 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
                     autoPlay_timer.setInterval(disconnectTimeout);
             }
         }
-        else
+        else if(player->state()!=PausedState)
         {
             if(!autoPlay_timer.isActive())
                 autoPlay_timer.start();
