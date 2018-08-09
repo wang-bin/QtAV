@@ -46,7 +46,7 @@ public:
     AVThread* videoThread();
     void stepForward(); // show next video frame and pause
     void stepBackward();
-    void seek(qint64 pos, SeekType type); //ms
+    void seek(qint64 external_pos, qint64 pos, SeekType type); //ms
     //AVDemuxer* demuxer
     bool isPaused() const;
     bool isEnd() const;
@@ -84,7 +84,7 @@ private:
     void setAVThread(AVThread *&pOld, AVThread* pNew);
     void newSeekRequest(QRunnable *r);
     void processNextSeekTask();
-    void seekInternal(qint64 pos, SeekType type); //must call in AVDemuxThread
+    void seekInternal(qint64 pos, SeekType type, qint64 external_pos = std::numeric_limits < qint64 >::min()); //must call in AVDemuxThread
     void pauseInternal(bool value);
 
     bool paused;

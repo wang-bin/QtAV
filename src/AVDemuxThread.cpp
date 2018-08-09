@@ -211,37 +211,39 @@ void AVDemuxThread::stepBackward()
     newSeekRequest(new stepBackwardTask(this, pre_pts));
 }
 
-void AVDemuxThread::seek(qint64 pos, SeekType type)
+void AVDemuxThread::seek(qint64 external_pos, qint64 pos, SeekType type)
 {
     end = false;
-    // queue maybe blocked by put()
-    if (audio_thread) {
-        audio_thread->packetQueue()->clear();
-    }
-    if (video_thread) {
-        video_thread->packetQueue()->clear();
-    }
     class SeekTask : public QRunnable {
     public:
-        SeekTask(AVDemuxThread *dt, qint64 t, SeekType st)
+        SeekTask(AVDemuxThread *dt, qint64 external_pos, qint64 t, SeekType st)
             : demux_thread(dt)
             , type(st)
             , position(t)
+            , external_pos(external_pos)
         {}
         void run() {
+            // queue maybe blocked by put()
+            if (demux_thread->audio_thread) {
+                demux_thread->audio_thread->packetQueue()->clear();
+            }
+            if (demux_thread->video_thread) {
+                demux_thread->video_thread->packetQueue()->clear();
+            }
             if (demux_thread->video_thread)
                 demux_thread->video_thread->setDropFrameOnSeek(true);
-            demux_thread->seekInternal(position, type);
+            demux_thread->seekInternal(position, type, external_pos);
         }
     private:
         AVDemuxThread *demux_thread;
         SeekType type;
         qint64 position;
+        qint64 external_pos;
     };
-    newSeekRequest(new SeekTask(this, pos, type));
+    newSeekRequest(new SeekTask(this, external_pos, pos, type));
 }
 
-void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
+void AVDemuxThread::seekInternal(qint64 pos, SeekType type, qint64 external_pos)
 {
     AVThread* av[] = { audio_thread, video_thread};
     qDebug("seek to %s %lld ms (%f%%)", QTime(0, 0, 0).addMSecs(pos).toString().toUtf8().constData(), pos, double(pos - demuxer->startTime())/double(demuxer->duration())*100.0);
@@ -264,6 +266,9 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type)
         Q_ASSERT(sync_id != 0);
         qDebug("demuxer sync id: %d/%d", sync_id, t->clock()->syncId());
         t->packetQueue()->clear();
+        if (external_pos != std::numeric_limits < qint64 >::min() )
+            t->clock()->updateExternalClock(qMax(qint64(0), external_pos));
+        t->clock()->updateValue(double(pos)/1000.0);
         t->requestSeek();
         // TODO: the first frame (key frame) will not be decoded correctly if flush() is called.
         //PacketBuffer *pb = t->packetQueue();
