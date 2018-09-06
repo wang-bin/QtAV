@@ -251,9 +251,9 @@ FrameReader::FrameReader(QObject *parent)
     , d(new Private())
 {
     moveToThread(&d->read_thread);
-    connect(this, SIGNAL(readMoreRequested()), SLOT(readMoreInternal()));
+    connect(this, SIGNAL(readMoreRequested()), SLOT(readMoreInternal()), Qt::QueuedConnection);
     connect(this, SIGNAL(readEnd()), &d->read_thread, SLOT(quit()));
-    connect(this, SIGNAL(seekRequested(qint64)), SLOT(seekInternal(qint64)));
+    connect(this, SIGNAL(seekRequested(qint64)), SLOT(seekInternal(qint64)), Qt::QueuedConnection);
 }
 
 FrameReader::~FrameReader()
