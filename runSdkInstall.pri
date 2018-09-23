@@ -29,7 +29,6 @@ win32:{
     file_pathes += $$PWD/ffmpegBin/win/$${archName}/bin/avdevice-58.dll
     file_pathes += $$PWD/ffmpegBin/win/$${archName}/bin/avfilter-7.dll
     file_pathes += $$PWD/ffmpegBin/win/$${archName}/bin/avformat-58.dll
-    file_pathes += $$PWD/ffmpegBin/win/$${archName}/bin/avresample-4.dll
     file_pathes += $$PWD/ffmpegBin/win/$${archName}/bin/avutil-56.dll
     file_pathes += $$PWD/ffmpegBin/win/$${archName}/bin/swresample-3.dll
     file_pathes += $$PWD/ffmpegBin/win/$${archName}/bin/swscale-5.dll
