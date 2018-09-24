@@ -52,7 +52,6 @@ else:linux:{
     file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libavdevice.so.58
     file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libavfilter.so.7
     file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libavformat.so.58
-    file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libavresample.so.4
     file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libavutil.so.56
     file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libswresample.so.3
     file_pathes += $$PWD/ffmpegBin/linux/$${archName}/lib/libswscale.so.5
