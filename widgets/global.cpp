@@ -24,7 +24,7 @@
 #include <QBoxLayout>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QTableWidget>
+#include <QTabWidget>
 #include <QTextBrowser>
 
 #include "QtAVWidgets/WidgetRenderer.h"
