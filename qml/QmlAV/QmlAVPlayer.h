@@ -59,6 +59,8 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(MediaMetaData *metaData READ metaData CONSTANT)
     Q_PROPERTY(QObject *mediaObject READ mediaObject  NOTIFY mediaObjectChanged SCRIPTABLE false DESIGNABLE false)
     Q_PROPERTY(QString errorString READ errorString NOTIFY errorChanged)
+    Q_PROPERTY(QString ffmpegError READ ffmpegError NOTIFY errorChanged)
+    Q_PROPERTY(QString ffmpegErrorStr READ ffmpegErrorStr NOTIFY errorChanged)
     Q_ENUMS(Loop)
     Q_ENUMS(PlaybackState)
     Q_ENUMS(Status)
@@ -202,6 +204,8 @@ public:
     Status status() const;
     Error error() const;
     QString errorString() const;
+    int ffmpegError() const;
+    QString ffmpegErrorStr() const;
     PlaybackState playbackState() const;
     void setPlaybackState(PlaybackState playbackState);
     qreal playbackRate() const;
@@ -357,13 +361,13 @@ Q_SIGNALS:
     void disconnectTimeoutChanged();
 
     void errorChanged();
-    void error(Error error, const QString &errorString);
+    void error(Error error, const QString &errorString, int ffmpegError = 0, const QString& ffmpegErrorStr="");
     void statusChanged();
     void mediaObjectChanged();
     void audioBackendsChanged();
 private Q_SLOTS:
     // connect to signals from player
-    void _q_error(const QtAV::AVError& e);
+    void _q_error(const QtAV::AVError& e, int ffmpegError, const QString &ffmpegErrorStr);
     void _q_statusChanged();
     void _q_started();
     void _q_stopped();
@@ -400,6 +404,8 @@ private:
     PlaybackState mPlaybackState;
     Error mError;
     QString mErrorString;
+    int mffmpegError;
+    QString mffmpegErrorStr;
     QtAV::AVPlayer *mpPlayer;
     QUrl mSource;
     QStringList mVideoCodecs;

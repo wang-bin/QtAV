@@ -1331,7 +1331,7 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
 //            ec = AVError::NetworkError;
     }
     AVError err(ec, err_msg, averr);
-    Q_EMIT error(err);
+    Q_EMIT error(err, ec, av_err2str(averr));
     *errorCode = ec;
 }
 

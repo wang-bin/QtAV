@@ -582,7 +582,7 @@ Q_SIGNALS:
      * \brief durationChanged emit when media is loaded/unloaded
      */
     void durationChanged(qint64);
-    void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
+    void error(const QtAV::AVError& e, int ffmpegError = 0, const QString& ffmpegErrorStr=""); //explictly use QtAV::AVError in connection for Qt4 syntax
     void paused(bool p);
     /*!
      * \brief started

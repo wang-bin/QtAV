@@ -375,7 +375,7 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
         qWarning("failed to create audio decoder");
         return false;
     }
-    QObject::connect(adec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
+    QObject::connect(adec, &AudioDecoder::error, player, &AVPlayer::error);
     adec->setCodecContext(avctx);
     adec->setOptions(ac_opt);
     if (!adec->open()) {
@@ -543,7 +543,7 @@ bool AVPlayer::Private::tryApplyDecoderPriority(AVPlayer *player)
     if (vdec)
         delete vdec;
     vdec = vd;
-    QObject::connect(vdec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
+    QObject::connect(vdec, &VideoDecoder::error, player, &AVPlayer::error);
     initVideoStatistics(demuxer.videoStream());
     // If no seek, drop packets until a key frame packet is found. But we may drop too many packets, and also a/v sync is a problem.
     player->setPosition(pos);
@@ -591,7 +591,7 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
         emit player->error(e);
         return false;
     }
-    QObject::connect(vdec, SIGNAL(error(QtAV::AVError)), player, SIGNAL(error(QtAV::AVError)));
+    QObject::connect(vdec, &VideoDecoder::error, player, &AVPlayer::error);
     if (!vthread) {
         vthread = new VideoThread(player);
         vthread->setClock(clock);

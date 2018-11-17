@@ -81,7 +81,7 @@ void QmlAVPlayer::classBegin()
     connect(mpPlayer, SIGNAL(externalAudioTracksChanged(QVariantList)), SIGNAL(externalAudioTracksChanged()));
     connect(mpPlayer, SIGNAL(durationChanged(qint64)), SIGNAL(durationChanged()));
     connect(mpPlayer, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), SLOT(_q_statusChanged()));
-    connect(mpPlayer, SIGNAL(error(QtAV::AVError)), SLOT(_q_error(QtAV::AVError)));
+    connect(mpPlayer, &AVPlayer::error, this, &QmlAVPlayer::_q_error);
     connect(mpPlayer, SIGNAL(paused(bool)), SLOT(_q_paused(bool)));
     connect(mpPlayer, SIGNAL(started()), SLOT(_q_started()));
     connect(mpPlayer, SIGNAL(stopped()), SLOT(_q_stopped()));
@@ -775,6 +775,16 @@ QString QmlAVPlayer::errorString() const
     return mErrorString;
 }
 
+int QmlAVPlayer::ffmpegError() const
+{
+    return mffmpegError;
+}
+
+QString QmlAVPlayer::ffmpegErrorStr() const
+{
+    return mffmpegErrorStr;
+}
+
 QmlAVPlayer::PlaybackState QmlAVPlayer::playbackState() const
 {
     return mPlaybackState;
@@ -926,15 +936,17 @@ void QmlAVPlayer::seekBackward()
     mpPlayer->seekBackward();
 }
 
-void QmlAVPlayer::_q_error(const AVError &e)
+void QmlAVPlayer::_q_error(const AVError &e, int ffmpegError, const QString& ffmpegErrorStr)
 {
     mError = NoError;
     mErrorString = e.string();
+    mffmpegError = ffmpegError;
+    mffmpegErrorStr = ffmpegErrorStr;
     const AVError::ErrorCode ec = e.error();
     mError = static_cast<Error>(ec);
     if (ec != AVError::NoError)
         m_loading = false;
-    Q_EMIT error(mError, mErrorString);
+    Q_EMIT error(mError, mErrorString, mffmpegError, mffmpegErrorStr);
     Q_EMIT errorChanged();
 }
 

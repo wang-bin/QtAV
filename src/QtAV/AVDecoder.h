@@ -73,7 +73,7 @@ public:
     QVariantHash options() const;
 
 Q_SIGNALS:
-    void error(const QtAV::AVError& e); //explictly use QtAV::AVError in connection for Qt4 syntax
+    void error(const QtAV::AVError& e, int ffmpegError=0, const QString& ffmpegErrorStr=""); //explictly use QtAV::AVError in connection for Qt4 syntax
     void descriptionChanged();
 protected:
     AVDecoder(AVDecoderPrivate& d);

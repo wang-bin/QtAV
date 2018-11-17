@@ -230,6 +230,8 @@ Module {
         Property { name: "metaData"; type: "MediaMetaData"; isReadonly: true; isPointer: true }
         Property { name: "mediaObject"; type: "QObject"; isReadonly: true; isPointer: true }
         Property { name: "errorString"; type: "string"; isReadonly: true }
+        Property { name: "ffmpegError"; type: "int"; isReadonly: true }
+        Property { name: "ffmpegErrorStr"; type: "string"; isReadonly: true }
         Property { name: "startPosition"; type: "int" }
         Property { name: "stopPosition"; type: "int" }
         Property { name: "fastSeek"; type: "bool" }
@@ -270,6 +272,8 @@ Module {
             name: "error"
             Parameter { name: "error"; type: "Error" }
             Parameter { name: "errorString"; type: "string" }
+            Parameter { name: "ffmpegError"; type: "int" }
+            Parameter { name: "ffmpegErrorStr"; type: "string" }
         }
         Method { name: "play" }
         Method { name: "pause" }
