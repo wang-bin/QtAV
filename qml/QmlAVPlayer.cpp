@@ -931,18 +931,7 @@ void QmlAVPlayer::_q_error(const AVError &e)
     mError = NoError;
     mErrorString = e.string();
     const AVError::ErrorCode ec = e.error();
-    if (ec <= AVError::NoError)
-        mError = NoError;
-    else if (ec <= AVError::NetworkError)
-        mError = NetworkError;
-    else if (ec <= AVError::ResourceError)
-        mError = ResourceError;
-    else if (ec <= AVError::FormatError)
-        mError = FormatError;
-    else if (ec <= AVError::AccessDenied)
-        mError = AccessDenied;
-    //else
-      //  err = ServiceMissing;
+    mError = static_cast<Error>(ec);
     if (ec != AVError::NoError)
         m_loading = false;
     Q_EMIT error(mError, mErrorString);

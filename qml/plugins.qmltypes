@@ -180,11 +180,25 @@ Module {
             name: "Error"
             values: {
                 "NoError": 0,
-                "ResourceError": 1,
-                "FormatError": 2,
-                "NetworkError": 3,
-                "AccessDenied": 4,
-                "ServiceMissing": 5
+                "NetworkError": 1,
+                "OpenTimedout": 2,
+                "OpenError": 3,
+                "ParseStreamTimedOut": 4,
+                "ParseStreamError": 5,
+                "StreamNotFound": 6,
+                "ReadTimedout": 7,
+                "ReadError": 8,
+                "SeekError": 9,
+                "ResourceError": 10,
+                "OpenCodecError": 11,
+                "CloseCodecError": 12,
+                "AudioCodecNotFound": 13,
+                "VideoCodecNotFound": 14,
+                "SubtitleCodecNotFound": 15,
+                "CodecError": 16,
+                "FormatError": 17,
+                "AccessDenied": 18,
+                "ServiceMissing": 19
             }
         }
         Enum {

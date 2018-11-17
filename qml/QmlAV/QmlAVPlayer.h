@@ -121,9 +121,28 @@ public:
     };
     enum Error {
         NoError,
-        ResourceError,
-        FormatError,
+
         NetworkError,
+
+        OpenTimedout,
+        OpenError,
+        ParseStreamTimedOut,
+        ParseStreamError,
+        StreamNotFound,
+        ReadTimedout,
+        ReadError,
+        SeekError,
+        ResourceError,
+
+        OpenCodecError,
+        CloseCodecError,
+        AudioCodecNotFound,
+        VideoCodecNotFound,
+        SubtitleCodecNotFound,
+        CodecError,
+
+        FormatError,
+
         AccessDenied,
         ServiceMissing
     };
