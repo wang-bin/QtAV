@@ -1327,8 +1327,8 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
             ec = AVError::FormatError;
     } else {
         // Input/output error etc.
-        if (d->network)
-            ec = AVError::NetworkError;
+//        if (d->network)
+//            ec = AVError::NetworkError;
     }
     AVError err(ec, err_msg, averr);
     Q_EMIT error(err);
