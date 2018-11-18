@@ -59,7 +59,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(MediaMetaData *metaData READ metaData CONSTANT)
     Q_PROPERTY(QObject *mediaObject READ mediaObject  NOTIFY mediaObjectChanged SCRIPTABLE false DESIGNABLE false)
     Q_PROPERTY(QString errorString READ errorString NOTIFY errorChanged)
-    Q_PROPERTY(QString ffmpegError READ ffmpegError NOTIFY errorChanged)
+    Q_PROPERTY(int ffmpegError READ ffmpegError NOTIFY errorChanged)
     Q_PROPERTY(QString ffmpegErrorStr READ ffmpegErrorStr NOTIFY errorChanged)
     Q_ENUMS(Loop)
     Q_ENUMS(PlaybackState)
