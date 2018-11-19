@@ -353,7 +353,7 @@ void FrameReader::readMoreInternal()
             d->vframes.put(frame);
             Q_EMIT frameRead(frame);
             //qDebug("frame got @%.3f, queue enough: %d", frame.timestamp(), vframes.isEnough());
-            if (d->vframes.isEnough())
+            if (d->vframes.isFull())
                 break;
         } else {
             qDebug("dec error, continue to decoder");

@@ -1234,13 +1234,14 @@ void AVPlayer::playInternal()
         d->vthread->start();
     }
 
-    d->read_thread->setMediaEndAction(mediaEndAction());
-    d->read_thread->start();
-
     if (d->demuxer.audioCodecContext() && d->athread)
         d->athread->waitForStarted();
     if (d->demuxer.videoCodecContext() && d->vthread)
         d->vthread->waitForStarted();
+
+    d->read_thread->setMediaEndAction(mediaEndAction());
+    d->read_thread->start();
+
     /// demux thread not started, seek tasks will be cleared
     d->read_thread->waitForStarted();
     if (d->timer_id < 0) {
