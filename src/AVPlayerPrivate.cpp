@@ -428,6 +428,10 @@ bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
             }
         }
     }
+
+    // we set the thre state before the thread start,
+    // as it maybe clear after by AVDemuxThread starting
+    athread->resetState();
     athread->setDecoder(adec);
     setAVOutput(ao, ao, athread);
     updateBufferValue(athread->packetQueue());
@@ -605,6 +609,10 @@ bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
         }
         QObject::connect(vthread, SIGNAL(finished()), player, SLOT(tryClearVideoRenderers()), Qt::DirectConnection);
     }
+
+    // we set the thre state before the thread start
+    // as it maybe clear after by AVDemuxThread starting
+    vthread->resetState();
     vthread->setDecoder(vdec);
 
     vthread->setBrightness(brightness);
