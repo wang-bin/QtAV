@@ -37,6 +37,7 @@ static bool check_ffmpeg_hevc_dxva2()
 #if !AVCODEC_STATIC_REGISTER
     avcodec_register_all();
 #endif
+    return true; //av_hwaccel_next returns nothing
     AVHWAccel *hwa = av_hwaccel_next(0);
     while (hwa) {
         if (strncmp("hevc_dxva2", hwa->name, 10) == 0)
