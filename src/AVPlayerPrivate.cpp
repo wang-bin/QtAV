@@ -732,6 +732,8 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
     mediaData["protocol"] = QString();
     mediaData["imageBufferSize"] = 0;
 
+    connect(player,&AVPlayer::sourceChanged, player, &AVPlayer::resetMediaData);
+
     connect(player,&AVPlayer::stopped,player,[this](){
         mediaData["connected"] = false;
     });
