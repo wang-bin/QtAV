@@ -730,8 +730,10 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
     mediaData["averageAudioBandwidth"] = 0;
     mediaData["realResolution"] = QSize(0,0);
     mediaData["connected"] = false;
-    mediaData["protocol"] = QString();
+    mediaData["protocol"] = "";
     mediaData["imageBufferSize"] = 0;
+    mediaData["decoder"] = "";
+    mediaData["decoderDetails"] = "";
 
     connect(player,&AVPlayer::sourceChanged, player, &AVPlayer::resetMediaData);
 
@@ -759,6 +761,8 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
             else
                 mediaData["protocol"] = player->file().mid(0,player->file().indexOf(":")).toUpper();
             mediaData["imageBufferSize"] = statistics.imageBufferSize;
+            mediaData["decoder"] = statistics.video.decoder;
+            mediaData["decoderDetails"] = statistics.video.decoder_detail;
             elapsedTimer.start();
             totalElapsedTimer.start();
             mediaDataTimer.start();
