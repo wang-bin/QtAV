@@ -34,6 +34,7 @@ extern "C" {
 }
 #endif
 #include "utils/Logger.h"
+#include <QUrl>
 
 namespace QtAV {
 
@@ -753,7 +754,10 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
             lastTotalFrames = 0;
             mediaData["realResolution"] = statistics.realResolution;
             mediaData["connected"] = true;
-            mediaData["protocol"] = player->file().mid(0,player->file().indexOf(":")).toUpper();
+            if(QUrl::fromUserInput(player->file()).isLocalFile())
+                 mediaData["protocol"] = "File";
+            else
+                mediaData["protocol"] = player->file().mid(0,player->file().indexOf(":")).toUpper();
             mediaData["imageBufferSize"] = statistics.imageBufferSize;
             elapsedTimer.start();
             totalElapsedTimer.start();
