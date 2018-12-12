@@ -744,6 +744,15 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
     connect(player,&AVPlayer::started,player,[this](){
         mediaData["connected"] = true;
     });
+    connect(player,&AVPlayer::started,player,[this, player](){
+        if(QUrl::fromUserInput(player->file()).isLocalFile())
+             mediaData["protocol"] = "File";
+        else
+            mediaData["protocol"] = player->file().mid(0,player->file().indexOf(":")).toUpper();
+        mediaData["decoder"] = statistics.video.decoder;
+        mediaData["decoderDetails"] = statistics.video.decoder_detail;
+        mediaData["containerFormat"] = demuxer.containerFormat();
+    });
 
     connect(player,&AVPlayer::firstKeyFrameReceived,player,[this, player](){
         QTimer::singleShot(0,&demuxer,[this, player](){
@@ -757,14 +766,7 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
             lastTotalFrames = 0;
             mediaData["realResolution"] = statistics.realResolution;
             mediaData["connected"] = true;
-            if(QUrl::fromUserInput(player->file()).isLocalFile())
-                 mediaData["protocol"] = "File";
-            else
-                mediaData["protocol"] = player->file().mid(0,player->file().indexOf(":")).toUpper();
             mediaData["imageBufferSize"] = statistics.imageBufferSize;
-            mediaData["decoder"] = statistics.video.decoder;
-            mediaData["decoderDetails"] = statistics.video.decoder_detail;
-            mediaData["containerFormat"] = demuxer.containerFormat();
             elapsedTimer.start();
             totalElapsedTimer.start();
             mediaDataTimer.start();
