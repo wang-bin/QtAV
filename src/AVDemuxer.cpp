@@ -1349,6 +1349,12 @@ void AVDemuxer::clearStatistics()
     d->averagePtsDiff = 0;
 }
 
+QString AVDemuxer::videoFormat()
+{
+    if(d->format_ctx && d->format_ctx->iformat)
+        return d->format_ctx->iformat->name;
+}
+
 void AVDemuxer::startRecording(const QString &filePath, int duration)
 {
     if(d->recording)

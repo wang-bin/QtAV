@@ -734,6 +734,7 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
     mediaData["imageBufferSize"] = 0;
     mediaData["decoder"] = "";
     mediaData["decoderDetails"] = "";
+    mediaData["format"] = "";
 
     connect(player,&AVPlayer::sourceChanged, player, &AVPlayer::resetMediaData);
 
@@ -763,6 +764,7 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
             mediaData["imageBufferSize"] = statistics.imageBufferSize;
             mediaData["decoder"] = statistics.video.decoder;
             mediaData["decoderDetails"] = statistics.video.decoder_detail;
+            mediaData["format"] = demuxer.videoFormat();
             elapsedTimer.start();
             totalElapsedTimer.start();
             mediaDataTimer.start();
