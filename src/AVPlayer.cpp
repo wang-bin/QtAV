@@ -672,6 +672,11 @@ void AVPlayer::pause(bool p)
     d->state = p ? PausedState : PlayingState;
     Q_EMIT stateChanged(d->state);
     Q_EMIT paused(p);
+    if(!p && duration()<=0) {
+        stop();
+        play();
+    }
+
 }
 
 bool AVPlayer::isPaused() const
