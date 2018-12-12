@@ -209,7 +209,7 @@ private:
 
 public slots:
     void clearStatistics();
-    QString videoFormat();
+    QString containerFormat();
 
 public:
     void startRecording(const QString& filePath, int duration = -1);

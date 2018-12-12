@@ -1349,7 +1349,7 @@ void AVDemuxer::clearStatistics()
     d->averagePtsDiff = 0;
 }
 
-QString AVDemuxer::videoFormat()
+QString AVDemuxer::containerFormat()
 {
     if(d->format_ctx && d->format_ctx->iformat)
         return d->format_ctx->iformat->name;
