@@ -240,6 +240,32 @@ void AVDemuxThread::seek(qint64 external_pos, qint64 pos, SeekType type)
         qint64 position;
         qint64 external_pos;
     };
+
+	if (paused) {
+		// I'm not sure if this is all needed, I copied it from Step backwards and it appears to work
+		if (!video_thread)
+			return;
+		AVThread *t = video_thread;
+		const qreal pre_pts = video_thread->previousHistoryPts();
+		if (pre_pts == 0.0) {
+			qWarning("can not get previous pts");
+			return;
+		}
+
+		// queue maybe blocked by put()
+		if (audio_thread) {
+			audio_thread->packetQueue()->clear(); // will put new packets before task run
+		}
+
+		pause(true);
+		t->packetQueue()->clear(); // will put new packets before task run
+		t->packetQueue();
+		Packet pkt;
+		pkt.pts = pre_pts;
+		t->packetQueue()->put(pkt); // clear and put a seek packet to ensure not frames other than previous frame will be decoded and rendered
+		t->pause(false);
+	}
+
     newSeekRequest(new SeekTask(this, external_pos, pos, type));
 }
 
