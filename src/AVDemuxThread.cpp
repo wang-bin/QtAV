@@ -213,7 +213,6 @@ void AVDemuxThread::stepBackward()
 
 void AVDemuxThread::seek(qint64 external_pos, qint64 pos, SeekType type)
 {
-    end = false;
     class SeekTask : public QRunnable {
     public:
         SeekTask(AVDemuxThread *dt, qint64 external_pos, qint64 t, SeekType st)
@@ -240,6 +239,16 @@ void AVDemuxThread::seek(qint64 external_pos, qint64 pos, SeekType type)
         qint64 position;
         qint64 external_pos;
     };
+
+    end = false;
+    // queue maybe blocked by put()	
+    // These must be here or seeking while paused will not update the video frame
+    if (audio_thread) {
+        audio_thread->packetQueue()->clear();
+    }
+    if (video_thread) {
+        video_thread->packetQueue()->clear();
+    }
     newSeekRequest(new SeekTask(this, external_pos, pos, type));
 }
 
