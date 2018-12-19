@@ -521,15 +521,7 @@ void AVPlayer::setDisconnectTimeout(int value)
 void AVPlayer::resetMediaData()
 {
     d->mediaDataTimer.stop();
-    d->demuxer.totalBandwidth = 0;
-    d->demuxer.totalVideoBandwidth = 0;
-    d->demuxer.totalAudioBandwidth= 0;
-    d->demuxer.totalKeyFrameSize = 0;
-    d->demuxer.totalPFrameSize = 0;
-    d->demuxer.totalPackets = 0;
-    d->demuxer.totalVideoPackets = 0;
-    d->demuxer.totalAudioPackets = 0;
-    d->demuxer.lostFrames = 0;
+    d->demuxer.clearStatistics();
     d->statistics.totalFrames = 0;
     d->statistics.droppedFrames = 0;
     d->statistics.droppedPackets = 0;
