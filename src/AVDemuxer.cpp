@@ -1337,6 +1337,8 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
 
 void AVDemuxer::clearStatistics()
 {
+    QMutexLocker lock(&d->mutex);
+
     totalBandwidth = 0;
     totalVideoBandwidth = 0;
     totalAudioBandwidth = 0;
