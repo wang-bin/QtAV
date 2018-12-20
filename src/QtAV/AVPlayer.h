@@ -422,6 +422,9 @@ public:
     bool adaptiveBuffer() const;
     void setAdaptiveBuffer(bool value);
 
+    int autoPlay() const;
+    void setAutoPlay(bool value);
+
     QVariantMap mediaData() const;
 
     int mediaDataTimerInterval() const;

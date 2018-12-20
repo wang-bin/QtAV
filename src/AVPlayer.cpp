@@ -489,6 +489,19 @@ void AVPlayer::setAdaptiveBuffer(bool value)
     Q_EMIT adaptiveBufferChanged(value);
 }
 
+int AVPlayer::autoPlay() const
+{
+    return d->autoPlay;
+}
+
+void AVPlayer::setAutoPlay(bool value)
+{
+    if (d->autoPlay == value)
+        return;
+    d->autoPlay = value;
+    d->applyAutoPlay(this, value);
+}
+
 QVariantMap AVPlayer::mediaData() const
 {
     return d->mediaData;
@@ -1241,7 +1254,7 @@ bool AVPlayer::load()
 
 void AVPlayer::play()
 {
-    d->applyAutoPlay(this, true);
+    d->applyAutoPlay(this, d->autoPlay);
 
     //FIXME: bad delay after play from here
     if (isPlaying()) {

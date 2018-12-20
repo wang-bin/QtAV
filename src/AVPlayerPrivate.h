@@ -171,6 +171,7 @@ public:
     QTimer adaptiveBuffer_timer;
 
     QTimer autoPlay_timer;
+    bool autoPlay = false;
 
     QElapsedTimer elapsedTimer;
     QElapsedTimer totalElapsedTimer;

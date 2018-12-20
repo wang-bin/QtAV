@@ -202,6 +202,8 @@ void QmlAVPlayer::setAutoPlay(bool autoplay)
         return;
 
     mAutoPlay = autoplay;
+    if (mpPlayer)
+        mpPlayer->setAutoPlay(autoplay);
     Q_EMIT autoPlayChanged();
 }
 
