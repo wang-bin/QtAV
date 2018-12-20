@@ -105,9 +105,9 @@ void QmlAVPlayer::componentComplete()
 {
     // TODO: set player parameters
     if (mSource.isValid() && (mAutoLoad || mAutoPlay)) {
-        if (mAutoLoad)
-            mpPlayer->load();
-        if (mAutoPlay)
+//        if (mAutoLoad)
+//            mpPlayer->load();
+//        if (mAutoPlay)
             mpPlayer->play();
     }
 
@@ -167,9 +167,9 @@ void QmlAVPlayer::setSource(const QUrl &url)
         Q_EMIT error(mError, mErrorString);
         Q_EMIT errorChanged();
         stop(); // TODO: no stop for autoLoad?
-        if (mAutoLoad)
-            mpPlayer->load();
-        if (mAutoPlay) {
+//        if (mAutoLoad)
+//            mpPlayer->load();
+        if (mAutoPlay || mAutoLoad) {
             //mPlaybackState is actually changed in slots. But if set to a new source the state may not change before call play()
             mPlaybackState = StoppedState;
             play();
