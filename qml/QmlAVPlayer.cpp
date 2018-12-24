@@ -485,6 +485,21 @@ void QmlAVPlayer::setDisconnectTimeout(int value)
     }
 }
 
+int QmlAVPlayer::autoPlayInterval() const
+{
+    return mpPlayer->autoPlayInterval();
+}
+
+void QmlAVPlayer::setAutoPlayInterval(int value)
+{
+    if (mpPlayer->autoPlayInterval() == value)
+        return;
+    if (mpPlayer) {
+        mpPlayer->setAutoPlayInterval(value);
+        Q_EMIT autoPlayIntervalChanged();
+    }
+}
+
 void QmlAVPlayer::startRecording(QString filePath, int duration)
 {
     mpPlayer->startRecording(filePath, duration);

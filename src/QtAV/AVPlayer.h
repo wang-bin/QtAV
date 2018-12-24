@@ -86,6 +86,7 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(QVariantMap mediaData READ mediaData NOTIFY mediaDataTimerTriggered)
     Q_PROPERTY(int mediaDataTimerInterval READ mediaDataTimerInterval WRITE setMediaDataTimerInterval NOTIFY mediaDataTimerIntervalChanged)
     Q_PROPERTY(int disconnectTimeout READ disconnectTimeout WRITE setDisconnectTimeout NOTIFY disconnectTimeoutChanged)
+    Q_PROPERTY(int autoPlayInterval READ autoPlayInterval WRITE setAutoPlayInterval NOTIFY autoPlayIntervalChanged)
     Q_PROPERTY(unsigned int chapters READ chapters NOTIFY chaptersChanged)
     Q_ENUMS(State)
 public:
@@ -433,6 +434,9 @@ public:
     int disconnectTimeout() const;
     void setDisconnectTimeout(int value);
 
+    int autoPlayInterval() const;
+    void setAutoPlayInterval(int value);
+
     void resetMediaData();
 
     void startRecording(const QString &filePath, int duration = -1);
@@ -581,6 +585,7 @@ Q_SIGNALS:
     void mediaDataTimerStarted();
     void mediaDataTimerIntervalChanged(int);
     void disconnectTimeoutChanged(int);
+    void autoPlayIntervalChanged(int);
     /*!
      * \brief durationChanged emit when media is loaded/unloaded
      */

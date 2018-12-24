@@ -184,6 +184,7 @@ public:
     QVariantMap mediaData;
 
     int disconnectTimeout = 5000;
+    int autoPlayInterval = 5000;
 };
 
 } //namespace QtAV
