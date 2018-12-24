@@ -1507,7 +1507,6 @@ void AVPlayer::updateAutoPlay()
 {
     if(state()!=StoppedState)
         stop();
-    load();
     play();
     if(d->autoPlay_timer.interval()!=5000)
         d->autoPlay_timer.setInterval(5000);// to try reconnecting in 5 seconds
@@ -1519,18 +1518,11 @@ void AVPlayer::onMediaStatusChanged(MediaStatus status)
     {
         if(masterClock()->clockType()==AVClock::ExternalClock)
             d->clock->pause(true);
-
-        if(!d->autoPlay_timer.isActive())
-             d->autoPlay_timer.start();
     }
     else
     {
         if(masterClock()->clockType()==AVClock::ExternalClock)
             d->clock->pause(false);
-
-        d->autoPlay_timer.stop();
-        if(d->autoPlay_timer.interval()!=d->disconnectTimeout)
-            d->autoPlay_timer.setInterval(d->disconnectTimeout);
     }
 }
 

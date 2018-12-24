@@ -675,6 +675,10 @@ void AVPlayer::Private::applyAutoPlay(AVPlayer *player, bool autoPlay)
     {
         autoPlay_timer.setInterval(disconnectTimeout);
         connect(&autoPlay_timer,SIGNAL(timeout()),player,SLOT(updateAutoPlay()));
+        connect(player,&AVPlayer::loaded,[this](){
+            autoPlay_timer.stop();
+            autoPlay_timer.setInterval(disconnectTimeout);
+        });
     }
 }
 
@@ -820,7 +824,7 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
         }
         else if(player->state()!=PausedState)
         {
-            if(!autoPlay_timer.isActive())
+            if(autoPlay && !autoPlay_timer.isActive())
                 autoPlay_timer.start();
         }
     });
