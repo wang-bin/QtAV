@@ -38,7 +38,7 @@ static const qint64 kInvalidPosition = std::numeric_limits<qint64>::max();
 class AVPlayer::Private
 {
 public:
-    Private();
+    Private(AVPlayer * player);
     ~Private();
 
     bool checkSourceChange();
@@ -166,6 +166,8 @@ public:
     AVPlayer::State state;
     MediaEndAction end_action;
     QMutex load_mutex;
+
+    AVPlayer * q;
 
     bool adaptive_buffer;
     QTimer adaptiveBuffer_timer;

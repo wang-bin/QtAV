@@ -69,7 +69,7 @@ static bool correct_audio_channels(AVCodecContext *ctx) {
     return ctx->channel_layout > 0 && ctx->channels > 0;
 }
 
-AVPlayer::Private::Private()
+AVPlayer::Private::Private(AVPlayer *player)
     : auto_load(false)
     , async_load(true)
     , loaded(false)
@@ -112,6 +112,7 @@ AVPlayer::Private::Private()
     , status(NoMedia)
     , state(AVPlayer::StoppedState)
     , end_action(MediaEndAction_Default)
+    ,q(player)
     , adaptive_buffer(false)
 {
     demuxer.setInterruptTimeout(interrupt_timeout);

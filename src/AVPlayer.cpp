@@ -70,7 +70,7 @@ const QStringList& AVPlayer::supportedProtocols()
 
 AVPlayer::AVPlayer(QObject *parent) :
     QObject(parent)
-  , d(new Private())
+  , d(new Private(this))
 {
     d->vos = new OutputSet(this);
     d->aos = new OutputSet(this);
