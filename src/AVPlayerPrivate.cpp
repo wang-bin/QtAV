@@ -782,26 +782,7 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
         mediaData["containerFormat"] = demuxer.containerFormat();
     });
 
-    connect(player,&AVPlayer::firstKeyFrameReceived,player,[this, player](){
-        QTimer::singleShot(0,&demuxer,[this, player](){
-            statistics.totalFrames = 0;
-            statistics.droppedFrames = 0;
-            statistics.droppedPackets = 0;
-            demuxer.clearStatistics();
-            lastTotalBandwidth = 0;
-            lastTotalVideoBandwidth = 0;
-            lastTotalAudioBandwidth = 0;
-            lastTotalFrames = 0;
-            mediaData["realResolution"] = statistics.realResolution;
-            mediaData["connected"] = true;
-            mediaData["imageBufferSize"] = statistics.imageBufferSize;
-            elapsedTimer.start();
-            totalElapsedTimer.start();
-            mediaDataTimer.start();
-            emit player->mediaDataTimerStarted();
-        });
-    });
-    connect(&mediaDataTimer, &QTimer::timeout, [this, player]() {
+    auto updateMediaData = [this]() {
         if(!calcRates())
             return;
 
@@ -834,9 +815,28 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
             mediaData["averageVideoBandwidth"] = (static_cast<double>(demuxer.totalVideoBandwidth)/totalElapsed)*1000;
             mediaData["averageAudioBandwidth"] = (static_cast<double>(demuxer.totalAudioBandwidth)/totalElapsed)*1000;
         }
+        emit q->mediaDataTimerTriggered(mediaData);
+    };
 
-        emit player->mediaDataTimerTriggered(mediaData);
+    connect(player,&AVPlayer::firstKeyFrameReceived,player,[this, updateMediaData](){
+        statistics.totalFrames = 0;
+        statistics.droppedFrames = 0;
+        statistics.droppedPackets = 0;
+        demuxer.clearStatistics();
+        lastTotalBandwidth = 0;
+        lastTotalVideoBandwidth = 0;
+        lastTotalAudioBandwidth = 0;
+        lastTotalFrames = 0;
+        mediaData["realResolution"] = statistics.realResolution;
+        mediaData["connected"] = true;
+        mediaData["imageBufferSize"] = statistics.imageBufferSize;
+        elapsedTimer.start();
+        totalElapsedTimer.start();
+        mediaDataTimer.start();
+        updateMediaData();
+        emit q->mediaDataTimerStarted();
     });
+    connect(&mediaDataTimer, &QTimer::timeout, updateMediaData);
 }
 
 } //namespace QtAV
