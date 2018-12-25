@@ -131,9 +131,11 @@ AVPlayer::Private::Private(AVPlayer *player)
                 autoPlaylastTotalBandwidth = demuxer.totalBandwidth;
                 autoPlayElapsedTimer.start();
             }
-            else if(q->state()!=PausedState &&
-                    autoPlayElapsedTimer.elapsed()>=disconnectTimeout) {
-                autoPlayMode = "reconnect";
+            else if(q->state()!=PausedState) {
+                if(!autoPlayElapsedTimer.isValid())
+                    autoPlayElapsedTimer.start();
+                if(autoPlayElapsedTimer.elapsed()>=disconnectTimeout)
+                    autoPlayMode = "reconnect";
             }
         }
         else if(autoPlayMode=="reconnect") {
@@ -145,7 +147,6 @@ AVPlayer::Private::Private(AVPlayer *player)
         }
     });
     connect(player,&AVPlayer::loaded,[this](){
-        autoPlayElapsedTimer.start();
         autoPlayMode = "check";
         autoPlay_timer.setInterval(autoPlayCheckInterval);
     });
