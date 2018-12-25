@@ -124,6 +124,30 @@ AVPlayer::Private::Private(AVPlayer *player)
 
     mediaDataTimer.setInterval(1000);
 
+    connect(&autoPlay_timer,&QTimer::timeout,[this](){
+        if(autoPlayMode=="check") {
+            if(demuxer.totalBandwidth-autoPlaylastTotalBandwidth>0) {
+                autoPlaylastTotalBandwidth = demuxer.totalBandwidth;
+                autoPlayElapsedTimer.start();
+            }
+            else if(q->state()!=PausedState &&
+                    autoPlayElapsedTimer.elapsed()>=disconnectTimeout) {
+                autoPlayMode = "reconnect";
+            }
+        }
+        else if(autoPlayMode=="reconnect") {
+            if(q->state()!=StoppedState)
+                q->stop();
+            q->play();
+            if(autoPlay_timer.interval()!=autoPlayInterval)
+                autoPlay_timer.setInterval(autoPlayInterval);
+        }
+    });
+    connect(player,&AVPlayer::loaded,[this](){
+        autoPlayMode = "check";
+        autoPlay_timer.setInterval(autoPlayCheckInterval);
+    });
+
     vc_ids
 #if QTAV_HAVE(DXVA)
             //<< VideoDecoderId_DXVA
@@ -669,18 +693,14 @@ void AVPlayer::Private::applyAdaptiveBuffer(AVPlayer *player)
     }
 }
 
-void AVPlayer::Private::applyAutoPlay(AVPlayer *player, bool autoPlay)
+void AVPlayer::Private::applyAutoPlay(bool autoPlay)
 {
-    disconnect(&autoPlay_timer,SIGNAL(timeout()),player,SLOT(updateAutoPlay()));
-    if(autoPlay)
-    {
-        autoPlay_timer.setInterval(disconnectTimeout);
-        connect(&autoPlay_timer,SIGNAL(timeout()),player,SLOT(updateAutoPlay()));
-        connect(player,&AVPlayer::loaded,[this](){
-            autoPlay_timer.stop();
-            autoPlay_timer.setInterval(disconnectTimeout);
-        });
+    if(autoPlay) {
+        autoPlay_timer.setInterval(1000);
+        autoPlay_timer.start();
     }
+    else
+        autoPlay_timer.stop();
 }
 
 bool AVPlayer::Private::calcRates()
@@ -813,21 +833,6 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
         }
 
         emit player->mediaDataTimerTriggered(mediaData);
-
-        if(statistics.bandwidthRate>0)
-        {
-            if(autoPlay_timer.isActive())
-            {
-                autoPlay_timer.stop();
-                if(autoPlay_timer.interval()!=disconnectTimeout)
-                    autoPlay_timer.setInterval(disconnectTimeout);
-            }
-        }
-        else if(player->state()!=PausedState)
-        {
-            if(autoPlay && !autoPlay_timer.isActive())
-                autoPlay_timer.start();
-        }
     });
 }
 

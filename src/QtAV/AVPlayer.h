@@ -654,7 +654,6 @@ private Q_SLOTS:
     void onSeekFinished(qint64 value);
     void tryClearVideoRenderers();
     void updateAdaptiveBuffer();
-    void updateAutoPlay();
     void onMediaStatusChanged(QtAV::MediaStatus status);
     void seekChapter(int incr);
 protected:

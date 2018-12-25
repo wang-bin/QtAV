@@ -105,7 +105,7 @@ public:
 
     void applyAdaptiveBuffer(AVPlayer *player);
 
-    void applyAutoPlay(AVPlayer *player, bool autoPlay);
+    void applyAutoPlay(bool autoPlay);
 
     bool calcRates();
 
@@ -174,6 +174,12 @@ public:
 
     QTimer autoPlay_timer;
     bool autoPlay = false;
+    QString autoPlayMode = "check";
+    quint64 autoPlaylastTotalBandwidth = 0;
+    QElapsedTimer autoPlayElapsedTimer;
+    int disconnectTimeout = 5000;
+    int autoPlayInterval = 5000;
+    int autoPlayCheckInterval = 1000;
 
     QElapsedTimer elapsedTimer;
     QElapsedTimer totalElapsedTimer;
@@ -184,9 +190,6 @@ public:
 
     QTimer mediaDataTimer;
     QVariantMap mediaData;
-
-    int disconnectTimeout = 5000;
-    int autoPlayInterval = 5000;
 };
 
 } //namespace QtAV

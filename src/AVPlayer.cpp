@@ -499,7 +499,7 @@ void AVPlayer::setAutoPlay(bool value)
     if (d->autoPlay == value)
         return;
     d->autoPlay = value;
-    d->applyAutoPlay(this, value);
+    d->applyAutoPlay(value);
 }
 
 QVariantMap AVPlayer::mediaData() const
@@ -1270,7 +1270,7 @@ bool AVPlayer::load()
 
 void AVPlayer::play()
 {
-    d->applyAutoPlay(this, d->autoPlay);
+    d->applyAutoPlay(d->autoPlay);
 
     //FIXME: bad delay after play from here
     if (isPlaying()) {
@@ -1519,15 +1519,6 @@ void AVPlayer::updateAdaptiveBuffer()
     }
 }
 
-void AVPlayer::updateAutoPlay()
-{
-    if(state()!=StoppedState)
-        stop();
-    play();
-    if(d->autoPlay_timer.interval()!=d->autoPlayInterval)
-        d->autoPlay_timer.setInterval(d->autoPlayInterval);// to try reconnecting in 5 seconds
-}
-
 void AVPlayer::onMediaStatusChanged(MediaStatus status)
 {
     if(status!=BufferedMedia)
@@ -1580,7 +1571,7 @@ void AVPlayer::seekChapter(int incr)
 
 void AVPlayer::stop()
 {
-    d->applyAutoPlay(this, false);
+    d->applyAutoPlay(false);
 
     // check d->timer_id, <0 return?
     if (d->reset_state) {
