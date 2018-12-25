@@ -61,6 +61,9 @@ protected:
 
 private:
     AVPlayer * player;
+
+Q_SIGNALS:
+    void firstKeyFrameReceived();
 };
 
 

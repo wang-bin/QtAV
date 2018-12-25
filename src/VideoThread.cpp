@@ -72,6 +72,7 @@ VideoThread::VideoThread(QObject *parent) :
     AVThread(*new VideoThreadPrivate(), parent)
 {
     player = qobject_cast<AVPlayer*>(parent);
+    connect(this,&VideoThread::firstKeyFrameReceived,player,&AVPlayer::firstKeyFrameReceived, Qt::BlockingQueuedConnection);
 }
 
 //it is called in main thread usually, but is being used in video thread,
@@ -525,7 +526,7 @@ void VideoThread::run()
                                                  dec->frame().width(),
                                                  dec->frame().height(),
                                                  32);
-                emit player->firstKeyFrameReceived();
+                emit firstKeyFrameReceived();
             }
         }
 
