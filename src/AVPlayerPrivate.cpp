@@ -680,19 +680,19 @@ void AVPlayer::Private::updateBufferValue()
         updateBufferValue(vthread->packetQueue());
 }
 
-void AVPlayer::Private::applyAdaptiveBuffer(AVPlayer *player)
+void AVPlayer::Private::applyAdaptiveBuffer()
 {
-    disconnect(&adaptiveBuffer_timer,SIGNAL(timeout()),player,SLOT(updateAdaptiveBuffer()));
-    disconnect(player,SIGNAL(started()),&adaptiveBuffer_timer,SLOT(start()));
-    disconnect(player,SIGNAL(stopped()),&adaptiveBuffer_timer,SLOT(stop()));
+    disconnect(&adaptiveBuffer_timer,SIGNAL(timeout()),q,SLOT(updateAdaptiveBuffer()));
+    disconnect(q,SIGNAL(started()),&adaptiveBuffer_timer,SLOT(start()));
+    disconnect(q,SIGNAL(stopped()),&adaptiveBuffer_timer,SLOT(stop()));
     if(adaptive_buffer)
     {
         //buffer_mode = BufferTime;
         adaptiveBuffer_timer.setInterval(30);
-        player->setBufferValue(5);
-        connect(&adaptiveBuffer_timer,SIGNAL(timeout()),player,SLOT(updateAdaptiveBuffer()));
-        connect(player,SIGNAL(started()),&adaptiveBuffer_timer,SLOT(start()));
-        connect(player,SIGNAL(stopped()),&adaptiveBuffer_timer,SLOT(stop()));
+        q->setBufferValue(5);
+        connect(&adaptiveBuffer_timer,SIGNAL(timeout()),q,SLOT(updateAdaptiveBuffer()));
+        connect(q,SIGNAL(started()),&adaptiveBuffer_timer,SLOT(start()));
+        connect(q,SIGNAL(stopped()),&adaptiveBuffer_timer,SLOT(stop()));
     }
 }
 
@@ -732,7 +732,7 @@ bool AVPlayer::Private::calcRates()
     return true;
 }
 
-void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
+void AVPlayer::Private::applyMediaDataCalculation()
 {
     mediaData["bandwidthRate"] = 0;
     mediaData["videoBandwidthRate"] = 0;
@@ -764,19 +764,19 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
     mediaData["decoderDetails"] = "";
     mediaData["containerFormat"] = "";
 
-    connect(player,&AVPlayer::sourceChanged, player, &AVPlayer::resetMediaData);
+    connect(q,&AVPlayer::sourceChanged, q, &AVPlayer::resetMediaData);
 
-    connect(player,&AVPlayer::stopped,player,[this](){
+    connect(q,&AVPlayer::stopped,q,[this](){
         mediaData["connected"] = false;
     });
-    connect(player,&AVPlayer::started,player,[this](){
+    connect(q,&AVPlayer::started,q,[this](){
         mediaData["connected"] = true;
     });
-    connect(player,&AVPlayer::started,player,[this, player](){
-        if(QUrl::fromUserInput(player->file()).isLocalFile())
+    connect(q,&AVPlayer::started,q,[this](){
+        if(QUrl::fromUserInput(q->file()).isLocalFile())
              mediaData["protocol"] = "File";
         else
-            mediaData["protocol"] = player->file().mid(0,player->file().indexOf(":")).toUpper();
+            mediaData["protocol"] = q->file().mid(0,q->file().indexOf(":")).toUpper();
         mediaData["decoder"] = statistics.video.decoder;
         mediaData["decoderDetails"] = statistics.video.decoder_detail;
         mediaData["containerFormat"] = demuxer.containerFormat();
@@ -818,7 +818,7 @@ void AVPlayer::Private::applyMediaDataCalculation(AVPlayer *player)
         emit q->mediaDataTimerTriggered(mediaData);
     };
 
-    connect(player,&AVPlayer::firstKeyFrameReceived,player,[this, updateMediaData](){
+    connect(q,&AVPlayer::firstKeyFrameReceived,[this, updateMediaData](){
         statistics.totalFrames = 0;
         statistics.droppedFrames = 0;
         statistics.droppedPackets = 0;

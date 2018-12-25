@@ -101,7 +101,7 @@ AVPlayer::AVPlayer(QObject *parent) :
 
     //audio()->setBackends(QStringList()<<"null");
 
-    d->applyMediaDataCalculation(this);
+    d->applyMediaDataCalculation();
 }
 
 AVPlayer::~AVPlayer()
@@ -485,7 +485,7 @@ void AVPlayer::setAdaptiveBuffer(bool value)
     if (d->adaptive_buffer == value)
         return;
     d->adaptive_buffer = value;
-    d->applyAdaptiveBuffer(this);
+    d->applyAdaptiveBuffer();
     Q_EMIT adaptiveBufferChanged(value);
 }
 

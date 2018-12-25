@@ -103,13 +103,13 @@ public:
         }
     }
 
-    void applyAdaptiveBuffer(AVPlayer *player);
+    void applyAdaptiveBuffer();
 
     void applyAutoPlay(bool autoPlay);
 
     bool calcRates();
 
-    void applyMediaDataCalculation(AVPlayer *player);
+    void applyMediaDataCalculation();
 
     bool auto_load;
     bool async_load;
