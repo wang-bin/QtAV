@@ -124,6 +124,7 @@ AVPlayer::Private::Private(AVPlayer *player)
 
     mediaDataTimer.setInterval(1000);
 
+    autoPlay_timer.setInterval(autoPlayCheckInterval);
     connect(&autoPlay_timer,&QTimer::timeout,[this](){
         if(autoPlayMode=="check") {
             if(demuxer.totalBandwidth-autoPlaylastTotalBandwidth>0) {
@@ -144,6 +145,7 @@ AVPlayer::Private::Private(AVPlayer *player)
         }
     });
     connect(player,&AVPlayer::loaded,[this](){
+        autoPlayElapsedTimer.start();
         autoPlayMode = "check";
         autoPlay_timer.setInterval(autoPlayCheckInterval);
     });
@@ -696,7 +698,7 @@ void AVPlayer::Private::applyAdaptiveBuffer(AVPlayer *player)
 void AVPlayer::Private::applyAutoPlay(bool autoPlay)
 {
     if(autoPlay) {
-        autoPlay_timer.setInterval(1000);
+        autoPlay_timer.setInterval(autoPlayCheckInterval);
         autoPlay_timer.start();
     }
     else
