@@ -126,6 +126,7 @@ public:
     qint64 totalKeyFrames = -1;
     QSize realResolution = QSize(0,0);
     int imageBufferSize = 0;
+    std::atomic<bool> resetValues{true};
 };
 
 } //namespace QtAV

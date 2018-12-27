@@ -315,6 +315,13 @@ void VideoThread::run()
             pkt = d.packets.take(); //wait to dequeue
            // TODO: push pts history here and reorder
         }
+        if(d.statistics->resetValues) {
+            d.statistics->totalFrames = 0;
+            d.statistics->droppedFrames = 0;
+            d.statistics->droppedPackets = 0;
+            d.statistics->totalKeyFrames = -1;
+            d.statistics->resetValues = false;
+        }
         if (pkt.isEOF()) {
             wait_key_frame = false;
             qDebug("video thread gets an eof packet.");

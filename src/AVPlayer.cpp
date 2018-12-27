@@ -551,10 +551,7 @@ void AVPlayer::resetMediaData()
 {
     d->mediaDataTimer.stop();
     d->demuxer.clearStatistics();
-    d->statistics.totalFrames = 0;
-    d->statistics.droppedFrames = 0;
-    d->statistics.droppedPackets = 0;
-    d->statistics.totalKeyFrames = -1;
+    d->statistics.resetValues = true;
 }
 
 void AVPlayer::startRecording(const QString& filePath, int duration)
