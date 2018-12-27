@@ -498,6 +498,20 @@ bool AVDemuxer::readFrame()
         return false;
     }
 
+    if(resetValues) {
+        totalBandwidth = 0;
+        totalVideoBandwidth = 0;
+        totalAudioBandwidth = 0;
+        totalKeyFrameSize = 0;
+        totalPFrameSize = 0;
+        totalPackets = 0;
+        totalVideoPackets = 0;
+        totalAudioPackets = 0;
+        lostFrames = 0;
+        d->averagePtsDiff = 0;
+        resetValues = false;
+    }
+
     auto packetSize = d->calculatePacketSize(&packet);
 
     totalBandwidth+=static_cast<quint64>(packetSize);
@@ -1333,22 +1347,6 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
     AVError err(ec, err_msg, averr);
     Q_EMIT error(err, ec, av_err2str(averr));
     *errorCode = ec;
-}
-
-void AVDemuxer::clearStatistics()
-{
-    QMutexLocker lock(&d->mutex);
-
-    totalBandwidth = 0;
-    totalVideoBandwidth = 0;
-    totalAudioBandwidth = 0;
-    totalKeyFrameSize = 0;
-    totalPFrameSize = 0;
-    totalPackets = 0;
-    totalVideoPackets = 0;
-    totalAudioPackets = 0;
-    lostFrames = 0;
-    d->averagePtsDiff = 0;
 }
 
 QString AVDemuxer::containerFormat()

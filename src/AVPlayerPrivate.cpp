@@ -819,10 +819,7 @@ void AVPlayer::Private::applyMediaDataCalculation()
     };
 
     connect(q,&AVPlayer::firstKeyFrameReceived,[this, updateMediaData](){
-        statistics.totalFrames = 0;
-        statistics.droppedFrames = 0;
-        statistics.droppedPackets = 0;
-        demuxer.clearStatistics();
+        demuxer.resetValues = true;
         lastTotalBandwidth = 0;
         lastTotalVideoBandwidth = 0;
         lastTotalAudioBandwidth = 0;

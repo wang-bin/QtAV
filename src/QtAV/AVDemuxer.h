@@ -208,7 +208,6 @@ private:
     friend class InterruptHandler;
 
 public slots:
-    void clearStatistics();
     QString containerFormat();
 
 public:
@@ -225,6 +224,7 @@ public:
     qint64 totalAudioPackets = 0;
     qint64 lostFrames = 0;
     int audioStreamIndex = -1;
+    std::atomic<bool> resetValues{true};
 };
 
 } //namespace QtAV
