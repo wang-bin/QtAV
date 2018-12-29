@@ -81,6 +81,7 @@ public:
     qreal decodeFrameRate() const; //move to statistics?
     void setDropFrameOnSeek(bool value);
 
+    void resetState();
 public slots:
     virtual void stop();
     /*change pause state. the pause/continue action will do in the next loop*/
@@ -100,7 +101,6 @@ private Q_SLOTS:
     void onFinished();
 protected:
     AVThread(AVThreadPrivate& d, QObject *parent = 0);
-    void resetState();
     /*
      * If the pause state is true setted by pause(true), then block the thread and wait for pause state changed, i.e. pause(false)
      * and return true. Otherwise, return false immediatly.
