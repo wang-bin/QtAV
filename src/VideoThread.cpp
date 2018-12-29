@@ -247,7 +247,7 @@ void VideoThread::run()
     DPTR_D(VideoThread);
     if (!d.dec || !d.dec->isAvailable() || !d.outputSet)
         return;
-    resetState();
+    // resetState(); // we can't reset the thread state from here
     if (d.capture->autoSave()) {
         d.capture->setCaptureName(QFileInfo(d.statistics->url).completeBaseName());
     }
@@ -332,7 +332,7 @@ void VideoThread::run()
                 d.statistics->droppedPackets++;
                 // may be we should check other information. invalid packet can come from
                 wait_key_frame = true;
-                qDebug("Invalid packet! flush video codec context!!!!!!!!!! video packet queue size: %d", d.packets.size());  
+                qDebug("Invalid packet! flush video codec context!!!!!!!!!! video packet queue size: %d", d.packets.size());
                 d.dec->flush(); //d.dec instead of dec because d.dec maybe changed in processNextTask() but dec is not
                 d.render_pts0 = pkt.pts;
                 sync_id = pkt.position;

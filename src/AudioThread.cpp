@@ -78,7 +78,7 @@ void AudioThread::run()
     //No decoder or output. No audio output is ok, just display picture
     if (!d.dec || !d.dec->isAvailable() || !d.outputSet)
         return;
-    resetState();
+    // resetState(); // we can't reset the thread state from here
     Q_ASSERT(d.clock != 0);
     d.init();
     Packet pkt;

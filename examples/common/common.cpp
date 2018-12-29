@@ -35,6 +35,7 @@
 #include <QtCore/QStandardPaths>
 #endif
 #include <QtDebug>
+#include <QMutex>
 
 #ifdef Q_OS_WINRT
 #include <wrl.h>
@@ -98,8 +99,13 @@ QtMsgHandler qInstallMessageHandler(QtMessageHandler h) {
     return qInstallMsgHandler(MsgHandlerWrapper::handler);
 }
 #endif
+
+QMutex loggerMutex;
 void Logger(QtMsgType type, const QMessageLogContext &, const QString& qmsg)
 {
+    // QFile is not thread-safe
+    QMutexLocker locker(&loggerMutex);
+
     const QByteArray msgArray = qmsg.toUtf8();
     const char* msg = msgArray.constData();
      switch (type) {
