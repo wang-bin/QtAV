@@ -838,7 +838,6 @@ void AVPlayer::Private::applyMediaDataCalculation()
         elapsedTimer.start();
         totalElapsedTimer.start();
         mediaDataTimer.start();
-        updateMediaData();
         emit q->mediaDataTimerStarted();
     });
     connect(&mediaDataTimer, &QTimer::timeout, updateMediaData);
