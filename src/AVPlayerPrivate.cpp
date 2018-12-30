@@ -124,23 +124,29 @@ AVPlayer::Private::Private(AVPlayer *player)
 
     mediaDataTimer.setInterval(1000);
 
-    autoPlay_timer.setInterval(autoPlayCheckInterval);
     connect(&autoPlay_timer,&QTimer::timeout,[this](){
-        if(autoPlayMode=="check") {
-            if(demuxer.totalBandwidth-autoPlaylastTotalBandwidth>0) {
-                autoPlaylastTotalBandwidth = demuxer.totalBandwidth;
-                autoPlayElapsedTimer.start();
+        if(autoPlayMode=="check" || autoPlayMode=="timeout") {
+            if(demuxer.isReceiving.load()) {
+                demuxer.isReceiving.store(false);
+                autoPlayMode="check";
             }
-            else if(q->state()!=PausedState) {
-                if(!autoPlayElapsedTimer.isValid())
+            else {
+                if(autoPlayMode=="check" &&
+                   q->state()!=PausedState &&
+                   q->file()!="") {
                     autoPlayElapsedTimer.start();
-                if(autoPlayElapsedTimer.elapsed()>=disconnectTimeout)
-                    autoPlayMode = "reconnect";
+                    autoPlayMode="timeout";
+                }
+                else if(autoPlayMode=="timeout") {
+                    if(autoPlayElapsedTimer.elapsed()>=disconnectTimeout) {
+                        autoPlayMode = "stop";
+                        q->stop();
+                        autoPlayMode = "reconnect";
+                    }
+                }
             }
         }
         else if(autoPlayMode=="reconnect") {
-            if(q->state()!=StoppedState)
-                q->stop();
             q->play();
             if(autoPlay_timer.interval()!=autoPlayInterval)
                 autoPlay_timer.setInterval(autoPlayInterval);
@@ -149,6 +155,8 @@ AVPlayer::Private::Private(AVPlayer *player)
     connect(player,&AVPlayer::loaded,[this](){
         autoPlayMode = "check";
         autoPlay_timer.setInterval(autoPlayCheckInterval);
+        if(autoPlay)
+            autoPlay_timer.start();
     });
 
     vc_ids

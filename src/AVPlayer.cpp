@@ -1267,8 +1267,6 @@ bool AVPlayer::load()
 
 void AVPlayer::play()
 {
-    d->applyAutoPlay(d->autoPlay);
-
     //FIXME: bad delay after play from here
     if (isPlaying()) {
         qDebug("play() when playing");
@@ -1568,8 +1566,8 @@ void AVPlayer::seekChapter(int incr)
 
 void AVPlayer::stop()
 {
-    d->applyAutoPlay(false);
-
+    if(d->autoPlayMode!="stop")
+        d->applyAutoPlay(false);
     // check d->timer_id, <0 return?
     if (d->reset_state) {
         /*

@@ -177,7 +177,6 @@ public:
     QTimer autoPlay_timer;
     bool autoPlay = false;
     QString autoPlayMode = "check";
-    quint64 autoPlaylastTotalBandwidth = 0;
     QElapsedTimer autoPlayElapsedTimer;
     int disconnectTimeout = 5000;
     int autoPlayInterval = 5000;
