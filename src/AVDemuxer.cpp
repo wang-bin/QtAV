@@ -498,7 +498,8 @@ bool AVDemuxer::readFrame()
         return false;
     }
 
-    if(resetValues) {
+    if(resetValues.load()) {
+        this->lock.lockForWrite();
         totalBandwidth = 0;
         totalVideoBandwidth = 0;
         totalAudioBandwidth = 0;
@@ -509,15 +510,19 @@ bool AVDemuxer::readFrame()
         totalAudioPackets = 0;
         lostFrames = 0;
         d->averagePtsDiff = 0;
+        this->lock.unlock();
         resetValues = false;
     }
 
     auto packetSize = d->calculatePacketSize(&packet);
 
+    this->lock.lockForWrite();
     totalBandwidth+=static_cast<quint64>(packetSize);
     totalPackets++;
+    this->lock.unlock();
     if( packet.stream_index==videoStream())
     {
+        this->lock.lockForWrite();
         totalVideoBandwidth+=static_cast<quint64>(packetSize);
         totalVideoPackets++;
 
@@ -532,6 +537,8 @@ bool AVDemuxer::readFrame()
             lostFrames+=(ptsDiff/d->averagePtsDiff);
         else
             d->averagePtsDiff += (ptsDiff-d->averagePtsDiff)/totalVideoPackets;
+        this->lock.unlock();
+
         d->lastPts = packet.pts;
 
         if(d->recording)
@@ -575,8 +582,10 @@ bool AVDemuxer::readFrame()
     }
     else if( packet.stream_index==audioStream() || packet.stream_index==audioStreamIndex)
     {
+        this->lock.lockForWrite();
         totalAudioBandwidth+=static_cast<quint64>(packetSize);
         totalAudioPackets++;
+        this->lock.unlock();
     }
 
     d->stream = packet.stream_index;

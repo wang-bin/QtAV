@@ -109,6 +109,8 @@ public:
 
     bool calcRates();
 
+    void initMediaData();
+
     void applyMediaDataCalculation();
 
     bool auto_load;

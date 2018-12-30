@@ -27,6 +27,7 @@
 #include <QtCore/QTime>
 #include <QtCore/QSharedData>
 #include <QSize>
+#include <QReadWriteLock>
 
 /*!
  * values from functions are dynamically calculated
@@ -126,6 +127,7 @@ public:
     qint64 totalKeyFrames = -1;
     QSize realResolution = QSize(0,0);
     int imageBufferSize = 0;
+    QReadWriteLock lock;
     std::atomic<bool> resetValues{true};
 };
 

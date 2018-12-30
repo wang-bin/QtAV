@@ -549,9 +549,9 @@ void AVPlayer::setAutoPlayInterval(int value)
 
 void AVPlayer::resetMediaData()
 {
+    d->statistics.resetValues.store(true);
+    d->demuxer.resetValues.store(true);
     d->mediaDataTimer.stop();
-    d->statistics.resetValues = true;
-    d->demuxer.resetValues = true;
 }
 
 void AVPlayer::startRecording(const QString& filePath, int duration)
