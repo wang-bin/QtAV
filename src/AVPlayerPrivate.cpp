@@ -855,9 +855,11 @@ void AVPlayer::Private::applyMediaDataCalculation()
         lastTotalVideoBandwidth = 0;
         lastTotalAudioBandwidth = 0;
         lastTotalFrames = 0;
-        mediaData["realResolution"] = statistics.realResolution;
         mediaData["connected"] = true;
+        statistics.lock.lockForRead();
+        mediaData["realResolution"] = statistics.realResolution;
         mediaData["imageBufferSize"] = statistics.imageBufferSize;
+        statistics.lock.unlock();
         elapsedTimer.start();
         totalElapsedTimer.start();
         mediaDataTimer.start();
