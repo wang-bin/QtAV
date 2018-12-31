@@ -798,8 +798,6 @@ void AVPlayer::Private::applyMediaDataCalculation()
     });
     connect(q,&AVPlayer::started,q,[this](){
         mediaData["connected"] = true;
-    });
-    connect(q,&AVPlayer::started,q,[this](){
         if(QUrl::fromUserInput(q->file()).isLocalFile())
              mediaData["protocol"] = "File";
         else
