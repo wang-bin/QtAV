@@ -208,9 +208,6 @@ private:
     class InterruptHandler;
     friend class InterruptHandler;
 
-public slots:
-    QString containerFormat();
-
 public:
     void startRecording(const QString& filePath, int duration = -1);
     void stopRecording();
@@ -225,6 +222,7 @@ public:
     qint64 totalAudioPackets = 0;
     qint64 lostFrames = 0;
     int audioStreamIndex = -1;
+    QString containerFormat;
     QReadWriteLock lock;
     std::atomic<bool> resetValues{true};
     std::atomic<bool> isReceiving{false}; //for autoPlay

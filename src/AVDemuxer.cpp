@@ -592,6 +592,14 @@ bool AVDemuxer::readFrame()
     d->stream = packet.stream_index;
     //check whether the 1st frame is alreay got. emit only once
     if (!d->started) {
+        this->lock.lockForWrite();
+        if(d->format_ctx && d->format_ctx->iformat && d->format_ctx->iformat->name) {
+            containerFormat =  d->format_ctx->iformat->name;
+        }
+        else
+            containerFormat = "";
+        this->lock.unlock();
+
         d->started = true;
         Q_EMIT started();
     }
@@ -1357,12 +1365,6 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
     AVError err(ec, err_msg, averr);
     Q_EMIT error(err, ec, av_err2str(averr));
     *errorCode = ec;
-}
-
-QString AVDemuxer::containerFormat()
-{
-    if(d->format_ctx && d->format_ctx->iformat)
-        return d->format_ctx->iformat->name;
 }
 
 void AVDemuxer::startRecording(const QString &filePath, int duration)

@@ -804,7 +804,9 @@ void AVPlayer::Private::applyMediaDataCalculation()
             mediaData["protocol"] = q->file().mid(0,q->file().indexOf(":")).toUpper();
         mediaData["decoder"] = statistics.video.decoder;
         mediaData["decoderDetails"] = statistics.video.decoder_detail;
-        mediaData["containerFormat"] = demuxer.containerFormat();
+        demuxer.lock.lockForRead();
+        mediaData["containerFormat"] = demuxer.containerFormat;
+        demuxer.lock.unlock();
     });
 
     auto updateMediaData = [this]() {
