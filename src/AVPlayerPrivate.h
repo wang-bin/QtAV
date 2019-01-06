@@ -111,6 +111,8 @@ public:
 
     void initMediaData();
 
+    void updateMediaData();
+
     void applyMediaDataCalculation();
 
     bool auto_load;

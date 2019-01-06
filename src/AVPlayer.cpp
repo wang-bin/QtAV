@@ -515,6 +515,12 @@ int AVPlayer::mediaDataTimerInterval() const
 void AVPlayer::setMediaDataTimerInterval(int value)
 {
     d->mediaDataTimer.setInterval(value);
+    if(value<1000000000) {
+        d->updateMediaData();
+        d->mediaDataTimer.start();
+    }
+    else
+        d->mediaDataTimer.stop();
 }
 
 int AVPlayer::disconnectTimeout() const
