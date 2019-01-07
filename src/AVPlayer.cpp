@@ -808,7 +808,7 @@ void AVPlayer::loadInternal()
     if(duration()<=0)
     {
         d->demuxer.audioStreamIndex = d->demuxer.audioStream();
-        setAudioStream(-1);
+        //setAudioStream(-1);
     }
 }
 
