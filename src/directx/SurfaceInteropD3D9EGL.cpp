@@ -83,7 +83,7 @@ EGLInteropResource::~EGLInteropResource()
 
 void EGLInteropResource::releaseEGL() {
     if (egl->surface != EGL_NO_SURFACE) {
-        eglReleaseTexImage(egl->dpy, egl->surface, EGL_BACK_BUFFER);
+        //eglReleaseTexImage(egl->dpy, egl->surface, EGL_BACK_BUFFER);
         eglDestroySurface(egl->dpy, egl->surface);
         egl->surface = EGL_NO_SURFACE;
     }
