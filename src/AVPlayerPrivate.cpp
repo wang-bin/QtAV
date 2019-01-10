@@ -727,6 +727,14 @@ bool AVPlayer::Private::calcRates()
     if(!elapsedTimer.isValid())
     {
         elapsedTimer.start();
+        demuxer.lock.lockForRead();
+        lastTotalBandwidth = demuxer.totalBandwidth;
+        lastTotalVideoBandwidth = demuxer.totalVideoBandwidth;
+        lastTotalAudioBandwidth = demuxer.totalAudioBandwidth;
+        demuxer.lock.unlock();
+        statistics.lock.lockForRead();
+        lastTotalFrames = statistics.totalFrames;
+        statistics.lock.unlock();
         return false;
     }
 
@@ -845,6 +853,7 @@ void AVPlayer::Private::applyMediaDataCalculation()
 
     connect(q,&AVPlayer::sourceChanged, [this](){
        mediaData["connected"] = false;
+       elapsedTimer.invalidate();
        if(mediaDataTimer.interval()  < 1000000000)
             statistics.resetValues.store(true);
     });
@@ -866,7 +875,7 @@ void AVPlayer::Private::applyMediaDataCalculation()
         mediaData["realResolution"] = statistics.realResolution;
         mediaData["imageBufferSize"] = statistics.imageBufferSize;
         statistics.lock.unlock();
-        elapsedTimer.start();
+        elapsedTimer.invalidate();
         totalElapsedTimer.start();
         mediaDataTimer.start();
         emit q->mediaDataTimerStarted();
