@@ -45,6 +45,7 @@
 #include "QtAV/private/AVCompat.h"
 #include "utils/internal.h"
 #include "utils/Logger.h"
+#include <QUrl>
 extern "C" {
 #include <libavutil/mathematics.h>
 }
@@ -587,6 +588,7 @@ void AVPlayer::setFile(const QString &path)
     // QFile does not support "file:"
     if (p.startsWith(QLatin1String("file:")))
         p = Internal::Path::toLocal(p);
+    p = QUrl::fromEncoded(p.toUtf8()).url();
     d->reset_state = d->current_source.type() != QVariant::String || d->current_source.toString() != p;
     d->current_source = p;
     // TODO: d->reset_state = d->demuxer2.setMedia(path);
