@@ -322,7 +322,7 @@ void VideoThread::run()
             d.statistics->droppedPackets = 0;
             d.statistics->totalKeyFrames = -1;
             d.statistics->lock.unlock();
-            d.statistics->resetValues = false;
+            d.statistics->resetValues.store(false);
         }
         if (pkt.isEOF()) {
             wait_key_frame = false;
@@ -538,7 +538,7 @@ void VideoThread::run()
                                                  dec->frame().width(),
                                                  dec->frame().height(),
                                                  32);
-                d.statistics->totalFrames = 0;
+                d.statistics->totalFrames = 1;
                 d.statistics->droppedFrames = 0;
                 d.statistics->droppedPackets = 0;
                 emit firstKeyFrameReceived();

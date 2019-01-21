@@ -511,7 +511,7 @@ bool AVDemuxer::readFrame()
         lostFrames = 0;
         d->averagePtsDiff = 0;
         this->lock.unlock();
-        resetValues = false;
+        resetValues.store(false);
     }
 
     auto packetSize = d->calculatePacketSize(&packet);
