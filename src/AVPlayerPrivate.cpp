@@ -822,6 +822,7 @@ void AVPlayer::Private::updateMediaData()
     mediaData["droppedPackets"] = statistics.droppedPackets;
     mediaData["droppedFrames"] = statistics.droppedFrames;
     mediaData["totalKeyFrames"] = statistics.totalKeyFrames;
+    mediaData["imageBufferSize"] = statistics.imageBufferSize;
     statistics.lock.unlock();
 
     demuxer.lock.lockForRead();

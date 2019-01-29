@@ -533,15 +533,26 @@ void VideoThread::run()
             if(d.statistics->totalKeyFrames==1)
             {
                 d.statistics->realResolution = QSize(dec->frame().width(), dec->frame().height());
-                d.statistics->imageBufferSize =
-                        av_image_get_buffer_size(AVPixelFormat(dec->frame().pixelFormatFFmpeg()),
-                                                 dec->frame().width(),
-                                                 dec->frame().height(),
-                                                 32);
+
+                auto ibs = av_image_get_buffer_size(AVPixelFormat(dec->frame().pixelFormatFFmpeg()),
+                                                                       dec->frame().width(),
+                                                                       dec->frame().height(),
+                                                                       32);
+                if(ibs>0)
+                    d.statistics->imageBufferSize = ibs;
+
                 d.statistics->totalFrames = 1;
                 d.statistics->droppedFrames = 0;
                 d.statistics->droppedPackets = 0;
                 emit firstKeyFrameReceived();
+            }
+            if(d.statistics->imageBufferSize==0) {
+                auto ibs = av_image_get_buffer_size(AVPixelFormat(dec->frame().pixelFormatFFmpeg()),
+                                                                       dec->frame().width(),
+                                                                       dec->frame().height(),
+                                                                       32);
+                if(ibs>0)
+                    d.statistics->imageBufferSize = ibs;
             }
             d.statistics->lock.unlock();
         }
