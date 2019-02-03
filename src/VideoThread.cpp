@@ -320,7 +320,7 @@ void VideoThread::run()
             d.statistics->totalFrames = 0;
             d.statistics->droppedFrames = 0;
             d.statistics->droppedPackets = 0;
-            d.statistics->totalKeyFrames = -1;
+            d.statistics->totalKeyFrames = -3;
             d.statistics->lock.unlock();
             d.statistics->resetValues.store(false);
         }
@@ -530,7 +530,7 @@ void VideoThread::run()
         {
             d.statistics->lock.lockForWrite();
             d.statistics->totalKeyFrames++;
-            if(d.statistics->totalKeyFrames==1)
+            if(d.statistics->totalKeyFrames==-1)
             {
                 d.statistics->realResolution = QSize(dec->frame().width(), dec->frame().height());
 
@@ -541,7 +541,8 @@ void VideoThread::run()
                 if(ibs>0)
                     d.statistics->imageBufferSize = ibs;
 
-                d.statistics->totalFrames = 1;
+                d.statistics->totalFrames = 0;
+                d.statistics->totalKeyFrames = 0;
                 d.statistics->droppedFrames = 0;
                 d.statistics->droppedPackets = 0;
                 emit firstKeyFrameReceived();
