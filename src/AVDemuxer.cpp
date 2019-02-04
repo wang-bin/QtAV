@@ -326,7 +326,7 @@ public:
     bool recording = false;
     int recordDuration = -1;
 
-    qreal lastPts = -1;
+    qint64 lastPts = -1;
     qreal averagePtsDiff = 0;
 
     int calculatePacketSize(const AVPacket* packet){
@@ -533,11 +533,11 @@ bool AVDemuxer::readFrame()
             totalPFrameSize += static_cast<quint64>(packetSize);
 
         //auto time = packet.pts* av_q2d(d->format_ctx->streams[videoStream()]->time_base);
-        auto ptsDiff = packet.pts-d->lastPts;
+        qint64 ptsDiff = packet.pts-d->lastPts;
         if(totalVideoPackets>100 && ptsDiff>(10*d->averagePtsDiff))
             lostFrames+=(ptsDiff/d->averagePtsDiff);
         else
-            d->averagePtsDiff += (ptsDiff-d->averagePtsDiff)/totalVideoPackets;
+            d->averagePtsDiff += static_cast<double>(ptsDiff-d->averagePtsDiff)/totalVideoPackets;
         this->lock.unlock();
 
         d->lastPts = packet.pts;
