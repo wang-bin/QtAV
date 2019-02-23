@@ -534,10 +534,12 @@ bool AVDemuxer::readFrame()
 
         //auto time = packet.pts* av_q2d(d->format_ctx->streams[videoStream()]->time_base);
         qint64 ptsDiff = packet.pts-d->lastPts;
-        if(totalVideoPackets>100 && ptsDiff>(10*d->averagePtsDiff))
-            lostFrames+=(ptsDiff/d->averagePtsDiff);
-        else
-            d->averagePtsDiff += static_cast<double>(ptsDiff-d->averagePtsDiff)/totalVideoPackets;
+        if(ptsDiff>0) {
+            if(totalVideoPackets>100 && ptsDiff>(10*d->averagePtsDiff))
+                lostFrames+=(ptsDiff/d->averagePtsDiff);
+            else
+                d->averagePtsDiff += static_cast<double>(ptsDiff-d->averagePtsDiff)/totalVideoPackets;
+        }
         this->lock.unlock();
 
         d->lastPts = packet.pts;
