@@ -27,6 +27,7 @@
 #include <SLES/OpenSLES_Android.h>
 #include <SLES/OpenSLES_AndroidConfiguration.h>
 #include <sys/system_properties.h>
+#include <cmath>
 #endif
 #include "QtAV/private/mkid.h"
 #include "QtAV/private/factory.h"
