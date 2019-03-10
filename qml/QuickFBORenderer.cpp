@@ -162,7 +162,9 @@ void QuickFBORenderer::setSource(QObject *source)
     if(p0)
     {
         p0->removeVideoRenderer(this);
-        receiveFrame(VideoFrame());
+        auto img = QImage(static_cast<int>(width()),static_cast<int>(height()), QImage::Format_RGB32);
+        img.fill(backgroundColor());
+        receiveFrame(VideoFrame(img));
     }
 
     d.source = source;
