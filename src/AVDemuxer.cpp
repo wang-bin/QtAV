@@ -318,7 +318,6 @@ public:
     QMutex mutex; //TODO: remove if load, read, seek is called in 1 thread
 
     // for recording stream
-    AVOutputFormat* fmt;
     AVFormatContext* oc;
     AVStream* ostream;
 
@@ -1373,9 +1372,7 @@ void AVDemuxer::startRecording(const QString &filePath, int duration)
 {
     if(d->recording)
         return;
-    d->fmt = av_guess_format(nullptr,filePath.toLatin1(),nullptr);
-    d->oc = avformat_alloc_context();
-    d->oc->oformat = d->fmt;
+    avformat_alloc_output_context2(&d->oc,nullptr,nullptr,filePath.toLatin1());
     avio_open2(&d->oc->pb, filePath.toLatin1(), AVIO_FLAG_WRITE,nullptr,nullptr);
     d->ostream=nullptr;
     d->recording = true;
