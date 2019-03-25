@@ -546,7 +546,7 @@ bool AVDemuxer::readFrame()
         if(d->recording && packet.stream_index==videoStream())
         {
             if(d->ostream == nullptr){//create stream in file
-                if(packet.flags & AV_PKT_FLAG_KEY)
+                if((packet.flags & AV_PKT_FLAG_KEY) && d->oc)
                 {
                     d->elapsed.start();
                     d->ostream = avformat_new_stream(d->oc, nullptr);
