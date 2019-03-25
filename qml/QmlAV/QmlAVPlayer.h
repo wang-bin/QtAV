@@ -313,8 +313,8 @@ public Q_SLOTS:
     void seekForward();
     void seekBackward();
 
-    void startRecording(QString filePath, int duration = -1);
-    void stopRecording();
+    bool startRecording(QString filePath, int duration = -1);
+    bool stopRecording();
 
     void resetMediaData();
 

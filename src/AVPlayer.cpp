@@ -561,14 +561,14 @@ void AVPlayer::resetMediaData()
     d->mediaDataTimer.stop();
 }
 
-void AVPlayer::startRecording(const QString& filePath, int duration)
+bool AVPlayer::startRecording(const QString& filePath, int duration)
 {
-    d->demuxer.startRecording(filePath, duration);
+    return d->demuxer.startRecording(filePath, duration);
 }
 
-void AVPlayer::stopRecording()
+bool AVPlayer::stopRecording()
 {
-    d->demuxer.stopRecording();
+    return d->demuxer.stopRecording();
 }
 
 MediaEndAction AVPlayer::mediaEndAction() const

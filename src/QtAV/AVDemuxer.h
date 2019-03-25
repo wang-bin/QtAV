@@ -209,8 +209,8 @@ private:
     friend class InterruptHandler;
 
 public:
-    void startRecording(const QString& filePath, int duration = -1);
-    void stopRecording();
+    bool startRecording(const QString& filePath, int duration = -1);
+    bool stopRecording();
 
     quint64 totalBandwidth = 0;
     quint64 totalVideoBandwidth = 0;

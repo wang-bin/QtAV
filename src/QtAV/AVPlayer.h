@@ -439,8 +439,8 @@ public:
 
     void resetMediaData();
 
-    void startRecording(const QString &filePath, int duration = -1);
-    void stopRecording();
+    bool startRecording(const QString &filePath, int duration = -1);
+    bool stopRecording();
 
 public Q_SLOTS:
     /*!

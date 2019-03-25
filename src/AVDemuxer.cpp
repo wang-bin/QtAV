@@ -1374,31 +1374,38 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
     *errorCode = ec;
 }
 
-void AVDemuxer::startRecording(const QString &filePath, int duration)
+bool AVDemuxer::startRecording(const QString &filePath, int duration)
 {
     QMutexLocker(&d->recordMutex);
     if(d->recording)
-        return;
-    avformat_alloc_output_context2(&d->oc,nullptr,nullptr,filePath.toLatin1());
-    if(d->oc && !(d->oc->oformat->flags & AVFMT_NOFILE))
-        avio_open(&d->oc->pb, filePath.toLatin1(), AVIO_FLAG_WRITE);
-    d->ostream=nullptr;
-    d->recording = true;
-    d->recordDuration = duration;
+        return false;
+    auto ret = avformat_alloc_output_context2(&d->oc,nullptr,nullptr,filePath.toLatin1());
+    if(ret>=0) {
+        if(d->oc && !(d->oc->oformat->flags & AVFMT_NOFILE))
+            avio_open(&d->oc->pb, filePath.toLatin1(), AVIO_FLAG_WRITE);
+        d->ostream=nullptr;
+        d->recording = true;
+        d->recordDuration = duration;
+        return true;
+    }
+    else
+        return false;
 }
 
-void AVDemuxer::stopRecording()
+bool AVDemuxer::stopRecording()
 {
     QMutexLocker(&d->recordMutex);
     if(!d->recording)
-        return;
+        return false;
     d->recording = false;
-    if(d->ostream != nullptr) {
+    auto ret = (d->ostream != nullptr);
+    if(ret) {
         av_write_trailer(d->oc);
         avio_close(d->oc->pb);
         d->oc->pb = nullptr;
     }
     avformat_free_context(d->oc);
+    return ret;
 }
 
 bool AVDemuxer::Private::setStream(AVDemuxer::StreamType st, int streamValue)

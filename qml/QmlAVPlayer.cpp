@@ -500,14 +500,14 @@ void QmlAVPlayer::setAutoPlayInterval(int value)
     }
 }
 
-void QmlAVPlayer::startRecording(QString filePath, int duration)
+bool QmlAVPlayer::startRecording(QString filePath, int duration)
 {
-    mpPlayer->startRecording(filePath, duration);
+    return mpPlayer->startRecording(filePath, duration);
 }
 
-void QmlAVPlayer::stopRecording()
+bool QmlAVPlayer::stopRecording()
 {
-    mpPlayer->stopRecording();
+    return mpPlayer->stopRecording();
 }
 
 void QmlAVPlayer::resetMediaData()
