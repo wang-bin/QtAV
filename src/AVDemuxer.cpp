@@ -552,18 +552,19 @@ bool AVDemuxer::readFrame()
                 {
                     d->elapsed.start();
                     d->ostream = avformat_new_stream(d->oc, nullptr);
-                    //avcodec_copy_context(d->ostream->codec,d->format_ctx->streams[videoStream()]->codec);
-                    avcodec_parameters_copy(d->ostream->codecpar, d->format_ctx->streams[videoStream()]->codecpar);
-                    d->ostream->codecpar->codec_tag = 0;
-                    d->ostream->start_time          = 0;
+                    if(d->ostream) {
+                        avcodec_parameters_copy(d->ostream->codecpar, d->format_ctx->streams[videoStream()]->codecpar);
+                        d->ostream->codecpar->codec_tag = 0;
+                        d->ostream->start_time          = 0;
 
-                    d->ostream->sample_aspect_ratio = d->format_ctx->streams[videoStream()]->codec->sample_aspect_ratio;
-                    d->ostream->sample_aspect_ratio.num = d->format_ctx->streams[videoStream()]->codec->sample_aspect_ratio.num;
-                    d->ostream->sample_aspect_ratio.den = d->format_ctx->streams[videoStream()]->codec->sample_aspect_ratio.den;
+                        d->ostream->sample_aspect_ratio = d->format_ctx->streams[videoStream()]->codec->sample_aspect_ratio;
+                        d->ostream->sample_aspect_ratio.num = d->format_ctx->streams[videoStream()]->codec->sample_aspect_ratio.num;
+                        d->ostream->sample_aspect_ratio.den = d->format_ctx->streams[videoStream()]->codec->sample_aspect_ratio.den;
 
-                    d->ostream->time_base = av_inv_q( d->ostream->r_frame_rate );
-                    d->ostream->codec->time_base = d->ostream->time_base;
-                    avformat_write_header(d->oc,nullptr);
+                        d->ostream->time_base = av_inv_q( d->ostream->r_frame_rate );
+                        d->ostream->codec->time_base = d->ostream->time_base;
+                        avformat_write_header(d->oc,nullptr);
+                    }
                 }
             }
             if(d->ostream != nullptr){
