@@ -1388,10 +1388,11 @@ void AVDemuxer::stopRecording()
     if(!d->recording)
         return;
     d->recording = false;
-    if(d->ostream != nullptr)
+    if(d->ostream != nullptr) {
         av_write_trailer(d->oc);
-    avio_close(d->oc->pb);
-    d->oc->pb = nullptr;
+        avio_close(d->oc->pb);
+        d->oc->pb = nullptr;
+    }
     avformat_free_context(d->oc);
 }
 
