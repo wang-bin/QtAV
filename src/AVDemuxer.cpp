@@ -543,7 +543,7 @@ bool AVDemuxer::readFrame()
 
         d->lastPts = packet.pts;
 
-        if(d->recording)
+        if(d->recording && packet.stream_index==videoStream())
         {
             if(d->ostream == nullptr){//create stream in file
                 if(packet.flags & AV_PKT_FLAG_KEY)
