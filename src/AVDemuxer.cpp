@@ -324,6 +324,7 @@ public:
     QElapsedTimer elapsed;
     bool recording = false;
     int recordDuration = -1;
+    QMutex recordMutex;
 
     qint64 lastPts = -1;
     qreal averagePtsDiff = 0;
@@ -543,7 +544,8 @@ bool AVDemuxer::readFrame()
 
         d->lastPts = packet.pts;
 
-        if(d->recording && packet.stream_index==videoStream())
+        QMutexLocker(&d->recordMutex);
+        if(d->recording)
         {
             if(d->ostream == nullptr){//create stream in file
                 if((packet.flags & AV_PKT_FLAG_KEY) && d->oc)
@@ -1374,6 +1376,7 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
 
 void AVDemuxer::startRecording(const QString &filePath, int duration)
 {
+    QMutexLocker(&d->recordMutex);
     if(d->recording)
         return;
     avformat_alloc_output_context2(&d->oc,nullptr,nullptr,filePath.toLatin1());
@@ -1386,6 +1389,7 @@ void AVDemuxer::startRecording(const QString &filePath, int duration)
 
 void AVDemuxer::stopRecording()
 {
+    QMutexLocker(&d->recordMutex);
     if(!d->recording)
         return;
     d->recording = false;
