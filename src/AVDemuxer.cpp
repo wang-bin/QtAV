@@ -322,6 +322,7 @@ public:
     AVStream* ostream;
 
     QElapsedTimer elapsed;
+    QString recordFilePath;
     bool recording = false;
     int recordDuration = -1;
     QMutex recordMutex;
@@ -548,10 +549,14 @@ bool AVDemuxer::readFrame()
         if(d->recording)
         {
             if(d->ostream == nullptr){//create stream in file
-                if((packet.flags & AV_PKT_FLAG_KEY) && d->oc)
+                if(packet.flags & AV_PKT_FLAG_KEY)
                 {
-                    d->elapsed.start();
-                    d->ostream = avformat_new_stream(d->oc, nullptr);
+                    auto ret = avformat_alloc_output_context2(&d->oc,nullptr,nullptr,d->recordFilePath.toLatin1());
+                    if(ret>=0 && d->oc) {
+                        if(!(d->oc->oformat->flags & AVFMT_NOFILE))
+                            avio_open(&d->oc->pb, d->recordFilePath.toLatin1(), AVIO_FLAG_WRITE);
+                        d->ostream = avformat_new_stream(d->oc, nullptr);
+                    }
                     if(d->ostream) {
                         avcodec_parameters_copy(d->ostream->codecpar, d->format_ctx->streams[videoStream()]->codecpar);
                         d->ostream->codecpar->codec_tag = 0;
@@ -564,6 +569,7 @@ bool AVDemuxer::readFrame()
                         d->ostream->time_base = av_inv_q( d->ostream->r_frame_rate );
                         d->ostream->codec->time_base = d->ostream->time_base;
                         avformat_write_header(d->oc,nullptr);
+                        d->elapsed.start();
                     }
                 }
             }
@@ -1380,17 +1386,12 @@ bool AVDemuxer::startRecording(const QString &filePath, int duration)
     QMutexLocker(&d->recordMutex);
     if(d->recording)
         return false;
-    auto ret = avformat_alloc_output_context2(&d->oc,nullptr,nullptr,filePath.toLatin1());
-    if(ret>=0) {
-        if(d->oc && !(d->oc->oformat->flags & AVFMT_NOFILE))
-            avio_open(&d->oc->pb, filePath.toLatin1(), AVIO_FLAG_WRITE);
-        d->ostream=nullptr;
-        d->recording = true;
-        d->recordDuration = duration;
-        return true;
-    }
-    else
-        return false;
+    d->oc = nullptr;
+    d->ostream=nullptr;
+    d->recordFilePath = filePath;
+    d->recordDuration = duration;
+    d->recording = true;
+    return true;
 }
 
 bool AVDemuxer::stopRecording()
@@ -1405,7 +1406,8 @@ bool AVDemuxer::stopRecording()
         avio_close(d->oc->pb);
         d->oc->pb = nullptr;
     }
-    avformat_free_context(d->oc);
+    if(d->oc!=nullptr)
+        avformat_free_context(d->oc);
     return ret;
 }
 
