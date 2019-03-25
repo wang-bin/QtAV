@@ -1377,7 +1377,8 @@ void AVDemuxer::startRecording(const QString &filePath, int duration)
     if(d->recording)
         return;
     avformat_alloc_output_context2(&d->oc,nullptr,nullptr,filePath.toLatin1());
-    avio_open2(&d->oc->pb, filePath.toLatin1(), AVIO_FLAG_WRITE,nullptr,nullptr);
+    if(d->oc && !(d->oc->oformat->flags & AVFMT_NOFILE))
+        avio_open(&d->oc->pb, filePath.toLatin1(), AVIO_FLAG_WRITE);
     d->ostream=nullptr;
     d->recording = true;
     d->recordDuration = duration;
