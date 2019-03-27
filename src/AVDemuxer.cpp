@@ -584,7 +584,6 @@ bool AVDemuxer::readFrame()
             }
         }
         if(d->ostreamVideo != nullptr && packet.stream_index==videoStream()){
-            int temp1 = packet.stream_index;
             int64_t temp2 = packet.pts;
             int64_t temp3 = packet.dts;
 
@@ -595,12 +594,10 @@ bool AVDemuxer::readFrame()
 
             av_write_frame(d->oc,&packet);
 
-            packet.stream_index = temp1;
             packet.pts = temp2;
             packet.dts = temp3;
         }
         else if(d->ostreamAudio != nullptr && packet.stream_index==audioStream()){
-            int temp1 = packet.stream_index;
             int64_t temp2 = packet.pts;
             int64_t temp3 = packet.dts;
 
@@ -611,7 +608,6 @@ bool AVDemuxer::readFrame()
 
             av_write_frame(d->oc,&packet);
 
-            packet.stream_index = temp1;
             packet.pts = temp2;
             packet.dts = temp3;
         }
