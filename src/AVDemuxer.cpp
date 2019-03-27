@@ -572,26 +572,12 @@ bool AVDemuxer::readFrame()
                     avcodec_parameters_copy(d->ostreamVideo->codecpar, d->format_ctx->streams[videoStream()]->codecpar);
                     d->ostreamVideo->codecpar->codec_tag = 0;
                     d->ostreamVideo->start_time          = 0;
-
-                    d->ostreamVideo->sample_aspect_ratio = d->format_ctx->streams[videoStream()]->codec->sample_aspect_ratio;
-                    d->ostreamVideo->sample_aspect_ratio.num = d->format_ctx->streams[videoStream()]->codec->sample_aspect_ratio.num;
-                    d->ostreamVideo->sample_aspect_ratio.den = d->format_ctx->streams[videoStream()]->codec->sample_aspect_ratio.den;
-
-                    d->ostreamVideo->time_base = av_inv_q( d->ostreamVideo->r_frame_rate );
-                    d->ostreamVideo->codec->time_base = d->ostreamVideo->time_base;
                     d->elapsed.start();
                 }
                 if(d->ostreamAudio) {
                     avcodec_parameters_copy(d->ostreamAudio->codecpar, d->format_ctx->streams[audioStream()]->codecpar);
                     d->ostreamAudio->codecpar->codec_tag = 0;
                     d->ostreamAudio->start_time          = 0;
-
-                    d->ostreamAudio->sample_aspect_ratio = d->format_ctx->streams[audioStream()]->codec->sample_aspect_ratio;
-                    d->ostreamAudio->sample_aspect_ratio.num = d->format_ctx->streams[audioStream()]->codec->sample_aspect_ratio.num;
-                    d->ostreamAudio->sample_aspect_ratio.den = d->format_ctx->streams[audioStream()]->codec->sample_aspect_ratio.den;
-
-                    d->ostreamAudio->time_base = av_inv_q( d->ostreamAudio->r_frame_rate );
-                    d->ostreamAudio->codec->time_base = d->ostreamAudio->time_base;
                 }
                 if(d->ostreamVideo)
                     avformat_write_header(d->oc,nullptr);
