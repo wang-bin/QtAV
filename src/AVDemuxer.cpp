@@ -557,33 +557,35 @@ bool AVDemuxer::readFrame()
     QMutexLocker(&d->recordMutex);
     if(d->recording)
     {
-        if(d->ostreamVideo == nullptr && packet.stream_index==videoStream()){
-            if(packet.flags & AV_PKT_FLAG_KEY)
-            {
+        if((d->ostreamVideo == nullptr && videoStream()>=0) ||
+            (d->ostreamAudio==nullptr && audioStream()>=0)){
+            if(d->oc==nullptr) {
                 auto ret = avformat_alloc_output_context2(&d->oc,nullptr,nullptr,d->recordFilePath.toLatin1());
-                if(ret>=0 && d->oc) {
-                    if(!(d->oc->oformat->flags & AVFMT_NOFILE))
-                        avio_open(&d->oc->pb, d->recordFilePath.toLatin1(), AVIO_FLAG_WRITE);
-                    d->ostreamVideo = avformat_new_stream(d->oc, nullptr);
-                    if(audioStream()>=0)
-                        d->ostreamAudio = avformat_new_stream(d->oc, nullptr);
-                }
+                if(ret>=0 && d->oc && !(d->oc->oformat->flags & AVFMT_NOFILE))
+                    avio_open(&d->oc->pb, d->recordFilePath.toLatin1(), AVIO_FLAG_WRITE);
+            }
+            if(d->oc && d->ostreamVideo == nullptr && videoStream()>=0) {
+                d->ostreamVideo = avformat_new_stream(d->oc, nullptr);
                 if(d->ostreamVideo) {
                     avcodec_parameters_copy(d->ostreamVideo->codecpar, d->format_ctx->streams[videoStream()]->codecpar);
                     d->ostreamVideo->codecpar->codec_tag = 0;
                     d->ostreamVideo->start_time          = 0;
-                    d->elapsed.start();
                 }
+            }
+            if(d->oc && d->ostreamAudio == nullptr && audioStream()>=0) {
+                d->ostreamAudio = avformat_new_stream(d->oc, nullptr);
                 if(d->ostreamAudio) {
                     avcodec_parameters_copy(d->ostreamAudio->codecpar, d->format_ctx->streams[audioStream()]->codecpar);
                     d->ostreamAudio->codecpar->codec_tag = 0;
                     d->ostreamAudio->start_time          = 0;
                 }
-                if(d->ostreamVideo)
-                    avformat_write_header(d->oc,nullptr);
+            }
+            if((d->ostreamVideo || videoStream()<0) && (d->ostreamAudio || audioStream()<0)) {
+                avformat_write_header(d->oc,nullptr);
+                d->elapsed.start();
             }
         }
-        if(d->ostreamVideo != nullptr && packet.stream_index==videoStream()){
+        if(d->ostreamVideo != nullptr && packet.stream_index==videoStream() && d->elapsed.isValid()){
             int64_t temp2 = packet.pts;
             int64_t temp3 = packet.dts;
 
@@ -597,7 +599,7 @@ bool AVDemuxer::readFrame()
             packet.pts = temp2;
             packet.dts = temp3;
         }
-        else if(d->ostreamAudio != nullptr && packet.stream_index==audioStream()){
+        else if(d->ostreamAudio != nullptr && packet.stream_index==audioStream() && d->elapsed.isValid()){
             int64_t temp2 = packet.pts;
             int64_t temp3 = packet.dts;
 
@@ -1403,6 +1405,7 @@ bool AVDemuxer::startRecording(const QString &filePath, int duration)
     d->ostreamAudio=nullptr;
     d->recordFilePath = filePath;
     d->recordDuration = duration;
+    d->elapsed.invalidate();
     d->recording = true;
     return true;
 }
@@ -1421,6 +1424,7 @@ bool AVDemuxer::stopRecording()
     }
     if(d->oc!=nullptr)
         avformat_free_context(d->oc);
+    d->elapsed.invalidate();
     return ret;
 }
 
