@@ -1416,7 +1416,7 @@ bool AVDemuxer::stopRecording()
     if(!d->recording)
         return false;
     d->recording = false;
-    auto ret = (d->ostreamVideo != nullptr);
+    auto ret = (d->ostreamVideo != nullptr || d->ostreamAudio != nullptr);
     if(ret) {
         av_write_trailer(d->oc);
         avio_close(d->oc->pb);
