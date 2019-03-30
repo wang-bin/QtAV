@@ -585,19 +585,11 @@ bool AVDemuxer::readFrame()
                 d->elapsed.start();
             }
         }
-        if(d->ostreamVideo != nullptr && packet.stream_index==videoStream() && d->elapsed.isValid()){
-            int64_t temp2 = packet.pts;
-            int64_t temp3 = packet.dts;
-            packet.pts = av_rescale_q(d->elapsed.nsecsElapsed(), {1,1000000000} , d->ostreamVideo->time_base);
-            packet.dts = packet.pts;
-            av_write_frame(d->oc,&packet);
-            packet.pts = temp2;
-            packet.dts = temp3;
-        }
-        else if(d->ostreamAudio != nullptr && packet.stream_index==audioStream() && d->elapsed.isValid()){
-            int64_t temp2 = packet.pts;
-            int64_t temp3 = packet.dts;
-            packet.pts = av_rescale_q(d->elapsed.nsecsElapsed(), {1,1000000000} , d->ostreamAudio->time_base);
+        auto & os = packet.stream_index==videoStream() ? d->ostreamVideo : d->ostreamAudio;
+        if(os != nullptr && d->elapsed.isValid()){
+            auto temp2 = packet.pts;
+            auto temp3 = packet.dts;
+            packet.pts = av_rescale_q(d->elapsed.nsecsElapsed(), {1,1000000000} , os->time_base);
             packet.dts = packet.pts;
             av_write_frame(d->oc,&packet);
             packet.pts = temp2;
