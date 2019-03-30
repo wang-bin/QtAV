@@ -585,15 +585,19 @@ bool AVDemuxer::readFrame()
                 d->elapsed.start();
             }
         }
+        auto & is = d->format_ctx->streams[packet.stream_index];
         auto & os = packet.stream_index==videoStream() ? d->ostreamVideo : d->ostreamAudio;
         if(os != nullptr && d->elapsed.isValid()){
-            auto temp2 = packet.pts;
-            auto temp3 = packet.dts;
-            packet.pts = av_rescale_q(d->elapsed.nsecsElapsed(), {1,1000000000} , os->time_base);
-            packet.dts = packet.pts;
+            auto t1 = packet.pts;
+            auto t2 = packet.dts;
+            auto t3 = packet.duration;
+            //packet.pts = av_rescale_q(d->elapsed.nsecsElapsed(), {1,1000000000} , os->time_base);
+            //packet.dts = packet.pts;
+            av_packet_rescale_ts(&packet, is->time_base, os->time_base);
             av_write_frame(d->oc,&packet);
-            packet.pts = temp2;
-            packet.dts = temp3;
+            packet.pts = t1;
+            packet.dts = t2;
+            packet.duration = t3;
         }
         if(d->recordDuration>0 && (d->elapsed.elapsed()/1000)>=d->recordDuration)
             stopRecording();
