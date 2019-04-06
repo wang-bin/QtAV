@@ -31,6 +31,7 @@ typedef QTime QElapsedTimer;
 #endif
 #include "utils/internal.h"
 #include "utils/Logger.h"
+#include <QUrl>
 
 namespace QtAV {
 static const char kFileScheme[] = "file:";
@@ -326,6 +327,7 @@ public:
     QString recordFilePath;
     bool recording = false;
     int recordDuration = -1;
+    bool restream = false;
     QMutex recordMutex;
 
     qint64 lastPts = -1;
@@ -560,7 +562,11 @@ bool AVDemuxer::readFrame()
         if((d->ostreamVideo == nullptr && videoStream()>=0) ||
             (d->ostreamAudio==nullptr && audioStream()>=0)){
             if(d->oc==nullptr) {
-                auto ret = avformat_alloc_output_context2(&d->oc,nullptr,nullptr,d->recordFilePath.toLatin1());
+                auto ret = -1;
+                if(d->restream)
+                    ret = avformat_alloc_output_context2(&d->oc,nullptr,d->format_ctx->iformat->name,nullptr);
+                else
+                    ret = avformat_alloc_output_context2(&d->oc,nullptr,nullptr,d->recordFilePath.toLatin1());
                 if(ret>=0 && d->oc && !(d->oc->oformat->flags & AVFMT_NOFILE))
                     avio_open(&d->oc->pb, d->recordFilePath.toLatin1(), AVIO_FLAG_WRITE);
             }
@@ -1390,6 +1396,7 @@ bool AVDemuxer::startRecording(const QString &filePath, int duration)
     d->ostreamVideo=nullptr;
     d->ostreamAudio=nullptr;
     d->recordFilePath = filePath;
+    d->restream = (QUrl(d->recordFilePath).scheme().toLower()=="udp");
     d->recordDuration = duration;
     d->elapsed.invalidate();
     d->recording = true;
