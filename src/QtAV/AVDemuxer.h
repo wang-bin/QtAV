@@ -210,7 +210,7 @@ private:
 
 public:
     bool startRecording(const QString& filePath, int duration = -1);
-    bool stopRecording();
+    bool stopRecording(const QString &filePath = "");
 
     quint64 totalBandwidth = 0;
     quint64 totalVideoBandwidth = 0;

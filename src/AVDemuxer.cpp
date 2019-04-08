@@ -319,15 +319,13 @@ public:
     QMutex mutex; //TODO: remove if load, read, seek is called in 1 thread
 
     // for recording stream
-    AVFormatContext* oc;
-    AVStream* ostreamVideo;
-    AVStream* ostreamAudio;
-
-    QElapsedTimer elapsed;
-    QString recordFilePath;
-    bool recording = false;
-    int recordDuration = -1;
-    bool restream = false;
+    QMap<QString,AVFormatContext*> oc;
+    QMap<QString,AVStream*> ostreamVideo;
+    QMap<QString,AVStream*> ostreamAudio;
+    QMap<QString,QElapsedTimer> elapsed;
+    QSet<QString> recordFilePath;
+    QMap<QString,int> recordDuration;
+    QMap<QString,bool> restream;
     QMutex recordMutex;
 
     qint64 lastPts = -1;
@@ -557,56 +555,60 @@ bool AVDemuxer::readFrame()
     }
 
     QMutexLocker(&d->recordMutex);
-    if(d->recording)
+    if(!d->recordFilePath.isEmpty())
     {
-        if((d->ostreamVideo == nullptr && videoStream()>=0) ||
-            (d->ostreamAudio==nullptr && audioStream()>=0)){
-            if(d->oc==nullptr) {
-                auto ret = -1;
-                if(d->restream)
-                    ret = avformat_alloc_output_context2(&d->oc,nullptr,d->format_ctx->iformat->name,nullptr);
-                else
-                    ret = avformat_alloc_output_context2(&d->oc,nullptr,nullptr,d->recordFilePath.toLatin1());
-                if(ret>=0 && d->oc && !(d->oc->oformat->flags & AVFMT_NOFILE))
-                    avio_open(&d->oc->pb, d->recordFilePath.toLatin1(), AVIO_FLAG_WRITE);
-            }
-            if(d->oc && d->ostreamVideo == nullptr && videoStream()>=0) {
-                d->ostreamVideo = avformat_new_stream(d->oc, nullptr);
-                if(d->ostreamVideo) {
-                    avcodec_parameters_copy(d->ostreamVideo->codecpar, d->format_ctx->streams[videoStream()]->codecpar);
-                    d->ostreamVideo->codecpar->codec_tag = 0;
-                    d->ostreamVideo->start_time          = 0;
+        for(const auto& k: d->recordFilePath) {
+            if((d->ostreamVideo[k] == nullptr && videoStream()>=0) ||
+                    (d->ostreamAudio[k]==nullptr && audioStream()>=0)){
+                if(d->oc[k]==nullptr) {
+                    auto ret = -1;
+                    if(d->restream[k])
+                        ret = avformat_alloc_output_context2(&d->oc[k],nullptr,d->format_ctx->iformat->name,nullptr);
+                    else
+                        ret = avformat_alloc_output_context2(&d->oc[k],nullptr,nullptr,k.toLatin1());
+                    if(ret>=0 && d->oc[k] && !(d->oc[k]->oformat->flags & AVFMT_NOFILE))
+                        avio_open(&d->oc[k]->pb, k.toLatin1(), AVIO_FLAG_WRITE);
                 }
-            }
-            if(d->oc && d->ostreamAudio == nullptr && audioStream()>=0) {
-                d->ostreamAudio = avformat_new_stream(d->oc, nullptr);
-                if(d->ostreamAudio) {
-                    avcodec_parameters_copy(d->ostreamAudio->codecpar, d->format_ctx->streams[audioStream()]->codecpar);
-                    d->ostreamAudio->codecpar->codec_tag = 0;
-                    d->ostreamAudio->start_time          = 0;
+                if(d->oc[k] && d->ostreamVideo[k] == nullptr && videoStream()>=0) {
+                    d->ostreamVideo[k] = avformat_new_stream(d->oc[k], nullptr);
+                    if(d->ostreamVideo[k]) {
+                        avcodec_parameters_copy(d->ostreamVideo[k]->codecpar, d->format_ctx->streams[videoStream()]->codecpar);
+                        d->ostreamVideo[k]->codecpar->codec_tag = 0;
+                        d->ostreamVideo[k]->start_time          = 0;
+                    }
                 }
-            }
-            if((d->ostreamVideo || videoStream()<0) && (d->ostreamAudio || audioStream()<0)) {
-                avformat_write_header(d->oc,nullptr);
-                d->elapsed.start();
+                if(d->oc[k] && d->ostreamAudio[k] == nullptr && audioStream()>=0) {
+                    d->ostreamAudio[k] = avformat_new_stream(d->oc[k], nullptr);
+                    if(d->ostreamAudio[k]) {
+                        avcodec_parameters_copy(d->ostreamAudio[k]->codecpar, d->format_ctx->streams[audioStream()]->codecpar);
+                        d->ostreamAudio[k]->codecpar->codec_tag = 0;
+                        d->ostreamAudio[k]->start_time          = 0;
+                    }
+                }
+                if((d->ostreamVideo[k] || videoStream()<0) && (d->ostreamAudio[k] || audioStream()<0)) {
+                    avformat_write_header(d->oc[k],nullptr);
+                    d->elapsed[k].start();
+                }
             }
         }
         auto & is = d->format_ctx->streams[packet.stream_index];
-        auto & os = packet.stream_index==videoStream() ? d->ostreamVideo : d->ostreamAudio;
-        if(os != nullptr && d->elapsed.isValid()){
-            auto t1 = packet.pts;
-            auto t2 = packet.dts;
-            auto t3 = packet.duration;
-            //packet.pts = av_rescale_q(d->elapsed.nsecsElapsed(), {1,1000000000} , os->time_base);
-            //packet.dts = packet.pts;
-            av_packet_rescale_ts(&packet, is->time_base, os->time_base);
-            av_write_frame(d->oc,&packet);
-            packet.pts = t1;
-            packet.dts = t2;
-            packet.duration = t3;
+        for(const auto& k: d->recordFilePath) {
+            auto & os = packet.stream_index==videoStream() ? d->ostreamVideo[k] : d->ostreamAudio[k];
+            if(os != nullptr && d->elapsed[k].isValid()){
+                auto t1 = packet.pts;
+                auto t2 = packet.dts;
+                auto t3 = packet.duration;
+                //packet.pts = av_rescale_q(d->elapsed.nsecsElapsed(), {1,1000000000} , os->time_base);
+                //packet.dts = packet.pts;
+                av_packet_rescale_ts(&packet, is->time_base, os->time_base);
+                av_write_frame(d->oc[k],&packet);
+                packet.pts = t1;
+                packet.dts = t2;
+                packet.duration = t3;
+            }
+            if(d->recordDuration[k]>0 && (d->elapsed[k].elapsed()/1000)>=d->recordDuration[k])
+                stopRecording(k);
         }
-        if(d->recordDuration>0 && (d->elapsed.elapsed()/1000)>=d->recordDuration)
-            stopRecording();
     }
 
     d->stream = packet.stream_index;
@@ -1390,35 +1392,47 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
 bool AVDemuxer::startRecording(const QString &filePath, int duration)
 {
     QMutexLocker(&d->recordMutex);
-    if(d->recording)
+    if(d->recordFilePath.contains(filePath))
         return false;
-    d->oc = nullptr;
-    d->ostreamVideo=nullptr;
-    d->ostreamAudio=nullptr;
-    d->recordFilePath = filePath;
-    d->restream = (QUrl(d->recordFilePath).scheme().toLower()=="udp");
-    d->recordDuration = duration;
-    d->elapsed.invalidate();
-    d->recording = true;
+    d->oc.insert(filePath, nullptr);
+    d->ostreamVideo.insert(filePath, nullptr);
+    d->ostreamAudio.insert(filePath, nullptr);
+    d->recordFilePath.insert(filePath);
+    d->restream.insert(filePath, (QUrl(filePath).scheme().toLower()=="udp"));
+    d->recordDuration.insert(filePath, duration);
+    d->elapsed.insert(filePath, QElapsedTimer{});
     return true;
 }
 
-bool AVDemuxer::stopRecording()
+bool AVDemuxer::stopRecording(const QString &filePath)
 {
     QMutexLocker(&d->recordMutex);
-    if(!d->recording)
+    if(!d->recordFilePath.contains(filePath) && filePath!="")
         return false;
-    d->recording = false;
-    auto ret = (d->ostreamVideo != nullptr || d->ostreamAudio != nullptr);
-    if(ret) {
-        av_write_trailer(d->oc);
-        avio_close(d->oc->pb);
-        d->oc->pb = nullptr;
+    QSet<QString> stops;
+    if(filePath!="")
+        stops.insert(filePath);
+    else
+        stops.unite(d->recordFilePath); // stop all
+
+    bool ret = true;
+    for(const auto& k: stops) {
+        d->recordFilePath.remove(k);
+        d->elapsed.remove(k);
+        auto r = (d->ostreamVideo[k] != nullptr || d->ostreamAudio[k] != nullptr);
+        ret = r;
+        if(r) {
+            av_write_trailer(d->oc[k]);
+            avio_close(d->oc[k]->pb);
+            d->oc[k]->pb = nullptr;
+        }
+        if(d->oc[k]!=nullptr)
+            avformat_free_context(d->oc[k]);
     }
-    if(d->oc!=nullptr)
-        avformat_free_context(d->oc);
-    d->elapsed.invalidate();
-    return ret;
+    if(filePath=="")
+        return true;
+    else
+        return ret;
 }
 
 bool AVDemuxer::Private::setStream(AVDemuxer::StreamType st, int streamValue)
