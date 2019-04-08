@@ -1417,8 +1417,6 @@ bool AVDemuxer::stopRecording(const QString &filePath)
 
     bool ret = true;
     for(const auto& k: stops) {
-        d->recordFilePath.remove(k);
-        d->elapsed.remove(k);
         auto r = (d->ostreamVideo[k] != nullptr || d->ostreamAudio[k] != nullptr);
         ret = r;
         if(r) {
@@ -1428,6 +1426,14 @@ bool AVDemuxer::stopRecording(const QString &filePath)
         }
         if(d->oc[k]!=nullptr)
             avformat_free_context(d->oc[k]);
+
+        d->recordFilePath.remove(k);
+        d->oc.remove(k);
+        d->ostreamVideo.remove(k);
+        d->ostreamAudio.remove(k);
+        d->restream.remove(k);
+        d->recordDuration.remove(k);
+        d->elapsed.remove(k);
     }
     if(filePath=="")
         return true;
