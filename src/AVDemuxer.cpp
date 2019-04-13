@@ -564,26 +564,26 @@ bool AVDemuxer::readFrame()
                     ret = avformat_alloc_output_context2(&d->oc[k],nullptr,d->format_ctx->iformat->name,nullptr);
                 else
                     ret = avformat_alloc_output_context2(&d->oc[k],nullptr,nullptr,k.toLatin1());
-                if(ret>=0 && d->oc[k] && !(d->oc[k]->oformat->flags & AVFMT_NOFILE))
+                if(ret>=0 && d->oc[k]!=nullptr && !(d->oc[k]->oformat->flags & AVFMT_NOFILE))
                     avio_open(&d->oc[k]->pb, k.toLatin1(), AVIO_FLAG_WRITE);
             }
-            if(d->oc[k] && d->ostreamVideo[k] == nullptr && videoStream()>=0) {
+            if(d->oc[k]!=nullptr && d->ostreamVideo[k] == nullptr && videoStream()>=0) {
                 d->ostreamVideo[k] = avformat_new_stream(d->oc[k], nullptr);
-                if(d->ostreamVideo[k]) {
+                if(d->ostreamVideo[k]!=nullptr) {
                     avcodec_parameters_copy(d->ostreamVideo[k]->codecpar, d->format_ctx->streams[videoStream()]->codecpar);
                     d->ostreamVideo[k]->codecpar->codec_tag = 0;
                     d->ostreamVideo[k]->start_time          = 0;
                 }
             }
-            if(d->oc[k] && d->ostreamAudio[k] == nullptr && audioStream()>=0) {
+            if(d->oc[k]!=nullptr && d->ostreamAudio[k] == nullptr && audioStream()>=0) {
                 d->ostreamAudio[k] = avformat_new_stream(d->oc[k], nullptr);
-                if(d->ostreamAudio[k]) {
+                if(d->ostreamAudio[k]!=nullptr) {
                     avcodec_parameters_copy(d->ostreamAudio[k]->codecpar, d->format_ctx->streams[audioStream()]->codecpar);
                     d->ostreamAudio[k]->codecpar->codec_tag = 0;
                     d->ostreamAudio[k]->start_time          = 0;
                 }
             }
-            if((d->ostreamVideo[k] || videoStream()<0) && (d->ostreamAudio[k] || audioStream()<0)) {
+            if((d->ostreamVideo[k]!=nullptr || videoStream()<0) && (d->ostreamAudio[k]!=nullptr || audioStream()<0)) {
                 avformat_write_header(d->oc[k],nullptr);
                 d->elapsed[k].start();
             }
