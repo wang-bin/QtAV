@@ -319,13 +319,13 @@ public:
     QMutex mutex; //TODO: remove if load, read, seek is called in 1 thread
 
     // for recording stream
-    QMap<QString,AVFormatContext*> oc;
-    QMap<QString,AVStream*> ostreamVideo;
-    QMap<QString,AVStream*> ostreamAudio;
-    QMap<QString,QElapsedTimer> elapsed;
+    std::map<QString,AVFormatContext*> oc;
+    std::map<QString,AVStream*> ostreamVideo;
+    std::map<QString,AVStream*> ostreamAudio;
+    std::map<QString,QElapsedTimer> elapsed;
     QSet<QString> recordFilePath;
-    QMap<QString,int> recordDuration;
-    QMap<QString,bool> restream;
+    std::map<QString,int> recordDuration;
+    std::map<QString,bool> restream;
     QMutex recordMutex;
 
     qint64 lastPts = -1;
@@ -1389,13 +1389,13 @@ bool AVDemuxer::startRecording(const QString &filePath, int duration)
     QMutexLocker(&d->recordMutex);
     if(d->recordFilePath.contains(filePath))
         return false;
-    d->oc.insert(filePath, nullptr);
-    d->ostreamVideo.insert(filePath, nullptr);
-    d->ostreamAudio.insert(filePath, nullptr);
+    d->oc.insert({filePath, nullptr});
+    d->ostreamVideo.insert({filePath, nullptr});
+    d->ostreamAudio.insert({filePath, nullptr});
     d->recordFilePath.insert(filePath);
-    d->restream.insert(filePath, (QUrl(filePath).scheme().toLower()=="udp"));
-    d->recordDuration.insert(filePath, duration);
-    d->elapsed.insert(filePath, QElapsedTimer{});
+    d->restream.insert({filePath, (QUrl(filePath).scheme().toLower()=="udp")});
+    d->recordDuration.insert({filePath, duration});
+    d->elapsed.insert({filePath, QElapsedTimer{}});
     return true;
 }
 
@@ -1423,12 +1423,12 @@ bool AVDemuxer::stopRecording(const QString &filePath)
             avformat_free_context(d->oc[k]);
 
         d->recordFilePath.remove(k);
-        d->oc.remove(k);
-        d->ostreamVideo.remove(k);
-        d->ostreamAudio.remove(k);
-        d->restream.remove(k);
-        d->recordDuration.remove(k);
-        d->elapsed.remove(k);
+        d->oc.erase(k);
+        d->ostreamVideo.erase(k);
+        d->ostreamAudio.erase(k);
+        d->restream.erase(k);
+        d->recordDuration.erase(k);
+        d->elapsed.erase(k);
     }
     if(filePath=="")
         return true;
