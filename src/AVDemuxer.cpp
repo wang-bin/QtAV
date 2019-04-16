@@ -322,6 +322,8 @@ public:
     std::map<QString,AVFormatContext*> oc;
     std::map<QString,AVStream*> ostreamVideo;
     std::map<QString,AVStream*> ostreamAudio;
+    std::map<QString,int64_t> videoFirstPts;
+    std::map<QString,int64_t> audioFirstPts;
     std::map<QString,QElapsedTimer> elapsed;
     QSet<QString> recordFilePath;
     std::map<QString,int> recordDuration;
@@ -597,6 +599,17 @@ bool AVDemuxer::readFrame()
             //packet.pts = av_rescale_q(d->elapsed.nsecsElapsed(), {1,1000000000} , os->time_base);
             //packet.dts = packet.pts;
             av_packet_rescale_ts(&packet, is->time_base, os->time_base);
+            if(packet.stream_index==videoStream()) {
+                if(d->videoFirstPts[k]<0)
+                    d->videoFirstPts[k] = packet.pts;
+                packet.pts -= d->videoFirstPts[k];
+            }
+            else {
+                if(d->audioFirstPts[k]<0)
+                    d->audioFirstPts[k] = packet.pts;
+                packet.pts -= d->audioFirstPts[k];
+            }
+            packet.dts = AV_NOPTS_VALUE;
             av_write_frame(d->oc[k],&packet);
             packet.pts = t1;
             packet.dts = t2;
@@ -1396,6 +1409,8 @@ bool AVDemuxer::startRecording(const QString &filePath, int duration)
     d->restream.insert({filePath, (QUrl(filePath).scheme().toLower()=="udp")});
     d->recordDuration.insert({filePath, duration});
     d->elapsed.insert({filePath, QElapsedTimer{}});
+    d->videoFirstPts.insert({filePath, -1});
+    d->audioFirstPts.insert({filePath, -1});
     return true;
 }
 
@@ -1426,6 +1441,8 @@ bool AVDemuxer::stopRecording(const QString &filePath)
         d->oc.erase(k);
         d->ostreamVideo.erase(k);
         d->ostreamAudio.erase(k);
+        d->videoFirstPts.erase(k);
+        d->audioFirstPts.erase(k);
         d->restream.erase(k);
         d->recordDuration.erase(k);
         d->elapsed.erase(k);
