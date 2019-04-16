@@ -596,19 +596,21 @@ bool AVDemuxer::readFrame()
             auto t1 = packet.pts;
             auto t2 = packet.dts;
             auto t3 = packet.duration;
-            //packet.pts = av_rescale_q(d->elapsed.nsecsElapsed(), {1,1000000000} , os->time_base);
-            //packet.dts = packet.pts;
-            av_packet_rescale_ts(&packet, is->time_base, os->time_base);
-            if(packet.stream_index==videoStream()) {
-                if(d->videoFirstPts[k]<0)
-                    d->videoFirstPts[k] = packet.pts;
-                packet.pts -= d->videoFirstPts[k];
+            if(packet.pts!=AV_NOPTS_VALUE) {
+                av_packet_rescale_ts(&packet, is->time_base, os->time_base);
+                if(packet.stream_index==videoStream()) {
+                    if(d->videoFirstPts[k]<0)
+                        d->videoFirstPts[k] = packet.pts;
+                    packet.pts -= d->videoFirstPts[k];
+                }
+                else {
+                    if(d->audioFirstPts[k]<0)
+                        d->audioFirstPts[k] = packet.pts;
+                    packet.pts -= d->audioFirstPts[k];
+                }
             }
-            else {
-                if(d->audioFirstPts[k]<0)
-                    d->audioFirstPts[k] = packet.pts;
-                packet.pts -= d->audioFirstPts[k];
-            }
+            else
+                packet.pts = av_rescale_q(d->elapsed[k].nsecsElapsed(), {1,1000000000} , os->time_base);
             packet.dts = AV_NOPTS_VALUE;
             av_write_frame(d->oc[k],&packet);
             packet.pts = t1;
