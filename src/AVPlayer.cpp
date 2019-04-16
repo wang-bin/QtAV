@@ -103,6 +103,17 @@ AVPlayer::AVPlayer(QObject *parent) :
     //audio()->setBackends(QStringList()<<"null");
 
     d->applyMediaDataCalculation();
+
+    auto timer = new QTimer(this);
+    connect(timer,&QTimer::timeout,this,[this](){
+       auto dfps = d->statistics.video_only.currentDisplayFPS();
+       if(!qFuzzyCompare(dfps,d->statistics.displayFPS)) {
+           d->statistics.displayFPS = dfps;
+           emit displayFrameRateChanged(dfps);
+       }
+    });
+    timer->setInterval(1000);
+    timer->start();
 }
 
 AVPlayer::~AVPlayer()
@@ -552,6 +563,11 @@ void AVPlayer::setAutoPlayInterval(int value)
         d->autoPlay_timer.setInterval(value);
     d->autoPlayInterval = value;
     Q_EMIT autoPlayIntervalChanged(value);
+}
+
+double AVPlayer::displayFrameRate() const
+{
+    return d->statistics.displayFPS;
 }
 
 void AVPlayer::resetMediaData()

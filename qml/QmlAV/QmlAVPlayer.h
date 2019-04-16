@@ -89,6 +89,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(int mediaDataTimerInterval READ mediaDataTimerInterval WRITE setMediaDataTimerInterval NOTIFY mediaDataTimerIntervalChanged)
     Q_PROPERTY(int disconnectTimeout READ disconnectTimeout WRITE setDisconnectTimeout NOTIFY disconnectTimeoutChanged)
     Q_PROPERTY(int autoPlayInterval READ autoPlayInterval WRITE setAutoPlayInterval NOTIFY autoPlayIntervalChanged)
+    Q_PROPERTY(int displayFrameRate READ displayFrameRate NOTIFY displayFrameRateChanged)
     Q_PROPERTY(QUrl externalAudio READ externalAudio WRITE setExternalAudio NOTIFY externalAudioChanged)
     Q_PROPERTY(QVariantList internalAudioTracks READ internalAudioTracks NOTIFY internalAudioTracksChanged)
     Q_PROPERTY(QVariantList internalVideoTracks READ internalVideoTracks NOTIFY internalVideoTracksChanged)
@@ -282,6 +283,8 @@ public:
     int autoPlayInterval() const;
     void setAutoPlayInterval(int value);
 
+    double displayFrameRate() const;
+
     /*!
      * \brief externalAudio
      * If externalAudio url is valid, player will use audioTrack of external audio as audio source.
@@ -364,6 +367,7 @@ Q_SIGNALS:
     void mediaDataTimerIntervalChanged();
     void disconnectTimeoutChanged();
     void autoPlayIntervalChanged();
+    void displayFrameRateChanged();
 
     void errorChanged();
     void error(Error error, const QString &errorString, int ffmpegError = 0, const QString& ffmpegErrorStr="");

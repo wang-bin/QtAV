@@ -812,7 +812,6 @@ void AVPlayer::Private::updateMediaData()
         return;
 
     statistics.lock.lockForRead();
-    statistics.displayFPS = statistics.video_only.currentDisplayFPS();
     mediaData["bandwidthRate"] = statistics.bandwidthRate;
     mediaData["videoBandwidthRate"] = statistics.videoBandwidthRate;
     mediaData["audioBandwidthRate"] = statistics.audioBandwidthRate;
