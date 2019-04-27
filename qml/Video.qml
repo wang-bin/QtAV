@@ -89,6 +89,8 @@ Item {
     property alias internalAudioTracks: player.internalAudioTracks
     property alias externalAudioTracks: player.externalAudioTracks
     property alias internalVideoTracks: player.internalVideoTracks
+    property alias internalSubtitleTracks: player.internalSubtitleTracks
+    property alias internalSubtitleTrack: player.internalSubtitleTrack
     /*** Properties of VideoOutput ***/
     /*!
         \qmlproperty enumeration Video::fillMode
