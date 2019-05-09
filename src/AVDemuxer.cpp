@@ -558,8 +558,7 @@ bool AVDemuxer::readFrame()
 
     QMutexLocker(&d->recordMutex);
     for(const auto& k: d->recordFilePath) {
-        if((d->ostreamVideo[k] == nullptr && videoStream()>=0) ||
-                (d->ostreamAudio[k]==nullptr && audioStream()>=0)){
+        if(!d->elapsed[k].isValid()){
             if(d->oc[k]==nullptr) {
                 auto ret = -1;
                 if(d->restream[k])
@@ -585,9 +584,10 @@ bool AVDemuxer::readFrame()
                     d->ostreamAudio[k]->start_time          = 0;
                 }
             }
-            if((d->ostreamVideo[k]!=nullptr || videoStream()<0) && (d->ostreamAudio[k]!=nullptr || audioStream()<0)) {
-                avformat_write_header(d->oc[k],nullptr);
-                d->elapsed[k].start();
+            if((d->ostreamVideo[k]!=nullptr || videoStream()<0) && (d->ostreamAudio[k]!=nullptr || audioStream()<0) && !d->elapsed[k].isValid()) {
+                auto ret = avformat_write_header(d->oc[k],nullptr);
+                if(ret>=0)
+                    d->elapsed[k].start();
             }
         }
         auto & is = d->format_ctx->streams[packet.stream_index];
