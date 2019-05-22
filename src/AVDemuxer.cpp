@@ -32,6 +32,7 @@ typedef QTime QElapsedTimer;
 #include "utils/internal.h"
 #include "utils/Logger.h"
 #include <QUrl>
+#include <set>
 
 namespace QtAV {
 static const char kFileScheme[] = "file:";
@@ -325,7 +326,7 @@ public:
     std::map<QString,int64_t> videoFirstPts;
     std::map<QString,int64_t> audioFirstPts;
     std::map<QString,QElapsedTimer> elapsed;
-    QSet<QString> recordFilePath;
+    std::set<QString> recordFilePath;
     std::map<QString,int> recordDuration;
     std::map<QString,bool> restream;
     QMutex recordMutex;
@@ -1403,7 +1404,7 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
 bool AVDemuxer::startRecording(const QString &filePath, int duration)
 {
     QMutexLocker(&d->recordMutex);
-    if(d->recordFilePath.contains(filePath))
+    if(d->recordFilePath.find(filePath)!=d->recordFilePath.end())
         return false;
     d->oc.insert({filePath, nullptr});
     d->ostreamVideo.insert({filePath, nullptr});
@@ -1420,13 +1421,13 @@ bool AVDemuxer::startRecording(const QString &filePath, int duration)
 bool AVDemuxer::stopRecording(const QString &filePath)
 {
     QMutexLocker(&d->recordMutex);
-    if(!d->recordFilePath.contains(filePath) && filePath!="")
+    if(d->recordFilePath.find(filePath)==d->recordFilePath.end() && filePath!="")
         return false;
-    QSet<QString> stops;
+    std::set<QString> stops;
     if(filePath!="")
         stops.insert(filePath);
     else
-        stops.unite(d->recordFilePath); // stop all
+        stops = d->recordFilePath; // stop all
 
     bool ret = true;
     for(const auto& k: stops) {
@@ -1440,7 +1441,7 @@ bool AVDemuxer::stopRecording(const QString &filePath)
         if(d->oc[k]!=nullptr)
             avformat_free_context(d->oc[k]);
 
-        d->recordFilePath.remove(k);
+        d->recordFilePath.erase(k);
         d->oc.erase(k);
         d->ostreamVideo.erase(k);
         d->ostreamAudio.erase(k);
