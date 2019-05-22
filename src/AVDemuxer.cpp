@@ -326,7 +326,7 @@ public:
     std::map<QString,int64_t> videoFirstPts;
     std::map<QString,int64_t> audioFirstPts;
     std::map<QString,QElapsedTimer> elapsed;
-    std::map<QString,int> recordFilePath;
+    std::map<QString,int> records; // <path, duration>
     std::map<QString,bool> restream;
     QMutex recordMutex;
 
@@ -558,8 +558,8 @@ bool AVDemuxer::readFrame()
     }
 
     d->recordMutex.lock();
-    if(d->recordFilePath.size()!=d->oc.size()) {
-        for(const auto& [k,v]: d->recordFilePath)
+    if(d->records.size()!=d->oc.size()) {
+        for(const auto& [k,v]: d->records)
             if(d->oc.find(k)==d->oc.end()) {
                 d->oc.insert({k, nullptr});
                 d->ostreamVideo.insert({k, nullptr});
@@ -571,7 +571,7 @@ bool AVDemuxer::readFrame()
             }
         for(auto it =  d->oc.cbegin(); it!=d->oc.cend();) {
             auto k = it->first;
-            if(d->recordFilePath.find(k)==d->recordFilePath.end()) {
+            if(d->records.find(k)==d->records.end()) {
                 if(d->ostreamVideo[k] != nullptr || d->ostreamAudio[k] != nullptr) {
                     av_write_trailer(d->oc[k]);
                     avio_close(d->oc[k]->pb);
@@ -654,7 +654,7 @@ bool AVDemuxer::readFrame()
             packet.dts = t2;
             packet.duration = t3;
         }
-        if(d->recordFilePath[k]>0 && (d->elapsed[k].elapsed()/1000)>=d->recordFilePath[k])
+        if(d->records[k]>0 && (d->elapsed[k].elapsed()/1000)>=d->records[k])
             stopRecording(k);
     }
 
@@ -1439,22 +1439,22 @@ void AVDemuxer::handleError(int averr, AVError::ErrorCode *errorCode, QString &m
 bool AVDemuxer::startRecording(const QString &filePath, int duration)
 {
     QMutexLocker(&d->recordMutex);
-    if(d->recordFilePath.find(filePath)!=d->recordFilePath.end())
+    if(d->records.find(filePath)!=d->records.end())
         return false;
-    d->recordFilePath.insert({filePath, duration});
+    d->records.insert({filePath, duration});
     return true;
 }
 
 bool AVDemuxer::stopRecording(const QString &filePath)
 {
     QMutexLocker(&d->recordMutex);
-    if(d->recordFilePath.find(filePath)==d->recordFilePath.end() && filePath!="")
+    if(d->records.find(filePath)==d->records.end() && filePath!="")
         return false;
     std::set<QString> stops;
     if(filePath!="")
-        d->recordFilePath.erase(filePath);
+        d->records.erase(filePath);
     else
-        d->recordFilePath.clear();
+        d->records.clear();
     return true;
 }
 
