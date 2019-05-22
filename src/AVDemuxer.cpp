@@ -326,8 +326,7 @@ public:
     std::map<QString,int64_t> videoFirstPts;
     std::map<QString,int64_t> audioFirstPts;
     std::map<QString,QElapsedTimer> elapsed;
-    std::set<QString> recordFilePath;
-    std::map<QString,int> recordDuration;
+    std::map<QString,int> recordFilePath;
     std::map<QString,bool> restream;
     QMutex recordMutex;
 
@@ -558,8 +557,44 @@ bool AVDemuxer::readFrame()
         this->lock.unlock();
     }
 
-    QMutexLocker(&d->recordMutex);
-    for(const auto& k: d->recordFilePath) {
+    d->recordMutex.lock();
+    if(d->recordFilePath.size()!=d->oc.size()) {
+        for(const auto& [k,v]: d->recordFilePath)
+            if(d->oc.find(k)==d->oc.end()) {
+                d->oc.insert({k, nullptr});
+                d->ostreamVideo.insert({k, nullptr});
+                d->ostreamAudio.insert({k, nullptr});
+                d->restream.insert({k, (QUrl(k).scheme().toLower()=="udp")});
+                d->elapsed.insert({k, QElapsedTimer{}});
+                d->videoFirstPts.insert({k, -1});
+                d->audioFirstPts.insert({k, -1});
+            }
+        for(auto it =  d->oc.cbegin(); it!=d->oc.cend();) {
+            auto k = it->first;
+            if(d->recordFilePath.find(k)==d->recordFilePath.end()) {
+                if(d->ostreamVideo[k] != nullptr || d->ostreamAudio[k] != nullptr) {
+                    av_write_trailer(d->oc[k]);
+                    avio_close(d->oc[k]->pb);
+                    d->oc[k]->pb = nullptr;
+                }
+                if(d->oc[k]!=nullptr)
+                    avformat_free_context(d->oc[k]);
+
+                d->ostreamVideo.erase(k);
+                d->ostreamAudio.erase(k);
+                d->videoFirstPts.erase(k);
+                d->audioFirstPts.erase(k);
+                d->restream.erase(k);
+                d->elapsed.erase(k);
+                it = d->oc.erase(it);
+            }
+            else
+                ++it;
+        }
+    }
+    d->recordMutex.unlock();
+
+    for(const auto& [k,v]: d->oc) {
         if(!d->elapsed[k].isValid()){
             if(d->oc[k]==nullptr) {
                 auto ret = -1;
@@ -619,7 +654,7 @@ bool AVDemuxer::readFrame()
             packet.dts = t2;
             packet.duration = t3;
         }
-        if(d->recordDuration[k]>0 && (d->elapsed[k].elapsed()/1000)>=d->recordDuration[k])
+        if(d->recordFilePath[k]>0 && (d->elapsed[k].elapsed()/1000)>=d->recordFilePath[k])
             stopRecording(k);
     }
 
@@ -1406,15 +1441,7 @@ bool AVDemuxer::startRecording(const QString &filePath, int duration)
     QMutexLocker(&d->recordMutex);
     if(d->recordFilePath.find(filePath)!=d->recordFilePath.end())
         return false;
-    d->oc.insert({filePath, nullptr});
-    d->ostreamVideo.insert({filePath, nullptr});
-    d->ostreamAudio.insert({filePath, nullptr});
-    d->recordFilePath.insert(filePath);
-    d->restream.insert({filePath, (QUrl(filePath).scheme().toLower()=="udp")});
-    d->recordDuration.insert({filePath, duration});
-    d->elapsed.insert({filePath, QElapsedTimer{}});
-    d->videoFirstPts.insert({filePath, -1});
-    d->audioFirstPts.insert({filePath, -1});
+    d->recordFilePath.insert({filePath, duration});
     return true;
 }
 
@@ -1425,36 +1452,10 @@ bool AVDemuxer::stopRecording(const QString &filePath)
         return false;
     std::set<QString> stops;
     if(filePath!="")
-        stops.insert(filePath);
+        d->recordFilePath.erase(filePath);
     else
-        stops = d->recordFilePath; // stop all
-
-    bool ret = true;
-    for(const auto& k: stops) {
-        auto r = (d->ostreamVideo[k] != nullptr || d->ostreamAudio[k] != nullptr);
-        ret = r;
-        if(r) {
-            av_write_trailer(d->oc[k]);
-            avio_close(d->oc[k]->pb);
-            d->oc[k]->pb = nullptr;
-        }
-        if(d->oc[k]!=nullptr)
-            avformat_free_context(d->oc[k]);
-
-        d->recordFilePath.erase(k);
-        d->oc.erase(k);
-        d->ostreamVideo.erase(k);
-        d->ostreamAudio.erase(k);
-        d->videoFirstPts.erase(k);
-        d->audioFirstPts.erase(k);
-        d->restream.erase(k);
-        d->recordDuration.erase(k);
-        d->elapsed.erase(k);
-    }
-    if(filePath=="")
-        return true;
-    else
-        return ret;
+        d->recordFilePath.clear();
+    return true;
 }
 
 bool AVDemuxer::Private::setStream(AVDemuxer::StreamType st, int streamValue)
