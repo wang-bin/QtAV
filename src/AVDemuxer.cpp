@@ -654,7 +654,10 @@ bool AVDemuxer::readFrame()
             packet.dts = t2;
             packet.duration = t3;
         }
-        if(d->records[k]>0 && (d->elapsed[k].elapsed()/1000)>=d->records[k])
+        d->recordMutex.lock();
+        auto stop = (d->records[k]>0 && (d->elapsed[k].elapsed()/1000)>=d->records[k]);
+        d->recordMutex.unlock();
+        if(stop)
             stopRecording(k);
     }
 
