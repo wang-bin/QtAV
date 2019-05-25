@@ -18,7 +18,7 @@
     License along with this library; if not, write to the Free Software
     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 ******************************************************************************/
-
+#define IOS_USE_PRIVATE 0 // private symbols are forbidden by app store
 #include "SurfaceInteropCV.h"
 #ifdef Q_OS_IOS
 #import <OpenGLES/EAGL.h>
@@ -26,7 +26,7 @@
 # ifdef __IPHONE_11_0 // always defined in new sdk
 #  import <OpenGLES/EAGLIOSurface.h>
 # endif //__IPHONE_11_0
-# if COREVIDEO_SUPPORTS_IOSURFACE
+# if COREVIDEO_SUPPORTS_IOSURFACE && IOS_USE_PRIVATE
 // declare the private API if IOSurface is supported in SDK. Thus we can use IOSurface on any iOS version even with old SDK and compiler
 @interface EAGLContext()
 - (BOOL)texImageIOSurface:(IOSurfaceRef)ioSurface target:(NSUInteger)target internalFormat:(NSUInteger)internalFormat width:(uint32_t)width height:(uint32_t)height format:(NSUInteger)format type:(NSUInteger)type plane:(uint32_t)plane invert:(BOOL)invert NS_AVAILABLE_IOS(4_0); // confirmed in iOS5.1
@@ -142,7 +142,11 @@ bool InteropResourceIOSurface::map(CVPixelBufferRef buf, GLuint *tex, int w, int
         ok = [[EAGLContext currentContext] texImageIOSurface:surface target:target internalFormat:iformat width:planeW height:planeH format:format type:dtype plane:plane];
     else // fallback to old private api if runtime version < 11
 # endif //__IPHONE_11_0
+    {
+#if IOS_USE_PRIVATE
         ok = [[EAGLContext currentContext] texImageIOSurface:surface target:target internalFormat:iformat width:planeW height:planeH format:format type:dtype plane:plane invert:NO];
+#endif //IOS_USE_PRIVATE
+    }
     if (!ok) {
          qWarning("error creating IOSurface texture at plane %d", plane);
     }

@@ -436,6 +436,35 @@ void QmlAVPlayer::setBufferSize(int value)
     }
 }
 
+QmlAVPlayer::BufferMode QmlAVPlayer::bufferMode() const
+{
+    return static_cast<BufferMode>(mpPlayer->bufferMode());
+}
+
+void QmlAVPlayer::setBufferMode(QmlAVPlayer::BufferMode value)
+{
+    QtAV::BufferMode mode = static_cast<QtAV::BufferMode>(value);
+    if(mpPlayer->bufferMode() == mode)
+        return;
+    if(mpPlayer) {
+        mpPlayer->setBufferMode(mode);
+        Q_EMIT bufferModeChanged();
+    }
+}
+
+qreal QmlAVPlayer::frameRate() const
+{
+    return mpPlayer->forcedFrameRate();
+}
+
+void QmlAVPlayer::setFrameRate(qreal value)
+{
+    if(mpPlayer) {
+        mpPlayer->setFrameRate(value);
+        Q_EMIT frameRateChanged();
+    }
+}
+
 int QmlAVPlayer::adaptiveBuffer() const
 {
     return mpPlayer->adaptiveBuffer();

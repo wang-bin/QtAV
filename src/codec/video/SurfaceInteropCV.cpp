@@ -61,10 +61,13 @@ extern InteropResource* CreateInteropCVOpenGLES();
 InteropResource* InteropResource::create(InteropType type)
 {
     if (type == InteropAuto) {
-#if defined(Q_OS_MACX) || defined(__IPHONE_11_0)
-        type = InteropIOSurface;
-#else
         type = InteropCVOpenGLES;
+#if defined(Q_OS_MACX)
+        type = InteropIOSurface;
+#endif
+#if defined(__builtin_available)
+        if (__builtin_available(iOS 11, macOS 10.6, *))
+            type = InteropIOSurface;
 #endif
     }
     switch (type) {

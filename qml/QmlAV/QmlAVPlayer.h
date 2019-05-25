@@ -66,6 +66,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_ENUMS(Status)
     Q_ENUMS(Error)
     Q_ENUMS(ChannelLayout)
+    Q_ENUMS(BufferMode)
     // not supported by QtMultimedia
     Q_ENUMS(PositionValue)
     Q_PROPERTY(int startPosition READ startPosition WRITE setStartPosition NOTIFY startPositionChanged)
@@ -84,6 +85,8 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(int videoTrack READ videoTrack WRITE setVideoTrack NOTIFY videoTrackChanged)
     Q_PROPERTY(int buffered READ buffered)
     Q_PROPERTY(int bufferSize READ bufferSize WRITE setBufferSize NOTIFY bufferSizeChanged)
+    Q_PROPERTY(BufferMode bufferMode READ bufferMode WRITE setBufferMode NOTIFY bufferModeChanged)
+    Q_PROPERTY(qreal frameRate READ frameRate WRITE setFrameRate NOTIFY frameRateChanged)
     Q_PROPERTY(bool adaptiveBuffer READ adaptiveBuffer WRITE setAdaptiveBuffer NOTIFY adaptiveBufferChanged)
     Q_PROPERTY(QVariantMap mediaData READ mediaData NOTIFY mediaDataTimerTriggered)
     Q_PROPERTY(int mediaDataTimerInterval READ mediaDataTimerInterval WRITE setMediaDataTimerInterval NOTIFY mediaDataTimerIntervalChanged)
@@ -157,6 +160,12 @@ public:
         Right,
         Mono,
         Stereo
+    };
+    enum BufferMode
+    {
+       BufferTime    = QtAV::BufferTime,
+       BufferBytes   = QtAV::BufferBytes,
+       BufferPackets = QtAV::BufferPackets
     };
 
     explicit QmlAVPlayer(QObject *parent = 0);
@@ -269,6 +278,12 @@ public:
     int bufferSize() const;
     void setBufferSize(int value);
 
+    BufferMode bufferMode() const;
+    void setBufferMode(BufferMode value);
+
+    qreal frameRate() const;
+    void setFrameRate(qreal value);
+
     int adaptiveBuffer() const;
     void setAdaptiveBuffer(bool value);
 
@@ -361,6 +376,8 @@ Q_SIGNALS:
     void internalSubtitleTrackChanged();
     void internalSubtitleTracksChanged();
     void bufferSizeChanged();
+    void bufferModeChanged();
+    void frameRateChanged();
     void adaptiveBufferChanged();
     void mediaDataTimerTriggered();
     void mediaDataTimerStarted();
