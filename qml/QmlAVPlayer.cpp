@@ -535,6 +535,22 @@ double QmlAVPlayer::displayFrameRate() const
     return mpPlayer->displayFrameRate();
 }
 
+QmlAVPlayer::MediaEndAction QmlAVPlayer::mediaEndAction() const
+{
+    return  static_cast<MediaEndAction>(int(mpPlayer->mediaEndAction()));
+}
+
+void QmlAVPlayer::setMediaEndAction(QmlAVPlayer::MediaEndAction value)
+{
+    QtAV::MediaEndAction action = static_cast<QtAV::MediaEndAction>(value);
+    if (mpPlayer->mediaEndAction() == action)
+        return;
+    if (mpPlayer) {
+        mpPlayer->setMediaEndAction(action);
+        Q_EMIT mediaEndActionChanged();
+    }
+}
+
 bool QmlAVPlayer::startRecording(QString filePath, int duration)
 {
     return mpPlayer->startRecording(filePath, duration);
