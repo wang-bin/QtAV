@@ -90,7 +90,8 @@ enum MediaStatus
     BufferingMedia, // NOT IMPLEMENTED
     BufferedMedia, // when playing //NOT IMPLEMENTED
     EndOfMedia, // Playback has reached the end of the current media. The player is in the StoppedState.
-    InvalidMedia // what if loop > 0 or stopPosition() is not mediaStopPosition()?
+    InvalidMedia, // what if loop > 0 or stopPosition() is not mediaStopPosition()?
+    PausedOnMediaAtEnd // when media is at end and mediaEndAction is MediaEndAction_Pause
 };
 
 enum BufferMode {

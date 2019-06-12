@@ -603,6 +603,8 @@ void AVDemuxThread::run()
             if (exit_thread) {
                 if (!(mediaEndAction() & MediaEndAction_Pause))
                     break;
+                else
+                    Q_EMIT mediaStatusChanged(QtAV::PausedOnMediaAtEnd);
                 pause(true);
                 Q_EMIT requestClockPause(true);
                 if (aqueue)

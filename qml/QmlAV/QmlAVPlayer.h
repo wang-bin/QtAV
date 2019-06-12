@@ -126,7 +126,8 @@ public:
         Buffering = QtAV::BufferingMedia,
         Buffered = QtAV::BufferedMedia, // when playing
         EndOfMedia = QtAV::EndOfMedia,
-        InvalidMedia = QtAV::InvalidMedia
+        InvalidMedia = QtAV::InvalidMedia,
+        PausedOnMediaAtEnd = QtAV::PausedOnMediaAtEnd
     };
     enum Error {
         NoError,

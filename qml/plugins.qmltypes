@@ -173,7 +173,8 @@ Module {
                 "Buffering": 5,
                 "Buffered": 6,
                 "EndOfMedia": 7,
-                "InvalidMedia": 8
+                "InvalidMedia": 8,
+                "PausedOnMediaAtEnd": 9
             }
         }
         Enum {
