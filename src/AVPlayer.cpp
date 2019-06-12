@@ -107,7 +107,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     auto timer = new QTimer(this);
     connect(timer,&QTimer::timeout,this,[this](){
        auto dfps = d->statistics.video_only.currentDisplayFPS();
-       if(!qFuzzyCompare(dfps,d->statistics.displayFPS)) {
+       if(qAbs(dfps-d->statistics.displayFPS)>0.1) {
            d->statistics.displayFPS = dfps;
            emit displayFrameRateChanged(dfps);
        }
