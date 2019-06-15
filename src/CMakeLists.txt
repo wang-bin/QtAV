@@ -326,13 +326,13 @@ if(HAVE_OPENGL)
   endif()
 endif()
 
-if(HAVE_EGL)
+if(HAVE_EGL AND HAVE_CAPI)
   list(APPEND SOURCES capi/egl_api.cpp)
   # TODO: X11Extras
   if(DEFINED Qt5Gui_EGL_INCLUDE_DIRS) # ANGLE
     list(APPEND EXTRA_INCLUDE ${Qt5Gui_EGL_INCLUDE_DIRS})
     #list(APPEND EXTRA_DEFS -DQTAV_HAVE_QT_EGL=1)
-    if(HAVE_CAPI AND NOT IOS)
+    if(NOT IOS)
       list(APPEND EXTRA_DEFS -DQTAV_HAVE_EGL_CAPI=1)
       if(WindowsPhone OR WindowsStore)
         list(APPEND EXTRA_DEFS -DCAPI_LINK_EGL)
