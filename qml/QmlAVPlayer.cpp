@@ -454,6 +454,22 @@ void QmlAVPlayer::setFrameRate(qreal value)
     }
 }
 
+QmlAVPlayer::MediaEndAction QmlAVPlayer::mediaEndAction() const
+{
+    return  static_cast<MediaEndAction>(int(mpPlayer->mediaEndAction()));
+}
+
+void QmlAVPlayer::setMediaEndAction(QmlAVPlayer::MediaEndAction value)
+{
+    QtAV::MediaEndAction action = static_cast<QtAV::MediaEndAction>(value);
+    if (mpPlayer->mediaEndAction() == action)
+        return;
+    if (mpPlayer) {
+        mpPlayer->setMediaEndAction(action);
+        Q_EMIT mediaEndActionChanged();
+    }
+}
+
 QUrl QmlAVPlayer::externalAudio() const
 {
     return m_audio;

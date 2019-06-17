@@ -66,6 +66,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_ENUMS(BufferMode)
     // not supported by QtMultimedia
     Q_ENUMS(PositionValue)
+    Q_ENUMS(MediaEndAction)
     Q_PROPERTY(int startPosition READ startPosition WRITE setStartPosition NOTIFY startPositionChanged)
     Q_PROPERTY(int stopPosition READ stopPosition WRITE setStopPosition NOTIFY stopPositionChanged)
     Q_PROPERTY(bool fastSeek READ isFastSeek WRITE setFastSeek NOTIFY fastSeekChanged)
@@ -90,6 +91,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(QVariantList internalSubtitleTracks READ internalSubtitleTracks NOTIFY internalSubtitleTracksChanged)
     // internal subtitle, e.g. mkv embedded subtitles
     Q_PROPERTY(int internalSubtitleTrack READ internalSubtitleTrack WRITE setInternalSubtitleTrack NOTIFY internalSubtitleTrackChanged)
+    Q_PROPERTY(MediaEndAction mediaEndAction READ mediaEndAction WRITE setMediaEndAction NOTIFY mediaEndActionChanged)
 
     Q_PROPERTY(QQmlListProperty<QuickAudioFilter> audioFilters READ audioFilters)
     Q_PROPERTY(QQmlListProperty<QuickVideoFilter> videoFilters READ videoFilters)
@@ -137,6 +139,11 @@ public:
        BufferTime    = QtAV::BufferTime,
        BufferBytes   = QtAV::BufferBytes,
        BufferPackets = QtAV::BufferPackets
+    };
+    enum MediaEndAction {
+        MediaEndAction_Default, /// stop playback (if loop end) and clear video renderer
+        MediaEndAction_KeepDisplay = 1, /// stop playback but video renderer keeps the last frame
+        MediaEndAction_Pause = 1 << 1 /// pause playback. Currently AVPlayer repeat mode will not work if this flag is set
     };
 
     explicit QmlAVPlayer(QObject *parent = 0);
@@ -250,6 +257,9 @@ public:
 
     qreal frameRate() const;
     void setFrameRate(qreal value);
+
+    MediaEndAction mediaEndAction() const;
+    void setMediaEndAction(MediaEndAction value);
     /*!
      * \brief externalAudio
      * If externalAudio url is valid, player will use audioTrack of external audio as audio source.
@@ -323,6 +333,7 @@ Q_SIGNALS:
     void bufferSizeChanged();
     void bufferModeChanged();
     void frameRateChanged();
+    void mediaEndActionChanged();
 
     void errorChanged();
     void error(Error error, const QString &errorString);

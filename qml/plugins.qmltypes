@@ -188,6 +188,14 @@ Module {
             }
         }
         Enum {
+            name: "MediaEndAction"
+            values: {
+                "MediaEndAction_Default": 0,
+                "MediaEndAction_KeepDisplay": 1,
+                "MediaEndAction_Pause": 2
+            }
+        }
+        Enum {
             name: "ChannelLayout"
             values: {
                 "ChannelLayoutAuto": 0,
@@ -208,6 +216,7 @@ Module {
         Property { name: "playbackState"; type: "PlaybackState"; isReadonly: true }
         Property { name: "autoPlay"; type: "bool" }
         Property { name: "autoLoad"; type: "bool" }
+        Property { name: "mediaEndAction"; type: "MediaEndAction" }
         Property { name: "playbackRate"; type: "double" }
         Property { name: "source"; type: "QUrl" }
         Property { name: "loops"; type: "int" }
