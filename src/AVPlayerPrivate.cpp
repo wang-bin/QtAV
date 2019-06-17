@@ -197,7 +197,7 @@ void AVPlayer::Private::applyFrameRate()
         force = !!vthread;
         vfps = statistics.video.frame_rate > 0 ? statistics.video.frame_rate : 25;
         // vfps<0: try to use pts (ExternalClock). if no pts (raw codec), try the default fps(VideoClock)
-        vfps = -vfps;
+        //vfps = -vfps;
     }
     qreal r = speed;
     if (force) {
