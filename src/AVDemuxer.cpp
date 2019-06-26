@@ -213,7 +213,9 @@ public:
         , seek_type(AccurateSeek)
         , dict(0)
         , interrupt_hanlder(0)
-    {}
+    {
+        lastKeyFrame.data = nullptr;
+    }
     ~Private() {
         delete interrupt_hanlder;
         if (dict) {
@@ -326,9 +328,11 @@ public:
     std::map<QString,int64_t> videoFirstPts;
     std::map<QString,int64_t> audioFirstPts;
     std::map<QString,QElapsedTimer> elapsed;
+    std::map<QString,quint64> recordPacketCount;
     std::map<QString,int> records; // <path, duration>
     std::map<QString,bool> restream;
     QMutex recordMutex;
+    AVPacket lastKeyFrame;
 
     qint64 lastPts = -1;
     qreal averagePtsDiff = 0;
@@ -566,6 +570,7 @@ bool AVDemuxer::readFrame()
                 d->ostreamAudio.insert({k, nullptr});
                 d->restream.insert({k, (QUrl(k).scheme().toLower()=="udp")});
                 d->elapsed.insert({k, QElapsedTimer{}});
+                d->recordPacketCount.insert({k, 0});
                 d->videoFirstPts.insert({k, -1});
                 d->audioFirstPts.insert({k, -1});
             }
@@ -586,6 +591,7 @@ bool AVDemuxer::readFrame()
                 d->audioFirstPts.erase(k);
                 d->restream.erase(k);
                 d->elapsed.erase(k);
+                d->recordPacketCount.erase(k);
                 it = d->oc.erase(it);
             }
             else
@@ -630,29 +636,39 @@ bool AVDemuxer::readFrame()
         auto & is = d->format_ctx->streams[packet.stream_index];
         auto & os = packet.stream_index==videoStream() ? d->ostreamVideo[k] : d->ostreamAudio[k];
         if(os != nullptr && d->elapsed[k].isValid()){
-            auto t1 = packet.pts;
-            auto t2 = packet.dts;
-            auto t3 = packet.duration;
-            if(packet.pts!=AV_NOPTS_VALUE) {
-                av_packet_rescale_ts(&packet, is->time_base, os->time_base);
-                if(packet.stream_index==videoStream()) {
+            auto p = &packet;
+            if(d->recordPacketCount[k]==0 && !(packet.flags & AV_PKT_FLAG_KEY) && d->lastKeyFrame.data!=nullptr) {
+                p = &d->lastKeyFrame;
+                p->pts = AV_NOPTS_VALUE;
+                p->dts = AV_NOPTS_VALUE;
+                p->duration = 0;
+            }
+            auto t1 = p->pts;
+            auto t2 = p->dts;
+            auto t3 = p->duration;
+            if(p->pts!=AV_NOPTS_VALUE) {
+                av_packet_rescale_ts(p, is->time_base, os->time_base);
+                if(p->stream_index==videoStream()) {
                     if(d->videoFirstPts[k]<0)
-                        d->videoFirstPts[k] = packet.pts;
-                    packet.pts -= d->videoFirstPts[k];
+                        d->videoFirstPts[k] = p->pts;
+                    p->pts -= d->videoFirstPts[k];
                 }
                 else {
                     if(d->audioFirstPts[k]<0)
-                        d->audioFirstPts[k] = packet.pts;
-                    packet.pts -= d->audioFirstPts[k];
+                        d->audioFirstPts[k] = p->pts;
+                    p->pts -= d->audioFirstPts[k];
                 }
             }
-            else
-                packet.pts = av_rescale_q(d->elapsed[k].nsecsElapsed(), {1,1000000000} , os->time_base);
-            packet.dts = AV_NOPTS_VALUE;
-            av_write_frame(d->oc[k],&packet);
-            packet.pts = t1;
-            packet.dts = t2;
-            packet.duration = t3;
+            else {
+                p->pts = av_rescale_q(d->elapsed[k].nsecsElapsed(), {1,1000000000} , os->time_base);
+                p->duration = 0;
+            }
+            p->dts = AV_NOPTS_VALUE;
+            av_write_frame(d->oc[k],p);
+            p->pts = t1;
+            p->dts = t2;
+            p->duration = t3;
+            ++(d->recordPacketCount[k]);
         }
         d->recordMutex.lock();
         auto stop = (d->records[k]>0 && (d->elapsed[k].elapsed()/1000)>=d->records[k]);
@@ -682,7 +698,13 @@ bool AVDemuxer::readFrame()
     }
     // TODO: v4l2 copy
     d->pkt = Packet::fromAVPacket(&packet, av_q2d(d->format_ctx->streams[d->stream]->time_base));
-    av_packet_unref(&packet); //important!
+    if(packet.flags & AV_PKT_FLAG_KEY) {
+        if(d->lastKeyFrame.data!=nullptr)
+            av_packet_unref(&d->lastKeyFrame);
+        d->lastKeyFrame = packet;
+    }
+    else
+        av_packet_unref(&packet); //important!
     d->eof = false;
     if (d->pkt.pts > qreal(duration())/1000.0) {
         d->max_pts = d->pkt.pts;
