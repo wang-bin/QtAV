@@ -100,6 +100,7 @@ private:
     QMutex buffer_mutex;
     QWaitCondition cond;
     BlockingQueue<QRunnable*> seek_tasks;
+    qint64 last_seek_pos;
 
     QSemaphore sem;
     QMutex next_frame_mutex;

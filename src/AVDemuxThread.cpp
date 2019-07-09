@@ -82,6 +82,7 @@ AVDemuxThread::AVDemuxThread(QObject *parent) :
   , audio_thread(0)
   , video_thread(0)
   , clock_type(-1)
+  , last_seek_pos(0)
 {
     seek_tasks.setCapacity(1);
     seek_tasks.blockFull(false);
@@ -95,6 +96,7 @@ AVDemuxThread::AVDemuxThread(AVDemuxer *dmx, QObject *parent) :
   , m_buffer(0)
   , audio_thread(0)
   , video_thread(0)
+  , last_seek_pos(0)
 {
     setDemuxer(dmx);
     seek_tasks.setCapacity(1);
@@ -278,6 +280,7 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type, qint64 external_pos)
         if (external_pos != std::numeric_limits < qint64 >::min() )
             t->clock()->updateExternalClock(qMax(qint64(0), external_pos));
         t->clock()->updateValue(double(pos)/1000.0);
+        last_seek_pos = pos;
         t->requestSeek();
         // TODO: the first frame (key frame) will not be decoded correctly if flush() is called.
         //PacketBuffer *pb = t->packetQueue();
@@ -321,6 +324,11 @@ void AVDemuxThread::processNextSeekTask()
     task->run();
     if (task->autoDelete())
         delete task;
+}
+
+qint64 AVDemuxThread::lastSeekPos()
+{
+    return last_seek_pos;
 }
 
 void AVDemuxThread::pauseInternal(bool value)
@@ -486,6 +494,10 @@ void AVDemuxThread::frameDeliveredOnStepForward()
         clock_type = -1;
         thread->clock()->updateExternalClock((thread->previousHistoryPts() - thread->clock()->initialValue())*1000.0);
     }
+    
+    // Fudge the bit at the end + 33ms so that step forward and step backwards present different values
+    last_seek_pos = (thread->previousHistoryPts() - thread->clock()->initialValue())*1000.0 + 33;
+    
     Q_EMIT stepFinished();
 }
 
