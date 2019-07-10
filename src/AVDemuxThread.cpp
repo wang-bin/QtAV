@@ -160,7 +160,7 @@ void AVDemuxThread::stepBackward()
 {
     if (!video_thread)
         return;
-    if (hasSeekTasks() || m_buffering)
+    if (hasSeekTasks())
         return;
     AVThread *t = video_thread;
     const qreal pre_pts = video_thread->previousHistoryPts();
@@ -469,7 +469,7 @@ void AVDemuxThread::stepForward()
 {
     if (end)
         return;
-    if (hasSeekTasks() || m_buffering)
+    if (hasSeekTasks())
         return;
 
     stepping = true;
