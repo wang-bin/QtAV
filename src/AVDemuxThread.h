@@ -108,7 +108,7 @@ private:
     qint64 last_seek_pos;
     QRunnable *current_seek_task;
     bool stepping;
-    QTimer *step_timeout_timer;
+    qint64 stepping_timeout_time;
         
     QSemaphore sem;
     QMutex next_frame_mutex;
