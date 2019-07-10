@@ -585,8 +585,12 @@ void AVPlayer::pause(bool p)
         return;
 
     if (!p) {
-        // TODO: If was stepping, skip our position a little bit behind us.
-        d->was_stepping = false;
+        if (d->was_stepping) {
+            d->was_stepping = false;
+            // If was stepping, skip our position a little bit behind us.
+            //  This fixes an issue with the audio timer
+            seek(position() - 100);
+        }
     }
 
     audio()->pause(p);
