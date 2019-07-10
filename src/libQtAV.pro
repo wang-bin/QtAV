@@ -157,7 +157,6 @@ config_avdevice { #may depends on avfilter
         ios {
           LIBS += -framework AVFoundation
         } else {
-          LIBS += -framework QTKit
       # assume avdevice targets to the same version as Qt and always >= 10.6
          !isEqual(QMAKE_MACOSX_DEPLOYMENT_TARGET, 10.6): LIBS += -framework AVFoundation
         }
