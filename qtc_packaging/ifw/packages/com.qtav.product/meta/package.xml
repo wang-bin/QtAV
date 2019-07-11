@@ -2,8 +2,8 @@
  <Package>
      <DisplayName>QtAV</DisplayName>
      <Description>Install QtAV multimedia library</Description>
-     <Version>1.12.0-0</Version>
-     <ReleaseDate>2017-06-20</ReleaseDate>
+     <Version>1.13.0-0</Version>
+     <ReleaseDate>2019-07-11</ReleaseDate>
      <Name>com.qtav.product</Name>
      <Licenses>
          <License name="LGPL v2.1" file="lgpl-2.1.txt" />

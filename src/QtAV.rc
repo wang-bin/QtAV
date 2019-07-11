@@ -19,10 +19,10 @@ BEGIN
     BEGIN
         BLOCK "000004b0"
         BEGIN
-            VALUE "CompanyName", "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
+            VALUE "CompanyName", "wbsecg1@gmail.com"
             VALUE "FileDescription", "QtAV Multimedia framework. http://qtav.org"
             VALUE "FileVersion", QTAV_VERSION_STR ".0"
-            VALUE "LegalCopyright", "Copyright (C) 2012-2017 WangBin, wbsecg1@gmail.com"
+            VALUE "LegalCopyright", "Copyright (C) 2012-2019 WangBin, wbsecg1@gmail.com"
             VALUE "InternalName", "QtAV"
             VALUE "OriginalFilename", "QtAV.dll"
             VALUE "ProductName", "QtAV"

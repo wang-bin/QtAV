@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<manifest package="org.qtav.qmlplayer" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="1.12.1" android:versionCode="9" android:installLocation="auto">
+<manifest package="org.qtav.qmlplayer" xmlns:android="http://schemas.android.com/apk/res/android" android:versionName="1.13.0" android:versionCode="16" android:installLocation="auto">
     <application android:hardwareAccelerated="true" android:name="org.qtproject.qt5.android.bindings.QtApplication" android:label="QMLPlayer" android:icon="@drawable/icon">
         <activity android:configChanges="orientation|uiMode|screenLayout|screenSize|smallestScreenSize|locale|fontScale|keyboard|keyboardHidden|navigation" android:name="org.qtav.qmlplayer.QMLPlayerActivity" android:label="QtAV QMLPlayer" android:screenOrientation="unspecified" android:launchMode="singleTop">
             <intent-filter>

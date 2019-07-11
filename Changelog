@@ -1,3 +1,20 @@
+version 1.13.0 2019-07-11
+
+- add python bindings
+- more apis for qml player
+- auto rotate video
+- apple store
+- fix ios plugin not found
+- support chapters
+- muxer, encoder, transcoder improvements
+- compatible with new ffmpeg
+- videotoolbox: hevc,
+- cuda: new devices
+- android: no longer depends on private qt module
+- fix opensl error
+- mediacodec: 0-copy via a plugin from https://github.com/wang-bin/mdk-sdk
+
+
 version 1.12.0 2017-06-20
 
 Changelog

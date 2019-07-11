@@ -70,9 +70,9 @@ QMAKE_EXTRA_COMPILERS += extra_copy #
 EXTRA_COPY_FILES = $$qtav_qml.files
 
 QMAKE_WRITE_DEFAULT_RC = 1
-QMAKE_TARGET_COMPANY = "Shanghai University->S3 Graphics->Deepin | wbsecg1@gmail.com"
+QMAKE_TARGET_COMPANY = "wbsecg1@gmail.com"
 QMAKE_TARGET_DESCRIPTION = "QtAV QML module. QtAV Multimedia framework. http://qtav.org"
-QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2017 WangBin, wbsecg1@gmail.com"
+QMAKE_TARGET_COPYRIGHT = "Copyright (C) 2012-2019 WangBin, wbsecg1@gmail.com"
 QMAKE_TARGET_PRODUCT = "QtAV QML"
 
 SOURCES += \

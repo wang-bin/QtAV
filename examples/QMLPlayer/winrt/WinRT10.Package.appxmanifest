@@ -10,7 +10,7 @@
   <Identity
     Name=\"org.qtav.qmlplayer\"
     Publisher=\"CN=930FB10A-C50C-4801-84BA-255229D27D44\"
-    Version=\"1.12.0.0\"
+    Version=\"1.13.0.0\"
     ProcessorArchitecture=\"$$lower($$VCPROJ_ARCH)\" /> <!--replaced by qmake-->
   <mp:PhoneIdentity
     PhoneProductId=\"e556656c-d8e8-49f9-8148-26506e94575a\"

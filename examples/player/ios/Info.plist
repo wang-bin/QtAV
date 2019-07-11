@@ -19,9 +19,9 @@
 	<key>CFBundleName</key>
         <string>QtAV Player</string>
 	<key>CFBundleShortVersionString</key>
-        <string>1.12</string>
+        <string>1.13</string>
 	<key>CFBundleVersion</key>
-        <string>1.12.0</string>
+        <string>1.13.0</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIFileSharingEnabled</key>
