@@ -155,6 +155,4 @@ Use QtAV in QML with OpenGL shaders(example is from qtmultimedia. But qtmultimed
 
 > Copyright &copy; Wang Bin wbsecg1@gmail.com
 
-> Shanghai University->S3 Graphics->Deepin, Shanghai, China
-
 > 2013-01-21

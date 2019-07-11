@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
  <Installer>
      <Name>QtAV</Name>
-     <Version>1.12.0</Version>
+     <Version>1.13.0</Version>
      <Title>QtAV Multimedia framework</Title>
      <Publisher>WangBin wbsecg1@gmail.com</Publisher>
      <ProductUrl>http://qtav.org</ProductUrl>
