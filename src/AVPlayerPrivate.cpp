@@ -739,7 +739,11 @@ bool AVPlayer::Private::calcRates()
     }
 
     auto elapsed = elapsedTimer.elapsed();
-    elapsedTimer.start();
+    if(elapsed>(mediaDataTimer.interval()/2))
+        elapsedTimer.start();
+    else
+        return false;
+
 
     demuxer.lock.lockForRead();
     statistics.bandwidthRate = (static_cast<double>(demuxer.totalBandwidth-lastTotalBandwidth)/elapsed)*1000;
