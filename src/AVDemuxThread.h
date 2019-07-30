@@ -59,6 +59,10 @@ public:
     MediaEndAction mediaEndAction() const;
     void setMediaEndAction(MediaEndAction value);
     bool waitForStarted(int msec = -1);
+    int getRepeatCurrent();
+    int getRepeatMax();
+    void setRepeatCurrent(int repeat_current);
+    void setRepeatMax(int repeat_max);
 Q_SIGNALS:
     void requestClockPause(bool value);
     void mediaStatusChanged(QtAV::MediaStatus);
@@ -106,6 +110,8 @@ private:
     int clock_type; // change happens in different threads(direct connection)
     friend class SeekTask;
     friend class stepBackwardTask;
+    int m_repeat_current;
+    int m_repeat_max;
 };
 
 } //namespace QtAV

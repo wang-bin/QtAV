@@ -869,21 +869,19 @@ void AVPlayer::setPosition(qint64 position)
 
 int AVPlayer::repeat() const
 {
-    return d->repeat_max;
+    return d->read_thread->getRepeatMax();
 }
 
 int AVPlayer::currentRepeat() const
 {
-    return d->repeat_current;
+    return d->read_thread->getRepeatCurrent();
 }
 
 // TODO: reset current_repeat?
 void AVPlayer::setRepeat(int max)
 {
-    d->repeat_max = max;
-    if (d->repeat_max < 0)
-        d->repeat_max = std::numeric_limits<int>::max();
-    Q_EMIT repeatChanged(d->repeat_max);
+    d->read_thread->setRepeatMax(max);
+    Q_EMIT repeatChanged(d->read_thread->getRepeatMax());
 }
 
 bool AVPlayer::setExternalAudio(const QString &file)
@@ -1249,8 +1247,8 @@ void AVPlayer::playInternal()
         QMetaObject::invokeMethod(this, "startNotifyTimer", Qt::AutoConnection);
     }
     d->state = PlayingState;
-    if (d->repeat_current < 0)
-        d->repeat_current = 0;
+    if(currentRepeat() < 0)
+        d->read_thread->setRepeatCurrent(0);
     } //end lock scoped here to avoid dead lock if connect started() to a slot that call unload()/play()
     if (d->start_position_norm > 0) {
         if (relativeTimeMode())
@@ -1266,34 +1264,30 @@ void AVPlayer::stopFromDemuxerThread()
 {
     qDebug("demuxer thread emit finished. repeat: %d/%d", currentRepeat(), repeat());
     d->seeking = false;
-    if (currentRepeat() < 0 || (currentRepeat() >= repeat() && repeat() >= 0)) {
-        qreal stop_pts = masterClock()->videoTime();
-        if (stop_pts <= 0)
-            stop_pts = masterClock()->value();
-        masterClock()->reset();
-        QMetaObject::invokeMethod(this, "stopNotifyTimer");
-        // vars not set by user can be reset
-        d->repeat_current = -1;
-        d->start_position_norm = 0;
-        d->stop_position_norm = kInvalidPosition; // already stopped. so not 0 but invalid. 0 can stop the playback in timerEvent
-        d->media_end = kInvalidPosition;
-        qDebug("avplayer emit stopped()");
-        d->state = StoppedState;
-        QMetaObject::invokeMethod(this, "stateChanged", Q_ARG(QtAV::AVPlayer::State, d->state));
-        QMetaObject::invokeMethod(this, "stopped");
-        QMetaObject::invokeMethod(this, "stoppedAt", Q_ARG(qint64, qint64(stop_pts*1000.0)));
-        //Q_EMIT stateChanged(d->state);
-        //Q_EMIT stopped();
-        //Q_EMIT stoppedAt(stop_pts*1000.0);
 
-        /*
-         * currently preload is not supported. so always unload. Then some properties will be reset, e.g. duration()
-         */
-        unload(); //TODO: invoke?
-    } else {
-        d->repeat_current++;
-        QMetaObject::invokeMethod(this, "play"); //ensure play() is called from player thread
-    }
+    qreal stop_pts = masterClock()->videoTime();
+    if (stop_pts <= 0)
+        stop_pts = masterClock()->value();
+    masterClock()->reset();
+    QMetaObject::invokeMethod(this, "stopNotifyTimer");
+    // vars not set by user can be reset
+
+    d->start_position_norm = 0;
+    d->stop_position_norm = kInvalidPosition; // already stopped. so not 0 but invalid. 0 can stop the playback in timerEvent
+    d->media_end = kInvalidPosition;
+    qDebug("avplayer emit stopped()");
+    d->state = StoppedState;
+    QMetaObject::invokeMethod(this, "stateChanged", Q_ARG(QtAV::AVPlayer::State, d->state));
+    QMetaObject::invokeMethod(this, "stopped");
+    QMetaObject::invokeMethod(this, "stoppedAt", Q_ARG(qint64, qint64(stop_pts*1000.0)));
+    //Q_EMIT stateChanged(d->state);
+    //Q_EMIT stopped();
+    //Q_EMIT stoppedAt(stop_pts*1000.0);
+
+    /*
+     * currently preload is not supported. so always unload. Then some properties will be reset, e.g. duration()
+     */
+    unload(); //TODO: invoke?
 }
 
 void AVPlayer::aboutToQuitApp()
@@ -1454,7 +1448,7 @@ void AVPlayer::stop()
     }
     d->seeking = false;
     d->reset_state = true;
-    d->repeat_current = -1;
+    d->read_thread->setRepeatCurrent(-1);
     if (!isPlaying()) {
         qDebug("Not playing~");
         if (mediaStatus() == LoadingMedia || mediaStatus() == LoadedMedia) {
@@ -1514,22 +1508,25 @@ void AVPlayer::timerEvent(QTimerEvent *te)
             qDebug("stopPosition() == 0, stop");
             stop();
         }
-        // t < d->start_position is ok. d->repeat_max<0 means repeat forever
+        // t < d->start_position is ok. repeat()< 0 means repeat forever
+
         if (currentRepeat() >= repeat() && repeat() >= 0) {
             d->reset_state = true; // true is default, can remove here
             qDebug("stopPosition() %lld/%lld reached and no repeat: %d", t, stopPosition(), repeat());
             stop();
             return;
         }
+
         // FIXME: now stop instead of seek if reach media's end. otherwise will not get eof again
         if (d->stop_position_norm == mediaStopPosition() || !isSeekable()) {
             // if not seekable, how it can start to play at specified position?
-            qDebug("normalized stopPosition() == mediaStopPosition() or !seekable. d->repeat_current=%d", d->repeat_current);
+            qDebug("normalized stopPosition() == mediaStopPosition() or !seekable. currentRepeat()=%d", currentRepeat());
             d->reset_state = false;
             stop(); // repeat after all threads stopped
         } else {
-            d->repeat_current++;
-            qDebug("noramlized stopPosition() != mediaStopPosition() and seekable. d->repeat_current=%d", d->repeat_current);
+            int repeat_current = d->read_thread->getRepeatCurrent();
+            d->read_thread->setRepeatCurrent(repeat_current++);
+            qDebug("noramlized stopPosition() != mediaStopPosition() and seekable. currentRepeat()=%d", currentRepeat());
             setPosition(d->start_position_norm);
         }
     }
