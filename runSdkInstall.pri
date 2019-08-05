@@ -61,3 +61,23 @@ else:linux:{
 
     copyFiles($$file_pathes)
 }
+else:android:{
+    exists( $$OUT_PWD/../../sdk_install.sh ) {
+        QMAKE_POST_LINK += $$quote(chmod +x $$OUT_PWD/../../sdk_install.sh  $$escape_expand(\n\t))
+        QMAKE_POST_LINK += $$quote($$OUT_PWD/../../sdk_install.sh  $$escape_expand(\n\t))
+    }
+
+    clear(file_pathes)
+    file_pathes += $$PWD/ffmpegBin/Android/clang/lib/armeabi-v7a/libavcodec.so.58
+    file_pathes += $$PWD/ffmpegBin/Android/clang/lib/armeabi-v7a/libavdevice.so.58
+    file_pathes += $$PWD/ffmpegBin/Android/clang/lib/armeabi-v7a/libavfilter.so.7
+    file_pathes += $$PWD/ffmpegBin/Android/clang/lib/armeabi-v7a/libavformat.so.58
+    file_pathes += $$PWD/ffmpegBin/Android/clang/lib/armeabi-v7a/libavutil.so.56
+    file_pathes += $$PWD/ffmpegBin/Android/clang/lib/armeabi-v7a/libswresample.so.3
+    file_pathes += $$PWD/ffmpegBin/Android/clang/lib/armeabi-v7a/libswscale.so.5
+
+    clear(destination_pathes)
+    destination_pathes += $$QT.core.libs
+
+    copyFiles($$file_pathes)
+}
