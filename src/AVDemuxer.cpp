@@ -333,6 +333,7 @@ public:
     std::map<QString,bool> restream;
     QMutex recordMutex;
     AVPacket lastKeyFrame;
+    QList<AVPacket> lastNonKeyFrames;
 
     qint64 lastPts = -1;
     qreal averagePtsDiff = 0;
@@ -636,39 +637,51 @@ bool AVDemuxer::readFrame()
         auto & is = d->format_ctx->streams[packet.stream_index];
         auto & os = packet.stream_index==videoStream() ? d->ostreamVideo[k] : d->ostreamAudio[k];
         if(os != nullptr && d->elapsed[k].isValid()){
-            auto p = &packet;
-            if(d->recordPacketCount[k]==0 && !(packet.flags & AV_PKT_FLAG_KEY) && d->lastKeyFrame.data!=nullptr) {
-                p = &d->lastKeyFrame;
-                p->pts = AV_NOPTS_VALUE;
-                p->dts = AV_NOPTS_VALUE;
-                p->duration = 0;
+            QList<AVPacket> packets = {packet};
+            auto writePrevFrames = d->recordPacketCount[k]==0 && !(packet.flags & AV_PKT_FLAG_KEY) && d->lastKeyFrame.data!=nullptr;
+            if(writePrevFrames) {
+                packets = {d->lastKeyFrame};
+                packets.append(d->lastNonKeyFrames);
+                packets.append(packet);
+                auto i = 0;
+                for(auto& p: packets) {
+                    if(i<packets.length()-1) {
+                        p.pts = AV_NOPTS_VALUE;
+                        p.dts = AV_NOPTS_VALUE;
+                        p.duration = 0;
+                    }
+                    ++i;
+                }
             }
-            auto t1 = p->pts;
-            auto t2 = p->dts;
-            auto t3 = p->duration;
-            if(p->pts!=AV_NOPTS_VALUE) {
-                av_packet_rescale_ts(p, is->time_base, os->time_base);
-                if(p->stream_index==videoStream()) {
-                    if(d->videoFirstPts[k]<0)
-                        d->videoFirstPts[k] = p->pts;
-                    p->pts -= d->videoFirstPts[k];
+            for(auto & p: packets) {
+                auto t1 = p.pts;
+                auto t2 = p.dts;
+                auto t3 = p.duration;
+                if(p.pts!=AV_NOPTS_VALUE) {
+                    av_packet_rescale_ts(&p, is->time_base, os->time_base);
+                    if(p.stream_index==videoStream()) {
+                        if(d->videoFirstPts[k]<0)
+                            d->videoFirstPts[k] = p.pts;
+                        p.pts -= d->videoFirstPts[k];
+                    }
+                    else {
+                        if(d->audioFirstPts[k]<0)
+                            d->audioFirstPts[k] = p.pts;
+                        p.pts -= d->audioFirstPts[k];
+                    }
                 }
                 else {
-                    if(d->audioFirstPts[k]<0)
-                        d->audioFirstPts[k] = p->pts;
-                    p->pts -= d->audioFirstPts[k];
+                    auto elapsed = writePrevFrames ? 0 : d->elapsed[k].nsecsElapsed();
+                    p.pts = av_rescale_q(elapsed, {1,1000000000} , os->time_base);
+                    p.duration = 0;
                 }
+                p.dts = AV_NOPTS_VALUE;
+                av_write_frame(d->oc[k],&p);
+                p.pts = t1;
+                p.dts = t2;
+                p.duration = t3;
+                ++(d->recordPacketCount[k]);
             }
-            else {
-                p->pts = av_rescale_q(d->elapsed[k].nsecsElapsed(), {1,1000000000} , os->time_base);
-                p->duration = 0;
-            }
-            p->dts = AV_NOPTS_VALUE;
-            av_write_frame(d->oc[k],p);
-            p->pts = t1;
-            p->dts = t2;
-            p->duration = t3;
-            ++(d->recordPacketCount[k]);
         }
         d->recordMutex.lock();
         auto stop = (d->records[k]>0 && (d->elapsed[k].elapsed()/1000)>=d->records[k]);
@@ -699,9 +712,16 @@ bool AVDemuxer::readFrame()
     // TODO: v4l2 copy
     d->pkt = Packet::fromAVPacket(&packet, av_q2d(d->format_ctx->streams[d->stream]->time_base));
     if(packet.flags & AV_PKT_FLAG_KEY) {
-        if(d->lastKeyFrame.data!=nullptr)
+        if(d->lastKeyFrame.data!=nullptr) {
             av_packet_unref(&d->lastKeyFrame);
+            for(auto& p: d->lastNonKeyFrames)
+                av_packet_unref(&p);
+            d->lastNonKeyFrames.clear();
+        }
         d->lastKeyFrame = packet;
+    }
+    else if(d->lastKeyFrame.data!=nullptr) {
+        d->lastNonKeyFrames.append(packet);
     }
     else
         av_packet_unref(&packet); //important!
