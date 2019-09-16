@@ -114,6 +114,7 @@ void QmlAVPlayer::componentComplete()
     connect(mpPlayer, &QtAV::AVPlayer::mediaDataTimerTriggered, this, &QmlAVPlayer::mediaDataTimerTriggered);
     connect(mpPlayer, &QtAV::AVPlayer::mediaDataTimerStarted, this, &QmlAVPlayer::mediaDataTimerStarted);
     connect(mpPlayer, &QtAV::AVPlayer::displayFrameRateChanged, this, &QmlAVPlayer::displayFrameRateChanged);
+    connect(mpPlayer, &QtAV::AVPlayer::receivingFramesChanged, this, &QmlAVPlayer::receivingFramesChanged);
 
     m_complete = true;
 }
@@ -533,6 +534,11 @@ void QmlAVPlayer::setAutoPlayInterval(int value)
 double QmlAVPlayer::displayFrameRate() const
 {
     return mpPlayer->displayFrameRate();
+}
+
+bool QmlAVPlayer::receivingFrames() const
+{
+    return mpPlayer->receivingFrames();
 }
 
 QmlAVPlayer::MediaEndAction QmlAVPlayer::mediaEndAction() const

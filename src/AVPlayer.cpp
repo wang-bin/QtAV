@@ -111,9 +111,32 @@ AVPlayer::AVPlayer(QObject *parent) :
            d->statistics.displayFPS = dfps;
            emit displayFrameRateChanged(dfps);
        }
+       if(dfps<0.1) {
+           if(d->receivingFrames) {
+              ++(d->checkReceivingCounter);
+              if(d->checkReceivingCounter>10) {
+                  d->checkReceivingCounter = 0;
+                  d->receivingFrames = false;
+                  emit receivingFramesChanged(false);
+              }
+           }
+       }
+       else {
+           if(!d->receivingFrames) {
+               d->checkReceivingCounter = 0;
+               d->receivingFrames = true;
+               emit receivingFramesChanged(true);
+           }
+
+       }
     });
     timer->setInterval(1000);
     timer->start();
+    connect(this,&AVPlayer::loaded,this,[this](){
+        d->checkReceivingCounter = 0;
+        d->receivingFrames = true;
+        emit receivingFramesChanged(true);
+     });
 }
 
 AVPlayer::~AVPlayer()
@@ -568,6 +591,11 @@ void AVPlayer::setAutoPlayInterval(int value)
 double AVPlayer::displayFrameRate() const
 {
     return d->statistics.displayFPS;
+}
+
+bool AVPlayer::receivingFrames() const
+{
+    return d->receivingFrames;
 }
 
 void AVPlayer::resetMediaData()

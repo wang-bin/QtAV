@@ -263,6 +263,7 @@ Module {
         Property { name: "disconnectTimeout"; type: "int" }
         Property { name: "autoPlayInterval"; type: "int" }
         Property { name: "displayFrameRate"; type: "double" }
+        Property { name: "receivingFrames"; type: "bool" }
         Property { name: "externalAudio"; type: "QUrl" }
         Property { name: "internalAudioTracks"; type: "QVariantList"; isReadonly: true }
         Property { name: "externalAudioTracks"; type: "QVariantList"; isReadonly: true }

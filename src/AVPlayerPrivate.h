@@ -191,6 +191,9 @@ public:
     quint64 lastTotalAudioBandwidth = 0;
     qint64 lastTotalFrames = 0;
 
+    bool receivingFrames = false;
+    int checkReceivingCounter = 0;
+
     QTimer mediaDataTimer;
     QVariantMap mediaData;
 };
