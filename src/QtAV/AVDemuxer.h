@@ -225,7 +225,6 @@ public:
     QString containerFormat;
     QReadWriteLock lock;
     std::atomic<bool> resetValues{true};
-    std::atomic<bool> isReceiving{false}; //for autoPlay
 };
 
 } //namespace QtAV

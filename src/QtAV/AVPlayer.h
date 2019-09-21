@@ -88,7 +88,6 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(int disconnectTimeout READ disconnectTimeout WRITE setDisconnectTimeout NOTIFY disconnectTimeoutChanged)
     Q_PROPERTY(double displayFrameRate READ displayFrameRate NOTIFY displayFrameRateChanged)
     Q_PROPERTY(bool receivingFrames READ receivingFrames NOTIFY receivingFramesChanged)
-    Q_PROPERTY(int autoPlayInterval READ autoPlayInterval WRITE setAutoPlayInterval NOTIFY autoPlayIntervalChanged)
     Q_PROPERTY(unsigned int chapters READ chapters NOTIFY chaptersChanged)
     Q_ENUMS(State)
 public:
@@ -425,9 +424,6 @@ public:
     bool adaptiveBuffer() const;
     void setAdaptiveBuffer(bool value);
 
-    int autoPlay() const;
-    void setAutoPlay(bool value);
-
     QVariantMap mediaData() const;
 
     int mediaDataTimerInterval() const;
@@ -435,9 +431,6 @@ public:
 
     int disconnectTimeout() const;
     void setDisconnectTimeout(int value);
-
-    int autoPlayInterval() const;
-    void setAutoPlayInterval(int value);
 
     double displayFrameRate() const;
     bool receivingFrames() const;
@@ -590,7 +583,6 @@ Q_SIGNALS:
     void mediaDataTimerStarted();
     void mediaDataTimerIntervalChanged(int);
     void disconnectTimeoutChanged(int);
-    void autoPlayIntervalChanged(int);
     void displayFrameRateChanged(double);
     void receivingFramesChanged(bool);
     /*!

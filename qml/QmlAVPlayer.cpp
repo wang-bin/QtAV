@@ -45,7 +45,6 @@ QmlAVPlayer::QmlAVPlayer(QObject *parent) :
   , mUseWallclockAsTimestamps(false)
   , m_complete(false)
   , m_mute(false)
-  , mAutoPlay(false)
   , mAutoLoad(false)
   , mHasAudio(false)
   , mHasVideo(false)
@@ -104,11 +103,10 @@ void QmlAVPlayer::classBegin()
 void QmlAVPlayer::componentComplete()
 {
     // TODO: set player parameters
-    if (mSource.isValid() && (mAutoLoad || mAutoPlay)) {
+    if (mSource.isValid() && mAutoLoad) {
 //        if (mAutoLoad)
 //            mpPlayer->load();
-//        if (mAutoPlay)
-            mpPlayer->play();
+        mpPlayer->play();
     }
 
     connect(mpPlayer, &QtAV::AVPlayer::mediaDataTimerTriggered, this, &QmlAVPlayer::mediaDataTimerTriggered);
@@ -163,7 +161,7 @@ void QmlAVPlayer::setSource(const QUrl &url)
     }
 
     // TODO: in componentComplete()?
-    if (m_complete && (mAutoLoad || mAutoPlay)) {
+    if (m_complete && mAutoLoad) {
         mError = NoError;
         mErrorString = tr("No error");
         Q_EMIT error(mError, mErrorString);
@@ -171,7 +169,7 @@ void QmlAVPlayer::setSource(const QUrl &url)
         stop(); // TODO: no stop for autoLoad?
 //        if (mAutoLoad)
 //            mpPlayer->load();
-        if (mAutoPlay || mAutoLoad) {
+        if (mAutoLoad) {
             //mPlaybackState is actually changed in slots. But if set to a new source the state may not change before call play()
             mPlaybackState = StoppedState;
             play();
@@ -191,22 +189,6 @@ void QmlAVPlayer::setAutoLoad(bool autoLoad)
 
     mAutoLoad = autoLoad;
     Q_EMIT autoLoadChanged();
-}
-
-bool QmlAVPlayer::autoPlay() const
-{
-    return mAutoPlay;
-}
-
-void QmlAVPlayer::setAutoPlay(bool autoplay)
-{
-    if (mAutoPlay == autoplay)
-        return;
-
-    mAutoPlay = autoplay;
-    if (mpPlayer)
-        mpPlayer->setAutoPlay(autoplay);
-    Q_EMIT autoPlayChanged();
 }
 
 MediaMetaData* QmlAVPlayer::metaData() const
@@ -513,21 +495,6 @@ void QmlAVPlayer::setDisconnectTimeout(int value)
     if (mpPlayer) {
         mpPlayer->setDisconnectTimeout(value);
         Q_EMIT disconnectTimeoutChanged();
-    }
-}
-
-int QmlAVPlayer::autoPlayInterval() const
-{
-    return mpPlayer->autoPlayInterval();
-}
-
-void QmlAVPlayer::setAutoPlayInterval(int value)
-{
-    if (mpPlayer->autoPlayInterval() == value)
-        return;
-    if (mpPlayer) {
-        mpPlayer->setAutoPlayInterval(value);
-        Q_EMIT autoPlayIntervalChanged();
     }
 }
 
@@ -950,8 +917,7 @@ void QmlAVPlayer::play(const QUrl &url)
     if (mSource == url && (playbackState() != StoppedState || m_loading))
         return;
     setSource(url);
-    if (!autoPlay())
-        play();
+    play();
 }
 
 void QmlAVPlayer::play()

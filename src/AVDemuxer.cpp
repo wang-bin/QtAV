@@ -528,7 +528,6 @@ bool AVDemuxer::readFrame()
     this->lock.lockForWrite();
     totalBandwidth+=static_cast<quint64>(packetSize);
     totalPackets++;
-    isReceiving.store(true);
     this->lock.unlock();
     if( packet.stream_index==videoStream())
     {

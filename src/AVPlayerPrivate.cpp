@@ -124,41 +124,6 @@ AVPlayer::Private::Private(AVPlayer *player)
 
     mediaDataTimer.setInterval(1000);
 
-    connect(&autoPlay_timer,&QTimer::timeout,[this](){
-        if(autoPlayMode=="check" || autoPlayMode=="timeout") {
-            if(demuxer.isReceiving.load()) {
-                demuxer.isReceiving.store(false);
-                autoPlayMode="check";
-            }
-            else {
-                if(autoPlayMode=="check" &&
-                   q->state()!=PausedState &&
-                   q->file()!="") {
-                    autoPlayElapsedTimer.start();
-                    autoPlayMode="timeout";
-                }
-                else if(autoPlayMode=="timeout") {
-                    if(autoPlayElapsedTimer.elapsed()>=disconnectTimeout) {
-                        autoPlayMode = "stop";
-                        q->stop();
-                        autoPlayMode = "reconnect";
-                    }
-                }
-            }
-        }
-        else if(autoPlayMode=="reconnect") {
-            q->play();
-            if(autoPlay_timer.interval()!=autoPlayInterval)
-                autoPlay_timer.setInterval(autoPlayInterval);
-        }
-    });
-    connect(player,&AVPlayer::loaded,[this](){
-        autoPlayMode = "check";
-        autoPlay_timer.setInterval(autoPlayCheckInterval);
-        if(autoPlay)
-            autoPlay_timer.start();
-    });
-
     vc_ids
 #if QTAV_HAVE(DXVA)
             //<< VideoDecoderId_DXVA
@@ -710,16 +675,6 @@ void AVPlayer::Private::applyAdaptiveBuffer()
         connect(q,SIGNAL(started()),&adaptiveBuffer_timer,SLOT(start()));
         connect(q,SIGNAL(stopped()),&adaptiveBuffer_timer,SLOT(stop()));
     }
-}
-
-void AVPlayer::Private::applyAutoPlay(bool autoPlay)
-{
-    if(autoPlay) {
-        autoPlay_timer.setInterval(autoPlayCheckInterval);
-        autoPlay_timer.start();
-    }
-    else
-        autoPlay_timer.stop();
 }
 
 bool AVPlayer::Private::calcRates()

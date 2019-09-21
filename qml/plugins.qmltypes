@@ -229,7 +229,6 @@ Module {
         Property { name: "hasAudio"; type: "bool"; isReadonly: true }
         Property { name: "hasVideo"; type: "bool"; isReadonly: true }
         Property { name: "playbackState"; type: "PlaybackState"; isReadonly: true }
-        Property { name: "autoPlay"; type: "bool" }
         Property { name: "autoLoad"; type: "bool" }
         Property { name: "mediaEndAction"; type: "MediaEndAction" }
         Property { name: "playbackRate"; type: "double" }
@@ -261,7 +260,6 @@ Module {
         Property { name: "mediaData"; type: "QVariantMap" }
         Property { name: "mediaDataTimerInterval"; type: "int" }
         Property { name: "disconnectTimeout"; type: "int" }
-        Property { name: "autoPlayInterval"; type: "int" }
         Property { name: "displayFrameRate"; type: "double" }
         Property { name: "receivingFrames"; type: "bool" }
         Property { name: "externalAudio"; type: "QUrl" }

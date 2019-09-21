@@ -105,8 +105,6 @@ public:
 
     void applyAdaptiveBuffer();
 
-    void applyAutoPlay(bool autoPlay);
-
     bool calcRates();
 
     void initMediaData();
@@ -176,13 +174,7 @@ public:
     bool adaptive_buffer;
     QTimer adaptiveBuffer_timer;
 
-    QTimer autoPlay_timer;
-    bool autoPlay = false;
-    QString autoPlayMode = "check";
-    QElapsedTimer autoPlayElapsedTimer;
     int disconnectTimeout = 5000;
-    int autoPlayInterval = 5000;
-    int autoPlayCheckInterval = 1000;
 
     QElapsedTimer elapsedTimer;
     QElapsedTimer totalElapsedTimer;

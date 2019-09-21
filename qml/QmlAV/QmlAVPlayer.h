@@ -49,7 +49,6 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(bool hasAudio READ hasAudio NOTIFY hasAudioChanged)
     Q_PROPERTY(bool hasVideo READ hasVideo NOTIFY hasVideoChanged)
     Q_PROPERTY(PlaybackState playbackState READ playbackState NOTIFY playbackStateChanged)
-    Q_PROPERTY(bool autoPlay READ autoPlay WRITE setAutoPlay NOTIFY autoPlayChanged)
     Q_PROPERTY(bool autoLoad READ isAutoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
     Q_PROPERTY(qreal playbackRate READ playbackRate WRITE setPlaybackRate NOTIFY playbackRateChanged)
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
@@ -92,7 +91,6 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(QVariantMap mediaData READ mediaData NOTIFY mediaDataTimerTriggered)
     Q_PROPERTY(int mediaDataTimerInterval READ mediaDataTimerInterval WRITE setMediaDataTimerInterval NOTIFY mediaDataTimerIntervalChanged)
     Q_PROPERTY(int disconnectTimeout READ disconnectTimeout WRITE setDisconnectTimeout NOTIFY disconnectTimeoutChanged)
-    Q_PROPERTY(int autoPlayInterval READ autoPlayInterval WRITE setAutoPlayInterval NOTIFY autoPlayIntervalChanged)
     Q_PROPERTY(double displayFrameRate READ displayFrameRate NOTIFY displayFrameRateChanged)
     Q_PROPERTY(bool receivingFrames READ receivingFrames NOTIFY receivingFramesChanged)
     Q_PROPERTY(MediaEndAction mediaEndAction READ mediaEndAction WRITE setMediaEndAction NOTIFY mediaEndActionChanged)
@@ -236,9 +234,6 @@ public:
     bool isAutoLoad() const;
     void setAutoLoad(bool autoLoad);
 
-    bool autoPlay() const;
-    void setAutoPlay(bool autoplay);
-
     MediaMetaData *metaData() const;
     QObject *mediaObject() const;
     QtAV::VideoCapture *videoCapture() const;
@@ -304,9 +299,6 @@ public:
     int disconnectTimeout() const;
     void setDisconnectTimeout(int value);
 
-    int autoPlayInterval() const;
-    void setAutoPlayInterval(int value);
-
     double displayFrameRate() const;
     bool receivingFrames() const;
 
@@ -362,7 +354,6 @@ Q_SIGNALS:
     void loopCountChanged();
     void videoOutChanged();
     void playbackStateChanged();
-    void autoPlayChanged();
     void playbackRateChanged();
     void paused();
     void stopped();
@@ -396,7 +387,6 @@ Q_SIGNALS:
     void mediaDataTimerStarted();
     void mediaDataTimerIntervalChanged();
     void disconnectTimeoutChanged();
-    void autoPlayIntervalChanged();
     void displayFrameRateChanged();
     void receivingFramesChanged();
     void mediaEndActionChanged();
@@ -433,7 +423,6 @@ private:
     bool mUseWallclockAsTimestamps;
     bool m_complete;
     bool m_mute;
-    bool mAutoPlay;
     bool mAutoLoad;
     bool mHasAudio, mHasVideo;
     bool m_fastSeek;

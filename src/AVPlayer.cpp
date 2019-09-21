@@ -524,19 +524,6 @@ void AVPlayer::setAdaptiveBuffer(bool value)
     Q_EMIT adaptiveBufferChanged(value);
 }
 
-int AVPlayer::autoPlay() const
-{
-    return d->autoPlay;
-}
-
-void AVPlayer::setAutoPlay(bool value)
-{
-    if (d->autoPlay == value)
-        return;
-    d->autoPlay = value;
-    d->applyAutoPlay(value);
-}
-
 QVariantMap AVPlayer::mediaData() const
 {
     return d->mediaData;
@@ -567,25 +554,8 @@ void AVPlayer::setDisconnectTimeout(int value)
 {
     if (d->disconnectTimeout == value)
         return;
-    if(d->autoPlay_timer.interval()==d->disconnectTimeout)
-        d->autoPlay_timer.setInterval(value);
     d->disconnectTimeout = value;
     Q_EMIT disconnectTimeoutChanged(value);
-}
-
-int AVPlayer::autoPlayInterval() const
-{
-    return d->autoPlayInterval;
-}
-
-void AVPlayer::setAutoPlayInterval(int value)
-{
-    if (d->autoPlayInterval == value)
-        return;
-    if(d->autoPlay_timer.interval()==d->autoPlayInterval)
-        d->autoPlay_timer.setInterval(value);
-    d->autoPlayInterval = value;
-    Q_EMIT autoPlayIntervalChanged(value);
 }
 
 double AVPlayer::displayFrameRate() const
@@ -1618,8 +1588,6 @@ void AVPlayer::seekChapter(int incr)
 
 void AVPlayer::stop()
 {
-    if(d->autoPlayMode!="stop")
-        d->applyAutoPlay(false);
     // check d->timer_id, <0 return?
     if (d->reset_state) {
         /*
