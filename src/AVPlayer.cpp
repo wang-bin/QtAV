@@ -114,7 +114,7 @@ AVPlayer::AVPlayer(QObject *parent) :
        if(dfps<0.1) {
            if(d->receivingFrames) {
               ++(d->checkReceivingCounter);
-              if(d->checkReceivingCounter>10) {
+              if(d->checkReceivingCounter>d->disconnectTimeout) {
                   d->checkReceivingCounter = 0;
                   d->receivingFrames = false;
                   emit receivingFramesChanged(false);

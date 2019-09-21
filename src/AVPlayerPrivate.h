@@ -174,7 +174,7 @@ public:
     bool adaptive_buffer;
     QTimer adaptiveBuffer_timer;
 
-    int disconnectTimeout = 5000;
+    int disconnectTimeout = 5;
 
     QElapsedTimer elapsedTimer;
     QElapsedTimer totalElapsedTimer;
