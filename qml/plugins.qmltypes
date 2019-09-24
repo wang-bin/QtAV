@@ -256,7 +256,6 @@ Module {
         Property { name: "audioTrack"; type: "int" }
         Property { name: "buffered"; type: "int" }
         Property { name: "bufferSize"; type: "int" }
-        Property { name: "adaptiveBuffer"; type: "bool" }
         Property { name: "mediaData"; type: "QVariantMap" }
         Property { name: "mediaDataTimerInterval"; type: "int" }
         Property { name: "disconnectTimeout"; type: "int" }

@@ -103,8 +103,6 @@ public:
         }
     }
 
-    void applyAdaptiveBuffer();
-
     bool calcRates();
 
     void initMediaData();
@@ -170,9 +168,6 @@ public:
     QMutex load_mutex;
 
     AVPlayer * q;
-
-    bool adaptive_buffer;
-    QTimer adaptiveBuffer_timer;
 
     int disconnectTimeout = 5;
 

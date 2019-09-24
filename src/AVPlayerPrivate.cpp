@@ -113,7 +113,6 @@ AVPlayer::Private::Private(AVPlayer *player)
     , state(AVPlayer::StoppedState)
     , end_action(MediaEndAction_Default)
     ,q(player)
-    , adaptive_buffer(false)
 {
     demuxer.setInterruptTimeout(interrupt_timeout);
     /*
@@ -659,22 +658,6 @@ void AVPlayer::Private::updateBufferValue()
         updateBufferValue(athread->packetQueue());
     if (vthread)
         updateBufferValue(vthread->packetQueue());
-}
-
-void AVPlayer::Private::applyAdaptiveBuffer()
-{
-    disconnect(&adaptiveBuffer_timer,SIGNAL(timeout()),q,SLOT(updateAdaptiveBuffer()));
-    disconnect(q,SIGNAL(started()),&adaptiveBuffer_timer,SLOT(start()));
-    disconnect(q,SIGNAL(stopped()),&adaptiveBuffer_timer,SLOT(stop()));
-    if(adaptive_buffer)
-    {
-        //buffer_mode = BufferTime;
-        adaptiveBuffer_timer.setInterval(30);
-        q->setBufferValue(5);
-        connect(&adaptiveBuffer_timer,SIGNAL(timeout()),q,SLOT(updateAdaptiveBuffer()));
-        connect(q,SIGNAL(started()),&adaptiveBuffer_timer,SLOT(start()));
-        connect(q,SIGNAL(stopped()),&adaptiveBuffer_timer,SLOT(stop()));
-    }
 }
 
 bool AVPlayer::Private::calcRates()

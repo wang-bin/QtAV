@@ -448,21 +448,6 @@ void QmlAVPlayer::setFrameRate(qreal value)
     }
 }
 
-int QmlAVPlayer::adaptiveBuffer() const
-{
-    return mpPlayer->adaptiveBuffer();
-}
-
-void QmlAVPlayer::setAdaptiveBuffer(bool value)
-{
-    if (mpPlayer->adaptiveBuffer() == value)
-        return;
-    if (mpPlayer) {
-        mpPlayer->setAdaptiveBuffer(value);
-        Q_EMIT adaptiveBufferChanged();
-    }
-}
-
 QVariantMap QmlAVPlayer::mediaData() const
 {
     return mpPlayer->mediaData();

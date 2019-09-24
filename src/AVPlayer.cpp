@@ -510,20 +510,6 @@ void AVPlayer::setMediaEndAction(MediaEndAction value)
     d->read_thread->setMediaEndAction(value);
 }
 
-bool AVPlayer::adaptiveBuffer() const
-{
-    return d->adaptive_buffer;
-}
-
-void AVPlayer::setAdaptiveBuffer(bool value)
-{
-    if (d->adaptive_buffer == value)
-        return;
-    d->adaptive_buffer = value;
-    d->applyAdaptiveBuffer();
-    Q_EMIT adaptiveBufferChanged(value);
-}
-
 QVariantMap AVPlayer::mediaData() const
 {
     return d->mediaData;
@@ -1515,24 +1501,6 @@ void AVPlayer::tryClearVideoRenderers()
     }
     if (!(mediaEndAction() & MediaEndAction_KeepDisplay)) {
         d->vthread->clearRenderers();
-    }
-}
-
-void AVPlayer::updateAdaptiveBuffer()
-{
-    if((d->status!=BufferedMedia) || duration()>0)
-        return;
-
-
-    if(buffered()>=bufferValue())
-    {
-        setSpeed(1.1);
-        setBufferValue(qMin(bufferValue()+1, 60));
-    }
-    else if(buffered()<bufferValue())
-    {
-        setSpeed(1);
-        setBufferValue(qMax(bufferValue()-1,2));
     }
 }
 

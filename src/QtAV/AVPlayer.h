@@ -82,7 +82,6 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(State state READ state WRITE setState NOTIFY stateChanged)
     Q_PROPERTY(QtAV::MediaStatus mediaStatus READ mediaStatus NOTIFY mediaStatusChanged)
     Q_PROPERTY(QtAV::MediaEndAction mediaEndAction READ mediaEndAction WRITE setMediaEndAction NOTIFY mediaEndActionChanged)
-    Q_PROPERTY(bool adaptiveBuffer READ adaptiveBuffer WRITE setAdaptiveBuffer NOTIFY adaptiveBufferChanged)
     Q_PROPERTY(QVariantMap mediaData READ mediaData NOTIFY mediaDataTimerTriggered)
     Q_PROPERTY(int mediaDataTimerInterval READ mediaDataTimerInterval WRITE setMediaDataTimerInterval NOTIFY mediaDataTimerIntervalChanged)
     Q_PROPERTY(int disconnectTimeout READ disconnectTimeout WRITE setDisconnectTimeout NOTIFY disconnectTimeoutChanged)
@@ -417,12 +416,6 @@ public:
      */
     MediaEndAction mediaEndAction() const;
     void setMediaEndAction(MediaEndAction value);
-    /*!
-     * \brief adaptiveBuffer
-     * adaptive buffer size based on bit rate.
-     */
-    bool adaptiveBuffer() const;
-    void setAdaptiveBuffer(bool value);
 
     QVariantMap mediaData() const;
 
@@ -577,7 +570,6 @@ Q_SIGNALS:
     void loaded(); // == mediaStatusChanged(QtAV::LoadedMedia)
     void mediaStatusChanged(QtAV::MediaStatus status); //explictly use QtAV::MediaStatus
     void mediaEndActionChanged(QtAV::MediaEndAction action);
-    void adaptiveBufferChanged(bool);
     void firstKeyFrameReceived();
     void mediaDataTimerTriggered(QVariantMap);
     void mediaDataTimerStarted();
@@ -652,7 +644,6 @@ private Q_SLOTS:
     void updateMediaStatus(QtAV::MediaStatus status);
     void onSeekFinished(qint64 value);
     void tryClearVideoRenderers();
-    void updateAdaptiveBuffer();
     void onMediaStatusChanged(QtAV::MediaStatus status);
     void seekChapter(int incr);
 protected:
