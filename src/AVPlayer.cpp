@@ -137,6 +137,8 @@ AVPlayer::AVPlayer(QObject *parent) :
         d->receivingFrames = true;
         emit receivingFramesChanged(true);
      });
+
+    connect(&d->demuxer,&AVDemuxer::recordFinished,this,&AVPlayer::recordFinished);
 }
 
 AVPlayer::~AVPlayer()

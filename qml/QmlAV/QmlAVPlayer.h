@@ -385,6 +385,7 @@ Q_SIGNALS:
     void displayFrameRateChanged();
     void receivingFramesChanged();
     void mediaEndActionChanged();
+    void recordFinished(bool success, const QString& format);
 
     void errorChanged();
     void error(Error error, const QString &errorString, int ffmpegError = 0, const QString& ffmpegErrorStr="");

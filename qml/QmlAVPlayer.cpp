@@ -113,6 +113,7 @@ void QmlAVPlayer::componentComplete()
     connect(mpPlayer, &QtAV::AVPlayer::mediaDataTimerStarted, this, &QmlAVPlayer::mediaDataTimerStarted);
     connect(mpPlayer, &QtAV::AVPlayer::displayFrameRateChanged, this, &QmlAVPlayer::displayFrameRateChanged);
     connect(mpPlayer, &QtAV::AVPlayer::receivingFramesChanged, this, &QmlAVPlayer::receivingFramesChanged);
+    connect(mpPlayer, &QtAV::AVPlayer::recordFinished, this, &QmlAVPlayer::recordFinished);
 
     m_complete = true;
 }

@@ -303,6 +303,11 @@ Module {
         }
         Method { name: "stopRecording" }
         Method { name: "resetMediaData" }
+        Signal {
+            name: "recordFinished"
+            Parameter { name: "success"; type: "bool" }
+            Parameter { name: "format"; type: "string" }
+        }
     }
     Component { name: "QtAV::AudioFilter"; prototype: "QtAV::Filter" }
     Component {

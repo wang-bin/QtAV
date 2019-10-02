@@ -329,6 +329,8 @@ public:
     std::map<QString,int64_t> audioFirstPts;
     std::map<QString,QElapsedTimer> elapsed;
     std::map<QString,quint64> recordPacketCount;
+    std::map<QString,quint64> recordTryCount;
+    std::map<QString,QString> recordFormat;
     std::map<QString,int> records; // <path, duration>
     std::map<QString,bool> restream;
     QMutex recordMutex;
@@ -571,6 +573,8 @@ bool AVDemuxer::readFrame()
                 d->restream.insert({k, (QUrl(k).scheme().toLower()=="udp")});
                 d->elapsed.insert({k, QElapsedTimer{}});
                 d->recordPacketCount.insert({k, 0});
+                d->recordTryCount.insert({k, 0});
+                d->recordFormat.insert({k,videoStream()>=0 ?"mkv":"wav"});
                 d->videoFirstPts.insert({k, -1});
                 d->audioFirstPts.insert({k, -1});
             }
@@ -578,12 +582,15 @@ bool AVDemuxer::readFrame()
             auto k = it->first;
             if(d->records.find(k)==d->records.end()) {
                 if(d->ostreamVideo[k] != nullptr || d->ostreamAudio[k] != nullptr) {
-                    av_write_trailer(d->oc[k]);
+                    if(d->elapsed[k].isValid())
+                        av_write_trailer(d->oc[k]);
                     avio_close(d->oc[k]->pb);
                     d->oc[k]->pb = nullptr;
                 }
                 if(d->oc[k]!=nullptr)
                     avformat_free_context(d->oc[k]);
+
+                emit recordFinished(true, d->recordFormat[k]);
 
                 d->ostreamVideo.erase(k);
                 d->ostreamAudio.erase(k);
@@ -592,6 +599,8 @@ bool AVDemuxer::readFrame()
                 d->restream.erase(k);
                 d->elapsed.erase(k);
                 d->recordPacketCount.erase(k);
+                d->recordTryCount.erase(k);
+                d->recordFormat.erase(k);
                 it = d->oc.erase(it);
             }
             else
@@ -602,14 +611,36 @@ bool AVDemuxer::readFrame()
 
     for(const auto& [k,v]: d->oc) {
         if(!d->elapsed[k].isValid()){
+            if(!d->restream[k] && d->recordTryCount[k]>20) {
+                if(d->oc[k]!=nullptr)
+                    avformat_free_context(d->oc[k]);
+                d->oc[k] = nullptr;
+                d->ostreamVideo[k] = nullptr;
+                d->ostreamAudio[k] = nullptr;
+                if(d->recordFormat[k]=="mkv")
+                    d->recordFormat[k]="mp4";
+                else if(d->recordFormat[k]=="mp4")
+                    d->recordFormat[k]="avi";
+                else if(d->recordFormat[k]=="avi")
+                    d->recordFormat[k]="mov";
+                else if(d->recordFormat[k]=="mov")
+                    d->recordFormat[k]="flv";
+                else {
+                    emit recordFinished(false, "");
+                    d->recordMutex.lock();
+                    stopRecording(k);
+                    d->recordMutex.unlock();
+                }
+                d->recordTryCount[k] = 0;
+            }
             if(d->oc[k]==nullptr) {
                 auto ret = -1;
                 if(d->restream[k])
                     ret = avformat_alloc_output_context2(&d->oc[k],nullptr,d->format_ctx->iformat->name,nullptr);
                 else
-                    ret = avformat_alloc_output_context2(&d->oc[k],nullptr,nullptr,k.toLatin1());
+                    ret = avformat_alloc_output_context2(&d->oc[k],nullptr,nullptr,(k+"."+d->recordFormat[k]).toLatin1());
                 if(ret>=0 && d->oc[k]!=nullptr && !(d->oc[k]->oformat->flags & AVFMT_NOFILE))
-                    avio_open(&d->oc[k]->pb, k.toLatin1(), AVIO_FLAG_WRITE);
+                    avio_open(&d->oc[k]->pb, (k+"."+d->recordFormat[k]).toLatin1(), AVIO_FLAG_WRITE);
             }
             if(d->oc[k]!=nullptr && d->ostreamVideo[k] == nullptr && videoStream()>=0) {
                 d->ostreamVideo[k] = avformat_new_stream(d->oc[k], nullptr);
@@ -632,6 +663,8 @@ bool AVDemuxer::readFrame()
                 if(ret>=0)
                     d->elapsed[k].start();
             }
+            if(!d->elapsed[k].isValid())
+                ++(d->recordTryCount[k]);
         }
         auto & is = d->format_ctx->streams[packet.stream_index];
         auto & os = packet.stream_index==videoStream() ? d->ostreamVideo[k] : d->ostreamAudio[k];

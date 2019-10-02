@@ -577,6 +577,7 @@ Q_SIGNALS:
     void disconnectTimeoutChanged(int);
     void displayFrameRateChanged(double);
     void receivingFramesChanged(bool);
+    void recordFinished(bool success, const QString& format);
     /*!
      * \brief durationChanged emit when media is loaded/unloaded
      */

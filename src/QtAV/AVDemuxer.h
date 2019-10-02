@@ -198,6 +198,7 @@ Q_SIGNALS:
     void error(const QtAV::AVError& e, int ffmpegError = 0, const QString& ffmpegErrorStr=""); //explictly use QtAV::AVError in connection for Qt4 syntax
     void mediaStatusChanged(QtAV::MediaStatus status);
     void seekableChanged();
+    void recordFinished(bool success, const QString& format);
 private:
     void setMediaStatus(MediaStatus status);
     // error code (errorCode) and message (msg) may be modified internally
