@@ -860,25 +860,25 @@ qint64 AVPlayer::position() const
 
 qint64 AVPlayer::displayPosition() const
 {
-	// Return a cached value if there are seek tasks
-	if (d->seeking || d->read_thread->hasSeekTasks() || (d->read_thread->buffer() && d->read_thread->buffer()->isBuffering())) {
-		return d->last_known_good_pts = d->read_thread->lastSeekPos();
-	}
+    // Return a cached value if there are seek tasks
+    if (d->seeking || d->read_thread->hasSeekTasks() || (d->read_thread->buffer() && d->read_thread->buffer()->isBuffering())) {
+        return d->last_known_good_pts = d->read_thread->lastSeekPos();
+    }
 
-	// TODO: videoTime()?
-	qint64 pts = d->clock->videoTime()*1000.0;
+    // TODO: videoTime()?
+    qint64 pts = d->clock->videoTime()*1000.0;
 
     // If we are stepping around, we want the lastSeekPos.
     /// But if we're just paused by the user... we want another value.
     if (d->was_stepping) {
         pts = d->read_thread->lastSeekPos();
     }
-	if (pts < 0) {
-		return d->last_known_good_pts;
-	}
-	d->last_known_good_pts = pts;
+    if (pts < 0) {
+        return d->last_known_good_pts;
+    }
+    d->last_known_good_pts = pts;
 
-	return pts;
+    return pts;
 }
 
 void AVPlayer::setPosition(qint64 position)
@@ -1582,9 +1582,9 @@ void AVPlayer::stepForward()
 
 void AVPlayer::stepBackward()
 {
-	pause(true);
+    pause(true);
     d->was_stepping = true;
-	d->read_thread->stepBackward();
+    d->read_thread->stepBackward();
 }
 
 void AVPlayer::seek(qreal r)

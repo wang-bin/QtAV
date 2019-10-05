@@ -364,7 +364,7 @@ bool AVDemuxThread::hasSeekTasks()
     if (stepping && stepping_timeout_time > 0 && stepping_timeout_time < QDateTime::currentMSecsSinceEpoch()) {
         finishedStepBackward();
     }
-	return !seek_tasks.isEmpty() || current_seek_task || stepping;
+    return !seek_tasks.isEmpty() || current_seek_task || stepping;
 }
 
 qint64 AVDemuxThread::lastSeekPos()
