@@ -272,7 +272,7 @@ void AVDemuxThread::seek(qint64 external_pos, qint64 pos, SeekType type)
     };
 
     end = false;
-    // queue maybe blocked by put()	
+    // queue maybe blocked by put()
     // These must be here or seeking while paused will not update the video frame
     if (audio_thread) {
         audio_thread->packetQueue()->clear();

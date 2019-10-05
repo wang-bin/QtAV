@@ -60,8 +60,8 @@ public:
     MediaEndAction mediaEndAction() const;
     void setMediaEndAction(MediaEndAction value);
     bool waitForStarted(int msec = -1);
-	qint64 lastSeekPos();
-	bool hasSeekTasks();
+    qint64 lastSeekPos();
+    bool hasSeekTasks();
 Q_SIGNALS:
     void requestClockPause(bool value);
     void mediaStatusChanged(QtAV::MediaStatus);
