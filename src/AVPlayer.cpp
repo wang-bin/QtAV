@@ -583,6 +583,16 @@ void AVPlayer::pause(bool p)
         return;
     if (isPaused() == p)
         return;
+
+    if (!p) {
+        if (d->was_stepping) {
+            d->was_stepping = false;
+            // If was stepping, skip our position a little bit behind us.
+            //  This fixes an issue with the audio timer
+            seek(position() - 100);
+        }
+    }
+
     audio()->pause(p);
     //pause thread. check pause state?
     d->read_thread->pause(p);
@@ -845,6 +855,29 @@ qint64 AVPlayer::position() const
     const qint64 pts = d->clock->value()*1000.0;
     if (relativeTimeMode())
         return pts - absoluteMediaStartPosition();
+    return pts;
+}
+
+qint64 AVPlayer::displayPosition() const
+{
+    // Return a cached value if there are seek tasks
+    if (d->seeking || d->read_thread->hasSeekTasks() || (d->read_thread->buffer() && d->read_thread->buffer()->isBuffering())) {
+        return d->last_known_good_pts = d->read_thread->lastSeekPos();
+    }
+
+    // TODO: videoTime()?
+    qint64 pts = d->clock->videoTime()*1000.0;
+
+    // If we are stepping around, we want the lastSeekPos.
+    /// But if we're just paused by the user... we want another value.
+    if (d->was_stepping) {
+        pts = d->read_thread->lastSeekPos();
+    }
+    if (pts < 0) {
+        return d->last_known_good_pts;
+    }
+    d->last_known_good_pts = pts;
+
     return pts;
 }
 
@@ -1258,6 +1291,9 @@ void AVPlayer::playInternal()
         else
             setPosition((qint64)(d->start_position_norm));
     }
+    
+    d->was_stepping = false;
+
     Q_EMIT stateChanged(PlayingState);
     Q_EMIT started(); //we called stop(), so must emit started()
 }
@@ -1540,15 +1576,14 @@ void AVPlayer::stepForward()
 {
     // pause clock
     pause(true); // must pause AVDemuxThread (set user_paused true)
+    d->was_stepping = true;
     d->read_thread->stepForward();
 }
 
 void AVPlayer::stepBackward()
 {
-    d->clock->pause(true);
-    d->state = PausedState;
-    Q_EMIT stateChanged(d->state);
-    Q_EMIT paused(true);
+    pause(true);
+    d->was_stepping = true;
     d->read_thread->stepBackward();
 }
 

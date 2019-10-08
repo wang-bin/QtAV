@@ -111,6 +111,8 @@ public:
     bool reset_state;
     qint64 start_position, stop_position;
     qint64 start_position_norm, stop_position_norm; // real position
+    qint64 last_known_good_pts;
+    bool was_stepping;
     int repeat_max, repeat_current;
     int timer_id; //notify position change and check AB repeat range. active when playing
 

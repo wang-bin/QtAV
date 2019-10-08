@@ -178,6 +178,7 @@ public:
      */
     qint64 stopPosition() const; //unit: ms
     qint64 position() const; //unit: ms
+    qint64 displayPosition() const;
     //0: play once. N: play N+1 times. <0: infinity
     int repeat() const; //or repeatMax()?
     /*!

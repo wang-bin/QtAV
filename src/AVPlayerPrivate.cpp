@@ -111,6 +111,8 @@ AVPlayer::Private::Private()
     , status(NoMedia)
     , state(AVPlayer::StoppedState)
     , end_action(MediaEndAction_Default)
+    , last_known_good_pts(0)
+    , was_stepping(false)
 {
     demuxer.setInterruptTimeout(interrupt_timeout);
     /*
