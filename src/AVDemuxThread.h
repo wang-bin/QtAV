@@ -27,6 +27,7 @@
 #include <QtCore/QThread>
 #include <QtCore/QRunnable>
 #include "PacketBuffer.h"
+#include <QTimer>
 
 namespace QtAV {
 
@@ -59,6 +60,8 @@ public:
     MediaEndAction mediaEndAction() const;
     void setMediaEndAction(MediaEndAction value);
     bool waitForStarted(int msec = -1);
+    qint64 lastSeekPos();
+    bool hasSeekTasks();
 Q_SIGNALS:
     void requestClockPause(bool value);
     void mediaStatusChanged(QtAV::MediaStatus);
@@ -67,9 +70,11 @@ Q_SIGNALS:
     void stepFinished();
     void internalSubtitlePacketRead(int index, const QtAV::Packet& packet);
 private slots:
+    void finishedStepBackward();
     void seekOnPauseFinished();
     void frameDeliveredOnStepForward();
     void eofDecodedOnStepForward();
+    void stepForwardDone();
     void onAVThreadQuit();
 
 protected:
@@ -100,7 +105,11 @@ private:
     QMutex buffer_mutex;
     QWaitCondition cond;
     BlockingQueue<QRunnable*> seek_tasks;
-
+    qint64 last_seek_pos;
+    QRunnable *current_seek_task;
+    bool stepping;
+    qint64 stepping_timeout_time;
+        
     QSemaphore sem;
     QMutex next_frame_mutex;
     int clock_type; // change happens in different threads(direct connection)
