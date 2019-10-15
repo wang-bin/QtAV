@@ -909,8 +909,8 @@ void QmlAVPlayer::play(const QUrl &url)
 void QmlAVPlayer::play()
 {
     // if not autoPlay, maybe a different source was set and play() was not called
-    if (isAutoLoad() && (playbackState() == PlayingState || m_loading))
-        return;
+//    if (isAutoLoad() && (playbackState() == PlayingState || m_loading))
+//        return;
     setPlaybackState(PlayingState);
 }
 
