@@ -964,16 +964,20 @@ void QmlAVPlayer::seekBackward()
 
 void QmlAVPlayer::_q_error(const AVError &e, int ffmpegError, const QString& ffmpegErrorStr)
 {
-    mError = NoError;
-    mErrorString = e.string();
-    mffmpegError = ffmpegError;
-    mffmpegErrorStr = ffmpegErrorStr;
+    if(mffmpegError!=ffmpegError) {
+        mffmpegError = ffmpegError;
+        mffmpegErrorStr = ffmpegErrorStr;
+        Q_EMIT ffmpegErrorChanged();
+    }
     const AVError::ErrorCode ec = e.error();
-    mError = static_cast<Error>(ec);
-    if (ec != AVError::NoError)
-        m_loading = false;
-    Q_EMIT error(mError, mErrorString, mffmpegError, mffmpegErrorStr);
-    Q_EMIT errorChanged();
+    if(mErrorString !=e.string() || mError != static_cast<Error>(ec)) {
+        mErrorString = e.string();
+        mError = static_cast<Error>(ec);
+        if (ec != AVError::NoError)
+            m_loading = false;
+        Q_EMIT error(mError, mErrorString, mffmpegError, mffmpegErrorStr);
+        Q_EMIT errorChanged();
+    }
 }
 
 void QmlAVPlayer::_q_statusChanged()

@@ -58,8 +58,8 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(MediaMetaData *metaData READ metaData CONSTANT)
     Q_PROPERTY(QObject *mediaObject READ mediaObject  NOTIFY mediaObjectChanged SCRIPTABLE false DESIGNABLE false)
     Q_PROPERTY(QString errorString READ errorString NOTIFY errorChanged)
-    Q_PROPERTY(int ffmpegError READ ffmpegError NOTIFY errorChanged)
-    Q_PROPERTY(QString ffmpegErrorStr READ ffmpegErrorStr NOTIFY errorChanged)
+    Q_PROPERTY(int ffmpegError READ ffmpegError NOTIFY ffmpegErrorChanged)
+    Q_PROPERTY(QString ffmpegErrorStr READ ffmpegErrorStr NOTIFY ffmpegErrorChanged)
     Q_ENUMS(Loop)
     Q_ENUMS(PlaybackState)
     Q_ENUMS(Status)
@@ -388,6 +388,7 @@ Q_SIGNALS:
     void recordFinished(bool success, const QString& format);
 
     void errorChanged();
+    void ffmpegErrorChanged();
     void error(Error error, const QString &errorString, int ffmpegError = 0, const QString& ffmpegErrorStr="");
     void statusChanged();
     void mediaObjectChanged();
