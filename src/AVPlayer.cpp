@@ -111,7 +111,7 @@ AVPlayer::AVPlayer(QObject *parent) :
            d->statistics.displayFPS = dfps;
            emit displayFrameRateChanged(dfps);
        }
-       if(dfps<0.1) {
+       if(dfps<1) {
            if(d->receivingFrames) {
               ++(d->checkReceivingCounter);
               if(d->checkReceivingCounter>d->disconnectTimeout) {
@@ -122,8 +122,8 @@ AVPlayer::AVPlayer(QObject *parent) :
            }
        }
        else {
+           d->checkReceivingCounter = 0;
            if(!d->receivingFrames) {
-               d->checkReceivingCounter = 0;
                d->receivingFrames = true;
                emit receivingFramesChanged(true);
            }
