@@ -316,12 +316,12 @@ void VideoThread::run()
            // TODO: push pts history here and reorder
         }
         if(d.statistics->resetValues.load()) {
-            d.statistics->lock.lockForWrite();
+            d.statistics->mutex.lock();
             d.statistics->totalFrames = 0;
             d.statistics->droppedFrames = 0;
             d.statistics->droppedPackets = 0;
             d.statistics->totalKeyFrames = -3;
-            d.statistics->lock.unlock();
+            d.statistics->mutex.unlock();
             d.statistics->resetValues.store(false);
         }
         if (pkt.isEOF()) {
@@ -331,9 +331,9 @@ void VideoThread::run()
             //qDebug() << pkt.position << " pts:" <<pkt.pts;
             //Compare to the clock
             if (!pkt.isValid()) {
-                d.statistics->lock.lockForWrite();
+                d.statistics->mutex.lock();
                 d.statistics->droppedPackets++;
-                d.statistics->lock.unlock();
+                d.statistics->mutex.unlock();
                 // may be we should check other information. invalid packet can come from
                 wait_key_frame = true;
                 qDebug("Invalid packet! flush video codec context!!!!!!!!!! video packet queue size: %d", d.packets.size());
@@ -528,7 +528,7 @@ void VideoThread::run()
 
         if(pkt.hasKeyFrame)
         {
-            d.statistics->lock.lockForWrite();
+            d.statistics->mutex.lock();
             d.statistics->totalKeyFrames++;
             if(d.statistics->totalKeyFrames==-1)
             {
@@ -555,7 +555,7 @@ void VideoThread::run()
                 if(ibs>0)
                     d.statistics->imageBufferSize = ibs;
             }
-            d.statistics->lock.unlock();
+            d.statistics->mutex.unlock();
         }
 
         // reduce here to ensure to decode the rest data in the next loop
@@ -570,13 +570,13 @@ void VideoThread::run()
 //           auto avframe = ffmpegDec->avframe();
 //        }
 
-        d.statistics->lock.lockForWrite();
+        d.statistics->mutex.lock();
         d.statistics->totalFrames++;
-        d.statistics->lock.unlock();
+        d.statistics->mutex.unlock();
         if (!frame.isValid()) {
-            d.statistics->lock.lockForWrite();
+            d.statistics->mutex.lock();
             d.statistics->droppedFrames++;
-            d.statistics->lock.unlock();
+            d.statistics->mutex.unlock();
             qWarning("invalid video frame from decoder. undecoded data size: %d", pkt.data.size());
             if (pkt_data == pkt.data.constData()) //FIXME: for libav9. what about other versions?
                 pkt = Packet();

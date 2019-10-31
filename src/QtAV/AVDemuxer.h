@@ -27,7 +27,7 @@
 #include <QtCore/QVariant>
 #include <QtCore/QObject>
 #include <QtCore/QScopedPointer>
-#include <QReadWriteLock>
+#include <QMutex>
 
 struct AVFormatContext;
 struct AVCodecContext;
@@ -224,7 +224,7 @@ public:
     qint64 lostFrames = 0;
     int audioStreamIndex = -1;
     QString containerFormat;
-    QReadWriteLock lock;
+    QMutex mutex;
     std::atomic<bool> resetValues{true};
 };
 

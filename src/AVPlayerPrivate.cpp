@@ -667,14 +667,14 @@ bool AVPlayer::Private::calcRates()
     if(!elapsedTimer.isValid())
     {
         elapsedTimer.start();
-        demuxer.lock.lockForRead();
+        demuxer.mutex.lock();
         lastTotalBandwidth = demuxer.totalBandwidth;
         lastTotalVideoBandwidth = demuxer.totalVideoBandwidth;
         lastTotalAudioBandwidth = demuxer.totalAudioBandwidth;
-        demuxer.lock.unlock();
-        statistics.lock.lockForRead();
+        demuxer.mutex.unlock();
+        statistics.mutex.lock();
         lastTotalFrames = statistics.totalFrames;
-        statistics.lock.unlock();
+        statistics.mutex.unlock();
         return false;
     }
 
@@ -685,7 +685,7 @@ bool AVPlayer::Private::calcRates()
         return false;
 
 
-    demuxer.lock.lockForRead();
+    demuxer.mutex.lock();
     statistics.bandwidthRate = (static_cast<double>(demuxer.totalBandwidth-lastTotalBandwidth)/elapsed)*1000;
     lastTotalBandwidth = demuxer.totalBandwidth;
 
@@ -694,12 +694,12 @@ bool AVPlayer::Private::calcRates()
 
     statistics.audioBandwidthRate = (static_cast<double>(demuxer.totalAudioBandwidth-lastTotalAudioBandwidth)/elapsed)*1000;
     lastTotalAudioBandwidth = demuxer.totalAudioBandwidth;
-    demuxer.lock.unlock();
+    demuxer.mutex.unlock();
 
-    statistics.lock.lockForRead();
+    statistics.mutex.lock();
     statistics.fps = (static_cast<double>(statistics.totalFrames-lastTotalFrames)/elapsed)*1000;
     lastTotalFrames = statistics.totalFrames;
-    statistics.lock.unlock();
+    statistics.mutex.unlock();
 
     return true;
 }
@@ -747,15 +747,15 @@ void AVPlayer::Private::updateMediaData()
             mediaData["protocol"] = q->file().mid(0,q->file().indexOf(":")).toUpper();
         mediaData["decoder"] = statistics.video.decoder;
         mediaData["decoderDetails"] = statistics.video.decoder_detail;
-        demuxer.lock.lockForRead();
+        demuxer.mutex.lock();
         mediaData["containerFormat"] = demuxer.containerFormat;
-        demuxer.lock.unlock();
+        demuxer.mutex.unlock();
     }
 
     if(!calcRates())
         return;
 
-    statistics.lock.lockForRead();
+    statistics.mutex.lock();
     mediaData["bandwidthRate"] = statistics.bandwidthRate;
     mediaData["videoBandwidthRate"] = statistics.videoBandwidthRate;
     mediaData["audioBandwidthRate"] = statistics.audioBandwidthRate;
@@ -766,9 +766,9 @@ void AVPlayer::Private::updateMediaData()
     mediaData["droppedFrames"] = statistics.droppedFrames;
     mediaData["totalKeyFrames"] = statistics.totalKeyFrames;
     mediaData["imageBufferSize"] = statistics.imageBufferSize;
-    statistics.lock.unlock();
+    statistics.mutex.unlock();
 
-    demuxer.lock.lockForRead();
+    demuxer.mutex.lock();
     mediaData["totalBandwidth"] = demuxer.totalBandwidth;
     mediaData["totalVideoBandwidth"] = demuxer.totalVideoBandwidth;
     mediaData["totalAudioBandwidth"] = demuxer.totalAudioBandwidth;
@@ -778,7 +778,7 @@ void AVPlayer::Private::updateMediaData()
     mediaData["totalVideoPackets"] = demuxer.totalVideoPackets;
     mediaData["totalAudioPackets"] = demuxer.totalAudioPackets;
     mediaData["lostFrames"] = demuxer.lostFrames;
-    demuxer.lock.unlock();
+    demuxer.mutex.unlock();
 
     auto totalElapsed = totalElapsedTimer.elapsed();
     if(totalElapsed>0)
@@ -815,10 +815,10 @@ void AVPlayer::Private::applyMediaDataCalculation()
         lastTotalAudioBandwidth = 0;
         lastTotalFrames = 0;
         mediaData["connected"] = true;
-        statistics.lock.lockForRead();
+        statistics.mutex.lock();
         mediaData["realResolution"] = statistics.realResolution;
         mediaData["imageBufferSize"] = statistics.imageBufferSize;
-        statistics.lock.unlock();
+        statistics.mutex.unlock();
         elapsedTimer.invalidate();
         totalElapsedTimer.start();
         mediaDataTimer.start();

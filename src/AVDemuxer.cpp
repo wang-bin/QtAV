@@ -510,7 +510,7 @@ bool AVDemuxer::readFrame()
     }
 
     if(resetValues.load()) {
-        this->lock.lockForWrite();
+        mutex.lock();
         totalBandwidth = 0;
         totalVideoBandwidth = 0;
         totalAudioBandwidth = 0;
@@ -521,19 +521,19 @@ bool AVDemuxer::readFrame()
         totalAudioPackets = 0;
         lostFrames = 0;
         d->averagePtsDiff = 0;
-        this->lock.unlock();
+        mutex.unlock();
         resetValues.store(false);
     }
 
     auto packetSize = d->calculatePacketSize(&packet);
 
-    this->lock.lockForWrite();
+    mutex.lock();
     totalBandwidth+=static_cast<quint64>(packetSize);
     totalPackets++;
-    this->lock.unlock();
+    mutex.unlock();
     if( packet.stream_index==videoStream())
     {
-        this->lock.lockForWrite();
+        mutex.lock();
         totalVideoBandwidth+=static_cast<quint64>(packetSize);
         totalVideoPackets++;
 
@@ -551,16 +551,16 @@ bool AVDemuxer::readFrame()
             else
                 d->averagePtsDiff += static_cast<double>(ptsDiff-d->averagePtsDiff)/totalVideoPackets;
         }
-        this->lock.unlock();
+        mutex.unlock();
 
         d->lastPts = packet.pts;
     }
     else if( packet.stream_index==audioStream() || packet.stream_index==audioStreamIndex)
     {
-        this->lock.lockForWrite();
+        mutex.lock();
         totalAudioBandwidth+=static_cast<quint64>(packetSize);
         totalAudioPackets++;
-        this->lock.unlock();
+        mutex.unlock();
     }
 
     d->recordMutex.lock();
@@ -725,13 +725,13 @@ bool AVDemuxer::readFrame()
     d->stream = packet.stream_index;
     //check whether the 1st frame is alreay got. emit only once
     if (!d->started) {
-        this->lock.lockForWrite();
+        mutex.lock();
         if(d->format_ctx && d->format_ctx->iformat && d->format_ctx->iformat->name) {
             containerFormat =  d->format_ctx->iformat->name;
         }
         else
             containerFormat = "";
-        this->lock.unlock();
+        mutex.unlock();
 
         d->started = true;
         Q_EMIT started();
