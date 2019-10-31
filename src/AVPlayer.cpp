@@ -105,13 +105,16 @@ AVPlayer::AVPlayer(QObject *parent) :
     d->applyMediaDataCalculation();
 
     auto timer = new QTimer(this);
-    connect(timer,&QTimer::timeout,this,[this](){
+    connect(timer,&QTimer::timeout,this,[this, lastFrameCount = 0]() mutable {
        auto dfps = d->statistics.video_only.currentDisplayFPS();
        if(qAbs(dfps-d->statistics.displayFPS)>0.1) {
            d->statistics.displayFPS = dfps;
            emit displayFrameRateChanged(dfps);
        }
-       if(dfps<1) {
+       d->statistics.mutex.lock();
+       auto frameCount = d->statistics.totalFrames;
+       d->statistics.mutex.unlock();
+       if(frameCount == lastFrameCount) {
            if(d->receivingFrames) {
               ++(d->checkReceivingCounter);
               if(d->checkReceivingCounter>d->disconnectTimeout) {
@@ -129,6 +132,7 @@ AVPlayer::AVPlayer(QObject *parent) :
            }
 
        }
+       lastFrameCount = frameCount;
     });
     timer->setInterval(1000);
     timer->start();
