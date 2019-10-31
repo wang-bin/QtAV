@@ -259,7 +259,6 @@ Module {
         Property { name: "mediaData"; type: "QVariantMap" }
         Property { name: "mediaDataTimerInterval"; type: "int" }
         Property { name: "disconnectTimeout"; type: "int" }
-        Property { name: "displayFrameRate"; type: "double" }
         Property { name: "receivingFrames"; type: "bool" }
         Property { name: "externalAudio"; type: "QUrl" }
         Property { name: "internalAudioTracks"; type: "QVariantList"; isReadonly: true }

@@ -111,7 +111,6 @@ void QmlAVPlayer::componentComplete()
 
     connect(mpPlayer, &QtAV::AVPlayer::mediaDataTimerTriggered, this, &QmlAVPlayer::mediaDataTimerTriggered);
     connect(mpPlayer, &QtAV::AVPlayer::mediaDataTimerStarted, this, &QmlAVPlayer::mediaDataTimerStarted);
-    connect(mpPlayer, &QtAV::AVPlayer::displayFrameRateChanged, this, &QmlAVPlayer::displayFrameRateChanged);
     connect(mpPlayer, &QtAV::AVPlayer::receivingFramesChanged, this, &QmlAVPlayer::receivingFramesChanged);
     connect(mpPlayer, &QtAV::AVPlayer::recordFinished, this, &QmlAVPlayer::recordFinished);
 
@@ -482,11 +481,6 @@ void QmlAVPlayer::setDisconnectTimeout(int value)
         mpPlayer->setDisconnectTimeout(value);
         Q_EMIT disconnectTimeoutChanged();
     }
-}
-
-double QmlAVPlayer::displayFrameRate() const
-{
-    return mpPlayer->displayFrameRate();
 }
 
 bool QmlAVPlayer::receivingFrames() const

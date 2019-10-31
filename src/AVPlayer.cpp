@@ -106,11 +106,6 @@ AVPlayer::AVPlayer(QObject *parent) :
 
     auto timer = new QTimer(this);
     connect(timer,&QTimer::timeout,this,[this, lastFrameCount = 0]() mutable {
-       auto dfps = d->statistics.video_only.currentDisplayFPS();
-       if(qAbs(dfps-d->statistics.displayFPS)>0.1) {
-           d->statistics.displayFPS = dfps;
-           emit displayFrameRateChanged(dfps);
-       }
        d->statistics.mutex.lock();
        auto frameCount = d->statistics.totalFrames;
        d->statistics.mutex.unlock();
@@ -548,11 +543,6 @@ void AVPlayer::setDisconnectTimeout(int value)
         return;
     d->disconnectTimeout = value;
     Q_EMIT disconnectTimeoutChanged(value);
-}
-
-double AVPlayer::displayFrameRate() const
-{
-    return d->statistics.displayFPS;
 }
 
 bool AVPlayer::receivingFrames() const

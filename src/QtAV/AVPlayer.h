@@ -85,7 +85,6 @@ class Q_AV_EXPORT AVPlayer : public QObject
     Q_PROPERTY(QVariantMap mediaData READ mediaData NOTIFY mediaDataTimerTriggered)
     Q_PROPERTY(int mediaDataTimerInterval READ mediaDataTimerInterval WRITE setMediaDataTimerInterval NOTIFY mediaDataTimerIntervalChanged)
     Q_PROPERTY(int disconnectTimeout READ disconnectTimeout WRITE setDisconnectTimeout NOTIFY disconnectTimeoutChanged)
-    Q_PROPERTY(double displayFrameRate READ displayFrameRate NOTIFY displayFrameRateChanged)
     Q_PROPERTY(bool receivingFrames READ receivingFrames NOTIFY receivingFramesChanged)
     Q_PROPERTY(unsigned int chapters READ chapters NOTIFY chaptersChanged)
     Q_ENUMS(State)
@@ -426,7 +425,6 @@ public:
     int disconnectTimeout() const;
     void setDisconnectTimeout(int value);
 
-    double displayFrameRate() const;
     bool receivingFrames() const;
 
     void resetMediaData();
@@ -576,7 +574,6 @@ Q_SIGNALS:
     void mediaDataTimerStarted();
     void mediaDataTimerIntervalChanged(int);
     void disconnectTimeoutChanged(int);
-    void displayFrameRateChanged(double);
     void receivingFramesChanged(bool);
     void recordFinished(bool success, const QString& format);
     /*!
