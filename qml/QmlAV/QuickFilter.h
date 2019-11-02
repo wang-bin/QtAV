@@ -71,7 +71,6 @@ Q_SIGNALS:
     void typeChanged();
     void makeImageChanged();
     void imageReady(const QImage& image);
-    void frameReady(int frameHeight, int frameWidth,const QByteArray& frameData, int bytesPerLine);
 protected:
     void process(Statistics* statistics, VideoFrame* frame = 0) Q_DECL_OVERRIDE;
 };

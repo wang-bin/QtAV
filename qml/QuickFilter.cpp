@@ -144,11 +144,6 @@ void QuickVideoFilter::setMakeImage(bool value)
 void QuickVideoFilter::process(Statistics *statistics, VideoFrame *frame)
 {
     DPTR_D(QuickVideoFilter);
-    emit frameReady(frame->height(), frame->width(),
-                    QByteArray::fromRawData(
-                    reinterpret_cast<const char *>(frame->constBits()),
-                    frame->bytesPerLine()),
-                    frame->bytesPerLine());
     if(d.makeImage)
         emit imageReady(frame->toImage());
     if (!d.filter)
