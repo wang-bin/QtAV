@@ -640,7 +640,7 @@ bool AVDemuxer::readFrame()
                 else
                     ret = avformat_alloc_output_context2(&d->oc[k],nullptr,nullptr,(k+"."+d->recordFormat[k]).toLatin1());
                 if(ret>=0 && d->oc[k]!=nullptr && !(d->oc[k]->oformat->flags & AVFMT_NOFILE))
-                    avio_open(&d->oc[k]->pb, (k+"."+d->recordFormat[k]).toLatin1(), AVIO_FLAG_WRITE);
+                    avio_open(&d->oc[k]->pb, (k+(d->restream[k] ? "" : "."+d->recordFormat[k])).toLatin1(), AVIO_FLAG_WRITE);
             }
             if(d->oc[k]!=nullptr && d->ostreamVideo[k] == nullptr && videoStream()>=0) {
                 d->ostreamVideo[k] = avformat_new_stream(d->oc[k], nullptr);
