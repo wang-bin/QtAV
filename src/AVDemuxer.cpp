@@ -636,7 +636,7 @@ bool AVDemuxer::readFrame()
             if(d->oc[k]==nullptr) {
                 auto ret = -1;
                 if(d->restream[k])
-                    ret = avformat_alloc_output_context2(&d->oc[k],nullptr,/*d->format_ctx->iformat->name*/"flv",nullptr);
+                    ret = avformat_alloc_output_context2(&d->oc[k],nullptr,/*d->format_ctx->iformat->name*/"mpegts",nullptr);
                 else
                     ret = avformat_alloc_output_context2(&d->oc[k],nullptr,nullptr,(k+"."+d->recordFormat[k]).toLatin1());
                 if(ret>=0 && d->oc[k]!=nullptr && !(d->oc[k]->oformat->flags & AVFMT_NOFILE))
