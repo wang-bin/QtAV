@@ -530,10 +530,9 @@ void VideoThread::run()
         {
             d.statistics->mutex.lock();
             d.statistics->totalKeyFrames++;
+            d.statistics->realResolution = QSize(dec->frame().width(), dec->frame().height());
             if(d.statistics->totalKeyFrames==-1)
             {
-                d.statistics->realResolution = QSize(dec->frame().width(), dec->frame().height());
-
                 auto ibs = av_image_get_buffer_size(AVPixelFormat(dec->frame().pixelFormatFFmpeg()),
                                                                        dec->frame().width(),
                                                                        dec->frame().height(),

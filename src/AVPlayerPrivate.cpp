@@ -739,18 +739,20 @@ void AVPlayer::Private::initMediaData()
 
 void AVPlayer::Private::updateMediaData()
 {
-    if(!mediaData["connected"].toBool()) {
-        mediaData["connected"] = true;
-        if(QUrl::fromUserInput(q->file()).isLocalFile())
-            mediaData["protocol"] = "File";
-        else
-            mediaData["protocol"] = q->file().mid(0,q->file().indexOf(":")).toUpper();
-        mediaData["decoder"] = statistics.video.decoder;
-        mediaData["decoderDetails"] = statistics.video.decoder_detail;
-        demuxer.mutex.lock();
-        mediaData["containerFormat"] = demuxer.containerFormat;
-        demuxer.mutex.unlock();
-    }
+    mediaData["connected"] = true;
+    if(QUrl::fromUserInput(q->file()).isLocalFile())
+        mediaData["protocol"] = "File";
+    else
+        mediaData["protocol"] = q->file().mid(0,q->file().indexOf(":")).toUpper();
+    mediaData["decoder"] = statistics.video.decoder;
+    mediaData["decoderDetails"] = statistics.video.decoder_detail;
+    demuxer.mutex.lock();
+    mediaData["containerFormat"] = demuxer.containerFormat;
+    demuxer.mutex.unlock();
+    statistics.mutex.lock();
+    mediaData["realResolution"] = statistics.realResolution;
+    mediaData["imageBufferSize"] = statistics.imageBufferSize;
+    statistics.mutex.unlock();
 
     if(!calcRates())
         return;
@@ -815,10 +817,6 @@ void AVPlayer::Private::applyMediaDataCalculation()
         lastTotalAudioBandwidth = 0;
         lastTotalFrames = 0;
         mediaData["connected"] = true;
-        statistics.mutex.lock();
-        mediaData["realResolution"] = statistics.realResolution;
-        mediaData["imageBufferSize"] = statistics.imageBufferSize;
-        statistics.mutex.unlock();
         elapsedTimer.invalidate();
         totalElapsedTimer.start();
         mediaDataTimer.start();
