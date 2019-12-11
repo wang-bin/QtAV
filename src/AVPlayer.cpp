@@ -1631,7 +1631,14 @@ void AVPlayer::stop()
     while (d->read_thread->isRunning()) {
         qDebug("stopping demuxer thread...");
         d->read_thread->stop();
-        d->read_thread->wait(500);
+        // wait to finish
+        QEventLoop loop;
+        connect(d->read_thread, &AVDemuxThread::finished, &loop, &QEventLoop::quit);
+        QTimer timer;
+        timer.setSingleShot(true);
+        connect(&timer, &QTimer::timeout, &loop, &QEventLoop::quit);
+        timer.start(500);
+        loop.exec();
         // interrupt to quit av_read_frame quickly.
         d->demuxer.setInterruptStatus(-1);
     }
