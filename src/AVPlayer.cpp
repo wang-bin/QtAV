@@ -105,11 +105,14 @@ AVPlayer::AVPlayer(QObject *parent) :
     d->applyMediaDataCalculation();
 
     auto timer = new QTimer(this);
-    connect(timer,&QTimer::timeout,this,[this, lastFrameCount = 0]() mutable {
+    connect(timer,&QTimer::timeout,this,[this, lastFrameCount = 0, lastAudioCount = 0]() mutable {
        d->statistics.mutex.lock();
        auto frameCount = d->statistics.totalFrames;
        d->statistics.mutex.unlock();
-       if(frameCount == lastFrameCount) {
+       d->demuxer.mutex.lock();
+       auto audioCount = d->demuxer.totalAudioPackets;
+       d->demuxer.mutex.unlock();
+       if(frameCount == lastFrameCount && audioCount == lastAudioCount) {
            if(d->receivingFrames) {
               ++(d->checkReceivingCounter);
               if(d->checkReceivingCounter>d->disconnectTimeout) {
@@ -128,6 +131,7 @@ AVPlayer::AVPlayer(QObject *parent) :
 
        }
        lastFrameCount = frameCount;
+       lastAudioCount = audioCount;
     });
     timer->setInterval(1000);
     timer->start();
