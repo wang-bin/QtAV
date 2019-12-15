@@ -26,6 +26,7 @@
 #include <QtCore/QScopedPointer>
 #include <QtGui/QOpenGLFunctions>
 #include <QtQuick/QSGMaterialShader>
+#include <QSGMaterial>
 
 // all in QSGRenderThread
 namespace QtAV {
