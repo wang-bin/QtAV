@@ -30,7 +30,7 @@ namespace QtAV {
 
 /// metadata: pallete for pal8
 class VideoFramePrivate;
-class Q_AV_EXPORT VideoFrame : public Frame
+class  VideoFrame : public Frame
 {
     Q_DECLARE_PRIVATE(VideoFrame)
 public:
@@ -129,7 +129,7 @@ public:
 };
 
 class ImageConverter;
-class Q_AV_EXPORT VideoFrameConverter
+class  VideoFrameConverter
 {
 public:
     VideoFrameConverter();

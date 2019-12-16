@@ -43,12 +43,12 @@ QT_END_NAMESPACE
 namespace QtAV {
 
 typedef int VideoRendererId;
-extern Q_AV_EXPORT VideoRendererId VideoRendererId_OpenGLWindow;
+extern  VideoRendererId VideoRendererId_OpenGLWindow;
 class Filter;
 class OpenGLVideo;
 class VideoFormat;
 class VideoRendererPrivate;
-class Q_AV_EXPORT VideoRenderer : public AVOutput
+class  VideoRenderer : public AVOutput
 {
     DPTR_DECLARE_PRIVATE(VideoRenderer)
 public:

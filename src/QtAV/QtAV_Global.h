@@ -43,9 +43,9 @@
 #define Q_AV_PRIVATE_EXPORT Q_AV_EXPORT
 
 /* runtime version. used to compare with compile time version */
-Q_AV_EXPORT unsigned QtAV_Version();
-Q_AV_EXPORT QString QtAV_Version_String();
-Q_AV_EXPORT QString QtAV_Version_String_Long();
+ unsigned QtAV_Version();
+ QString QtAV_Version_String();
+ QString QtAV_Version_String_Long();
 namespace QtAV {
 enum LogLevel {
     LogOff,
@@ -55,29 +55,29 @@ enum LogLevel {
     LogFatal, // log fatal
     LogAll
 };
-Q_AV_EXPORT QString aboutFFmpeg_PlainText();
-Q_AV_EXPORT QString aboutFFmpeg_HTML();
-Q_AV_EXPORT QString aboutQtAV_PlainText();
-Q_AV_EXPORT QString aboutQtAV_HTML();
+ QString aboutFFmpeg_PlainText();
+ QString aboutFFmpeg_HTML();
+ QString aboutQtAV_PlainText();
+ QString aboutQtAV_HTML();
 /*!
  * Default value: LogOff for release build. LogAll for debug build.
  * The level can also be changed at runtime by setting the QTAV_LOG_LEVEL or QTAV_LOG environment variable;
  * QTAV_LOG_LEVEL can be: off, debug, warning, critical, fatal, all. Or use their enum values
  * if both setLogLevel() is called and QTAV_LOG_LEVEL is set, the environment variable takes preceden.
 */
-Q_AV_EXPORT void setLogLevel(LogLevel value);
-Q_AV_EXPORT LogLevel logLevel();
+ void setLogLevel(LogLevel value);
+ LogLevel logLevel();
 /// Default handler is qt message logger. Set environment QTAV_FFMPEG_LOG=0 or setFFmpegLogHandler(0) to disable.
-Q_AV_EXPORT void setFFmpegLogHandler(void(*)(void *, int, const char *, va_list));
+ void setFFmpegLogHandler(void(*)(void *, int, const char *, va_list));
 /*!
  * \brief setFFmpegLogLevel
  * \param level can be: quiet, panic, fatal, error, warn, info, verbose, debug, trace
  */
-Q_AV_EXPORT void setFFmpegLogLevel(const QByteArray& level);
+ void setFFmpegLogLevel(const QByteArray& level);
 
 /// query the common options of avformat/avcodec that can be used by AVPlayer::setOptionsForXXX. Format/codec specified options are also included
-Q_AV_EXPORT QString avformatOptions();
-Q_AV_EXPORT QString avcodecOptions();
+ QString avformatOptions();
+ QString avcodecOptions();
 
 ////////////Types/////////////
 enum MediaStatus

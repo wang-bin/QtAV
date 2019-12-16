@@ -30,7 +30,7 @@ struct AVPacket;
 namespace QtAV {
 
 class PacketPrivate;
-class Q_AV_EXPORT Packet
+class  Packet
 {
 public:
     static Packet fromAVPacket(const AVPacket* avpkt, double time_base);
@@ -79,7 +79,7 @@ bool Packet::isValid() const
 }
 
 #ifndef QT_NO_DEBUG_STREAM
-Q_AV_EXPORT QDebug operator<<(QDebug debug, const Packet &pkt);
+ QDebug operator<<(QDebug debug, const Packet &pkt);
 #endif
 } //namespace QtAV
 Q_DECLARE_METATYPE(QtAV::Packet)

@@ -30,7 +30,7 @@ namespace QtAV {
 
 class Packet;
 class AVDecoderPrivate;
-class Q_AV_EXPORT AVDecoder : public QObject
+class  AVDecoder : public QObject
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(AVDecoder)

@@ -1,4 +1,5 @@
 TEMPLATE = lib
+CONFIG += staticlib
 MODULE_INCNAME = QtAVWidgets # for mac framework. also used in install_sdk.pro
 TARGET = QtAVWidgets
 QT += gui
@@ -14,7 +15,7 @@ greaterThan(QT_MAJOR_VERSION, 4) {
 }
 CONFIG *= qtavwidgets-buildlib
 
-include(../runSdkInstall.pri)
+#include(../runSdkInstall.pri)
 
 INCLUDEPATH += $$[QT_INSTALL_HEADERS]
 #release: DEFINES += QT_NO_DEBUG_OUTPUT

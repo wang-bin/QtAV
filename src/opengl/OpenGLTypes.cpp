@@ -240,7 +240,7 @@ bool Uniform::setGL()
 }
 
 #ifndef QT_NO_DEBUG_STREAM
-Q_AV_EXPORT QDebug operator<<(QDebug dbg, const Uniform &u)
+ QDebug operator<<(QDebug dbg, const Uniform &u)
 {
     dbg.nospace() << "uniform " << UniformTypeToName(u.type()) << " " << u.name.constData();
     if (u.arraySize() > 1) {
@@ -260,7 +260,7 @@ Q_AV_EXPORT QDebug operator<<(QDebug dbg, const Uniform &u)
     return dbg.space();
 }
 
-Q_AV_EXPORT QDebug operator<<(QDebug dbg, Uniform::Type ut);
+ QDebug operator<<(QDebug dbg, Uniform::Type ut);
 #endif
 
 QVector<Uniform> ParseUniforms(const QByteArray &text, GLuint programId = 0)

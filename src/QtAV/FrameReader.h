@@ -42,7 +42,7 @@ namespace QtAV {
  * }
  * TODO: multiple tracks
  */
-class Q_AV_EXPORT FrameReader : public QObject
+class  FrameReader : public QObject
 {
     Q_OBJECT
 public:

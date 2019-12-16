@@ -29,7 +29,7 @@
 namespace QtAV {
 
 class AVPlayer;
-class Q_AV_EXPORT AVTranscoder : public QObject
+class  AVTranscoder : public QObject
 {
     Q_OBJECT
 public:

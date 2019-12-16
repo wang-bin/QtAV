@@ -38,7 +38,7 @@ namespace QtAV {
  * TODO: for Qt5, no QtOpenGL, use QWindow instead.
  */
 class OpenGLRendererBasePrivate;
-class Q_AV_EXPORT OpenGLRendererBase : public VideoRenderer
+class  OpenGLRendererBase : public VideoRenderer
 #if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
         , public QOpenGLFunctions
 #endif

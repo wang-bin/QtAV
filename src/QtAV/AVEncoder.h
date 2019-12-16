@@ -30,7 +30,7 @@
 
 namespace QtAV {
 class AVEncoderPrivate;
-class Q_AV_EXPORT AVEncoder : public QObject
+class  AVEncoder : public QObject
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(AVEncoder)

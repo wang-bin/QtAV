@@ -32,7 +32,7 @@ QT_END_NAMESPACE
 namespace QtAV {
 
 class AudioFormatPrivate;
-class Q_AV_EXPORT AudioFormat
+class  AudioFormat
 {
     enum { kSize = 12, kFloat = 1<<(kSize+1), kUnsigned = 1<<(kSize+2), kPlanar = 1<<(kSize+3), kByteOrder = 1<<(kSize+4) };
 public:
@@ -159,9 +159,9 @@ private:
 };
 
 #ifndef QT_NO_DEBUG_STREAM
-Q_AV_EXPORT QDebug operator<<(QDebug debug, const AudioFormat &fmt);
-Q_AV_EXPORT QDebug operator<<(QDebug debug, AudioFormat::SampleFormat sampleFormat);
-Q_AV_EXPORT QDebug operator<<(QDebug debug, AudioFormat::ChannelLayout channelLayout);
+ QDebug operator<<(QDebug debug, const AudioFormat &fmt);
+ QDebug operator<<(QDebug debug, AudioFormat::SampleFormat sampleFormat);
+ QDebug operator<<(QDebug debug, AudioFormat::ChannelLayout channelLayout);
 #endif
 
 } //namespace QtAV

@@ -29,7 +29,7 @@
  * to avoid read error, subtitle size > 10*1024*1024 will be ignored.
  */
 namespace QtAV {
-class Q_AV_EXPORT SubtitleFrame
+class  SubtitleFrame
 {
 public:
     SubtitleFrame() :
@@ -47,7 +47,7 @@ public:
     QString text; //plain text. always valid
 };
 
-class Q_AV_EXPORT Subtitle : public QObject
+class  Subtitle : public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QByteArray codec READ codec WRITE setCodec NOTIFY codecChanged)
@@ -217,7 +217,7 @@ private:
 };
 
 // internal use
-class Q_AV_EXPORT SubtitleAPIProxy {
+class  SubtitleAPIProxy {
 public:
     SubtitleAPIProxy(QObject* obj);
     void setSubtitle(Subtitle *sub);

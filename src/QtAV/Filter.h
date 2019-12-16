@@ -33,7 +33,7 @@ class AVPlayer;
 class FilterPrivate;
 class Statistics;
 class Frame;
-class Q_AV_EXPORT Filter : public QObject
+class  Filter : public QObject
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(Filter)
@@ -74,7 +74,7 @@ protected:
 };
 
 class VideoFilterPrivate;
-class Q_AV_EXPORT VideoFilter : public Filter
+class  VideoFilter : public Filter
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoFilter)
@@ -102,7 +102,7 @@ protected:
 
 class AudioFrame;
 class AudioFilterPrivate;
-class Q_AV_EXPORT AudioFilter : public Filter
+class  AudioFilter : public Filter
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(AudioFilter)

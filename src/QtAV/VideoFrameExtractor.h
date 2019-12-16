@@ -28,7 +28,7 @@
 //TODO: extract all streams
 namespace QtAV {
 class VideoFrameExtractorPrivate;
-class Q_AV_EXPORT VideoFrameExtractor : public QObject
+class  VideoFrameExtractor : public QObject
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(VideoFrameExtractor)

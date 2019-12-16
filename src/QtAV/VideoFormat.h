@@ -36,7 +36,7 @@ class VideoFormatPrivate;
  * \brief The VideoFormat class
  * Describes the layout of video data. Some properties like display aspect ratio, color space and color range, which describes how to display the video frame, should be in VideoFrame class.
 + */
-class Q_AV_EXPORT VideoFormat
+class  VideoFormat
 {
 public:
     /*!
@@ -277,8 +277,8 @@ private:
 };
 
 #ifndef QT_NO_DEBUG_STREAM
-Q_AV_EXPORT QDebug operator<<(QDebug debug, const VideoFormat &fmt);
-Q_AV_EXPORT QDebug operator<<(QDebug debug, VideoFormat::PixelFormat pixFmt);
+ QDebug operator<<(QDebug debug, const VideoFormat &fmt);
+ QDebug operator<<(QDebug debug, VideoFormat::PixelFormat pixFmt);
 #endif
 
 } //namespace QtAV

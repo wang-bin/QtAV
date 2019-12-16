@@ -37,7 +37,7 @@ enum DataType { //equals to GL_BYTE etc.
     TypeF32 = 0x1406 //F32
 };
 
-class Q_AV_EXPORT Attribute {
+class  Attribute {
     bool m_normalize;
     DataType m_type;
     int m_tupleSize, m_offset;
@@ -58,7 +58,7 @@ public:
     }
 };
 #ifndef QT_NO_DEBUG_STREAM
-Q_AV_EXPORT QDebug operator<<(QDebug debug, const Attribute &a);
+ QDebug operator<<(QDebug debug, const Attribute &a);
 #endif
 
 /*!
@@ -69,7 +69,7 @@ Q_AV_EXPORT QDebug operator<<(QDebug debug, const Attribute &a);
  * }
  * \endcode
  */
-class Q_AV_EXPORT Geometry {
+class  Geometry {
 public:
     /// Strip or Triangles is preferred by ANGLE. The values are equal to opengl
     enum Primitive {
@@ -122,7 +122,7 @@ protected:
     QByteArray m_idata;
 };
 
-class Q_AV_EXPORT TexturedGeometry : public Geometry {
+class  TexturedGeometry : public Geometry {
 public:
     TexturedGeometry();
     /*!
@@ -150,7 +150,7 @@ protected:
     QVector<Attribute> a;
 };
 
-class Q_AV_EXPORT Sphere : public TexturedGeometry {
+class  Sphere : public TexturedGeometry {
 public:
     Sphere();
     void setResolution(int w, int h); // >= 2x2

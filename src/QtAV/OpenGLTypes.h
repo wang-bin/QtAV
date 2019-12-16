@@ -25,7 +25,7 @@
 
 namespace QtAV {
 // TODO: namespace gl/gfx?
-class Q_AV_EXPORT Uniform {
+class  Uniform {
 public:
     enum { V = 16, Vec = 1<<V, M = 20, Mat = 1<<M };
     enum Type {
@@ -138,8 +138,8 @@ private:
     QVector<int> data; //uniform array
 };
 #ifndef QT_NO_DEBUG_STREAM
-Q_AV_EXPORT QDebug operator<<(QDebug debug, const Uniform &u);
-Q_AV_EXPORT QDebug operator<<(QDebug debug, Uniform::Type ut);
+ QDebug operator<<(QDebug debug, const Uniform &u);
+ QDebug operator<<(QDebug debug, Uniform::Type ut);
 #endif
 } //namespace QtAV
 

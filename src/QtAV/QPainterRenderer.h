@@ -28,7 +28,7 @@
 namespace QtAV {
 
 class QPainterRendererPrivate;
-class Q_AV_EXPORT QPainterRenderer : public VideoRenderer
+class  QPainterRenderer : public VideoRenderer
 {
     DPTR_DECLARE_PRIVATE(QPainterRenderer)
 public:

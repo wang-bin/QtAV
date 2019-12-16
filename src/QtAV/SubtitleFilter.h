@@ -35,7 +35,7 @@ class SubtitleFilterPrivate;
  * draw text and image subtitles
  * Subtitle load priority: user specified file (setFile(...)) > auto load external (autoLoad() must be true) > embedded subtitle
  */
-class Q_AV_EXPORT SubtitleFilter : public VideoFilter, public SubtitleAPIProxy
+class  SubtitleFilter : public VideoFilter, public SubtitleAPIProxy
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(SubtitleFilter)

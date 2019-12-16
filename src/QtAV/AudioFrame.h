@@ -28,7 +28,7 @@
 namespace QtAV {
 class AudioResampler;
 class AudioFramePrivate;
-class Q_AV_EXPORT AudioFrame : public Frame
+class  AudioFrame : public Frame
 {
     Q_DECLARE_PRIVATE(AudioFrame)
 public:

@@ -25,7 +25,7 @@
 #include <QtCore/QString>
 
 namespace QtAV {
-class Q_AV_EXPORT AVError
+class  AVError
 {
 public:
     enum ErrorCode {
@@ -99,7 +99,7 @@ Q_DECLARE_METATYPE(QtAV::AVError)
 QT_BEGIN_NAMESPACE
 class QDebug;
 QT_END_NAMESPACE
-Q_AV_EXPORT QDebug operator<<(QDebug debug, const QtAV::AVError &error);
+ QDebug operator<<(QDebug debug, const QtAV::AVError &error);
 #endif
 
 #endif // QTAV_AVERROR_H

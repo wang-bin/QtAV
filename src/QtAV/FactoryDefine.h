@@ -118,7 +118,7 @@
  */
 #define FACTORY_DECLARE(T) FACTORY_DECLARE_ID(T, T##Id)
 #define FACTORY_DECLARE_ID(T, ID) \
-    class Q_AV_EXPORT T##Factory \
+    class  T##Factory \
     { \
     public: \
         typedef T* (*T##Creator)(); \

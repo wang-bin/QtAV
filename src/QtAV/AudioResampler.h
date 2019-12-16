@@ -29,7 +29,7 @@ namespace QtAV {
 typedef int AudioResamplerId;
 class AudioFormat;
 class AudioResamplerPrivate;
-class Q_AV_EXPORT AudioResampler //export is required for users who want add their own subclass outside QtAV
+class  AudioResampler //export is required for users who want add their own subclass outside QtAV
 {
     DPTR_DECLARE_PRIVATE(AudioResampler)
 public:
@@ -105,7 +105,7 @@ protected:
     DPTR_DECLARE(AudioResampler)
 };
 
-extern Q_AV_EXPORT AudioResamplerId AudioResamplerId_FF;
-extern Q_AV_EXPORT AudioResamplerId AudioResamplerId_Libav;
+extern  AudioResamplerId AudioResamplerId_FF;
+extern  AudioResamplerId AudioResamplerId_Libav;
 } //namespace QtAV
 #endif // QTAV_AUDIORESAMPLER_H

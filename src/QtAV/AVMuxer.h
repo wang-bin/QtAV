@@ -35,7 +35,7 @@ namespace QtAV {
 class MediaIO;
 class VideoEncoder;
 class AudioEncoder;
-class Q_AV_EXPORT AVMuxer : public QObject
+class  AVMuxer : public QObject
 {
     Q_OBJECT
 public:

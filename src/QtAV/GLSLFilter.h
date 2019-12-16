@@ -36,7 +36,7 @@ QT_END_NAMESPACE
 namespace QtAV {
 class OpenGLVideo;
 class GLSLFilterPrivate;
-class Q_AV_EXPORT GLSLFilter : public VideoFilter
+class  GLSLFilter : public VideoFilter
 {
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(GLSLFilter)

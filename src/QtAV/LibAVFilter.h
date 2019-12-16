@@ -26,7 +26,7 @@
 
 namespace QtAV {
 
-class Q_AV_EXPORT LibAVFilter
+class  LibAVFilter
 {
 public:
     static QString filterDescription(const QString& filterName);
@@ -67,7 +67,7 @@ protected:
     Private *priv;
 };
 
-class Q_AV_EXPORT LibAVFilterVideo : public VideoFilter, public LibAVFilter
+class  LibAVFilterVideo : public VideoFilter, public LibAVFilter
 {
     Q_OBJECT
     Q_PROPERTY(QString options READ options WRITE setOptions NOTIFY optionsChanged)
@@ -83,7 +83,7 @@ protected:
     QString sourceArguments() const Q_DECL_OVERRIDE;
 };
 
-class Q_AV_EXPORT LibAVFilterAudio : public AudioFilter, public LibAVFilter
+class  LibAVFilterAudio : public AudioFilter, public LibAVFilter
 {
     Q_OBJECT
     Q_PROPERTY(QString options READ options WRITE setOptions NOTIFY optionsChanged)

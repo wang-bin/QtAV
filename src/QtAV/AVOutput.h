@@ -36,7 +36,7 @@ class AVOutputPrivate;
 class Filter;
 class Statistics;
 class OutputSet;
-class Q_AV_EXPORT AVOutput
+class  AVOutput
 {
     DPTR_DECLARE_PRIVATE(AVOutput)
 public:

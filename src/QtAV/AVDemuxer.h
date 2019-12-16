@@ -38,7 +38,7 @@ QT_END_NAMESPACE
 namespace QtAV {
 class AVError;
 class MediaIO;
-class Q_AV_EXPORT AVDemuxer : public QObject
+class  AVDemuxer : public QObject
 {
     Q_OBJECT
 public:

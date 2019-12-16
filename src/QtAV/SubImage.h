@@ -30,7 +30,7 @@ namespace QtAV {
  * (x, y, w, h) is relative to parent SubImageSet (0, 0, SubImageSet.w, SubImageSet.h)
  */
 struct SubImageSet;
-struct Q_AV_EXPORT SubImage {
+struct  SubImage {
     SubImage(int x = 0, int y = 0, int w = 0, int h = 0, int stride = 0);
     bool operator ==(const SubImage& o) const {
         return x == o.x && y == o.y && w == o.w && h == o.h && stride == o.stride && color == o.color && data == o.data;
@@ -42,7 +42,7 @@ struct Q_AV_EXPORT SubImage {
     QByteArray data; //size = stride*h
 };
 
-struct Q_AV_EXPORT SubImageSet {
+struct  SubImageSet {
     enum Format { ASS, RGBA, Unknown };
     SubImageSet(int width = 0, int height = 0, Format format = Unknown);
     int width() const {return w;}

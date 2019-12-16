@@ -1,17 +1,21 @@
 TEMPLATE = lib
-CONFIG += qt plugin
+CONFIG += staticlib
+#CONFIG += qt plugin
 TARGET = QmlAV
 QT += quick qml
 CONFIG *= qmlav-buildlib
 #QMAKE_RPATHLINKDIR
 #CONFIG *= qml_module relative_qt_rpath
 
-include(../runSdkInstall.pri)
+#include(../runSdkInstall.pri)
 
 #var with '_' can not pass to pri?
 PROJECTROOT = $$PWD/..
 !include($$PROJECTROOT/src/libQtAV.pri): error("could not find libQtAV.pri")
-!include(libQmlAV.pri): error("could not find libQmlAV.pri")
+#!include(libQmlAV.pri): error("could not find libQmlAV.pri")
+include($${PROJECTROOT}/common.pri)
+INCLUDEPATH += $$PWD/QmlAV
+DEPENDPATH += $$PWD/QmlAV
 preparePaths($$OUT_PWD/../out)
 #https://github.com/wang-bin/QtAV/issues/368#issuecomment-73246253
 #http://qt-project.org/forums/viewthread/38438
@@ -39,9 +43,9 @@ if(equals(MAKEFILE_GENERATOR, MSVC.NET)|equals(MAKEFILE_GENERATOR, MSBUILD)) {
 } else {
   TRY_COPY = -$$QMAKE_COPY #makefile. or -\$\(COPY_FILE\)
 }
-for(f, plugin.files) {
-  plugin.commands += $$escape_expand(\\n\\t)$$TRY_COPY $$shell_path($$f) $$shell_path($$plugin.path)
-}
+#for(f, plugin.files) {
+#  plugin.commands += $$escape_expand(\\n\\t)$$TRY_COPY $$shell_path($$f) $$shell_path($$plugin.path)
+#}
 #join values separated by space. so quote is needed
 #plugin.commands = $$join(plugin.commands,$$escape_expand(\\n\\t))
 OTHER_FILES += $$qtav_qml.files

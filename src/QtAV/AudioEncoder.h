@@ -29,7 +29,7 @@
 namespace QtAV {
 typedef int AudioEncoderId;
 class AudioEncoderPrivate;
-class Q_AV_EXPORT AudioEncoder : public AVEncoder
+class  AudioEncoder : public AVEncoder
 {
     Q_OBJECT
     Q_PROPERTY(QtAV::AudioFormat audioFormat READ audioFormat WRITE setAudioFormat NOTIFY audioFormatChanged)

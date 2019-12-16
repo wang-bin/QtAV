@@ -1,4 +1,5 @@
 TEMPLATE = lib
+CONFIG += staticlib
 MODULE_INCNAME = QtAV # for mac framework. also used in install_sdk.pro
 TARGET = QtAV
 QT += core gui
@@ -18,7 +19,7 @@ CONFIG *= qtav-buildlib
 static: CONFIG *= static_ffmpeg
 INCLUDEPATH += $$[QT_INSTALL_HEADERS] # TODO: ffmpeg dir
 
-include(../runSdkInstall.pri)
+#include(../runSdkInstall.pri)
 
 #mac: simd.prf will load qt_build_config and the result is soname will prefixed with QT_INSTALL_LIBS and link flag will append soname after QMAKE_LFLAGS_SONAME
 config_libcedarv: CONFIG *= neon config_simd #need by qt4 addSimdCompiler(). neon or config_neon is required because tests/arch can not detect neon
