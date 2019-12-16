@@ -39,7 +39,7 @@ class QWidget;
 QT_END_NAMESPACE
 namespace QtAV {
 class Filter;
-class Q_AV_PRIVATE_EXPORT VideoRendererPrivate : public AVOutputPrivate
+class  VideoRendererPrivate : public AVOutputPrivate
 {
 public:
     VideoRendererPrivate():

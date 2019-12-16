@@ -30,7 +30,7 @@
 namespace QtAV {
 
 class MediaIO;
-class Q_AV_PRIVATE_EXPORT MediaIOPrivate : public DPtrPrivate<MediaIO>
+class  MediaIOPrivate : public DPtrPrivate<MediaIO>
 {
 public:
     MediaIOPrivate()

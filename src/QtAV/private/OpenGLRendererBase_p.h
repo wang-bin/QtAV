@@ -27,7 +27,7 @@
 
 namespace QtAV {
 
-class Q_AV_PRIVATE_EXPORT OpenGLRendererBasePrivate : public VideoRendererPrivate
+class  OpenGLRendererBasePrivate : public VideoRendererPrivate
 {
 public:
     OpenGLRendererBasePrivate(QPaintDevice *pd);

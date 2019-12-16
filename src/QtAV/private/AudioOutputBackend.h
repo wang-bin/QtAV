@@ -29,7 +29,7 @@
 namespace QtAV {
 
 typedef int AudioOutputBackendId;
-class Q_AV_PRIVATE_EXPORT AudioOutputBackend : public QObject
+class  AudioOutputBackend : public QObject
 {
     Q_OBJECT
 public:

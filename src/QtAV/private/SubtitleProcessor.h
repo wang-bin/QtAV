@@ -30,7 +30,7 @@
 namespace QtAV {
 
 typedef QString SubtitleProcessorId;
-class Q_AV_PRIVATE_EXPORT SubtitleProcessor
+class  SubtitleProcessor
 {
 public:
     SubtitleProcessor();

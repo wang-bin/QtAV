@@ -37,7 +37,7 @@ class Subtitle;
  * Bind Subtitle to AVPlayer. Used by SubtitleFilter and QuickSubtitle.
  * Subtitle load priority: user specified file (setFile(...)) > auto load external (autoLoad() must be true) > embedded subtitle
  */
-class Q_AV_PRIVATE_EXPORT PlayerSubtitle : public QObject
+class  PlayerSubtitle : public QObject
 {
     Q_OBJECT
 public:

@@ -35,7 +35,7 @@ class Filter;
 class VideoFilterContext;
 class Statistics;
 class OutputSet;
-class Q_AV_PRIVATE_EXPORT AVOutputPrivate : public DPtrPrivate<AVOutput>
+class  AVOutputPrivate : public DPtrPrivate<AVOutput>
 {
 public:
     AVOutputPrivate():

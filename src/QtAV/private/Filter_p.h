@@ -29,7 +29,7 @@ namespace QtAV {
 class Filter;
 class VideoFilterContext;
 class Statistics;
-class Q_AV_PRIVATE_EXPORT FilterPrivate : public DPtrPrivate<Filter>
+class  FilterPrivate : public DPtrPrivate<Filter>
 {
 public:
     FilterPrivate():
@@ -42,7 +42,7 @@ public:
     bool owned_by_target;
 };
 
-class Q_AV_PRIVATE_EXPORT VideoFilterPrivate : public FilterPrivate
+class  VideoFilterPrivate : public FilterPrivate
 {
 public:
     VideoFilterPrivate() :
@@ -51,7 +51,7 @@ public:
     VideoFilterContext *context; //used only when is necessary
 };
 
-class Q_AV_PRIVATE_EXPORT AudioFilterPrivate : public FilterPrivate
+class  AudioFilterPrivate : public FilterPrivate
 {
 };
 

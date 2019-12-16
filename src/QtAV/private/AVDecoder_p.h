@@ -74,7 +74,7 @@ public:
 };
 typedef QSharedPointer<AVFrameBuffers> AVFrameBuffersRef;
 
-class Q_AV_PRIVATE_EXPORT AVDecoderPrivate : public DPtrPrivate<AVDecoder>
+class  AVDecoderPrivate : public DPtrPrivate<AVDecoder>
 {
 public:
     static const char* getProfileName(AVCodecID id, int profile) {
@@ -132,7 +132,7 @@ public:
     QByteArray decoded;
 };
 
-class Q_AV_PRIVATE_EXPORT VideoDecoderPrivate : public AVDecoderPrivate
+class  VideoDecoderPrivate : public AVDecoderPrivate
 {
 public:
     VideoDecoderPrivate():

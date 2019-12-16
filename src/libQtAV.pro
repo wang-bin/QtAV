@@ -2,7 +2,7 @@ TEMPLATE = lib
 CONFIG += staticlib
 MODULE_INCNAME = QtAV # for mac framework. also used in install_sdk.pro
 TARGET = QtAV
-QT += core gui
+QT += core gui quick qml
 CONFIG += c++17
 #CONFIG *= ltcg
 greaterThan(QT_MAJOR_VERSION, 4) {
@@ -664,3 +664,36 @@ MODULE_VERSION = $$VERSION
 # windows: Qt5AV.dll, not Qt1AV.dll
 !mac_framework: MODULE_VERSION = $${QT_MAJOR_VERSION}.$${QT_MINOR_VERSION}.$${QT_PATCH_VERSION}
 !contains(QMAKE_HOST.os, Windows):include($$PROJECTROOT/deploy.pri)
+
+
+SOURCES += \
+    ../qml/plugin.cpp \
+    ../qml/QQuickItemRenderer.cpp \
+    ../qml/SGVideoNode.cpp \
+    ../qml/QmlAVPlayer.cpp \
+    ../qml/QuickFilter.cpp \
+    ../qml/QuickSubtitle.cpp \
+    ../qml/MediaMetaData.cpp \
+    ../qml/QuickSubtitleItem.cpp \
+    ../qml/QuickVideoPreview.cpp
+
+HEADERS += \
+    ../qml/QmlAV/QuickSubtitle.h \
+    ../qml/QmlAV/QuickSubtitleItem.h \
+    ../qml/QmlAV/QuickVideoPreview.h \
+    ../qml/QmlAV/QmlAVPlayer.h \
+    ../qml/QmlAV/Export.h \
+    ../qml/QmlAV/MediaMetaData.h \
+    ../qml/QmlAV/QQuickItemRenderer.h \
+    ../qml/QmlAV/QuickFilter.h \
+    ../qml/QmlAV/SGVideoNode.h \
+
+greaterThan(QT_MINOR_VERSION, 1) {
+  HEADERS += ../qml/QmlAV/QuickFBORenderer.h
+  SOURCES += ../qml/QuickFBORenderer.cpp
+}
+
+INCLUDEPATH += $$PWD/../qml
+DEPENDPATH += $$PWD/../qml
+INCLUDEPATH += $$PWD/../qml/QmlAV
+DEPENDPATH += $$PWD/../qml/QmlAV

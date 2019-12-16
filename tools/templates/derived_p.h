@@ -6,7 +6,7 @@
 
 namespace QtAV {
 
-class Q_AV_PRIVATE_EXPORT %CLASS%Private : public %BASE%Private
+class  %CLASS%Private : public %BASE%Private
 {
 public:
     virtual ~%CLASS%Private() {}
