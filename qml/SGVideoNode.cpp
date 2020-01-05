@@ -25,8 +25,8 @@
 #include "QtAV/VideoFrame.h"
 #include <QtCore/QScopedPointer>
 #include <QtGui/QOpenGLFunctions>
+#include <QtQuick/QSGMaterial>
 #include <QtQuick/QSGMaterialShader>
-#include <QSGMaterial>
 
 // all in QSGRenderThread
 namespace QtAV {
