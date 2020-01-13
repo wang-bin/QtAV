@@ -522,7 +522,6 @@ void VideoThread::run()
                     break;
             }
             pkt = Packet();
-            v_a = 0; //?
             continue;
         }
 
@@ -581,7 +580,6 @@ void VideoThread::run()
                 pkt = Packet();
             else
                 pkt_data = pkt.data.constData();
-            v_a = 0; //?
             continue;
         }
         pkt_data = pkt.data.constData();
