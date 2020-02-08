@@ -392,7 +392,10 @@ void OpenGLVideo::updateViewport()
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
     QSizeF surfaceSize = d.ctx->surface()->size();
 #if QT_VERSION >= QT_VERSION_CHECK(5, 5, 0)
-    surfaceSize *= d.ctx->screen()->devicePixelRatio();
+    // When changing monitors (plugging and unplugging), the screen might sometimes be nullptr!
+    if (d.ctx->screen()) {
+        surfaceSize *= d.ctx->screen()->devicePixelRatio();
+    }
 #else
     surfaceSize *= qApp->devicePixelRatio(); //TODO: window()->devicePixelRatio() is the window screen's
 #endif
