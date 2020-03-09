@@ -621,7 +621,7 @@ mac {
 
 unix:!mac:!cross_compile {
 icon.files = $$PWD/$${TARGET}.svg
-icon.path = /usr/share/icons/hicolor/scalable/apps
+icon.path = $$[QT_INSTALL_PREFIX]/share/icons/hicolor/scalable/apps
 INSTALLS += icon
 #debian
 DEB_INSTALL_LIST = .$$[QT_INSTALL_LIBS]/libQt*AV.so.*

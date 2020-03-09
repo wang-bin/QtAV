@@ -104,14 +104,14 @@ android-no-sdk {
 } else:unix {
     maemo5 {
         desktopfile.files = $${TARGET}.desktop
-        desktopfile.path = /usr/share/applications/hildon
+        desktopfile.path = $$[QT_INSTALL_PREFIX]/share/applications/hildon
         icon.files = $${TARGET}64.png
-        icon.path = /usr/share/icons/hicolor/64x64/apps
+        icon.path = $$[QT_INSTALL_PREFIX]/share/icons/hicolor/64x64/apps
     } else:!isEmpty(MEEGO_VERSION_MAJOR) {
         desktopfile.files = $${TARGET}_harmattan.desktop
-        desktopfile.path = /usr/share/applications
+        desktopfile.path = $$[QT_INSTALL_PREFIX]/share/applications
         icon.files = $${TARGET}80.png
-        icon.path = /usr/share/icons/hicolor/80x80/apps
+        icon.path = $$[QT_INSTALL_PREFIX]/share/icons/hicolor/80x80/apps
     } else { # Assumed to be a Desktop Unix
         copyCommand =
         for(deploymentfolder, DEPLOYMENTFOLDERS) {
