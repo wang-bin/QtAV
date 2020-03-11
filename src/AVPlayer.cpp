@@ -94,6 +94,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     connect(d->read_thread, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SLOT(updateMediaStatus(QtAV::MediaStatus)));
     connect(d->read_thread, SIGNAL(bufferProgressChanged(qreal)), this, SIGNAL(bufferProgressChanged(qreal)));
     connect(d->read_thread, SIGNAL(seekFinished(qint64)), this, SLOT(onSeekFinished(qint64)), Qt::DirectConnection);
+    connect(d->read_thread, SIGNAL(stepFinished()), this, SLOT(onStepFinished()), Qt::DirectConnection);
     connect(d->read_thread, SIGNAL(internalSubtitlePacketRead(int, QtAV::Packet)), this, SIGNAL(internalSubtitlePacketRead(int, QtAV::Packet)), Qt::DirectConnection);
     d->vcapture = new VideoCapture(this);
 }
@@ -1412,6 +1413,11 @@ void AVPlayer::onSeekFinished(qint64 value)
         Q_EMIT positionChanged(value - absoluteMediaStartPosition());
     else
         Q_EMIT positionChanged(value);
+}
+
+void AVPlayer::onStepFinished()
+{
+    Q_EMIT stepFinished();
 }
 
 void AVPlayer::tryClearVideoRenderers()
