@@ -167,7 +167,6 @@ defineReplace(qtSharedLib) {
 	return($$LIB_FULLNAME)
 }
 
-
 defineReplace(qtLongName) {
   unset(LONG_NAME)
   LONG_NAME = $$1$${_OS}_$$join(TARGET_ARCH,+)$${_EXTRA}
