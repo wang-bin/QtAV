@@ -134,6 +134,7 @@ defineReplace(qtLibName) {
        }
     }
         RET = $$RET$$platformTargetSuffix()
+        qtAtLeast(5, 14):android:RET = $${RET}_$$ANDROID_TARGET_ARCH
         !win32: return($$RET)
 
 	isEmpty(2): VERSION_EXT = $$VERSION
@@ -165,6 +166,7 @@ defineReplace(qtSharedLib) {
         LIB_FULLNAME = $${QMAKE_PREFIX_SHLIB}$$member(LIB_FULLNAME, 0).$${QMAKE_EXTENSION_SHLIB} #default_post.prf
 	return($$LIB_FULLNAME)
 }
+
 
 defineReplace(qtLongName) {
   unset(LONG_NAME)
