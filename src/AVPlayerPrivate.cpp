@@ -275,7 +275,9 @@ void AVPlayer::Private::initCommonStatistics(int s, Statistics::Common *st, AVCo
 #if (defined FF_API_R_FRAME_RATE && FF_API_R_FRAME_RATE) //removed in libav10
     //FIXME: which 1 should we choose? avg_frame_rate may be nan, r_frame_rate may be wrong(guessed value)
     else if (stream->r_frame_rate.den && stream->r_frame_rate.num) {
-        st->frame_rate = av_q2d(stream->r_frame_rate);
+        if (stream->r_frame_rate.num < 90000)
+            st->frame_rate = av_q2d(stream->r_frame_rate);
+
         qDebug("%d/%d", stream->r_frame_rate.num, stream->r_frame_rate.den);
     }
 #endif //FF_API_R_FRAME_RATE
