@@ -134,6 +134,7 @@ defineReplace(qtLibName) {
        }
     }
         RET = $$RET$$platformTargetSuffix()
+        qtAtLeast(5, 14):android:RET = $${RET}_$$ANDROID_TARGET_ARCH
         !win32: return($$RET)
 
 	isEmpty(2): VERSION_EXT = $$VERSION
