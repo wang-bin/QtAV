@@ -12,6 +12,8 @@ INCLUDE(CheckTypeSize)
 include_directories(${QTDIR}/include) #TODO: remove. use external/include
 get_filename_component(QTDIR "${QTDIR}" ABSOLUTE)
 
+find_package(PkgConfig)
+
 list(APPEND EXTRA_INCLUDE ${QTAV_SOURCE_DIR}/external/include)
 list(APPEND EXTRA_LIBS ${CMAKE_LIBRARY_PATH_FLAG}${QTAV_SOURCE_DIR}/external/lib)
 if(APPLE)
@@ -28,39 +30,56 @@ if(EXISTS ${QTAV_SOURCE_DIR}/contrib/capi/capi.h)
     list(APPEND EXTRA_DEFS -DQTAV_HAVE_CAPI=1)
 endif()
 
-# check ffmpeg headers. assume libs exist. lib order matters if they are static
-set(AVMODULES avformat avcodec swscale avutil) # avdevice avfilter avresample swscale)
-# CMAKE_FIND_ROOT_PATH_BOTH: ensure find_file can search from given paths for cross compiling, may be set to ONLY in toolchain file
-foreach(av ${AVMODULES})
-    string(TOUPPER ${av} AV)
-    find_file(HAVE_${AV} lib${av}/${av}.h HINTS ${EXTRA_INCLUDE} PATHS ${EXTRA_INCLUDE} CMAKE_FIND_ROOT_PATH_BOTH)
-    message("HAVE_${AV}: ${HAVE_${AV}}")
-    if(NOT ${HAVE_${AV}} MATCHES HAVE_${AV}-NOTFOUND)
-      set(HAVE_${AV} 1)
-      list(APPEND EXTRA_LIBS ${av})
-      list(APPEND EXTRA_DEFS "-DQTAV_HAVE_${AV}=1")
-    else()
-      message(FATAL_ERROR "${av} is required")
-    endif()
-    #check_include_file(lib${av}/${av}.h HAVE_${AV}) # -D__STDC_CONSTANT_MACROS is required!
-endforeach()
+pkg_check_modules (AVFORMAT libavformat REQUIRED)
+if(${AVFORMAT_FOUND})
+    list(APPEND PKG_CONFIG_MODULES AVFORMAT)
+    message("Found AVFORMAT: ${AVFORMAT_LINK_LIBRARIES}")
+endif()
 
-foreach(av avfilter avdevice avresample swresample)
-  string(TOUPPER ${av} AV)
-  find_file(HAVE_${AV} lib${av}/${av}.h HINTS ${EXTRA_INCLUDE} PATHS ${EXTRA_INCLUDE} CMAKE_FIND_ROOT_PATH_BOTH)
-  message("HAVE_${AV}: ${HAVE_${AV}}")
-  if(NOT ${HAVE_${AV}} MATCHES HAVE_${AV}-NOTFOUND)
-    set(HAVE_${AV} 1)
-    list(APPEND EXTRA_LIBS ${av})
-    list(APPEND EXTRA_DEFS "-DQTAV_HAVE_${AV}=1")
-    list(APPEND AVMODULES ${av})
-  endif()
-endforeach()
+pkg_check_modules (AVCODEC libavcodec REQUIRED)
+if(${AVCODEC_FOUND})
+    list(APPEND PKG_CONFIG_MODULES AVCODEC)
+    message("Found AVCODEC: ${AVCODEC_LINK_LIBRARIES}")
+endif()
 
-if (NOT HAVE_SWRESAMPLE)
-  if (NOT HAVE_AVRESAMPLE)
+pkg_check_modules (SWSCALE libswscale REQUIRED)
+if(${SWSCALE_FOUND})
+    list(APPEND PKG_CONFIG_MODULES SWSCALE)
+    message("Found SWSCALE: ${SWSCALE_LINK_LIBRARIES}")
+endif()
+
+pkg_check_modules (AVUTIL libavutil REQUIRED)
+if(${AVUTIL_FOUND})
+    list(APPEND PKG_CONFIG_MODULES AVUTIL)
+    message("Found AVUTIL: ${AVUTIL_LINK_LIBRARIES}")
+endif()
+
+pkg_check_modules (AVFILTER libavfilter)
+if(${AVFILTER_FOUND})
+    list(APPEND PKG_CONFIG_MODULES AVFILTER)
+    message("Found AVFILTER: ${AVFILTER_LINK_LIBRARIES}")
+endif()
+
+pkg_check_modules (AVDEVICE libavdevice)
+if(${AVDEVICE_FOUND})
+    list(APPEND PKG_CONFIG_MODULES AVDEVICE)
+    message("Found AVDEVICE: ${AVDEVICE_LINK_LIBRARIES}")
+endif()
+
+pkg_check_modules (AVRESAMPLE libavresample)
+if(${AVRESAMPLE_FOUND})
+    list(APPEND PKG_CONFIG_MODULES AVRESAMPLE)
+    message("Found AVRESAMPLE: ${AVRESAMPLE_LINK_LIBRARIES}")
+endif()
+
+pkg_check_modules (SWRESAMPLE libswresample)
+if(${SWRESAMPLE_FOUND})
+    list(APPEND PKG_CONFIG_MODULES SWRESAMPLE)
+    message("Found SWRESAMPLE: ${SWRESAMPLE_LINK_LIBRARIES}")
+endif()
+
+if (NOT AVRESAMPLE_FOUND AND NOT SWRESAMPLE_FOUND)
     message(FATAL_ERROR "swresample or avresample is required")
-  endif()
 endif()
 
 list(APPEND EXTRA_DEFS -DBUILD_QTAV_LIB -D__STDC_CONSTANT_MACROS)
@@ -178,10 +197,10 @@ foreach (D ${DEP_H})
   endif()
 endforeach()
 
-if (HAVE_AVRESAMPLE)
+if (AVRESAMPLE_FOUND)
   list(APPEND SOURCES AudioResamplerLibav.cpp)
 endif()
-if (HAVE_SWRESAMPLE)
+if (SWRESAMPLE_FOUND)
   list(APPEND SOURCES AudioResamplerFF.cpp)
 endif()
 
@@ -307,13 +326,13 @@ if(HAVE_OPENGL)
   endif()
 endif()
 
-if(HAVE_EGL)
+if(HAVE_EGL AND HAVE_CAPI)
   list(APPEND SOURCES capi/egl_api.cpp)
   # TODO: X11Extras
   if(DEFINED Qt5Gui_EGL_INCLUDE_DIRS) # ANGLE
     list(APPEND EXTRA_INCLUDE ${Qt5Gui_EGL_INCLUDE_DIRS})
     #list(APPEND EXTRA_DEFS -DQTAV_HAVE_QT_EGL=1)
-    if(HAVE_CAPI AND NOT IOS)
+    if(NOT IOS)
       list(APPEND EXTRA_DEFS -DQTAV_HAVE_EGL_CAPI=1)
       if(WindowsPhone OR WindowsStore)
         list(APPEND EXTRA_DEFS -DCAPI_LINK_EGL)
@@ -484,6 +503,14 @@ target_link_libraries(${MODULE}
   LINK_PRIVATE ${EXTRA_LIBS}
   LINK_PUBLIC Qt5::Core Qt5::Gui # will add include dirs, macros etc.
 )
+
+foreach(PKG_CONFIG_MODULE ${PKG_CONFIG_MODULES})
+    target_link_libraries(${MODULE} PRIVATE ${${PKG_CONFIG_MODULE}_LINK_LIBRARIES})
+    target_include_directories(${MODULE} PRIVATE ${${PKG_CONFIG_MODULE}_INCLUDE_DIRS})
+    target_compile_options(${MODULE} PRIVATE ${${PKG_CONFIG_MODULE}_CFLAGS_OTHER})
+    target_compile_definitions(${MODULE} PRIVATE -DQTAV_HAVE_${PKG_CONFIG_MODULE}=1)
+endforeach()
+
 set_target_properties(${MODULE} PROPERTIES
   MACOSX_RPATH ON
   FRAMEWORK ON
