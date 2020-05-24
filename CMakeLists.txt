@@ -25,6 +25,7 @@ option(BUILD_EXAMPLES "Build examples" ON)
 option(BUILD_PLAYERS "Build players" ON)
 option(BUILD_TESTS "Build tests" ON)
 option(BUILD_QT5OPENGL "Build with Qt5 OpenGL module" ON)
+option(BUILD_QML "Build QML interfaces" ON)
 
 list(APPEND CMAKE_FIND_ROOT_PATH ${QTDIR})
 
@@ -116,13 +117,17 @@ if(CMAKE_GENERATOR MATCHES "Visual Studio.*")
 endif()
 
 add_subdirectory(src)
+
 find_package(Qt5Widgets)
 if(Qt5Widgets_FOUND)
   add_subdirectory(widgets)
 endif()
-find_package(Qt5 COMPONENTS Qml Quick)
-if(Qt5Qml_FOUND AND Qt5Quick_FOUND)
-  add_subdirectory(qml)
+
+if(BUILD_QML)
+  find_package(Qt5 COMPONENTS Qml Quick)
+  if(Qt5Qml_FOUND AND Qt5Quick_FOUND)
+      add_subdirectory(qml)
+  endif()
 endif()
 
 if(BUILD_EXAMPLES OR BUILD_PLAYERS)
