@@ -26,6 +26,7 @@
 #include <QtCore/QByteArray>
 #include <QtCore/QRect>
 #include <QtGui/QPainter>
+#include <QtGui/QPainterPath>
 /*
  * QPainterFilterContext, D2DFilterContext, ...
  */
