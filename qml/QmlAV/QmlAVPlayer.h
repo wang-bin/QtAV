@@ -401,7 +401,6 @@ private:
     QList<QuickAudioFilter*> m_afilters;
     QList<QuickVideoFilter*> m_vfilters;
     QStringList m_ao;
-    int m_notifyInterval;
 };
 
 #endif // QTAV_QML_AVPLAYER_H
