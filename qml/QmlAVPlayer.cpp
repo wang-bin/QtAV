@@ -89,7 +89,7 @@ void QmlAVPlayer::classBegin()
     connect(mpPlayer, SIGNAL(seekableChanged()), SIGNAL(seekableChanged()));
     connect(mpPlayer, SIGNAL(seekFinished(qint64)), this, SIGNAL(seekFinished()), Qt::DirectConnection);
     connect(mpPlayer, SIGNAL(bufferProgressChanged(qreal)), SIGNAL(bufferProgressChanged()));
-    connect(mpPlayer, SIGNAL(notifyIntervalChanged), SIGNAL(notifyIntervalChanged()));
+    connect(mpPlayer, SIGNAL(notifyIntervalChanged()), SIGNAL(notifyIntervalChanged()));
     connect(this, SIGNAL(channelLayoutChanged()), SLOT(applyChannelLayout()));
     // direct connection to ensure volume() in slots is correct
     connect(mpPlayer->audio(), SIGNAL(volumeChanged(qreal)), SLOT(applyVolume()), Qt::DirectConnection);
