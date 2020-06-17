@@ -342,7 +342,7 @@ Q_SIGNALS:
     void statusChanged();
     void mediaObjectChanged();
     void audioBackendsChanged();
-    void notifyIntervalChanged(int notifyInterval);
+    void notifyIntervalChanged();
 
 private Q_SLOTS:
     // connect to signals from player
@@ -401,7 +401,6 @@ private:
     QList<QuickAudioFilter*> m_afilters;
     QList<QuickVideoFilter*> m_vfilters;
     QStringList m_ao;
-    int m_notifyInterval;
 };
 
 #endif // QTAV_QML_AVPLAYER_H

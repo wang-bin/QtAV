@@ -1,4 +1,4 @@
-import QtQuick.tooling 1.1
+﻿import QtQuick.tooling 1.1
 
 // This file describes the plugin-supplied types contained in the library.
 // It is used for QML tooling purposes only.
@@ -248,6 +248,7 @@ Module {
         Property { name: "videoFilters"; type: "QuickVideoFilter"; isList: true; isReadonly: true }
         Property { name: "audioBackends"; type: "QStringList" }
         Property { name: "supportedAudioBackends"; type: "QStringList"; isReadonly: true }
+        Property { name: "notifyInterval"; type: "int" }
         Signal { name: "loopCountChanged" }
         Signal { name: "videoOutChanged" }
         Signal { name: "paused" }
