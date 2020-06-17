@@ -342,7 +342,7 @@ Q_SIGNALS:
     void statusChanged();
     void mediaObjectChanged();
     void audioBackendsChanged();
-    void notifyIntervalChanged(int notifyInterval);
+    void notifyIntervalChanged();
 
 private Q_SLOTS:
     // connect to signals from player
