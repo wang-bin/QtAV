@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
@@ -88,6 +88,7 @@ void QmlAVPlayer::classBegin()
     connect(mpPlayer, SIGNAL(seekableChanged()), SIGNAL(seekableChanged()));
     connect(mpPlayer, SIGNAL(seekFinished(qint64)), this, SIGNAL(seekFinished()), Qt::DirectConnection);
     connect(mpPlayer, SIGNAL(bufferProgressChanged(qreal)), SIGNAL(bufferProgressChanged()));
+    connect(mpPlayer, SIGNAL(notifyIntervalChanged()), this,SIGNAL(notifyIntervalChanged()));
     connect(this, SIGNAL(channelLayoutChanged()), SLOT(applyChannelLayout()));
     // direct connection to ensure volume() in slots is correct
     connect(mpPlayer->audio(), SIGNAL(volumeChanged(qreal)), SLOT(applyVolume()), Qt::DirectConnection);
@@ -653,6 +654,13 @@ void QmlAVPlayer::setAudioBackends(const QStringList &value)
     Q_EMIT audioBackendsChanged();
 }
 
+int QmlAVPlayer::notifyInterval() const
+{
+    if(!mpPlayer)
+        return -1;
+    return mpPlayer->notifyInterval();
+}
+
 QStringList QmlAVPlayer::supportedAudioBackends() const
 {
     return AudioOutput::backendsAvailable();
@@ -954,6 +962,13 @@ void QmlAVPlayer::seekBackward()
         return;
     mpPlayer->setSeekType(isFastSeek() ? KeyFrameSeek : AccurateSeek);
     mpPlayer->seekBackward();
+}
+
+void QmlAVPlayer::setNotifyInterval(int notifyInterval)
+{
+    if (!mpPlayer)
+        return;
+    mpPlayer->setNotifyInterval(notifyInterval);
 }
 
 void QmlAVPlayer::_q_error(const AVError &e, int ffmpegError, const QString& ffmpegErrorStr)

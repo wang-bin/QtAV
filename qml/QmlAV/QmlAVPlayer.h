@@ -1,4 +1,4 @@
-/******************************************************************************
+﻿/******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
     Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
 
@@ -105,6 +105,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     // TODO: startPosition/stopPosition
     Q_PROPERTY(QStringList audioBackends READ audioBackends WRITE setAudioBackends NOTIFY audioBackendsChanged)
     Q_PROPERTY(QStringList supportedAudioBackends READ supportedAudioBackends)
+    Q_PROPERTY(int notifyInterval READ notifyInterval WRITE setNotifyInterval NOTIFY notifyIntervalChanged)
 public:
     enum Loop { Infinite = -1 };
     // use (1<<31)-1
@@ -319,6 +320,7 @@ public:
     QStringList supportedAudioBackends() const;
     QStringList audioBackends() const;
     void setAudioBackends(const QStringList& value);
+    int notifyInterval() const;
 
 public Q_SLOTS:
     void play();
@@ -329,6 +331,7 @@ public Q_SLOTS:
     void seek(int offset);
     void seekForward();
     void seekBackward();
+    void setNotifyInterval(int notifyInterval);
 
     bool startRecording(QString filePath, int duration = -1);
     bool stopRecording();
@@ -390,6 +393,8 @@ Q_SIGNALS:
     void statusChanged();
     void mediaObjectChanged();
     void audioBackendsChanged();
+    void notifyIntervalChanged();
+
 private Q_SLOTS:
     // connect to signals from player
     void _q_error(const QtAV::AVError& e, int ffmpegError, const QString &ffmpegErrorStr);
