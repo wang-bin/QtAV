@@ -137,6 +137,11 @@ QUrl QmlAVPlayer::source() const
     return mSource;
 }
 
+QByteArray QmlAVPlayer::sourceBytes() const
+{
+    return mSourceBytes;
+}
+
 void QmlAVPlayer::setSource(const QUrl &url)
 {
     if (mSource == url)
@@ -151,6 +156,46 @@ void QmlAVPlayer::setSource(const QUrl &url)
     else
         mpPlayer->setFile(url.toEncoded());
     Q_EMIT sourceChanged(); //TODO: Q_EMIT only when player loaded a new source
+
+    if (mHasAudio) {
+        mHasAudio = false;
+        Q_EMIT hasAudioChanged();
+    }
+    if (mHasVideo) {
+        mHasVideo = false;
+        Q_EMIT hasVideoChanged();
+    }
+
+    // TODO: in componentComplete()?
+    if (m_complete && mAutoLoad) {
+        mError = NoError;
+        mErrorString = tr("No error");
+        Q_EMIT error(mError, mErrorString);
+        Q_EMIT errorChanged();
+        stop(); // TODO: no stop for autoLoad?
+//        if (mAutoLoad)
+//            mpPlayer->load();
+        if (mAutoLoad) {
+            //mPlaybackState is actually changed in slots. But if set to a new source the state may not change before call play()
+            mPlaybackState = StoppedState;
+            play();
+        }
+    }
+}
+
+void QmlAVPlayer::setSourceBytes(const QByteArray &bytes)
+{
+    if (mSourceBytes == bytes)
+        return;
+    mSourceBytes = bytes;
+    if(mIODevice.isOpen())
+        mIODevice.close();
+    mIODevice.setBuffer(&mSourceBytes);
+    mIODevice.open(QIODevice::ReadOnly);
+    mIODevice.reset();
+    mpPlayer->setIODevice(&mIODevice);
+
+    Q_EMIT sourceBytesChanged(); //TODO: Q_EMIT only when player loaded a new source
 
     if (mHasAudio) {
         mHasAudio = false;

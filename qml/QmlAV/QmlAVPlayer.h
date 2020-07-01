@@ -32,6 +32,8 @@
 #include <QtAV/VideoCapture.h>
 #include <QTimer>
 
+#include <QBuffer>
+
 namespace QtAV {
 class AVPlayer;
 }
@@ -52,6 +54,7 @@ class QmlAVPlayer : public QObject, public QQmlParserStatus
     Q_PROPERTY(bool autoLoad READ isAutoLoad WRITE setAutoLoad NOTIFY autoLoadChanged)
     Q_PROPERTY(qreal playbackRate READ playbackRate WRITE setPlaybackRate NOTIFY playbackRateChanged)
     Q_PROPERTY(QUrl source READ source WRITE setSource NOTIFY sourceChanged)
+    Q_PROPERTY(QByteArray sourceBytes READ sourceBytes WRITE setSourceBytes NOTIFY sourceBytesChanged)
     Q_PROPERTY(int loops READ loopCount WRITE setLoopCount NOTIFY loopCountChanged)
     Q_PROPERTY(qreal bufferProgress READ bufferProgress NOTIFY bufferProgressChanged)
     Q_PROPERTY(bool seekable READ isSeekable NOTIFY seekableChanged)
@@ -184,11 +187,13 @@ public:
     bool hasVideo() const;
 
     QUrl source() const;
+    QByteArray sourceBytes() const;
     /*!
      * \brief setSource
      * If url is changed and auto load is true, current playback will stop.
      */
     void setSource(const QUrl& url);
+    void setSourceBytes(const QByteArray& bytes);
 
     // 0,1: play once. MediaPlayer.Infinite: forever.
     // >1: play loopCount() - 1 times. different from Qt
@@ -347,6 +352,7 @@ Q_SIGNALS:
     void durationChanged();
     void positionChanged();
     void sourceChanged();
+    void sourceBytesChanged();
     void autoLoadChanged();
     void loopCountChanged();
     void videoOutChanged();
@@ -437,6 +443,8 @@ private:
     QString mffmpegErrorStr;
     QtAV::AVPlayer *mpPlayer;
     QUrl mSource;
+    QByteArray mSourceBytes;
+    QBuffer mIODevice;
     QStringList mVideoCodecs;
     ChannelLayout mChannelLayout;
     int m_timeout;
