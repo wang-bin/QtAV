@@ -115,6 +115,9 @@ void QmlAVPlayer::componentComplete()
     connect(mpPlayer, &QtAV::AVPlayer::receivingFramesChanged, this, &QmlAVPlayer::receivingFramesChanged);
     connect(mpPlayer, &QtAV::AVPlayer::recordFinished, this, &QmlAVPlayer::recordFinished);
 
+    mIODevice.setBuffer(&mSourceBytes);
+    mIODevice.open(QIODevice::ReadOnly);
+
     m_complete = true;
 }
 
@@ -187,13 +190,12 @@ void QmlAVPlayer::setSourceBytes(const QByteArray &bytes)
 {
     if (mSourceBytes == bytes)
         return;
-    mSourceBytes = bytes;
     if(mIODevice.isOpen())
         mIODevice.close();
-    mIODevice.setBuffer(&mSourceBytes);
+    mSourceBytes = bytes;
     mIODevice.open(QIODevice::ReadOnly);
     mIODevice.reset();
-    mpPlayer->setIODevice(&mIODevice);
+    mpPlayer->setIODevice(mSourceBytes.isEmpty() ? nullptr :&mIODevice);
 
     Q_EMIT sourceBytesChanged(); //TODO: Q_EMIT only when player loaded a new source
 
