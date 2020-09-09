@@ -1520,6 +1520,7 @@ void AVPlayer::timerEvent(QTimerEvent *te)
     if (te->timerId() == d->timer_id) {
         // killTimer() should be in the same thread as object. kill here?
         if (isPaused()) {
+            d->clock->pause(true);
             //return; //ensure positionChanged emitted for stepForward()
         }
         // active only when playing
