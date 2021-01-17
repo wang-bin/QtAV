@@ -616,6 +616,7 @@ private Q_SLOTS:
     void stopNotifyTimer();
     void onStarted();
     void updateMediaStatus(QtAV::MediaStatus status);
+    void onMediaEndActionPauseTriggered();
     void onSeekFinished(qint64 value);
     void onStepFinished();
     void tryClearVideoRenderers();
