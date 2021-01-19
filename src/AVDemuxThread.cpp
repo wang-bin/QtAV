@@ -674,6 +674,7 @@ void AVDemuxThread::run()
                     break;
                 pause(true);
                 Q_EMIT requestClockPause(true);
+                Q_EMIT mediaEndActionPauseTriggered();
                 if (aqueue)
                     aqueue->blockEmpty(true);
                 if (vqueue)

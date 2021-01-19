@@ -91,6 +91,7 @@ AVPlayer::AVPlayer(QObject *parent) :
     //direct connection can not sure slot order?
     connect(d->read_thread, SIGNAL(finished()), this, SLOT(stopFromDemuxerThread()), Qt::DirectConnection);
     connect(d->read_thread, SIGNAL(requestClockPause(bool)), masterClock(), SLOT(pause(bool)), Qt::DirectConnection);
+    connect(d->read_thread, SIGNAL(mediaEndActionPauseTriggered()), this, SLOT(onMediaEndActionPauseTriggered()));
     connect(d->read_thread, SIGNAL(mediaStatusChanged(QtAV::MediaStatus)), this, SLOT(updateMediaStatus(QtAV::MediaStatus)));
     connect(d->read_thread, SIGNAL(bufferProgressChanged(qreal)), this, SIGNAL(bufferProgressChanged(qreal)));
     connect(d->read_thread, SIGNAL(seekFinished(qint64)), this, SLOT(onSeekFinished(qint64)), Qt::DirectConnection);
@@ -1402,6 +1403,16 @@ void AVPlayer::updateMediaStatus(QtAV::MediaStatus status)
         return;
     d->status = status;
     Q_EMIT mediaStatusChanged(d->status);
+}
+
+void AVPlayer::onMediaEndActionPauseTriggered()
+{
+    if(d->state == PausedState)
+        return;
+
+    d->state = PausedState;
+    Q_EMIT stateChanged(d->state);
+    Q_EMIT paused(true);
 }
 
 void AVPlayer::onSeekFinished(qint64 value)

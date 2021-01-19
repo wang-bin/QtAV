@@ -64,6 +64,7 @@ public:
     bool hasSeekTasks();
 Q_SIGNALS:
     void requestClockPause(bool value);
+    void mediaEndActionPauseTriggered();
     void mediaStatusChanged(QtAV::MediaStatus);
     void bufferProgressChanged(qreal);
     void seekFinished(qint64 timestamp);
