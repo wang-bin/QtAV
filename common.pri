@@ -109,7 +109,10 @@ defineReplace(platformTargetSuffix) {
     CONFIG(debug, debug|release) {
         !debug_and_release|build_pass {
             mac: return($${suffix}_debug)
-            win32: return($${suffix}d)
+            win32: {
+                win32-g++: return($${suffix})
+                !win32-g++: return($${suffix}d)
+            }
         }
     }
     return($$suffix)
