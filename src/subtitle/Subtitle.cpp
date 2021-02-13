@@ -501,9 +501,14 @@ QString Subtitle::getText() const
     priv->current_text.clear();
     const int count = qAbs(priv->current_count);
     QLinkedList<SubtitleFrame>::iterator it = priv->current_count > 0 ? priv->itf : priv->itf + (priv->current_count+1);
-    for (int i = 0; i < count; ++i) {
-        priv->current_text.append(it->text).append(QStringLiteral("\n"));
-        ++it;
+
+    for (int i = 0; i < count; ++i) {        
+        if(priv->current_text.startsWith(it->text)){
+            break;
+        } else {
+            priv->current_text.append(it->text).append(QStringLiteral("\n"));
+            ++it;
+        }
     }
     priv->current_text = priv->current_text.trimmed();
     return priv->current_text;
