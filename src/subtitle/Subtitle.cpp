@@ -27,7 +27,7 @@
 #include <QtCore/QFile>
 #include <QtCore/QFileInfo>
 #include <QtCore/QIODevice>
-#include <QtCore/QLinkedList>
+#include <QtCore/QList>
 #include <QtCore/QRegExp>
 #include <QtCore/QRunnable>
 #include <QtCore/QThreadPool>
@@ -98,7 +98,7 @@ public:
     QList<SubtitleProcessor*> processors;
     QByteArray codec;
     QStringList engine_names;
-    QLinkedList<SubtitleFrame> frames;
+    QList<SubtitleFrame> frames;
     QUrl url;
     QByteArray raw_data;
     QString file_name;
@@ -113,7 +113,7 @@ public:
     QString current_text;
     QImage current_image;
     SubImageSet current_ass;
-    QLinkedList<SubtitleFrame>::iterator itf;
+    QList<SubtitleFrame>::iterator itf;
     /* number of subtitle frames at current time.
      * <0 means itf is the last. >0 means itf is the 1st
      */
@@ -500,7 +500,7 @@ QString Subtitle::getText() const
     priv->update_text = false;
     priv->current_text.clear();
     const int count = qAbs(priv->current_count);
-    QLinkedList<SubtitleFrame>::iterator it = priv->current_count > 0 ? priv->itf : priv->itf + (priv->current_count+1);
+    QList<SubtitleFrame>::iterator it = priv->current_count > 0 ? priv->itf : priv->itf + (priv->current_count+1);
     for (int i = 0; i < count; ++i) {
         priv->current_text.append(it->text).append(QStringLiteral("\n"));
         ++it;
@@ -595,7 +595,7 @@ bool Subtitle::processLine(const QByteArray &data, qreal pts, qreal duration)
         return true;
     }
     // usually add to the end. TODO: test
-    QLinkedList<SubtitleFrame>::iterator it = priv->frames.end();
+    QList<SubtitleFrame>::iterator it = priv->frames.end();
     if (it != priv->frames.begin())
         --it;
     while (it != priv->frames.begin() && f < (*it)) {--it;}
@@ -613,7 +613,7 @@ bool Subtitle::Private::prepareCurrentFrame()
 {
     if (frames.isEmpty())
         return false;
-    QLinkedList<SubtitleFrame>::iterator it = itf;
+    QList<SubtitleFrame>::iterator it = itf;
     int found = 0;
     const int old_current_count = current_count;
     const qreal t = this->t - delay;
