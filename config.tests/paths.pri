@@ -4,5 +4,11 @@ INCLUDEPATH += $$[QT_INSTALL_HEADERS]
 LIBS += -L$$[QT_INSTALL_LIBS]
 CONFIG -= qt app_bundle lib_bundle
 CONFIG += console
+
+mac {
+    INCLUDEPATH += /usr/local/include/
+    LIBS += -L/usr/local/lib
+}
+
 *msvc*: INCLUDEPATH *= $$PWD/../src/compat/msvc
 !config_dx: INCLUDEPATH *= $$PWD/../contrib/dxsdk
