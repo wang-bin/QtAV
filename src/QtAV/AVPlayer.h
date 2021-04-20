@@ -606,6 +606,7 @@ Q_SIGNALS:
      */
     void internalSubtitleHeaderRead(const QByteArray& codec, const QByteArray& data);
     void internalSubtitlePacketRead(int track, const QtAV::Packet& packet);
+    void mediaEndReached(); // emitted at the end of media if MediaEndAction_Pause is set
 private Q_SLOTS:
     void loadInternal(); // simply load
     void playInternal(); // simply play
