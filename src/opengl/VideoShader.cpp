@@ -137,8 +137,12 @@ const char* VideoShader::fragmentShader() const
         return 0;
     }
     const int nb_planes = d.video_format.planeCount();
-    if (nb_planes == 2) //TODO: nv21 must be swapped
+    if (nb_planes == 2) {
         frag.prepend("#define IS_BIPLANE\n");
+        if (d.video_format == VideoFormat::Format_NV21) {
+            frag.prepend("#define IS_NV21\n");
+        }
+    }
     if (OpenGLHelper::hasRG() && !OpenGLHelper::useDeprecatedFormats())
         frag.prepend("#define USE_RG\n");
     const bool has_alpha = d.video_format.hasAlpha();

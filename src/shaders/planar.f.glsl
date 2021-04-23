@@ -70,17 +70,27 @@ void main()
 #else
 #ifdef USE_RG
                              sample2d(u_Texture0, v_TexCoords0, 0).r,
-                             sample2d(u_Texture1, v_TexCoords1, 1).r,
 #ifdef IS_BIPLANE
-                             sample2d(u_Texture2, v_TexCoords2, 2).g,
+#ifdef IS_NV21
+                             sample2d(u_Texture1, v_TexCoords1, 1).g,
+                             sample2d(u_Texture2, v_TexCoords2, 2).r,
 #else
+                             sample2d(u_Texture1, v_TexCoords1, 1).r,
+                             sample2d(u_Texture2, v_TexCoords2, 2).g,
+#endif //IS_NV21
+#else
+                             sample2d(u_Texture1, v_TexCoords1, 1).r,
                              sample2d(u_Texture2, v_TexCoords2, 2).r,
 #endif //IS_BIPLANE
 #else
-// use r, g, a to work for both yv12 and nv12. idea from xbmc
+// use r, g, a/r to work for both yv12 and nv12/nv21. idea from xbmc
                              sample2d(u_Texture0, v_TexCoords0, 0).r,
                              sample2d(u_Texture1, v_TexCoords1, 1).g,
+#ifdef IS_NV21
+                             sample2d(u_Texture2, v_TexCoords2, 2).r,
+#else
                              sample2d(u_Texture2, v_TexCoords2, 2).a,
+#endif //IS_NV21
 #endif //USE_RG
 #endif //CHANNEL16_TO8
                              1.0
