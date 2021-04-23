@@ -116,7 +116,7 @@ bool PacketBuffer::checkEnough() const
 
 bool PacketBuffer::checkFull() const
 {
-    return buffered() >= qint64(qreal(bufferValue())*bufferMax());
+    return !checkInfinite() && buffered() >= qint64(qreal(bufferValue())*bufferMax());
 }
 
 void PacketBuffer::onPut(const Packet &p)
@@ -146,6 +146,12 @@ void PacketBuffer::onPut(const Packet &p)
         bi.bytes += m_history.back().bytes;
     bi.v = m_value1;
     bi.t = QDateTime::currentMSecsSinceEpoch();
+
+    if(m_history.size() >= kAvgSize){
+        bi.bytes -= m_history.front().bytes;
+        m_history.pop_front();
+    }
+
     m_history.push_back(bi);
 }
 

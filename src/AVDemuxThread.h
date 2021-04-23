@@ -62,6 +62,11 @@ public:
     bool waitForStarted(int msec = -1);
     qint64 lastSeekPos();
     bool hasSeekTasks();
+
+    bool isAudioBufferInfinite() const;
+    void setIsAudioBufferInfinite(const bool &value);
+    bool isVideoBufferInfinite() const;
+    void setIsVideoBufferInfinite(const bool &value);
 Q_SIGNALS:
     void requestClockPause(bool value);
     void mediaEndActionPauseTriggered();
@@ -116,6 +121,8 @@ private:
     int clock_type; // change happens in different threads(direct connection)
     friend class SeekTask;
     friend class stepBackwardTask;
+    bool audioBufferInfinite;
+    bool videoBufferInfinite;
 };
 
 } //namespace QtAV

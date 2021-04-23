@@ -413,6 +413,11 @@ public:
     MediaEndAction mediaEndAction() const;
     void setMediaEndAction(MediaEndAction value);
 
+    bool isAudioBufferInfinite() const;
+    void setIsAudioBufferInfinite(const bool &value);
+
+    bool isVideoBufferInfinite() const;
+    void setIsVideoBufferInfinite(const bool &value);
 public Q_SLOTS:
     /*!
      * \brief load

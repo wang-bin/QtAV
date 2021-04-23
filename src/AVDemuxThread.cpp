@@ -87,6 +87,8 @@ AVDemuxThread::AVDemuxThread(QObject *parent) :
   , current_seek_task(nullptr)
   , stepping(false)
   , stepping_timeout_time(0)
+  , audioBufferInfinite(false)
+  , videoBufferInfinite(false)
 {
     seek_tasks.setCapacity(1);
     seek_tasks.blockFull(false);
@@ -104,6 +106,8 @@ AVDemuxThread::AVDemuxThread(AVDemuxer *dmx, QObject *parent) :
   , current_seek_task(nullptr)
   , stepping(false)
   , stepping_timeout_time(0)
+  , audioBufferInfinite(false)
+  , videoBufferInfinite(false)
 {
     setDemuxer(dmx);
     seek_tasks.setCapacity(1);
@@ -140,11 +144,17 @@ void AVDemuxThread::setAVThread(AVThread*& pOld, AVThread *pNew)
 
 void AVDemuxThread::setAudioThread(AVThread *thread)
 {
+    auto aqueue = thread ? thread->packetQueue() : 0;
+    if(aqueue)
+        aqueue->setIsInfinite(audioBufferInfinite);
     setAVThread(audio_thread, thread);
 }
 
 void AVDemuxThread::setVideoThread(AVThread *thread)
 {
+    auto vqueue = thread ? thread->packetQueue() : 0;
+    if(vqueue)
+        vqueue->setIsInfinite(videoBufferInfinite);
     setAVThread(video_thread, thread);
 }
 
@@ -365,6 +375,32 @@ bool AVDemuxThread::hasSeekTasks()
         finishedStepBackward();
     }
     return !seek_tasks.isEmpty() || current_seek_task || stepping;
+}
+
+bool AVDemuxThread::isAudioBufferInfinite() const
+{
+    return audioBufferInfinite;
+}
+
+void AVDemuxThread::setIsAudioBufferInfinite(const bool &value)
+{
+    audioBufferInfinite = value;
+    PacketBuffer *aqueue = audio_thread ? audio_thread->packetQueue() : 0;
+    if(aqueue)
+        aqueue->setIsInfinite(audioBufferInfinite);
+}
+
+bool AVDemuxThread::isVideoBufferInfinite() const
+{
+    return videoBufferInfinite;
+}
+
+void AVDemuxThread::setIsVideoBufferInfinite(const bool &value)
+{
+    videoBufferInfinite = value;
+    PacketBuffer *vqueue = video_thread ? video_thread->packetQueue() : 0;
+    if(vqueue)
+        vqueue->setIsInfinite(videoBufferInfinite);
 }
 
 qint64 AVDemuxThread::lastSeekPos()
@@ -611,6 +647,10 @@ void AVDemuxThread::run()
     qDebug("get av queue a/v thread = %p %p", audio_thread, video_thread);
     PacketBuffer *aqueue = audio_thread ? audio_thread->packetQueue() : 0;
     PacketBuffer *vqueue = video_thread ? video_thread->packetQueue() : 0;
+    if(aqueue)
+        aqueue->setIsInfinite(audioBufferInfinite);
+    if(vqueue)
+        vqueue->setIsInfinite(videoBufferInfinite);
     // aqueue as a primary buffer: music with/without cover
     AVThread* thread = !video_thread || (audio_thread && demuxer->hasAttacedPicture()) ? audio_thread : video_thread;
     m_buffer = thread->packetQueue();
