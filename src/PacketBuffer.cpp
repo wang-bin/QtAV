@@ -116,7 +116,7 @@ bool PacketBuffer::checkEnough() const
 
 bool PacketBuffer::checkFull() const
 {
-    return buffered() >= qint64(qreal(bufferValue())*bufferMax());
+    return !checkInfinite() && buffered() >= qint64(qreal(bufferValue())*bufferMax());
 }
 
 void PacketBuffer::onPut(const Packet &p)

@@ -40,6 +40,13 @@ public:
     BlockingQueue();
     virtual ~BlockingQueue() {}
 
+    /*!
+     * \brief setIsInfinite
+     *      when it set to true, 'checkFull' and 'isFull' will ignore capacity and always return false.
+     * \param isInfinite (default false)
+     */
+    void setIsInfinite(bool isInfinite);
+
     void setCapacity(int max); //enqueue is allowed if less than capacity
     /*!
      * \brief setThreshold
@@ -80,6 +87,7 @@ public:
     inline int size() const;
     inline int threshold() const;
     inline int capacity() const;
+    inline bool isInfinite() const;
 
     class StateChangeCallback
     {
@@ -96,11 +104,12 @@ protected:
      * \brief checkFull
      * Check whether the queue is full. Default implemention is compare queue size to capacity.
      * Full is now a more generic notion. You can implement it as checking queued bytes etc.
-     * \return true if queue is full
+     * \return true when the queue is full and 'isInfinite' is set to false.
      */
     virtual bool checkFull() const;
     virtual bool checkEmpty() const;
     virtual bool checkEnough() const;
+    virtual bool checkInfinite() const;
 
     virtual void onPut(const T&) {}
     virtual void onTake(const T&) {}
@@ -114,6 +123,7 @@ private:
     QWaitCondition cond_full, cond_empty;
     //upto_threshold_callback, downto_threshold_callback
     QScopedPointer<StateChangeCallback> empty_callback, threshold_callback, full_callback;
+    bool infinite;
 };
 
 /* cap - thres = 24, about 1s
@@ -125,7 +135,24 @@ BlockingQueue<T, Container>::BlockingQueue()
     , empty_callback(0)
     , threshold_callback(0)
     , full_callback(0)
+    , infinite(false)
 {
+}
+
+template<typename T, template <typename> class Container>
+bool BlockingQueue<T, Container>::isInfinite() const
+{
+    QReadLocker locker(&lock);
+    Q_UNUSED(locker);
+    return infinite;
+}
+
+template<typename T, template <typename> class Container>
+void BlockingQueue<T, Container>::setIsInfinite(bool infinite)
+{
+    QWriteLocker locker(&lock);
+    Q_UNUSED(locker);
+    this->infinite = infinite;
 }
 
 template <typename T, template <typename> class Container>
@@ -275,7 +302,7 @@ bool BlockingQueue<T, Container>::isFull() const
 {
     QReadLocker locker(&lock);
     Q_UNUSED(locker);
-    return queue.size() >= cap;
+    return !infinite && queue.size() >= cap;
 }
 
 template <typename T, template <typename> class Container>
@@ -299,7 +326,7 @@ int BlockingQueue<T, Container>::capacity() const
 {
     QReadLocker locker(&lock);
     Q_UNUSED(locker);
-    return cap;
+    return infinite?cap:INT_MAX;
 }
 
 template <typename T, template <typename> class Container>
@@ -329,7 +356,7 @@ void BlockingQueue<T, Container>::setFullCallback(StateChangeCallback *call)
 template <typename T, template <typename> class Container>
 bool BlockingQueue<T, Container>::checkFull() const
 {
-    return queue.size() >= cap;
+    return !infinite && queue.size() >= cap;
 }
 
 template <typename T, template <typename> class Container>
@@ -342,6 +369,12 @@ template <typename T, template <typename> class Container>
 bool BlockingQueue<T, Container>::checkEnough() const
 {
     return queue.size() >= thres && !checkEmpty();
+}
+
+template <typename T, template <typename> class Container>
+bool BlockingQueue<T, Container>::checkInfinite() const
+{
+    return infinite;
 }
 } //namespace QtAV
 #endif // QTAV_BLOCKINGQUEUE_H

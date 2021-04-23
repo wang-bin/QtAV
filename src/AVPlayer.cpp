@@ -471,6 +471,26 @@ void AVPlayer::setMediaEndAction(MediaEndAction value)
     d->read_thread->setMediaEndAction(value);
 }
 
+bool AVPlayer::isAudioBufferInfinite() const
+{
+    return d->read_thread->isAudioBufferInfinite();
+}
+
+void AVPlayer::setIsAudioBufferInfinite(const bool &value)
+{
+    d->read_thread->setIsAudioBufferInfinite(value);
+}
+
+bool AVPlayer::isVideoBufferInfinite() const
+{
+    return d->read_thread->isVideoBufferInfinite();
+}
+
+void AVPlayer::setIsVideoBufferInfinite(const bool &value)
+{
+    d->read_thread->setIsVideoBufferInfinite(value);
+}
+
 MediaEndAction AVPlayer::mediaEndAction() const
 {
     return d->end_action;
