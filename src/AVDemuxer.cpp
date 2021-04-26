@@ -477,6 +477,11 @@ bool AVDemuxer::readFrame()
         qWarning("[AVDemuxer] error: %s", av_err2str(ret));
         av_packet_unref(&packet); //important!
         return false;
+    } else {
+        // (under infinite buffer mode...)
+        // calling the 'av_read_frame' too fast will cause the 'av_read_frame' return 'eof', but it is not over in fact.
+        // -Gim
+        d->eof = false;
     }
     d->stream = packet.stream_index;
     //check whether the 1st frame is alreay got. emit only once

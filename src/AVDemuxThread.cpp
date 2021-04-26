@@ -674,6 +674,14 @@ void AVDemuxThread::run()
 
     AutoSem as(&sem);
     Q_UNUSED(as);
+
+    if(false){
+seek_again:
+        last_apts = 0;
+        last_vpts = 0;
+        end = false;
+    }
+
     while (!end) {
         processNextSeekTask();
         //vthread maybe changed by AVPlayer.setPriority() from no dec case
@@ -733,7 +741,14 @@ void AVDemuxThread::run()
             continue; //the queue is empty and will block
         }
         updateBufferState();
-        if (!demuxer->readFrame()) {
+        if(audioBufferInfinite || videoBufferInfinite){
+            for(int i = 0; i < 500 ; ++i){ // 5 second to avoid 'eof'.... -Gim
+                if(demuxer->readFrame()){
+                   break;
+                }
+                msleep(10);
+            }
+        } else if (!demuxer->readFrame()) {
             continue;
         }
         stream = demuxer->stream();
@@ -818,26 +833,34 @@ void AVDemuxThread::run()
             continue;
         }
     }
-    m_buffering = false;
-    m_buffer = 0;
     while (audio_thread && audio_thread->isRunning()) {
         qDebug("waiting audio thread.......");
-        Packet quit_pkt(Packet::createEOF());
-        quit_pkt.position = 0;
-        aqueue->put(quit_pkt);
-        aqueue->blockEmpty(false); //FIXME: why need this
+        if(!seek_tasks.isEmpty())
+            goto seek_again;
+        if(aqueue->isEmpty()){
+            Packet quit_pkt(Packet::createEOF());
+            quit_pkt.position = 0;
+            aqueue->put(quit_pkt);
+            aqueue->blockEmpty(false); //FIXME: why need this
+        }
         audio_thread->pause(false);
         audio_thread->wait(500);
     }
     while (video_thread && video_thread->isRunning()) {
+        if(!seek_tasks.isEmpty())
+            goto seek_again;
         qDebug("waiting video thread.......");
-        Packet quit_pkt(Packet::createEOF());
-        quit_pkt.position = 0;
-        vqueue->put(quit_pkt);
-        vqueue->blockEmpty(false);
+        if(aqueue->isEmpty()){
+            Packet quit_pkt(Packet::createEOF());
+            quit_pkt.position = 0;
+            vqueue->put(quit_pkt);
+            vqueue->blockEmpty(false);
+        }
         video_thread->pause(false);
         video_thread->wait(500);
     }
+    m_buffering = false;
+    m_buffer = 0;
     thread->disconnect(this, SIGNAL(seekFinished(qint64)));
     qDebug("Demux thread stops running....");
     if (demuxer->atEnd())
