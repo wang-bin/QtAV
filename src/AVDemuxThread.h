@@ -62,6 +62,11 @@ public:
     bool waitForStarted(int msec = -1);
     qint64 lastSeekPos();
     bool hasSeekTasks();
+
+    bool isAudioBufferInfinite() const;
+    void setIsAudioBufferInfinite(const bool &value);
+    bool isVideoBufferInfinite() const;
+    void setIsVideoBufferInfinite(const bool &value);
 Q_SIGNALS:
     void requestClockPause(bool value);
     void mediaEndActionPauseTriggered();
@@ -90,7 +95,7 @@ private:
     void setAVThread(AVThread *&pOld, AVThread* pNew);
     void newSeekRequest(QRunnable *r);
     void processNextSeekTask();
-    void seekInternal(qint64 pos, SeekType type, qint64 external_pos = std::numeric_limits < qint64 >::min()); //must call in AVDemuxThread
+    void seekInternal(qint64 pos, SeekType type, qint64 external_pos = (std::numeric_limits<qint64>::min)()); //must call in AVDemuxThread
     void pauseInternal(bool value);
 
     bool paused;
@@ -116,6 +121,8 @@ private:
     int clock_type; // change happens in different threads(direct connection)
     friend class SeekTask;
     friend class stepBackwardTask;
+    bool audioBufferInfinite;
+    bool videoBufferInfinite;
 };
 
 } //namespace QtAV

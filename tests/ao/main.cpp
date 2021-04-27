@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 
     /* initialise sinusoidal wavetable */
     for(int i=0; i<kTableSize; i++) {
-        sin_table[i] = (qint16)((double)std::numeric_limits<qint16>::max() * sin(((double)i/(double)kTableSize)*3.1415926*2.0));
+        sin_table[i] = (qint16)((double)(std::numeric_limits<qint16>::max)() * sin(((double)i/(double)kTableSize)*3.1415926*2.0));
     }
 
     QCoreApplication app(argc, argv); //only used qapp to get parameter easily

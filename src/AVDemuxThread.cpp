@@ -87,6 +87,8 @@ AVDemuxThread::AVDemuxThread(QObject *parent) :
   , current_seek_task(nullptr)
   , stepping(false)
   , stepping_timeout_time(0)
+  , audioBufferInfinite(false)
+  , videoBufferInfinite(false)
 {
     seek_tasks.setCapacity(1);
     seek_tasks.blockFull(false);
@@ -104,6 +106,8 @@ AVDemuxThread::AVDemuxThread(AVDemuxer *dmx, QObject *parent) :
   , current_seek_task(nullptr)
   , stepping(false)
   , stepping_timeout_time(0)
+  , audioBufferInfinite(false)
+  , videoBufferInfinite(false)
 {
     setDemuxer(dmx);
     seek_tasks.setCapacity(1);
@@ -140,11 +144,17 @@ void AVDemuxThread::setAVThread(AVThread*& pOld, AVThread *pNew)
 
 void AVDemuxThread::setAudioThread(AVThread *thread)
 {
+    auto aqueue = thread ? thread->packetQueue() : 0;
+    if(aqueue)
+        aqueue->setIsInfinite(audioBufferInfinite);
     setAVThread(audio_thread, thread);
 }
 
 void AVDemuxThread::setVideoThread(AVThread *thread)
 {
+    auto vqueue = thread ? thread->packetQueue() : 0;
+    if(vqueue)
+        vqueue->setIsInfinite(videoBufferInfinite);
     setAVThread(video_thread, thread);
 }
 
@@ -306,7 +316,7 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type, qint64 external_pos)
         Q_ASSERT(sync_id != 0);
         qDebug("demuxer sync id: %d/%d", sync_id, t->clock()->syncId());
         t->packetQueue()->clear();
-        if (external_pos != std::numeric_limits < qint64 >::min() )
+        if (external_pos != (std::numeric_limits<qint64>::min)() )
             t->clock()->updateExternalClock(qMax(qint64(0), external_pos));
         t->clock()->updateValue(double(pos)/1000.0);
         last_seek_pos = pos;
@@ -365,6 +375,32 @@ bool AVDemuxThread::hasSeekTasks()
         finishedStepBackward();
     }
     return !seek_tasks.isEmpty() || current_seek_task || stepping;
+}
+
+bool AVDemuxThread::isAudioBufferInfinite() const
+{
+    return audioBufferInfinite;
+}
+
+void AVDemuxThread::setIsAudioBufferInfinite(const bool &value)
+{
+    audioBufferInfinite = value;
+    PacketBuffer *aqueue = audio_thread ? audio_thread->packetQueue() : 0;
+    if(aqueue)
+        aqueue->setIsInfinite(audioBufferInfinite);
+}
+
+bool AVDemuxThread::isVideoBufferInfinite() const
+{
+    return videoBufferInfinite;
+}
+
+void AVDemuxThread::setIsVideoBufferInfinite(const bool &value)
+{
+    videoBufferInfinite = value;
+    PacketBuffer *vqueue = video_thread ? video_thread->packetQueue() : 0;
+    if(vqueue)
+        vqueue->setIsInfinite(videoBufferInfinite);
 }
 
 qint64 AVDemuxThread::lastSeekPos()
@@ -590,7 +626,7 @@ void AVDemuxThread::onAVThreadQuit()
 
 bool AVDemuxThread::waitForStarted(int msec)
 {
-    if (!sem.tryAcquire(1, msec > 0 ? msec : std::numeric_limits<int>::max()))
+    if (!sem.tryAcquire(1, msec > 0 ? msec : (std::numeric_limits<int>::max)()))
         return false;
     sem.release(1); //ensure other waitForStarted() calls continue
     return true;
@@ -611,6 +647,10 @@ void AVDemuxThread::run()
     qDebug("get av queue a/v thread = %p %p", audio_thread, video_thread);
     PacketBuffer *aqueue = audio_thread ? audio_thread->packetQueue() : 0;
     PacketBuffer *vqueue = video_thread ? video_thread->packetQueue() : 0;
+    if(aqueue)
+        aqueue->setIsInfinite(audioBufferInfinite);
+    if(vqueue)
+        vqueue->setIsInfinite(videoBufferInfinite);
     // aqueue as a primary buffer: music with/without cover
     AVThread* thread = !video_thread || (audio_thread && demuxer->hasAttacedPicture()) ? audio_thread : video_thread;
     m_buffer = thread->packetQueue();
@@ -634,6 +674,14 @@ void AVDemuxThread::run()
 
     AutoSem as(&sem);
     Q_UNUSED(as);
+
+    if(false){
+seek_again:
+        last_apts = 0;
+        last_vpts = 0;
+        end = false;
+    }
+
     while (!end) {
         processNextSeekTask();
         //vthread maybe changed by AVPlayer.setPriority() from no dec case
@@ -693,7 +741,14 @@ void AVDemuxThread::run()
             continue; //the queue is empty and will block
         }
         updateBufferState();
-        if (!demuxer->readFrame()) {
+        if(audioBufferInfinite || videoBufferInfinite){
+            for(int i = 0; i < 500 ; ++i){ // 5 second to avoid 'eof'.... -Gim
+                if(demuxer->readFrame()){
+                   break;
+                }
+                msleep(10);
+            }
+        } else if (!demuxer->readFrame()) {
             continue;
         }
         stream = demuxer->stream();
@@ -752,7 +807,7 @@ void AVDemuxThread::run()
                 }
                 // must ensure bufferValue set correctly before continue
                 if (m_buffer != aqueue)
-                    aqueue->setBufferValue(m_buffer->isBuffering() ? std::numeric_limits<qint64>::max() : buf2);
+                    aqueue->setBufferValue(m_buffer->isBuffering() ? (std::numeric_limits<qint64>::max)() : buf2);
                 // always block full if no vqueue because empty callback may set false
                 // attached picture is cover for song, 1 frame
                 aqueue->blockFull(!video_thread || !video_thread->isRunning() || !vqueue || audio_has_pic);
@@ -778,26 +833,34 @@ void AVDemuxThread::run()
             continue;
         }
     }
-    m_buffering = false;
-    m_buffer = 0;
     while (audio_thread && audio_thread->isRunning()) {
         qDebug("waiting audio thread.......");
-        Packet quit_pkt(Packet::createEOF());
-        quit_pkt.position = 0;
-        aqueue->put(quit_pkt);
-        aqueue->blockEmpty(false); //FIXME: why need this
+        if(!seek_tasks.isEmpty())
+            goto seek_again;
+        if(aqueue->isEmpty()){
+            Packet quit_pkt(Packet::createEOF());
+            quit_pkt.position = 0;
+            aqueue->put(quit_pkt);
+            aqueue->blockEmpty(false); //FIXME: why need this
+        }
         audio_thread->pause(false);
         audio_thread->wait(500);
     }
     while (video_thread && video_thread->isRunning()) {
+        if(!seek_tasks.isEmpty())
+            goto seek_again;
         qDebug("waiting video thread.......");
-        Packet quit_pkt(Packet::createEOF());
-        quit_pkt.position = 0;
-        vqueue->put(quit_pkt);
-        vqueue->blockEmpty(false);
+        if(aqueue->isEmpty()){
+            Packet quit_pkt(Packet::createEOF());
+            quit_pkt.position = 0;
+            vqueue->put(quit_pkt);
+            vqueue->blockEmpty(false);
+        }
         video_thread->pause(false);
         video_thread->wait(500);
     }
+    m_buffering = false;
+    m_buffer = 0;
     thread->disconnect(this, SIGNAL(seekFinished(qint64)));
     qDebug("Demux thread stops running....");
     if (demuxer->atEnd())

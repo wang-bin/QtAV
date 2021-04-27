@@ -471,6 +471,26 @@ void AVPlayer::setMediaEndAction(MediaEndAction value)
     d->read_thread->setMediaEndAction(value);
 }
 
+bool AVPlayer::isAudioBufferInfinite() const
+{
+    return d->read_thread->isAudioBufferInfinite();
+}
+
+void AVPlayer::setIsAudioBufferInfinite(const bool &value)
+{
+    d->read_thread->setIsAudioBufferInfinite(value);
+}
+
+bool AVPlayer::isVideoBufferInfinite() const
+{
+    return d->read_thread->isVideoBufferInfinite();
+}
+
+void AVPlayer::setIsVideoBufferInfinite(const bool &value)
+{
+    d->read_thread->setIsVideoBufferInfinite(value);
+}
+
 MediaEndAction AVPlayer::mediaEndAction() const
 {
     return d->end_action;
@@ -917,7 +937,7 @@ void AVPlayer::setRepeat(int max)
 {
     d->repeat_max = max;
     if (d->repeat_max < 0)
-        d->repeat_max = std::numeric_limits<int>::max();
+        d->repeat_max = (std::numeric_limits<int>::max)();
     Q_EMIT repeatChanged(d->repeat_max);
 }
 

@@ -41,13 +41,13 @@ AVFormatConfigPage::AVFormatConfigPage(QWidget *parent) :
     gl->addWidget(m_direct, r++, 0);
     gl->addWidget(new QLabel(tr("Probe size")), r, 0, Qt::AlignRight);
     m_probeSize = new QSpinBox();
-    m_probeSize->setMaximum(std::numeric_limits<int>::max());
+    m_probeSize->setMaximum((std::numeric_limits<int>::max)());
     m_probeSize->setMinimum(0);
     m_probeSize->setToolTip(tr("0: auto"));
     gl->addWidget(m_probeSize, r++, 1, Qt::AlignLeft);
     gl->addWidget(new QLabel(tr("Max analyze duration")), r, 0, Qt::AlignRight);
     m_analyzeDuration = new QSpinBox();
-    m_analyzeDuration->setMaximum(std::numeric_limits<int>::max());
+    m_analyzeDuration->setMaximum((std::numeric_limits<int>::max)());
     m_analyzeDuration->setToolTip(tr("0: auto. how many microseconds are analyzed to probe the input"));
     gl->addWidget(m_analyzeDuration, r++, 1, Qt::AlignLeft);
 
