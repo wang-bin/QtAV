@@ -917,7 +917,7 @@ void AVPlayer::setRepeat(int max)
 {
     d->repeat_max = max;
     if (d->repeat_max < 0)
-        d->repeat_max = std::numeric_limits<int>::max();
+        d->repeat_max = (std::numeric_limits<int>::max)();
     Q_EMIT repeatChanged(d->repeat_max);
 }
 

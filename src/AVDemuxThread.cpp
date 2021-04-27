@@ -306,7 +306,7 @@ void AVDemuxThread::seekInternal(qint64 pos, SeekType type, qint64 external_pos)
         Q_ASSERT(sync_id != 0);
         qDebug("demuxer sync id: %d/%d", sync_id, t->clock()->syncId());
         t->packetQueue()->clear();
-        if (external_pos != std::numeric_limits < qint64 >::min() )
+        if (external_pos != (std::numeric_limits<qint64>::min)() )
             t->clock()->updateExternalClock(qMax(qint64(0), external_pos));
         t->clock()->updateValue(double(pos)/1000.0);
         last_seek_pos = pos;
@@ -590,7 +590,7 @@ void AVDemuxThread::onAVThreadQuit()
 
 bool AVDemuxThread::waitForStarted(int msec)
 {
-    if (!sem.tryAcquire(1, msec > 0 ? msec : std::numeric_limits<int>::max()))
+    if (!sem.tryAcquire(1, msec > 0 ? msec : (std::numeric_limits<int>::max)()))
         return false;
     sem.release(1); //ensure other waitForStarted() calls continue
     return true;
@@ -752,7 +752,7 @@ void AVDemuxThread::run()
                 }
                 // must ensure bufferValue set correctly before continue
                 if (m_buffer != aqueue)
-                    aqueue->setBufferValue(m_buffer->isBuffering() ? std::numeric_limits<qint64>::max() : buf2);
+                    aqueue->setBufferValue(m_buffer->isBuffering() ? (std::numeric_limits<qint64>::max)() : buf2);
                 // always block full if no vqueue because empty callback may set false
                 // attached picture is cover for song, 1 frame
                 aqueue->blockFull(!video_thread || !video_thread->isRunning() || !vqueue || audio_has_pic);
