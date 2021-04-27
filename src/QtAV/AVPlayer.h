@@ -479,12 +479,12 @@ public Q_SLOTS:
      *  pos < 0: duration() + pos
      * With the default value, the playback will not stop until the end of media (including dynamically changed media duration, e.g. recording video)
      */
-    void setStopPosition(qint64 pos = std::numeric_limits<qint64>::max());
+    void setStopPosition(qint64 pos = (std::numeric_limits<qint64>::max)());
     /*!
      * \brief setTimeRange
      * Set startPosition and stopPosition. Make sure start <= stop.
      */
-    void setTimeRange(qint64 start, qint64 stop = std::numeric_limits<qint64>::max());
+    void setTimeRange(qint64 start, qint64 stop = (std::numeric_limits<qint64>::max)());
 
     bool isSeekable() const;
     /*!

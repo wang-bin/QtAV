@@ -355,7 +355,7 @@ void AVThread::setStatistics(Statistics *statistics)
 
 bool AVThread::waitForStarted(int msec)
 {
-    if (!d_func().sem.tryAcquire(1, msec > 0 ? msec : std::numeric_limits<int>::max()))
+    if (!d_func().sem.tryAcquire(1, msec > 0 ? msec : (std::numeric_limits<int>::max)()))
         return false;
     d_func().sem.release(1); //ensure another waitForStarted() continues
     return true;

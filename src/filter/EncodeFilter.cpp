@@ -117,7 +117,7 @@ void AudioEncodeFilter::finish()
         return;
     qDebug("About finish audio encoding");
     AudioFrame f;
-    f.setTimestamp(std::numeric_limits<qreal>::max());
+    f.setTimestamp((std::numeric_limits<qreal>::max)());
     if (isAsync()) {
         Q_EMIT requestToEncode(f);
     } else {
@@ -160,7 +160,7 @@ void AudioEncodeFilter::encode(const AudioFrame& frame)
         }
         Q_EMIT readyToEncode();
     }
-    if (!frame.isValid() && frame.timestamp() == std::numeric_limits<qreal>::max()) {
+    if (!frame.isValid() && frame.timestamp() == (std::numeric_limits<qreal>::max)()) {
         while (d.enc->encode()) {
             qDebug("encode delayed audio frames...");
             Q_EMIT frameEncoded(d.enc->encoded());
@@ -350,7 +350,7 @@ void VideoEncodeFilter::encode(const VideoFrame& frame)
     if (f.pixelFormat() != d.enc->pixelFormat() || d.enc->width() != f.width() || d.enc->height() != f.height())
         f = f.to(d.enc->pixelFormat(), QSize(d.enc->width(), d.enc->height()));
     if (!d.enc->encode(f)) {
-        if (f.timestamp() == std::numeric_limits<qreal>::max()) {
+        if (f.timestamp() == (std::numeric_limits<qreal>::max)()) {
             Q_EMIT finished();
             d.finishing = 0;
         }
