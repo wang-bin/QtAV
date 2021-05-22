@@ -34,7 +34,7 @@ public:
 
 public:
     explicit OpenGLWidgetRenderer(QWidget* parent /TransferThis/ = 0, Qt::WindowFlags f = 0);
-    virtual VideoRendererId id();
+    VideoRendererId id() const;
     virtual QWidget* widget();
 
 signals:

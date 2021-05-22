@@ -34,7 +34,7 @@ public:
 
 public:
     GraphicsItemRenderer(QGraphicsItem* parent /TransferThis/ = 0);
-    virtual VideoRendererId id();
+    VideoRendererId id();
 
     bool isSupported(VideoFormat::PixelFormat pixfmt);
 

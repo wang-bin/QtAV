@@ -24,7 +24,7 @@ public:
 
 public:
     WidgetRenderer(QWidget* parent /TransferThis/ = 0, Qt::WindowFlags f = 0);
-    virtual VideoRendererId id();
+    VideoRendererId id();
     virtual QWidget* widget();
 
 signals:

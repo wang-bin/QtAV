@@ -193,6 +193,12 @@ bool AudioOutputDSound::close()
     available = false;
     destroy();
     CloseHandle(notify_event); // FIXME: is it ok if thread is still waiting?
+
+    // Wait for the PositionWatcher thread to stop.
+    while (watcher.isRunning()) {
+        watcher.wait(500);
+    }
+
     return true;
 }
 
