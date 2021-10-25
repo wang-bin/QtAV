@@ -472,7 +472,11 @@ QVariantList AVPlayer::Private::getTracksInfo(AVDemuxer *demuxer, AVDemuxer::Str
         AVStream *stream = demuxer->formatContext()->streams[s];
         AVCodecContext *ctx = stream->codec;
         if (ctx) {
-            t[QStringLiteral("codec")] = QByteArray(avcodec_descriptor_get(ctx->codec_id)->name);
+            const AVCodecDescriptor* codec_desc = avcodec_descriptor_get(ctx->codec_id);
+            if (codec_desc)
+                t[QStringLiteral("codec")] = QByteArray(codec_desc->name);
+            else
+                continue;
             if (ctx->extradata)
                 t[QStringLiteral("extra")] = QByteArray((const char*)ctx->extradata, ctx->extradata_size);
         }
@@ -503,6 +507,8 @@ bool AVPlayer::Private::applySubtitleStream(int n, AVPlayer *player)
         return false;
     // FIXME: AVCodecDescriptor.name and AVCodec.name are different!
     const AVCodecDescriptor *codec_desc = avcodec_descriptor_get(ctx->codec_id);
+    if (!codec_desc)
+        return false;
     QByteArray codec(codec_desc->name);
     if (ctx->extradata)
         Q_EMIT player->internalSubtitleHeaderRead(codec, QByteArray((const char*)ctx->extradata, ctx->extradata_size));
