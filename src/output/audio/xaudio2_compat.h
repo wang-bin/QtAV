@@ -1,6 +1,6 @@
 /******************************************************************************
     XAudio2 compat layer with both DXSDK and WINSDK support
-    Copyright (C) 2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2015-2020 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -177,7 +177,7 @@ DEFINE_IID(IXAudio2, 8bcf1f58, 9fe7, 4583, 8a, c6, e2, ad, c4, 65, c8, bb);
 // Flags
 // NOTE: XAUDIO2_DEBUG_ENGINE is NOT defined in winsdk!!!
 #define XAUDIO2_DEBUG_ENGINE            0x0001        // Used in XAudio2Create on Windows only
-HRESULT XAudio2Create(__deref_out IXAudio2** ppXAudio2, UINT32 Flags X2DEFAULT(0),
+HRESULT __stdcall XAudio2Create(__deref_out IXAudio2** ppXAudio2, UINT32 Flags X2DEFAULT(0),
                                XAUDIO2_PROCESSOR XAudio2Processor X2DEFAULT(XAUDIO2_DEFAULT_PROCESSOR))
 {
     // Instantiate the appropriate XAudio2 engine
@@ -201,7 +201,7 @@ HRESULT XAudio2Create(__deref_out IXAudio2** ppXAudio2, UINT32 Flags X2DEFAULT(0
 }
 #else
 #ifndef _XBOX
-HRESULT XAudio2Create(__deref_out IXAudio2** ppXAudio2, UINT32 Flags X2DEFAULT(0),
+HRESULT __stdcall XAudio2Create(__deref_out IXAudio2** ppXAudio2, UINT32 Flags X2DEFAULT(0),
                                XAUDIO2_PROCESSOR XAudio2Processor X2DEFAULT(XAUDIO2_DEFAULT_PROCESSOR))
 {
     return ::XAudio2Create(ppXAudio2, Flags, XAudio2Processor);
