@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2013)
 
@@ -49,7 +49,7 @@ static void log_helper(QtMsgType msgType, const QMessageLogger *qlog, const char
     QString qmsg(gQtAVLogTag);
     QString formated;
     if (msg) {
-        formated = QString().vsprintf(msg, ap);
+        formated = QString().vasprintf(msg, ap);
     }
     // repeate check
     if (last_type == msgType && last_msg == formated) {

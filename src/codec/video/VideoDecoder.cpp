@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -85,7 +85,12 @@ static void VideoDecoder_RegisterAll()
 QVector<VideoDecoderId> VideoDecoder::registered()
 {
     VideoDecoder_RegisterAll();
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    const auto ids = VideoDecoderFactory::Instance().registeredIds();
+    return {ids.begin(), ids.end()};
+#else
     return QVector<VideoDecoderId>::fromStdVector(VideoDecoderFactory::Instance().registeredIds());
+#endif
 }
 
 QStringList VideoDecoder::supportedCodecs()

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -28,12 +28,19 @@
 #include <QtCore/QFileInfo>
 #include <QtCore/QIODevice>
 #include <QtCore/QList>
-#include <QtCore/QRegExp>
 #include <QtCore/QRunnable>
 #include <QtCore/QThreadPool>
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #include <QtCore/QTextCodec>
+#endif
 #include <QtCore/QTextStream>
 #include <QtCore/QMutexLocker>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QtCore/QRegularExpression>
+using QRegExp = QRegularExpression;
+#else
+#include <QtCore/QRegExp>
+#endif
 #include "subtitle/CharsetDetector.h"
 #include "utils/Logger.h"
 
@@ -724,15 +731,23 @@ QStringList Subtitle::Private::find()
     foreach (const QString& suf, sfx) {
         if (list.isEmpty())
             break;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        auto rx = QRegularExpression::fromWildcard(QStringLiteral("*.") + suf);
+#else
         QRegExp rx(QStringLiteral("*.") + suf);
         rx.setPatternSyntax(QRegExp::Wildcard);
+#endif
         QFileInfoList::iterator it = list.begin();
         while (it != list.end()) {
             if (!it->fileName().startsWith(name) && !it->fileName().startsWith(base_name)) {// why it happens?
                 it = list.erase(it);
                 continue;
             }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+            if (!rx.match(it->fileName()).hasMatch()) {
+#else
             if (!rx.exactMatch(it->fileName())) {
+#endif
                 ++it;
                 continue;
             }
@@ -761,6 +776,7 @@ QByteArray Subtitle::Private::readFromFile(const QString &path)
     }
     QTextStream ts(&f);
     ts.setAutoDetectUnicode(true);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
     if (!codec.isEmpty()) {
         if (codec.toLower() == "system") {
             ts.setCodec(QTextCodec::codecForLocale());
@@ -777,6 +793,7 @@ QByteArray Subtitle::Private::readFromFile(const QString &path)
             ts.setCodec(QTextCodec::codecForName(codec));
         }
     }
+#endif
     return ts.readAll().toUtf8();
 }
 

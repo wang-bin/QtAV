@@ -3,6 +3,7 @@ MODULE_INCNAME = QtAVWidgets # for mac framework. also used in install_sdk.pro
 TARGET = QtAVWidgets
 QT += gui
 config_gl: QT += opengl
+greaterThan(QT_MAJOR_VERSION, 5): QT += openglwidgets
 greaterThan(QT_MAJOR_VERSION, 4) {
   # qtHaveModule does not exist in Qt5.0
   qtHaveModule(widgets) {
@@ -74,7 +75,7 @@ contains(QT_CONFIG, opengl):greaterThan(QT_MAJOR_VERSION, 4) {
   }
 }
 
-config_gl {
+lessThan(QT_MAJOR_VERSION, 6):config_gl {
   DEFINES *= QTAV_HAVE_GL=1
   SOURCES += GLWidgetRenderer2.cpp
   SDK_HEADERS += QtAVWidgets/GLWidgetRenderer2.h

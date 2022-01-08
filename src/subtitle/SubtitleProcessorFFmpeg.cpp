@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -26,6 +26,7 @@
 #include "QtAV/private/AVCompat.h"
 #include "PlainText.h"
 #include "utils/Logger.h"
+#include <QIODevice>
 
 namespace QtAV {
 

@@ -1,6 +1,6 @@
 /******************************************************************************
     QOptions: make command line options easy. https://github.com/wang-bin/qoptions
-    Copyright (C) 2011-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2011-2022 Wang Bin <wbsecg1@gmail.com>
 
 	This program is free software; you can redistribute it and/or modify
 	it under the terms of the GNU General Public License as published by
@@ -241,7 +241,7 @@ bool QOptions::parse(int argc, const char *const*argv)
                 QString sname = it_list->shortName();
 				int sname_len = sname.length(); //usally is 1
                 //TODO: startsWith(-height,-h) Not endsWith, -oabco
-                if (it->midRef(1).compare(sname) == 0) {
+                if (it->mid(1).compare(sname) == 0) {
                     if (it_list->type() == QOption::NoToken) {
                         it_list->setValue(true);
 						it = args.erase(it);

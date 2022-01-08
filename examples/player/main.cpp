@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -144,15 +144,33 @@ int main(int argc, char *argv[])
         QString aos(op.value().toString());
         QStringList ao;
         if (aos.contains(QString::fromLatin1(";")))
-            ao = aos.split(QString::fromLatin1(";"), QString::SkipEmptyParts);
+            ao = aos.split(QString::fromLatin1(";"),
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+            Qt::SkipEmptyParts
+#else
+            QString::SkipEmptyParts
+#endif
+            );
         else
-            ao = aos.split(QString::fromLatin1(","), QString::SkipEmptyParts);
+            ao = aos.split(QString::fromLatin1(","),
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+            Qt::SkipEmptyParts
+#else
+            QString::SkipEmptyParts
+#endif
+            );
         window.setAudioBackends(ao);
     }
 
     op = options.option(QString::fromLatin1("vd"));
     if (op.isSet()) {
-        QStringList vd = op.value().toString().split(QString::fromLatin1(";"), QString::SkipEmptyParts);
+        QStringList vd = op.value().toString().split(QString::fromLatin1(";"),
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+            Qt::SkipEmptyParts
+#else
+            QString::SkipEmptyParts
+#endif
+        );
         if (!vd.isEmpty())
             window.setVideoDecoderNames(vd);
     }

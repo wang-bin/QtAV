@@ -1,6 +1,6 @@
 /******************************************************************************
     this file is part of QtAV examples
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -21,7 +21,7 @@
 #include "videoplayer.h"
 #include <QGraphicsView>
 
-#ifndef QT_NO_OPENGL
+#if !defined(QT_NO_OPENGL) && QT_VERSION < QT_VERSION_CHECK(6,0,0)
 #include <QtOpenGL/QGLWidget>
 #endif
 

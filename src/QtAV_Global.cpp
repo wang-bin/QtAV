@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2019 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,7 +22,12 @@
 #include "QtAV/QtAV_Global.h"
 #include <QtCore/QLibraryInfo>
 #include <QtCore/QObject>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QtCore/QRegularExpression>
+using QRegExp = QRegularExpression;
+#else
 #include <QtCore/QRegExp>
+#endif
 #include "QtAV/version.h"
 #include "QtAV/private/AVCompat.h"
 #include "utils/internal.h"
@@ -85,14 +90,13 @@ static unsigned get_qt_version() {
 static const depend_component* get_depend_component(const depend_component* info = 0)
 {
     // DO NOT use QStringLiteral here because the install script use strings to search "Qt-" in the library. QStringLiteral will place it in .ro and strings can not find it
-    static const QByteArray qt_license(QLibraryInfo::licensee().prepend(QLatin1String("Qt-" QT_VERSION_STR " licensee: ")).toUtf8());
 #if QT_VERSION >= QT_VERSION_CHECK(5, 3, 0)
     static const char* qt_build_info = get_qt_version() >= QT_VERSION_CHECK(5, 3, 0) ? QLibraryInfo::build() : "";
 #else
     static const char* qt_build_info = "";
 #endif
     static const depend_component components[] = {
-        {  "Qt", QT_VERSION, get_qt_version(), qt_build_info, qt_license.constData() },
+        {  "Qt", QT_VERSION, get_qt_version(), qt_build_info, "" },
         //TODO: auto check loaded libraries
 #define FF_COMPONENT(name, NAME) #name, LIB##NAME##_VERSION_INT, name##_version(), name##_configuration(), name##_license()
         { FF_COMPONENT(avutil, AVUTIL) },
@@ -259,7 +263,7 @@ static void qtav_ffmpeg_log_callback(void* ctx, int level,const char* fmt, va_li
     if (level > Internal::gAVLogLevel)
         return;
     AVClass *c = ctx ? *(AVClass**)ctx : 0;
-    QString qmsg = QString().sprintf("[FFmpeg:%s] ", c ? c->item_name(ctx) : "?") + QString().vsprintf(fmt, vl);
+    QString qmsg = QString().asprintf("[FFmpeg:%s] ", c ? c->item_name(ctx) : "?") + QString().vasprintf(fmt, vl);
     qmsg = qmsg.trimmed();
     if (level > AV_LOG_WARNING)
         qDebug() << qPrintable(qmsg);
@@ -465,6 +469,6 @@ namespace {
     public:
         ResourceLoader() { initResources(); }
     };
-    
+
     ResourceLoader QtAV_QRCLoader;
 }

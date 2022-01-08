@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -79,7 +79,7 @@ void QPainterRenderer::drawBackground()
     const QRegion bgRegion(backgroundRegion());
     if (bgRegion.isEmpty())
         return;
-#if 0
+#if 1
     d.painter->save();
     d.painter->setClipRegion(bgRegion);
     d.painter->fillRect(QRect(QPoint(), rendererSize()), backgroundColor());

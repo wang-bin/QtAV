@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -28,7 +28,7 @@
 #include <QtGui/QMatrix4x4>
 #include <QtCore/QObject>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 0, 0)
-#include <QtGui/QOpenGLContext>
+#include <QOpenGLContext>
 #else
 #include <QtOpenGL/QGLContext>
 #define QOpenGLContext QGLContext

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2015)
 
@@ -198,10 +198,17 @@ static void getFFmpegOutputFormats(QStringList* formats, QStringList* extensions
         AVOutputFormat *o = NULL;
         while ((o = av_oformat_next(o))) {
 #endif
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+            if (o->extensions)
+                e << QString::fromLatin1(o->extensions).split(QLatin1Char(','), Qt::SkipEmptyParts);
+            if (o->name)
+                f << QString::fromLatin1(o->name).split(QLatin1Char(','), Qt::SkipEmptyParts);
+#else
             if (o->extensions)
                 e << QString::fromLatin1(o->extensions).split(QLatin1Char(','), QString::SkipEmptyParts);
             if (o->name)
                 f << QString::fromLatin1(o->name).split(QLatin1Char(','), QString::SkipEmptyParts);
+#endif
         }
         foreach (const QString& v, e) {
             exts.append(v.trimmed());
@@ -528,15 +535,15 @@ void AVMuxer::Private::applyOptionsForDict()
     if (options.contains(QStringLiteral("avformat")))
         opt = options.value(QStringLiteral("avformat"));
     Internal::setOptionsToDict(opt, &dict);
-
-    if (opt.type() == QVariant::Map) {
+    const auto type = opt.type();
+    if (type == QVariant::Map) {
         QVariantMap avformat_dict(opt.toMap());
         if (avformat_dict.contains(QStringLiteral("format_whitelist"))) {
             const QString fmts(avformat_dict[QStringLiteral("format_whitelist")].toString());
             if (!fmts.contains(QLatin1Char(',')) && !fmts.isEmpty())
                 format_forced = fmts; // reset when media changed
         }
-    } else if (opt.type() == QVariant::Hash) {
+    } else if (type == QVariant::Hash) {
         QVariantHash avformat_dict(opt.toHash());
         if (avformat_dict.contains(QStringLiteral("format_whitelist"))) {
             const QString fmts(avformat_dict[QStringLiteral("format_whitelist")].toString());

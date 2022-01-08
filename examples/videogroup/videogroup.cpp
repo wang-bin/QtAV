@@ -1,6 +1,6 @@
 /******************************************************************************
     VideoGroup:  this file is part of QtAV examples
-    Copyright (C) 2012-2015 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -20,14 +20,17 @@
 
 #include "videogroup.h"
 #include <QApplication>
-#include <QDesktopWidget>
 #include <QEvent>
 #include <QFileDialog>
 #include <QGridLayout>
 #include <QtCore/QUrl>
 #include <QtAV/AudioOutput.h>
 #include <QtAVWidgets>
-
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
+#define DESKTOP_RECT() qApp->desktop()->rect()
+#else
+#define DESKTOP_RECT() qApp->primaryScreen()->availableGeometry()
+#endif
 using namespace QtAV;
 
 VideoGroup::VideoGroup(QObject *parent) :
@@ -114,7 +117,7 @@ void VideoGroup::setSingleWindow(bool s)
         if (view)
             return;
         view = new QWidget;
-        view->resize(qApp->desktop()->size());
+        view->resize(DESKTOP_RECT().size());
         QGridLayout *layout = new QGridLayout;
         layout->setSizeConstraint(QLayout::SetMaximumSize);
         layout->setSpacing(1);
@@ -227,14 +230,14 @@ void VideoGroup::addRenderer()
         wf |= Qt::FramelessWindowHint;
     }
     renderer->widget()->setWindowFlags(wf);
-    int w = view ? view->frameGeometry().width()/c : qApp->desktop()->width()/c;
-    int h = view ? view->frameGeometry().height()/r : qApp->desktop()->height()/r;
+    int w = view ? view->frameGeometry().width()/c : DESKTOP_RECT().width()/c;
+    int h = view ? view->frameGeometry().height()/r : DESKTOP_RECT().height()/r;
     renderer->widget()->resize(w, h);
     mpPlayer->addVideoRenderer(renderer);
     int i = (mRenderers.size()-1)/cols();
     int j = (mRenderers.size()-1)%cols();
     if (view) {
-        view->resize(qApp->desktop()->size());
+        view->resize(DESKTOP_RECT().size());
         ((QGridLayout*)view->layout())->addWidget(renderer->widget(), i, j);
         view->show();
     } else {
@@ -268,8 +271,8 @@ void VideoGroup::updateROI()
         }
         return;
     }
-    int W = view ? view->frameGeometry().width() : qApp->desktop()->width();
-    int H = view ? view->frameGeometry().height() : qApp->desktop()->height();
+    int W = view ? view->frameGeometry().width() : DESKTOP_RECT().width();
+    int H = view ? view->frameGeometry().height() : DESKTOP_RECT().height();
     int w = W / c;
     int h = H / r;
     for (int i = 0; i < mRenderers.size(); ++i) {

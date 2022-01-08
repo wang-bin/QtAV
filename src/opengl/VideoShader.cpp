@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -26,7 +26,6 @@
 #include <cmath>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QFile>
-#include <QtCore/QRegExp>
 #include <QtCore/QStringList>
 #include "utils/Logger.h"
 

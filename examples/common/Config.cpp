@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -305,7 +305,11 @@ void Config::reload()
     settings.beginGroup(QString::fromLatin1("decoder"));
     settings.beginGroup(QString::fromLatin1("video"));
     QString decs_default(QString::fromLatin1("HW FFmpeg")); // HW is ignored
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+    setDecoderPriorityNames(settings.value(QString::fromLatin1("priority"), decs_default).toString().split(QString::fromLatin1(" "), Qt::SkipEmptyParts));
+#else
     setDecoderPriorityNames(settings.value(QString::fromLatin1("priority"), decs_default).toString().split(QString::fromLatin1(" "), QString::SkipEmptyParts));
+#endif
     setZeroCopy(settings.value(QString::fromLatin1("zeroCopy"), true).toBool());
     settings.endGroup(); //video
     settings.endGroup(); //decoder

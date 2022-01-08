@@ -1,7 +1,7 @@
 /******************************************************************************
 	QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
-    
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
+
 *   This file is part of QtAV
 
     This library is free software; you can redistribute it and/or
@@ -47,14 +47,14 @@ public:
             painter->setRenderHint(QPainter::Antialiasing, false);
             painter->setRenderHint(QPainter::TextAntialiasing, false);
             painter->setRenderHint(QPainter::SmoothPixmapTransform, false);
-            painter->setRenderHint(QPainter::HighQualityAntialiasing, false);
+            painter->setRenderHint(QPainter::Antialiasing, false);
             break;
         case VideoRenderer::QualityBest:
         default:
             painter->setRenderHint(QPainter::Antialiasing, true);
             painter->setRenderHint(QPainter::TextAntialiasing, true);
             painter->setRenderHint(QPainter::SmoothPixmapTransform, true);
-            painter->setRenderHint(QPainter::HighQualityAntialiasing, true);
+            painter->setRenderHint(QPainter::Antialiasing, true);
             break;
         }
     }

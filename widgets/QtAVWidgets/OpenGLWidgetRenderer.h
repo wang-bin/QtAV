@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -24,7 +24,7 @@
 
 #include <QtAVWidgets/global.h>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
-#include <QtWidgets/QOpenGLWidget>
+#include <QOpenGLWidget>
 #else
 #include <QtAVWidgets/QOpenGLWidget.h>
 #endif //QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
@@ -54,7 +54,7 @@ class Q_AVWIDGETS_EXPORT OpenGLWidgetRenderer : public QOpenGLWidget, public Ope
     Q_PROPERTY(QSize videoFrameSize READ videoFrameSize NOTIFY videoFrameSizeChanged)
     Q_ENUMS(Quality)
 public:
-    explicit OpenGLWidgetRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
+    explicit OpenGLWidgetRenderer(QWidget* parent = 0, Qt::WindowFlags f = Qt::Widget);
     virtual VideoRendererId id() const Q_DECL_OVERRIDE;
     virtual QWidget* widget() Q_DECL_OVERRIDE { return this; }
 Q_SIGNALS:

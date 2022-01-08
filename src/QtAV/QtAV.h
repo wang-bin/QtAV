@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -46,7 +46,7 @@
 #include <QtAV/GLSLFilter.h>
 #include <QtAV/LibAVFilter.h>
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5,0,0) && !defined(QT_NO_OPENGL)) || defined(QT_OPENGL_LIB)
+#if (QT_VERSION == QT_VERSION_CHECK(5,0,0) && !defined(QT_NO_OPENGL)) || (QT_VERSION >= QT_VERSION_CHECK(6,0,0) && defined(QT_OPENGL_LIB))
 #include <QtAV/Geometry.h>
 #include <QtAV/GeometryRenderer.h>
 #include <QtAV/VideoShader.h>
@@ -65,7 +65,7 @@
 #include <QtAV/VideoOutput.h>
 //The following renderer headers can be removed
 #include <QtAV/QPainterRenderer.h>
-#if QT_VERSION >= QT_VERSION_CHECK(5,4,0)
+#if (QT_VERSION >= QT_VERSION_CHECK(5,4,0) && QT_VERSION < QT_VERSION_CHECK(6,0,0)) || (QT_VERSION >= QT_VERSION_CHECK(6,0,0) && defined(QT_OPENGL_LIB))
 #include <QtAV/OpenGLWindowRenderer.h>
 #endif
 #include <QtAV/Subtitle.h>

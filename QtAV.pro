@@ -10,7 +10,7 @@ libqtav.file = src/libQtAV.pro
   libqtavwidgets.depends = libqtav
   examples.depends += libqtavwidgets #TODO: enable widgets based examples
 }
-greaterThan(QT_MAJOR_VERSION, 4) {
+isEqual(QT_MAJOR_VERSION, 5) {
   # qtHaveModule does not exist in Qt5.0
   isEqual(QT_MINOR_VERSION, 0)|qtHaveModule(quick) {
     SUBDIRS += libqmlav

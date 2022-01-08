@@ -23,7 +23,7 @@
 #define QTAV_EXAMPLE_SIMPLEFILTER_H
 
 #include <QtAV/Filter.h>
-#include <QtCore/QTime>
+#include <QtCore/QElapsedTimer>
 #include <QtGui/QMatrix4x4>
 
 namespace QtAV {
@@ -52,7 +52,7 @@ protected:
 private:
     bool mCanRot;
     bool mWave;
-    QTime mTime;
+    QElapsedTimer mTime;
     qreal mStartValue;
     QString mText;
     QMatrix4x4 mMat;

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -24,7 +24,7 @@
 #include "QtAV/VideoShader.h"
 #include "QtAV/VideoFrame.h"
 #include <QtCore/QScopedPointer>
-#include <QtGui/QOpenGLFunctions>
+#include <QOpenGLFunctions>
 #include <QtQuick/QSGMaterial>
 #include <QtQuick/QSGMaterialShader>
 

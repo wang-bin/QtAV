@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2013)
 
@@ -22,7 +22,7 @@
 #include "SimpleFilter.h"
 #include <QWidget>
 #include <math.h>
-
+#include <QTime>
 namespace QtAV {
 
 SimpleFilter::SimpleFilter(QObject *parent):
@@ -124,10 +124,10 @@ void SimpleFilter::process(Statistics *statistics, VideoFrame *frame)
             int i16 = (t+i) & 15;
             ctx->pen.setColor(QColor::fromHsv((15-i16)*16, 255, 255));
             if (mCanRot)
-                ctx->drawPlainText(QPointF(x-fm.width(mText)/2-ctx->rect.x(), y-sin_tbl[i16]*h/400), mText.mid(i, 1));
+                ctx->drawPlainText(QPointF(x-fm.boundingRect(mText).width()/2-ctx->rect.x(), y-sin_tbl[i16]*h/400), mText.mid(i, 1));
             else
                 ctx->drawPlainText(QPointF(x, y-sin_tbl[i16]*h/400), mText.mid(i, 1));
-            x += fm.width(mText[i]);
+            x += fm.boundingRect(mText[i]).width();
         }
     } else {
         qreal c = fabs(sin((float)t));
@@ -142,7 +142,7 @@ void SimpleFilter::process(Statistics *statistics, VideoFrame *frame)
 return;
         if (mCanRot) {
             QFontMetrics fm(ctx->font);
-            ctx->drawPlainText(QRectF(-fm.width(mText)/2, ctx->rect.y(), ctx->rect.width(), ctx->rect.height()), Qt::TextWordWrap, mText);
+            ctx->drawPlainText(QRectF(-fm.boundingRect(mText).width()/2, ctx->rect.y(), ctx->rect.width(), ctx->rect.height()), Qt::TextWordWrap, mText);
         } else {
             ctx->drawPlainText(ctx->rect, Qt::TextWordWrap, mText);
         }

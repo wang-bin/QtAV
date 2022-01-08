@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -22,8 +22,13 @@
 #include "OpenGLHelper.h"
 #include <string.h> //strstr
 #include <QtCore/QCoreApplication>
-#include <QtCore/QRegExp>
 #include <QtGui/QMatrix4x4>
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QtCore/QRegularExpression>
+using QRegExp = QRegularExpression;
+#else
+#include <QtCore/QRegExp>
+#endif
 #if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
 #if QT_VERSION >= QT_VERSION_CHECK(4, 8, 0)
 #include <QtOpenGL/QGLFunctions>
@@ -32,7 +37,7 @@
 #include <QtGui/QGuiApplication>
 #endif
 #ifdef QT_OPENGL_DYNAMIC
-#include <QtGui/QOpenGLFunctions_1_0>
+#include <QOpenGLFunctions_1_0>
 #endif
 #if QTAV_HAVE(EGL_CAPI) // && QTAV_HAVE(QT_EGL) //make sure no crash if no egl library
 #define EGL_CAPI_NS

@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -49,7 +49,7 @@ class Q_AVWIDGETS_EXPORT WidgetRenderer : public QWidget, public QPainterRendere
     Q_PROPERTY(QSize videoFrameSize READ videoFrameSize NOTIFY videoFrameSizeChanged)
     Q_ENUMS(Quality)
 public:
-    explicit WidgetRenderer(QWidget *parent = 0, Qt::WindowFlags f = 0);
+    explicit WidgetRenderer(QWidget *parent = 0, Qt::WindowFlags f = Qt::Widget);
     virtual VideoRendererId id() const Q_DECL_OVERRIDE;
     virtual QWidget* widget() Q_DECL_OVERRIDE { return this; }
 Q_SIGNALS:

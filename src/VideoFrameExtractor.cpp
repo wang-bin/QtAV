@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -260,7 +260,7 @@ public:
         }
         if (!pkt.isValid()) {
             qWarning("VideoFrameExtractor failed to get a packet at %lld", value);
-            err = QString().sprintf("failed to get a packet at %lld",value);
+            err = QString().asprintf("failed to get a packet at %lld",value);
             return false;
         }
         decoder->flush(); //must flush otherwise old frames will be decoded at the beginning
@@ -350,7 +350,7 @@ public:
             if (diff > range && t > pts) {
                 qWarning("out pts out of range. diff=%lld, range=%d", diff, range);
                 frame = VideoFrame();
-                err = QString().sprintf("out pts out of range. diff=%lld, range=%d", diff, range);
+                err = QString().asprintf("out pts out of range. diff=%lld, range=%d", diff, range);
                 return false;
             }
         }
@@ -538,9 +538,9 @@ void VideoFrameExtractor::extractInternal(qint64 pos)
     extractOk = d.extractInPrecision(pos, precision(), err, isAborted);
     if (!extractOk) {
         if (isAborted)
-            Q_EMIT aborted(QString().sprintf("Abort at position %lld: %s",pos,err.toLatin1().constData()));
+            Q_EMIT aborted(QString().asprintf("Abort at position %lld: %s",pos,err.toLatin1().constData()));
         else
-            Q_EMIT error(QString().sprintf("Cannot extract frame at position %lld: %s",pos,err.toLatin1().constData()));
+            Q_EMIT error(QString().asprintf("Cannot extract frame at position %lld: %s",pos,err.toLatin1().constData()));
         return;
     }
     Q_EMIT frameExtracted(d.frame);

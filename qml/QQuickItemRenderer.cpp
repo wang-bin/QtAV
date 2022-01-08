@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2017 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
     theoribeiro <theo@fictix.com.br>
 
 *   This file is part of QtAV (from 2013)
@@ -112,9 +112,17 @@ bool QQuickItemRenderer::event(QEvent *e)
     return true;
 }
 
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+void QQuickItemRenderer::geometryChange(const QRectF &newGeometry, const QRectF &oldGeometry)
+#else
 void QQuickItemRenderer::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
+#endif
 {
-    QQuickItem::geometryChanged(newGeometry, oldGeometry); //geometry will be updated
+#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
+    QQuickItem::geometryChange(newGeometry, oldGeometry);
+#else
+    QQuickItem::geometryChanged(newGeometry, oldGeometry);
+#endif
     DPTR_D(QQuickItemRenderer);
     resizeRenderer(newGeometry.size().toSize());
     if (d.fill_mode == PreserveAspectCrop) {

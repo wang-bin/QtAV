@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -22,7 +22,7 @@
 #ifndef QTAV_GLWIDGETRENDERER2_H
 #define QTAV_GLWIDGETRENDERER2_H
 
-#ifndef QT_NO_OPENGL
+#if !defined(QT_NO_OPENGL) && QT_VERSION < QT_VERSION_CHECK(6,0,0)
 #include <QtAVWidgets/global.h>
 #include <QtOpenGL/QGLWidget>
 #include <QtAV/OpenGLRendererBase.h>

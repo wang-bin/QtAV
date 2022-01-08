@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV Player Demo:  this file is part of QtAV examples
-    Copyright (C) 2012-2014 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -60,7 +60,9 @@ void TVView::load()
     if (!tv_file.open(QIODevice::ReadOnly))
         return;
     QTextStream ts(&tv_file);
+#if QT_VERSION < QT_VERSION_CHECK(6,0,0)
     ts.setCodec("UTF-8");
+#endif
     QTreeWidgetItem *nodeItem = new QTreeWidgetItem(mpView);
     nodeItem->setData(0, Qt::DisplayRole, QString());
     mpView->addTopLevelItem(nodeItem);

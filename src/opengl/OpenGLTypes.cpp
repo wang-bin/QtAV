@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2016)
 
@@ -20,7 +20,11 @@
 ******************************************************************************/
 #include "QtAV/OpenGLTypes.h"
 #include "opengl/OpenGLHelper.h"
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#include <QtCore/QRegularExpression>
+#else
 #include <QtCore/QRegExp>
+#endif
 #include <QtCore/QStringList>
 #include <QtCore/QVariant>
 #include "utils/Logger.h"
@@ -275,12 +279,21 @@ QVector<Uniform> ParseUniforms(const QByteArray &text, GLuint programId = 0)
         line = line.trimmed();
         if (!line.startsWith(QStringLiteral("uniform ")))
             continue;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        auto rx = QRegularExpression(exp_array).match(line);
+        if (!rx.hasMatch()) {
+            rx = QRegularExpression(exp).match(line);
+            if (!rx.hasMatch())
+                continue;
+        }
+#else
         QRegExp rx(exp_array);
         if (rx.indexIn(line) < 0) {
             rx = QRegExp(exp);
             if (rx.indexIn(line) < 0)
                 continue;
         }
+#endif
         Uniform u;
         const QStringList x = rx.capturedTexts();
         //qDebug() << x;

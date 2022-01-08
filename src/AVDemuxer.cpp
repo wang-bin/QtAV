@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2018 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV
 
@@ -23,6 +23,7 @@
 #include "QtAV/private/AVCompat.h"
 #include <QtCore/QMutex>
 #include <QtCore/QStringList>
+#include <QtCore/QIODevice>
 #if QT_VERSION >= QT_VERSION_CHECK(4, 7, 0)
 #include <QtCore/QElapsedTimer>
 #else
@@ -366,10 +367,18 @@ static void getFFmpegInputFormats(QStringList* formats, QStringList* extensions)
         av_register_all(); // MUST register all input/output formats
         while ((i = av_iformat_next(i))) {
 #endif
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+            if (i->extensions)
+                e << QString::fromLatin1(i->extensions).split(QLatin1Char(','), Qt::SkipEmptyParts);
+            if (i->name)
+                f << QString::fromLatin1(i->name).split(QLatin1Char(','), Qt::SkipEmptyParts);
+#else
             if (i->extensions)
                 e << QString::fromLatin1(i->extensions).split(QLatin1Char(','), QString::SkipEmptyParts);
             if (i->name)
                 f << QString::fromLatin1(i->name).split(QLatin1Char(','), QString::SkipEmptyParts);
+#endif
         }
         foreach (const QString& v, e) {
             exts.append(v.trimmed());

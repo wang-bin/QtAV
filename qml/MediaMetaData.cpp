@@ -1,6 +1,6 @@
 /******************************************************************************
     QtAV:  Multimedia framework based on Qt and FFmpeg
-    Copyright (C) 2012-2016 Wang Bin <wbsecg1@gmail.com>
+    Copyright (C) 2012-2022 Wang Bin <wbsecg1@gmail.com>
 
 *   This file is part of QtAV (from 2014)
 
@@ -76,8 +76,8 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
                 setValue(TrackNumber, it.value().toInt());
                 continue;
             }
-            setValue(TrackNumber, it.value().leftRef(slash).string()->toInt()); //QStringRef.toInt(): Qt5.2
-            setValue(TrackCount, it.value().midRef(slash+1).string()->toInt());
+            setValue(TrackNumber, it.value().left(slash).string()->toInt()); //QStringRef.toInt(): Qt5.2
+            setValue(TrackCount, it.value().mid(slash+1).string()->toInt());
             continue;
         }
         if (keyName == QLatin1String("date")
