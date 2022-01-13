@@ -20,6 +20,7 @@
 
 #include "videogroup.h"
 #include <QApplication>
+#include <QDesktopWidget>
 #include <QEvent>
 #include <QFileDialog>
 #include <QGridLayout>

@@ -76,8 +76,8 @@ void MediaMetaData::setValuesFromStatistics(const QtAV::Statistics &st)
                 setValue(TrackNumber, it.value().toInt());
                 continue;
             }
-            setValue(TrackNumber, it.value().left(slash).string()->toInt()); //QStringRef.toInt(): Qt5.2
-            setValue(TrackCount, it.value().mid(slash+1).string()->toInt());
+            setValue(TrackNumber, it.value().left(slash).toInt()); //QStringRef.toInt(): Qt5.2
+            setValue(TrackCount, it.value().mid(slash+1).toInt());
             continue;
         }
         if (keyName == QLatin1String("date")

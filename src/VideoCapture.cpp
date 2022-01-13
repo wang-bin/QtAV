@@ -56,6 +56,7 @@ public:
         QImage image(frame.toImage());
         if (image.isNull()) {
             qWarning("Failed to convert to QImage");
+            QMetaObject::invokeMethod(cap, "failed");
             return;
         }
         QMetaObject::invokeMethod(cap, "imageCaptured", Q_ARG(QImage, image));

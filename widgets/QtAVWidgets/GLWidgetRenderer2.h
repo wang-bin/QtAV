@@ -22,8 +22,8 @@
 #ifndef QTAV_GLWIDGETRENDERER2_H
 #define QTAV_GLWIDGETRENDERER2_H
 
-#if !defined(QT_NO_OPENGL) && QT_VERSION < QT_VERSION_CHECK(6,0,0)
 #include <QtAVWidgets/global.h>
+#if !defined(QT_NO_OPENGL) && QT_VERSION < QT_VERSION_CHECK(6,0,0)
 #include <QtOpenGL/QGLWidget>
 #include <QtAV/OpenGLRendererBase.h>
 
