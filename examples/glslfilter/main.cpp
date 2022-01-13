@@ -19,6 +19,7 @@
 ******************************************************************************/
 #include <QtAV>
 #include <QtAV/VideoShaderObject.h>
+#include <QtAV/OpenGLVideo.h>
 #include <QApplication>
 #include <QtCore/QScopedPointer>
 #include <QtCore/qmath.h>
