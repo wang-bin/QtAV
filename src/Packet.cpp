@@ -222,7 +222,10 @@ void Packet::skip(int bytes)
 #ifndef QT_NO_DEBUG_STREAM
 QDebug operator<<(QDebug dbg, const Packet &pkt)
 {
-    dbg.nospace() << "QtAV::Packet.data " << Qt::hex << (qptrdiff)pkt.data.constData() << "+" << Qt::dec << pkt.data.size();
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+    using Qt::hex, Qt::dec;
+#endif
+    dbg.nospace() << "QtAV::Packet.data " << hex << (qptrdiff)pkt.data.constData() << "+" << dec << pkt.data.size();
     dbg.nospace() << ", dts: " << pkt.dts;
     dbg.nospace() << ", pts: " << pkt.pts;
     dbg.nospace() << ", duration: " << pkt.duration;
