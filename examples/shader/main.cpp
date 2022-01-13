@@ -18,6 +18,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 #include <QtAV>
+#include <QtAV/OpenGLVideo.h>
 #include <QtAV/ConvolutionShader.h>
 #include <QtAV/VideoShaderObject.h>
 #include <QtCore/qmath.h>
