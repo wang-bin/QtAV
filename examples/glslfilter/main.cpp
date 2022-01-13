@@ -18,6 +18,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 #include <QtAV>
+#include <QtAV/VideoShaderObject.h>
 #include <QApplication>
 #include <QtCore/QScopedPointer>
 #include <QtCore/qmath.h>
