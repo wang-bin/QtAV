@@ -20,6 +20,7 @@
 #include "MainWindow.h"
 #include "EventFilter.h"
 #include <QtAV>
+#include <QtAV/OpenGLVideo.h>
 #include <QtAV/VideoShaderObject.h>
 #include <QtAVWidgets>
 #include <QtCore/QtDebug>
