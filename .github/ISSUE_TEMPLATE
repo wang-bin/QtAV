@@ -15,3 +15,5 @@ set environment var `QTAV_LOG=all` or C++ api `QtAV::setLogLevel(All)` to enable
 For Player and QMLPlayer example app, choose log level `all` in config page.
 
 ### Sample files (optional)
+
+> NOTE: QtAV is no longer maintained, please use [new sdk](https://github.com/wang-bin/mdk-sdk)
