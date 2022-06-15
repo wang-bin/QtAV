@@ -1,0 +1,36 @@
+# Specify the build system requirements.
+[build-system]
+requires = ["sip >=5.3, <7", "PyQt-builder >=1.9, <2"]
+build-backend = "sipbuild.api"
+
+# Specify the PEP 566 metadata for the project.
+[tool.sip.metadata]
+name = "PyQtAV"
+version = "1.12.0"
+summary = "Python bindings for the QtAV"
+home-page = ""
+author = ""
+author-email = ""
+license = "LGPL"
+
+# Specify a PyQt-based project.
+[tool.sip]
+project-factory = "pyqtbuild:PyQtProject"
+
+# Configure the project.
+[tool.sip.project]
+tag-prefix = "QtAV"
+sip-include-dirs = [PYQT_BINDINGS_DIR]
+
+# Define and configure each set of bindings.
+[tool.sip.bindings.QtAV]
+qmake-QT = ["widgets"]
+include-dirs = [INCLUDE_DIRS]
+libraries = [QTAV_LIB]
+library-dirs = [LIB_DIRS]
+
+[tool.sip.bindings.QtAVWidgets]
+qmake-QT = ["widgets", "opengl"]
+include-dirs = [INCLUDE_DIRS]
+libraries = [QTAV_LIB, QTAV_WIDGETS_LIB]
+library-dirs = [LIB_DIRS]
