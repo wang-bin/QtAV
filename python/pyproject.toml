@@ -30,7 +30,7 @@ libraries = [QTAV_LIB]
 library-dirs = [LIB_DIRS]
 
 [tool.sip.bindings.QtAVWidgets]
-qmake-QT = ["widgets", "opengl"]
+qmake-QT = ["widgets", "opengl", "openglwidgets"]
 include-dirs = [INCLUDE_DIRS]
 libraries = [QTAV_LIB, QTAV_WIDGETS_LIB]
 library-dirs = [LIB_DIRS]

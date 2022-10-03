@@ -3,6 +3,7 @@
 %Import QtGui/QtGuimod.sip
 %Import QtWidgets/QtWidgetsmod.sip
 %Import QtOpenGL/QtOpenGLmod.sip
+%Import QtOpenGLWidgets/QtOpenGLWidgetsmod.sip
 %Import QtAV/QtAVmod.sip
 
 %Timeline {QtAVWidgets_1_11_0 QtAVWidgets_1_12_0}
@@ -35,7 +36,6 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
 %Include global.sip
 
 %If (FULL_QTWIDGETS_API)
-%Include GLWidgetRenderer2.sip
 %Include GraphicsItemRenderer.sip
 // NOTE: We don't expose QOpenGLWidget because it is present in Qt >= 5.4.0
 %Include OpenGLWidgetRenderer.sip

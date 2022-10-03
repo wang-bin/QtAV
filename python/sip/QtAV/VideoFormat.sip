@@ -104,7 +104,6 @@ public:
     static QImage::Format imageFormatFromPixelFormat(PixelFormat format);
     static PixelFormat pixelFormatFromFFmpeg(int ff); //AVPixelFormat
     static int pixelFormatToFFmpeg(PixelFormat fmt);
-    static QVector<int> pixelFormatsFFmpeg();
 
     VideoFormat(PixelFormat format = Format_Invalid);
     VideoFormat(int formatFF /Constrained/);
