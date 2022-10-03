@@ -32,7 +32,8 @@ void* GetProcAddress_Qt(const char *name)
     void* p = (void*)QOpenGLContext::currentContext()->getProcAddress(QByteArray((const char*)name));
     if (!p) {
 #if defined(Q_OS_WIN) && defined(QT_OPENGL_DYNAMIC)
-        HMODULE handle = (HMODULE)QOpenGLContext::openGLModuleHandle();
+        using namespace QNativeInterface;
+        HMODULE handle = QWGLContext::openGLModuleHandle();
         if (handle)
             p = (void*)GetProcAddress(handle, name);
 #endif
