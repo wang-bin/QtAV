@@ -20,6 +20,7 @@
 ******************************************************************************/
 #include "QtAV/AVError.h"
 #include "QtAV/private/AVCompat.h"
+#include <QtCore/QObject>
 #ifndef QT_NO_DEBUG_STREAM
 #include <QtCore/qdebug.h>
 #endif
