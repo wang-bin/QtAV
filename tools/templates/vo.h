@@ -13,7 +13,7 @@ class Q_AV_EXPORT %CLASS% : public QWidget, public VideoRenderer
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(%CLASS%)
 public:
-    %CLASS%(QWidget* parent = 0, Qt::WindowFlags f = 0);
+    %CLASS%(QWidget* parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
     virtual ~%CLASS%();
 
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require

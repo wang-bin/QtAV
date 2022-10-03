@@ -47,7 +47,7 @@ class X11Renderer: public QWidget, public VideoRenderer
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(X11Renderer)
 public:
-    X11Renderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
+    X11Renderer(QWidget* parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
     VideoRendererId id() const Q_DECL_OVERRIDE;
     bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
 

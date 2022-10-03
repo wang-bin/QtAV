@@ -33,7 +33,7 @@ public:
     QSize videoFrameSize();
 
 public:
-    explicit OpenGLWidgetRenderer(QWidget* parent /TransferThis/ = 0, Qt::WindowFlags f = 0);
+    explicit OpenGLWidgetRenderer(QWidget* parent /TransferThis/ = 0, Qt::WindowFlags f = Qt::WindowFlags());
     VideoRendererId id() const;
     virtual QWidget* widget();
 

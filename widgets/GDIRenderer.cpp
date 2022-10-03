@@ -41,7 +41,7 @@ class GDIRenderer : public QWidget, public VideoRenderer
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(GDIRenderer)
 public:
-    GDIRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0); //offscreen?
+    GDIRenderer(QWidget* parent = 0, Qt::WindowFlags f = Qt::WindowFlags()); //offscreen?
     VideoRendererId id() const Q_DECL_OVERRIDE;
     bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
     /* WA_PaintOnScreen: To render outside of Qt's paint system, e.g. If you require

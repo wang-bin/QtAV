@@ -42,7 +42,7 @@ class Q_AVWIDGETS_EXPORT QOpenGLWidget : public QWidget
     Q_OBJECT
     Q_DISABLE_COPY(QOpenGLWidget)
 public:
-    explicit QOpenGLWidget(QWidget* parent = 0, Qt::WindowFlags f = 0);
+    explicit QOpenGLWidget(QWidget* parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
     virtual ~QOpenGLWidget();
     void setFormat(const QSurfaceFormat &format);
     QSurfaceFormat format() const;
