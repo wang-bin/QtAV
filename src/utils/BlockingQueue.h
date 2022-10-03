@@ -23,6 +23,8 @@
 #ifndef QTAV_BLOCKINGQUEUE_H
 #define QTAV_BLOCKINGQUEUE_H
 
+#include <climits>
+
 #include <QtCore/QReadWriteLock>
 #include <QtCore/QScopedPointer>
 #include <QtCore/QWaitCondition>
