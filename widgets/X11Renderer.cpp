@@ -441,8 +441,7 @@ void X11Renderer::drawBackground()
     // TODO: fill once each resize? mpv
     // TODO: set color
     //XSetBackground(d.display, d.gc, BlackPixel(d.display, DefaultScreen(d.display)));
-    const QVector<QRect> bg(bgRegion.rects());
-    foreach (const QRect& r, bg) {
+    foreach (const QRect& r, bgRegion) {
         XFillRectangle(d.display, winId(), d.gc, r.x(), r.y(), r.width(), r.height());
     }
     XFlush(d.display); // apply the color

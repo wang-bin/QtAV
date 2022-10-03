@@ -238,8 +238,7 @@ void GDIRenderer::drawBackground()
     //HDC hdc = d.device_context;
     Graphics g(d.device_context);
     SolidBrush brush(Color(bc.alpha(), bc.red(), bc.green(), bc.blue())); //argb
-    const QVector<QRect> bg(bgRegion.rects());
-    foreach (const QRect& r, bg) {
+    foreach (const QRect& r, bgRegion) {
         g.FillRectangle(&brush, r.x(), r.y(), r.width(), r.height());
     }
 }
