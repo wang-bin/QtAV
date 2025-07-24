@@ -50,6 +50,8 @@ public:
      * Extract video frames in another thread. Default is true.
      * In async mode, if current extraction is not finished, new
      * setPosition() will be ignored.
+     * If you want to disable async extraction make sure to call setAsync(false) as soon as possible (before extracting any frames or settings the source).
+     * After the first frame is extracted setAsync() has no effect.
      */
     void setAsync(bool value);
     bool async() const;

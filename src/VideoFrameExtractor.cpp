@@ -27,8 +27,6 @@
 #include <QtCore/QStringList>
 #include <QtCore/QThread>
 #include <QtCore/QMutex>
-#include <QtCore/QMutexLocker>
-#include "QtAV/VideoCapture.h"
 #include "QtAV/VideoDecoder.h"
 #include "QtAV/AVDemuxer.h"
 #include "QtAV/Packet.h"
@@ -369,15 +367,22 @@ public:
     }
 
     void safeReleaseResource() {
-        class Cleaner : public QRunnable {
-            VideoFrameExtractorPrivate *p;
-        public:
-            Cleaner(VideoFrameExtractorPrivate* pri) : p(pri) {}
-            void run() {
-                p->releaseResourceInternal();
-            }
-        };
-        thread.addTask(new Cleaner(this));
+      if(!async && !thread.isRunning()) {
+        releaseResourceInternal();
+        return;
+      }
+
+      class Cleaner : public QRunnable {
+          VideoFrameExtractorPrivate *p;
+      public:
+          Cleaner(VideoFrameExtractorPrivate* pri) : p(pri) {}
+          void run() {
+              p->releaseResourceInternal();
+          }
+      };
+
+      thread.start();
+      thread.addTask(new Cleaner(this));
     }
 
     volatile bool abort_seek;
@@ -403,10 +408,7 @@ QVariantHash VideoFrameExtractorPrivate::dec_opt_normal;
 
 VideoFrameExtractor::VideoFrameExtractor(QObject *parent) :
     QObject(parent)
-{
-    DPTR_D(VideoFrameExtractor);
-    d.thread.start();
-}
+{}
 
 void VideoFrameExtractor::setSource(const QString url)
 {
@@ -430,12 +432,15 @@ void VideoFrameExtractor::setAsync(bool value)
     if (d.async == value)
         return;
     d.async = value;
+    if (!d.async && d.thread.isRunning()) {
+      qInfo() << "ExtractThread is already running. Setting async to false has no effect.";
+    }
     Q_EMIT asyncChanged();
 }
 
 bool VideoFrameExtractor::async() const
 {
-    return d_func().async;
+    return d_func().async || d_func().thread.isRunning();
 }
 
 void VideoFrameExtractor::setAutoExtract(bool value)
@@ -494,7 +499,7 @@ int VideoFrameExtractor::precision() const
 void VideoFrameExtractor::extract()
 {
     DPTR_D(VideoFrameExtractor);
-    if (!d.async) {
+    if (!d.async && !d.thread.isRunning()) {
         extractInternal(position());
         return;
     }
@@ -518,6 +523,7 @@ void VideoFrameExtractor::extract()
     // (called by extractInternal()) and if true, method returns early.
     // Note if seek/decode is aborted, aborted() signal will be emitted.
     d.abort_seek = true;
+    d.thread.start();
     d.thread.addTask(new ExtractTask(this, position()));
 }
 
