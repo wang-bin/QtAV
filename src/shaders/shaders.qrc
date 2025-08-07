@@ -3,5 +3,7 @@
         <file>planar.f.glsl</file>
         <file>packed.f.glsl</file>
         <file>video.vert</file>
+        <file>frag.spv</file>
+        <file>vert.spv</file>
     </qresource>
 </RCC>

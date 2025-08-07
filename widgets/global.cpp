@@ -42,6 +42,9 @@
 #endif
 #include "QtAV/private/factory.h"
 #include "QtAV/private/mkid.h"
+#if QTAV_HAVE(VULKAN)
+#include "QtAVWidgets/VulkanRenderer.h"
+#endif //QTAV_HAVE(VULKAN)
 
 namespace QtAV {
 
@@ -54,6 +57,7 @@ VideoRendererId VideoRendererId_GDI = mkid::id32base36_3<'G', 'D', 'I'>::value;
 VideoRendererId VideoRendererId_Direct2D = mkid::id32base36_3<'D', '2', 'D'>::value;
 VideoRendererId VideoRendererId_XV = mkid::id32base36_6<'X', 'V', 'i', 'd', 'e', 'o'>::value;
 VideoRendererId VideoRendererId_X11 = mkid::id32base36_3<'X', '1', '1'>::value;
+VideoRendererId VideoRendererId_Vulkan = mkid::id32base36_6<'V', 'u', 'l', 'k', 'a', 'n'>::value;
 
 //QPainterRenderer is abstract. So can not register(operator new will needed)
 #if AUTO_REGISTER
@@ -116,6 +120,9 @@ void registerRenderers()
 #if QTAV_HAVE(X11)
     RegisterVideoRendererX11_Man();
 #endif //QTAV_HAVE(XV)
+#if QTAV_HAVE(VULKAN)
+            VideoRenderer::Register<VulkanRenderer>(VideoRendererId_Vulkan, "Vulkan");
+#endif //QTAV_HAVE(VULKAN)
     VideoRenderer::Register<GraphicsItemRenderer>(VideoRendererId_GraphicsItem, "GraphicsItem");
 }
 } //namespace Widgets
