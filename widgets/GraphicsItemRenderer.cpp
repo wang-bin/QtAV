@@ -306,7 +306,7 @@ bool GraphicsItemRenderer::onSetSaturation(qreal s)
 #if CONFIG_GRAPHICSWIDGET
 bool GraphicsItemRenderer::event(QEvent *event)
 {
-    if (e->type() == QEvent::User) {
+    if (event->type() == QEvent::User) {
 		scene()->update(sceneBoundingRect());
     }
 	else {
