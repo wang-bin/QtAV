@@ -60,6 +60,7 @@ extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_XV;
 extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_X11;
 extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_GLWidget2;
 extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_OpenGLWidget;
+extern Q_AVWIDGETS_EXPORT VideoRendererId VideoRendererId_Vulkan;
 //popup a dialog
 Q_AVWIDGETS_EXPORT void about();
 Q_AVWIDGETS_EXPORT void aboutFFmpeg();
