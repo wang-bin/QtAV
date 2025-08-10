@@ -1,12 +1,21 @@
 set(MODULE QtAVWidgets)
 set(EXTRA_DEFS -DBUILD_QTAVWIDGETS_LIB)
 list(APPEND EXTRA_DEFS -DQTAV_HAVE_GL=1)
+list(APPEND EXTRA_DEFS -DQTAV_HAVE_VULKAN=1)
 
 set(HAVE_QT5OPENGL 0)
 if(BUILD_QT5OPENGL)
-  find_package(Qt5OpenGL)
+  find_package(Qt5OpenGL QUIET)
   if(Qt5OpenGL_FOUND)
     set(HAVE_QT5OPENGL 1)
+  endif()
+endif()
+
+set(HAVE_Vulkan 0)
+if(BUILD_Vulkan)
+  find_package(Vulkan)
+  if(Vulkan_FOUND)
+    set(HAVE_Vulkan 1)
   endif()
 endif()
 
@@ -19,6 +28,7 @@ set(SDK_HEADERS
   QtAVWidgets/version.h
   QtAVWidgets/VideoPreviewWidget.h
   QtAVWidgets/WidgetRenderer.h
+  QtAVWidgets/VulkanRenderer.h
 )
 file(GLOB SDK_PRIVATE_HEADERS QtAVWidgets/*.h)
 
@@ -28,10 +38,20 @@ set(SOURCES
   OpenGLWidgetRenderer.cpp
   VideoPreviewWidget.cpp
   WidgetRenderer.cpp
+  VulkanRenderer.cpp
 )
+
 if(HAVE_QT5OPENGL)
   list(APPEND SDK_HEADERS QtAVWidgets/GLWidgetRenderer2.h)
   list(APPEND SOURCES GLWidgetRenderer2.cpp)
+endif()
+
+if(HAVE_Vulkan)
+  list(APPEND SDK_HEADERS QtAVWidgets/VulkanRenderer.h)
+  list(APPEND SDK_PRIVATE_HEADERS ../src/ColorTransform.h)
+  list(APPEND SOURCES VulkanRendererPrivate.cpp)
+  list(APPEND SOURCES VulkanRenderer.cpp)
+  list(APPEND SOURCES ../src/ColorTransform.cpp)
 endif()
 
 # TODO: Qt5Gui_OPENGL_IMPLEMENTATION?
@@ -54,6 +74,9 @@ target_link_libraries(${MODULE}
 if(HAVE_QT5OPENGL)
   target_link_libraries(${MODULE} LINK_PUBLIC Qt5::OpenGL)
 endif()
+if(HAVE_VULKAN)
+  target_link_libraries(${MODULE} LINK_PUBLIC Vulkan::Vulkan)
+endif()
 set_target_properties(${MODULE} PROPERTIES
   MACOSX_RPATH ON
   FRAMEWORK ON
@@ -75,6 +98,7 @@ target_include_directories(${MODULE}
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${MODULE}>
   PRIVATE ${EXTRA_INCLUDE}
+  $<BUILD_INTERFACE:${Vulkan_INCLUDE_DIRS}>
   )
 target_compile_definitions(${MODULE} PRIVATE ${EXTRA_DEFS})
 

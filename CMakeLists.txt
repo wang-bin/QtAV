@@ -26,6 +26,7 @@ option(BUILD_PLAYERS "Build players" ON)
 option(BUILD_TESTS "Build tests" ON)
 option(BUILD_QT5OPENGL "Build with Qt5 OpenGL module" ON)
 option(BUILD_QML "Build QML interfaces" ON)
+option(BUILD_Vulkan "Build Vulkan Renderer" ON)
 
 list(APPEND CMAKE_FIND_ROOT_PATH ${QTDIR})
 
