@@ -37,6 +37,4 @@ void main() {
     transformedColor.rgb = clamp(transformedColor.rgb, 0.0, 1.0);
     
     outColor = vec4(transformedColor.rgb, 1.0);
-	
-	outColor = vec4(r, g, b, 1.0);
 }
