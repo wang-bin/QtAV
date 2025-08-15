@@ -117,7 +117,7 @@ namespace QtAV
         );
         VkImageView createImageView(VkImage image, VkFormat format);
         void updateTextureImage(uint32_t currentImage);
-        void VulkanWindowRenderer::updateSinglePlaneTexture(const TextureObject& textureObj, const uchar* planeData);
+        void VulkanWindowRenderer::updateSinglePlaneTexture(const TextureObject& textureObj, const uchar* planeData, int lineSize);
         bool checkTextureObject();
 
     private:

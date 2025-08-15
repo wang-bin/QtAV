@@ -704,6 +704,10 @@ bool MainWindow::setRenderer(QtAV::VideoRenderer *renderer)
         mpVideoEQ->setEngines(QVector<VideoEQConfigPage::Engine>() << VideoEQConfigPage::XV);
         mpVideoEQ->setEngine(VideoEQConfigPage::XV);
         mpPlayer->renderer()->forcePreferredPixelFormat(true);
+    } else if (vid == VideoRendererId_Vulkan) {
+        mpVideoEQ->setEngines(QVector<VideoEQConfigPage::Engine>() << VideoEQConfigPage::GLSL);
+        mpVideoEQ->setEngine(VideoEQConfigPage::GLSL);
+        mpPlayer->renderer()->forcePreferredPixelFormat(true);
     } else {
         mpVideoEQ->setEngines(QVector<VideoEQConfigPage::Engine>() << VideoEQConfigPage::SWScale);
         mpVideoEQ->setEngine(VideoEQConfigPage::SWScale);

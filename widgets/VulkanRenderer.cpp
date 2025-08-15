@@ -9,7 +9,7 @@ namespace QtAV
 
 	Q_LOGGING_CATEGORY(lcVk, "qt.vulkan")
 
-		VulkanRenderer::VulkanRenderer()
+	VulkanRenderer::VulkanRenderer()
 		: VideoRenderer(*new VulkanRendererPrivate)
 	{
 		setMouseGrabEnabled(true);

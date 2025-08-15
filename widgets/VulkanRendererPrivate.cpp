@@ -7,7 +7,7 @@
 
 namespace QtAV
 {
-	constexpr uint32_t Matrix4x4Size = 64;
+	constexpr uint32_t Matrix4x4Size = 16 * sizeof(float);
 
 	std::vector<Vertex> vertices = {
 		{{-1.0f, 1.0f}, {0.0f, 1.0f}},
@@ -71,6 +71,7 @@ namespace QtAV
 		createTextureSampler();
 		createVertexBuffer();
 		createDescriptorSetLayout();
+		createDescriptorPool();
 	}
 
 	void VulkanWindowRenderer::initSwapChainResources()
@@ -80,7 +81,6 @@ namespace QtAV
 
 		createGraphicsPipeline();
 		createUniformBuffers();
-		createDescriptorPool();
 	}
 
 	void VulkanWindowRenderer::preInitResources()
@@ -90,9 +90,12 @@ namespace QtAV
 
 	void VulkanWindowRenderer::releaseResources()
 	{
+		cleanupDescriptorSetLayout();
+		cleanupDescriptorSets();
+		cleanupDescriptorPool();
+		cleanupTextureObject();
 		cleanupTextureSampler();
 		cleanupVertexBuffer();
-		cleanupDescriptorSetLayout();
 		m_vulkanDeviceFunctions = nullptr;
 		m_device = VK_NULL_HANDLE;
 		m_renderPass = VK_NULL_HANDLE;
@@ -106,9 +109,6 @@ namespace QtAV
 
 		cleanupGraphicsPipeline();
 		cleanupUniformBuffers();
-		cleanupDescriptorPool();
-		cleanupDescriptorSets();
-		cleanupTextureObject();
 	}
 
 	void VulkanWindowRenderer::startNextFrame()
@@ -363,7 +363,7 @@ namespace QtAV
 		uboLayoutBinding.descriptorCount = 1;	// 此绑定点的描述符数量
 		uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;	// 描述符类型
 		uboLayoutBinding.pImmutableSamplers = nullptr;
-		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;	// 指定哪些着色器可以访问此绑定点
+		uboLayoutBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;	// 指定哪些着色器可以访问此绑定点
 
 		VkDescriptorSetLayoutBinding ySamplerLayoutBinding{};
 		ySamplerLayoutBinding.binding = 1;
@@ -415,37 +415,17 @@ namespace QtAV
 
 	void VulkanWindowRenderer::createDescriptorPool()
 	{
-		{
-			std::array<VkDescriptorPoolSize, 2> poolSizes{};
-			poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			poolSizes[0].descriptorCount = 10;
-			poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			poolSizes[1].descriptorCount = 10;
-
-			VkDescriptorPoolCreateInfo poolInfo{};
-			poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-			poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-			poolInfo.pPoolSizes = poolSizes.data();
-			poolInfo.maxSets = 20;
-
-			if (m_vulkanDeviceFunctions->vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS)
-			{
-				qDebug() << "failed to create descriptor pool!";
-			}
-			return;
-		}
-
 		std::array<VkDescriptorPoolSize, 2> poolSizes{};
 		poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		poolSizes[0].descriptorCount = static_cast<uint32_t>(m_swapChainImageCount);
+		poolSizes[0].descriptorCount = QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT;
 		poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		poolSizes[1].descriptorCount = static_cast<uint32_t>(m_swapChainImageCount);
+		poolSizes[1].descriptorCount = QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT * 3;
 
 		VkDescriptorPoolCreateInfo poolInfo{};
 		poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
 		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 		poolInfo.pPoolSizes = poolSizes.data();
-		poolInfo.maxSets = static_cast<uint32_t>(m_swapChainImageCount);
+		poolInfo.maxSets = QVulkanWindow::MAX_CONCURRENT_FRAME_COUNT * 4;
 
 		if (m_vulkanDeviceFunctions->vkCreateDescriptorPool(m_device, &poolInfo, nullptr, &m_descriptorPool) != VK_SUCCESS)
 		{
@@ -473,7 +453,7 @@ namespace QtAV
 			VkDescriptorBufferInfo bufferInfo{};
 			bufferInfo.buffer = m_uniformBuffers[i];
 			bufferInfo.offset = 0;
-			bufferInfo.range = sizeof(UniformBufferObject);
+			bufferInfo.range = Matrix4x4Size * 2;
 
 			VkDescriptorImageInfo yImageInfo{};
 			yImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -570,22 +550,22 @@ namespace QtAV
 					texture.memory
 				);
 
+				m_vulkanDeviceFunctions->vkGetImageSubresourceLayout(
+					m_device,
+					texture.image,
+					&subresource,
+					&texture.layout
+				);
+
 				texture.imageView = createImageView(texture.image, VK_FORMAT_R8_UNORM);
 
 				m_vulkanDeviceFunctions->vkMapMemory(
 					m_device,
 					texture.memory,
 					0,
-					texture.width * texture.height,
+					texture.layout.size,
 					0,
 					&texture.mappedMemory
-				);
-
-				m_vulkanDeviceFunctions->vkGetImageSubresourceLayout(
-					m_device,
-					texture.image,
-					&subresource,
-					&texture.layout
 				);
 			}
 			};
@@ -707,6 +687,7 @@ namespace QtAV
 
 	void VulkanWindowRenderer::cleanupDescriptorSets()
 	{
+		m_vulkanDeviceFunctions->vkResetDescriptorPool(m_device, m_descriptorPool, 0);
 		m_descriptorSets.clear();
 	}
 
@@ -766,7 +747,7 @@ namespace QtAV
 		m_uboUploaded[currentImage] = true;
 
 		void* data;
-		m_vulkanDeviceFunctions->vkMapMemory(m_device, m_uniformBuffersMemory[currentImage], 0, sizeof(Matrix4x4Size * 2), 0, &data);
+		m_vulkanDeviceFunctions->vkMapMemory(m_device, m_uniformBuffersMemory[currentImage], 0, Matrix4x4Size * 2, 0, &data);
 		char* ptr = static_cast<char*>(data);
 		std::memcpy(ptr, m_uboObj.posTransform.constData(), Matrix4x4Size);
 		std::memcpy(ptr + Matrix4x4Size, m_uboObj.colorTransform.constData(), Matrix4x4Size);
@@ -933,18 +914,18 @@ namespace QtAV
 
 	void VulkanWindowRenderer::updateTextureImage(uint32_t currentImage)
 	{
-		if (currentImage >= static_cast<uint32_t>(m_swapChainImageCount)) 
+		if (currentImage >= static_cast<uint32_t>(m_swapChainImageCount))
 		{
 			qDebug() << "updateTextureImage: Invalid currentImage index (" << currentImage << ")";
 			return;
 		}
 
-		updateSinglePlaneTexture(m_yTextureObjects[currentImage], m_currentFrame.constBits(0));
-		updateSinglePlaneTexture(m_uTextureObjects[currentImage], m_currentFrame.constBits(1));
-		updateSinglePlaneTexture(m_vTextureObjects[currentImage], m_currentFrame.constBits(2));
+		updateSinglePlaneTexture(m_yTextureObjects[currentImage], m_currentFrame.constBits(0), m_currentFrame.bytesPerLine(0));
+		updateSinglePlaneTexture(m_uTextureObjects[currentImage], m_currentFrame.constBits(1), m_currentFrame.bytesPerLine(1));
+		updateSinglePlaneTexture(m_vTextureObjects[currentImage], m_currentFrame.constBits(2), m_currentFrame.bytesPerLine(2));
 	}
 
-	void VulkanWindowRenderer::updateSinglePlaneTexture(const TextureObject& textureObj, const uchar* planeData)
+	void VulkanWindowRenderer::updateSinglePlaneTexture(const TextureObject& textureObj, const uchar* planeData, int lineSize)
 	{
 		if (!planeData) {
 			qDebug() << "updateSinglePlaneTexture: Invalid plane data";
@@ -953,10 +934,9 @@ namespace QtAV
 
 		const uchar* srcData = planeData;
 		uchar* dstData = static_cast<uchar*>(textureObj.mappedMemory) + textureObj.layout.offset;
-		const uint32_t rowPitch = textureObj.layout.rowPitch;
-		const uint32_t rowSize = textureObj.width;
-
-		if (rowPitch == rowSize)
+		auto rowPitch = textureObj.layout.rowPitch;
+		auto validLineSize = textureObj.width;
+		if (textureObj.layout.rowPitch == lineSize)
 		{
 			memcpy(dstData, srcData, rowPitch * textureObj.height);
 		}
@@ -964,9 +944,9 @@ namespace QtAV
 		{
 			for (uint32_t y = 0; y < textureObj.height; ++y)
 			{
-				memcpy(dstData, srcData, rowSize);
-				srcData += rowSize;
+				memcpy(dstData, srcData, validLineSize);
 				dstData += rowPitch;
+				srcData += lineSize;
 			}
 		}
 	}
