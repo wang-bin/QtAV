@@ -70,6 +70,7 @@ Q_SIGNALS:
     void seekFinished(qint64 timestamp);
     void stepFinished();
     void internalSubtitlePacketRead(int index, const QtAV::Packet& packet);
+    void mediaEndReached(); // emitted at the end of media if MediaEndAction_Pause is set
 private slots:
     void finishedStepBackward();
     void seekOnPauseFinished();
