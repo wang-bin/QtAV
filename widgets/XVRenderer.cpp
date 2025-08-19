@@ -50,7 +50,7 @@ class XVRenderer: public QWidget, public VideoRenderer
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(XVRenderer)
 public:
-    XVRenderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
+    XVRenderer(QWidget* parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
     virtual VideoRendererId id() const Q_DECL_OVERRIDE;
     virtual bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
 
@@ -492,8 +492,7 @@ void XVRenderer::drawBackground()
         return;
     DPTR_D(XVRenderer);
     // TODO: set color
-    const QVector<QRect> bg(bgRegion.rects());
-    foreach (const QRect& r, bg) {
+    foreach (const QRect& r, bgRegion) {
         XFillRectangle(d.display, winId(), d.gc, r.x(), r.y(), r.width(), r.height());
     }
     XFlush(d.display);

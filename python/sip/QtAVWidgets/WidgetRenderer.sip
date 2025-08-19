@@ -23,8 +23,8 @@ public:
     QSize videoFrameSize();
 
 public:
-    WidgetRenderer(QWidget* parent /TransferThis/ = 0, Qt::WindowFlags f = 0);
-    virtual VideoRendererId id();
+    WidgetRenderer(QWidget* parent /TransferThis/ = 0, Qt::WindowFlags f = Qt::WindowFlags());
+    VideoRendererId id();
     virtual QWidget* widget();
 
 signals:

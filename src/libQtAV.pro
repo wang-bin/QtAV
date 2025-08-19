@@ -3,7 +3,7 @@ MODULE_INCNAME = QtAV # for mac framework. also used in install_sdk.pro
 TARGET = QtAV
 QT += core gui
 #CONFIG *= ltcg
-greaterThan(QT_MAJOR_VERSION, 5): QT += opengl
+greaterThan(QT_MAJOR_VERSION, 5): QT += opengl openglwidgets
 greaterThan(QT_MAJOR_VERSION, 4) {
   contains(QT_CONFIG, opengl) {
       CONFIG *= config_opengl

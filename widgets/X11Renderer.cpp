@@ -47,7 +47,7 @@ class X11Renderer: public QWidget, public VideoRenderer
     Q_OBJECT
     DPTR_DECLARE_PRIVATE(X11Renderer)
 public:
-    X11Renderer(QWidget* parent = 0, Qt::WindowFlags f = 0);
+    X11Renderer(QWidget* parent = 0, Qt::WindowFlags f = Qt::WindowFlags());
     VideoRendererId id() const Q_DECL_OVERRIDE;
     bool isSupported(VideoFormat::PixelFormat pixfmt) const Q_DECL_OVERRIDE;
 
@@ -441,8 +441,7 @@ void X11Renderer::drawBackground()
     // TODO: fill once each resize? mpv
     // TODO: set color
     //XSetBackground(d.display, d.gc, BlackPixel(d.display, DefaultScreen(d.display)));
-    const QVector<QRect> bg(bgRegion.rects());
-    foreach (const QRect& r, bg) {
+    foreach (const QRect& r, bgRegion) {
         XFillRectangle(d.display, winId(), d.gc, r.x(), r.y(), r.width(), r.height());
     }
     XFlush(d.display); // apply the color

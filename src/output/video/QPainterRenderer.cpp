@@ -85,8 +85,7 @@ void QPainterRenderer::drawBackground()
     d.painter->fillRect(QRect(QPoint(), rendererSize()), backgroundColor());
     d.painter->restore();
 #else
-    const QVector<QRect> bg(bgRegion.rects());
-    foreach (const QRect& r, bg) {
+    foreach (const QRect& r, bgRegion) {
         d.painter->fillRect(r, backgroundColor());
     }
 #endif

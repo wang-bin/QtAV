@@ -22,6 +22,8 @@
 #ifndef QTAV_OUTPUTSET_H
 #define QTAV_OUTPUTSET_H
 
+#include <climits>
+
 #include <QtCore/QObject>
 #include <QtCore/QMutex>
 #include <QtCore/QWaitCondition>

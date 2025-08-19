@@ -29,7 +29,6 @@
 //#include "QtAV/private/mkid.h"
 #include "utils/Logger.h"
 #include "directx/SurfaceInteropD3D9.h"
-#include <QtCore/QSysInfo>
 #define DX_LOG_COMPONENT "DXVA2"
 #include "utils/DirectXHelper.h"
 
@@ -98,7 +97,7 @@ public:
         VideoDecoderD3DPrivate()
     {
         // d3d9+gl interop may not work on optimus moble platforms, 0-copy is enabled only for egl interop
-        if (d3d9::InteropResource::isSupported(d3d9::InteropEGL) && QSysInfo::windowsVersion() >= QSysInfo::WV_VISTA)
+        if (d3d9::InteropResource::isSupported(d3d9::InteropEGL))
             copy_mode = VideoDecoderFFmpegHW::ZeroCopy;
 
         hd3d9_dll = 0;
@@ -269,9 +268,9 @@ bool VideoDecoderDXVAPrivate::createDevice()
         return false;
     }
     vendor = QString::fromLatin1(DXHelper::vendorName(d3dai.VendorId));
-    description = QString().sprintf("DXVA2 (%.*s, vendor %lu(%s), device %lu, revision %lu)",
-                                    sizeof(d3dai.Description), d3dai.Description,
-                                    d3dai.VendorId, qPrintable(vendor), d3dai.DeviceId, d3dai.Revision);
+    description = QString().asprintf("DXVA2 (%.*s, vendor %lu(%s), device %lu, revision %lu)",
+                                     sizeof(d3dai.Description), d3dai.Description,
+                                     d3dai.VendorId, qPrintable(vendor), d3dai.DeviceId, d3dai.Revision);
 
     //if (copy_uswc)
       //  copy_uswc = vendor.toLower() == "intel";

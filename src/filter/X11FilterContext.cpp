@@ -182,7 +182,7 @@ void X11FilterContext::drawPlainText(const QPointF &pos, const QString &text)
     this->plain = true;
 
     QFontMetrics fm(font);
-    text_q = QImage(fm.width(text), fm.height(), QImage::Format_ARGB32);
+    text_q = QImage(fm.horizontalAdvance(text), fm.height(), QImage::Format_ARGB32);
     text_q.fill(0);
     painter->begin(&text_q);
     painter->translate(0, 0);

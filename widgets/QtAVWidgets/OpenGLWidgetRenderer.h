@@ -24,7 +24,7 @@
 
 #include <QtAVWidgets/global.h>
 #if QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
-#include <QOpenGLWidget>
+#include <QtOpenGLWidgets/QOpenGLWidget>
 #else
 #include <QtAVWidgets/QOpenGLWidget.h>
 #endif //QT_VERSION >= QT_VERSION_CHECK(5, 4, 0)
